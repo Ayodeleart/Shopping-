@@ -1,0 +1,16 @@
+{
+  "name": "My Store",
+  "short_name": "Store",
+  "description": "Fast mobile shopping",
+  "start_url": "/index.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#D91C2D",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ],
+  "categories": ["shopping"],
+  "lang": "en-NG"
+}
