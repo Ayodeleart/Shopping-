@@ -229,6 +229,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
     <button class="tab on" data-tab="dash">Dashboard</button>
     <button class="tab" data-tab="products">Products</button>
     <button class="tab" data-tab="banners">Banners</button>
+    <button class="tab" data-tab="shortcuts">Shortcuts</button>
     <button class="tab" data-tab="orders">Orders</button>
     <button class="tab" data-tab="settings">Settings</button>
   </div>
@@ -321,6 +322,32 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
     <div id="bList"></div>
   </div>
 
+
+  <!-- SHORTCUTS -->
+  <div class="panel" id="p-shortcuts">
+    <div class="fcard">
+      <h3 id="scFormTitle">Add Shortcut Card</h3>
+      <div class="fg"><label>Title *</label><input type="text" id="scTitle" placeholder="e.g. Up to 70% Off"></div>
+      <div class="fg"><label>Background Color</label><input type="color" id="scBg" value="#f5f5f5" style="width:100%;height:40px;border:1.5px solid var(--border);border-radius:9px;cursor:pointer;background:var(--bg)"></div>
+      <div class="fg"><label>Display Order</label><input type="number" id="scOrder" value="1" min="1"></div>
+      <div class="fg">
+        <label>Image</label>
+        <div class="iup-area" id="scImgArea">
+          <input type="file" id="scImgFile" accept="image/*">
+          <div class="iup-txt" id="scImgTxt">Tap to upload image</div>
+        </div>
+        <div class="uprog" id="scImgProg"><div class="uprog-bar" id="scImgProgBar" style="width:0%"></div></div>
+        <img class="iup-prev" id="scImgPrev" alt="">
+      </div>
+      <div class="form-btns">
+        <button class="btn-p" onclick="saveShortcut()">Save Shortcut</button>
+        <button class="btn-s" id="cancelScBtn" style="display:none" onclick="cancelScEdit()">Cancel</button>
+      </div>
+    </div>
+    <div class="ph"><span class="pt">All Shortcuts</span></div>
+    <div id="scList"></div>
+  </div>
+
   <!-- ORDERS -->
   <div class="panel" id="p-orders">
     <div class="ph">
@@ -336,6 +363,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
       <div class="ssec-ttl">Store Details</div>
       <div class="srow"><label>Store Name</label><input type="text" id="sName" placeholder="My Store"></div>
       <div class="srow"><label>Tagline</label><input type="text" id="sTag" placeholder="Fast delivery. Real deals."></div>
+      <div class="srow"><label>Phone (Call to Order)</label><input type="tel" id="sPhone" placeholder="e.g. 02018883300"></div>
       <div class="srow"><label>Currency Symbol</label><input type="text" id="sCurr" placeholder="₦" maxlength="5"></div>
     </div>
 
@@ -790,6 +818,7 @@ async function loadSettings() {
   document.getElementById('sName').value = get('storeName') || '';
   document.getElementById('sTag').value = get('tagline') || '';
   document.getElementById('sCurr').value = get('currency') || '₦';
+    document.getElementById('sPhone').value = get('phone') || '';
   const flashEnd = get('flashSaleEnd');
   if (flashEnd) {
     const d = new Date(parseInt(flashEnd));
@@ -901,10 +930,104 @@ document.getElementById('logoutBtn').onclick = () => {
   document.getElementById('lPwd').value = '';
 };
 
+
+/* ===== SHORTCUTS ===== */
+let editScId = null;
+
+document.getElementById('scImgFile').addEventListener('change', () => previewFile('scImgFile', 'scImgPrev', 'scImgTxt'));
+
+async function saveShortcut() {
+  const title = document.getElementById('scTitle').value.trim();
+  if (!title) { toast('Title required', true); return; }
+  showLoad('Saving...');
+  try {
+    let image_url = null;
+    const file = document.getElementById('scImgFile').files[0];
+    if (file) {
+      image_url = await uploadImage(file, 'shortcuts', 'scImgProgBar', 'scImgProg');
+    } else if (editScId) {
+      const { data } = await sb.from('shortcuts').select('image_url').eq('id', editScId).single();
+      image_url = data?.image_url || null;
+    }
+    const row = {
+      title,
+      bg_color: document.getElementById('scBg').value,
+      sort_order: parseInt(document.getElementById('scOrder').value) || 1,
+      image_url
+    };
+    let error;
+    if (editScId) {
+      ({ error } = await sb.from('shortcuts').update(row).eq('id', editScId));
+    } else {
+      ({ error } = await sb.from('shortcuts').insert([row]));
+    }
+    if (error) throw error;
+    toast(editScId ? 'Shortcut updated' : 'Shortcut added');
+    cancelScEdit();
+    await loadShortcuts();
+    await loadDash();
+  } catch(e) { toast('Save failed: ' + e.message, true); } finally { hideLoad(); }
+}
+
+function cancelScEdit() {
+  editScId = null;
+  document.getElementById('scTitle').value = '';
+  document.getElementById('scBg').value = '#f5f5f5';
+  document.getElementById('scOrder').value = '1';
+  document.getElementById('scImgFile').value = '';
+  document.getElementById('scImgPrev').classList.remove('on');
+  document.getElementById('scImgTxt').textContent = 'Tap to upload image';
+  document.getElementById('scFormTitle').textContent = 'Add Shortcut Card';
+  document.getElementById('cancelScBtn').style.display = 'none';
+}
+
+async function editShortcut(id) {
+  const { data: s } = await sb.from('shortcuts').select('*').eq('id', id).single();
+  if (!s) return;
+  editScId = id;
+  document.getElementById('scTitle').value = s.title || '';
+  document.getElementById('scBg').value = s.bg_color || '#f5f5f5';
+  document.getElementById('scOrder').value = s.sort_order || 1;
+  if (s.image_url) { document.getElementById('scImgPrev').src = s.image_url; document.getElementById('scImgPrev').classList.add('on'); document.getElementById('scImgTxt').textContent = 'Image loaded. Tap to replace.'; }
+  document.getElementById('scFormTitle').textContent = 'Edit Shortcut';
+  document.getElementById('cancelScBtn').style.display = '';
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('on'));
+  document.querySelectorAll('.panel').forEach(x => x.classList.remove('on'));
+  document.querySelector('[data-tab=shortcuts]').classList.add('on');
+  document.getElementById('p-shortcuts').classList.add('on');
+}
+
+async function deleteShortcut(id) {
+  confirm('Delete Shortcut', 'Remove this shortcut card?', async () => {
+    showLoad('Deleting...');
+    await sb.from('shortcuts').delete().eq('id', id);
+    hideLoad(); toast('Deleted');
+    await loadShortcuts(); await loadDash();
+  });
+}
+
+async function loadShortcuts() {
+  const { data: rows } = await sb.from('shortcuts').select('*').order('sort_order', { ascending: true });
+  const el = document.getElementById('scList');
+  if (!rows?.length) { el.innerHTML = `<div class="no-items"><h3>No shortcuts yet</h3><p>Add shortcut cards above.</p></div>`; return; }
+  el.innerHTML = rows.map(s => `
+    <div class="bitem">
+      <div class="bprev" style="background:${s.bg_color||'#f5f5f5'}">
+        ${s.image_url ? `<img src="${s.image_url}" alt="">` : ''}
+        <div class="bprev-txt"><div class="bprev-title">${s.title||''}</div></div>
+      </div>
+      <div class="bfoot">
+        <span class="bfoot-name">Order ${s.sort_order||1} — ${s.title||''}</span>
+        <button class="btn-e" onclick="editShortcut(${s.id})">Edit</button>
+        <button class="btn-d" onclick="deleteShortcut(${s.id})">Delete</button>
+      </div>
+    </div>`).join('');
+}
+
 /* ===== LOAD ALL ===== */
 async function loadAll() {
   await loadSettings();
-  await Promise.all([loadProducts(), loadBanners(), loadOrders(), loadDash()]);
+  await Promise.all([loadProducts(), loadBanners(), loadShortcuts(), loadOrders(), loadDash()]);
 }
 
 /* ===== INIT ===== */
