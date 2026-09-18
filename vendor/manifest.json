@@ -1,0 +1,16 @@
+{
+  "name": "Vendor Portal",
+  "short_name": "Vendor",
+  "description": "Manage your store, products and orders",
+  "start_url": "/vendor/",
+  "scope": "/vendor/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#D91C2D",
+  "icons": [
+    { "src": "../icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ],
+  "categories": ["business", "shopping"],
+  "lang": "en-NG"
+}

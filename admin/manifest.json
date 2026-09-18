@@ -1,0 +1,16 @@
+{
+  "name": "Store Admin",
+  "short_name": "Admin",
+  "description": "Manage the marketplace: vendors, products, banners and orders",
+  "start_url": "/admin/",
+  "scope": "/admin/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#D91C2D",
+  "icons": [
+    { "src": "../icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ],
+  "categories": ["business"],
+  "lang": "en-NG"
+}

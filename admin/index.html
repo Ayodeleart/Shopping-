@@ -6,6 +6,9 @@
 <meta name="theme-color" content="#D91C2D">
 <meta name="robots" content="noindex,nofollow">
 <title>Admin Panel</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="../icon.svg">
+<link rel="apple-touch-icon" href="../icon.svg">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 :root{--bg:#fff;--bg2:#f5f5f5;--bg3:#ebebeb;--card:#fff;--txt:#111;--txt2:#555;--txt3:#999;--red:#D91C2D;--red2:#a81422;--green:#16a34a;--border:#e0e0e0;--shadow:0 2px 12px rgba(0,0,0,.06);--r:12px}
@@ -208,11 +211,12 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
   <div class="lbox">
     <div class="llogo"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 3H8l-2 4h12l-2-4z"/></svg></div>
     <div class="ltitle">Admin Panel</div>
-    <div class="lsub">Sign in to manage your store</div>
-    <div class="lfield"><label>Password</label><input type="password" id="lPwd" placeholder="Enter password" autocomplete="current-password"></div>
-    <button id="loginBtn">Sign In</button>
+    <div class="lsub">Sign in with an authorized admin Google account</div>
+    <button id="loginBtn" style="background:#fff;border:1.5px solid var(--border);color:#111;display:flex;align-items:center;justify-content:center;gap:10px">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.9 32.7 29.4 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.6 18.9 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 16.3 4 9.6 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.5 0 10.4-1.9 14.2-5.1l-6.5-5.5C29.6 35.3 27 36 24 36c-5.4 0-9.9-3.3-11.4-7.9l-6.6 5.1C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.7l6.5 5.5C41.5 36.4 44 30.7 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>
+      Continue with Google
+    </button>
     <div id="loginErr"></div>
-    <p style="font-size:11px;color:var(--txt3);text-align:center;margin-top:14px">Default password: admin123</p>
   </div>
 </div>
 
@@ -227,6 +231,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 
   <div id="tabs">
     <button class="tab on" data-tab="dash">Dashboard</button>
+    <button class="tab" data-tab="vendors">Vendors</button>
     <button class="tab" data-tab="products">Products</button>
     <button class="tab" data-tab="banners">Banners</button>
     <button class="tab" data-tab="shortcuts">Shortcuts</button>
@@ -244,6 +249,14 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
     </div>
     <div class="ph"><span class="pt">Recent Orders</span></div>
     <div id="dashOrders"></div>
+  </div>
+
+  <!-- VENDORS -->
+  <div class="panel" id="p-vendors">
+    <div class="ph"><span class="pt">Pending Approval</span></div>
+    <div id="vendorsPending"></div>
+    <div class="ph" style="margin-top:16px"><span class="pt">All Vendors</span></div>
+    <div id="vendorsAll"></div>
   </div>
 
   <!-- PRODUCTS -->
@@ -401,7 +414,14 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 const SB_URL = 'https://qmwlphribvncdtgzbixt.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtd2xwaHJpYnZuY2R0Z3piaXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMDkwMjcsImV4cCI6MjA5NTg4NTAyN30.kmXKSrnQxG6n8RdK6ppNvn05vi7Xl68LKUNW5f7CQCU';
 const BUCKET = 'avatars';
-const sb = window.supabase.createClient(SB_URL, SB_KEY);
+const sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
+
+/* Client-side allow-list is just for UI gating (which screen to show).
+   The real security boundary is server-side: /api/admin-vendors.js re-checks
+   this same list (via ADMIN_EMAIL env var) before using the service-role key,
+   and RLS on the vendors/products tables blocks direct writes from anon/authenticated
+   clients that aren't the row owner. Add every admin's Google email here. */
+const ADMIN_EMAILS = ['YOUR_ADMIN_EMAIL@gmail.com']; // TODO: replace with your real admin Google account(s)
 
 /* ===== THEME ===== */
 let dark = localStorage.getItem('theme') === 'dark';
@@ -905,30 +925,31 @@ async function loadDash() {
     </div>`).join('');
 }
 
-/* ===== AUTH ===== */
-function getAdminPwd() { return localStorage.getItem('adminPwd') || 'admin123'; }
-document.getElementById('lPwd').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
-document.getElementById('loginBtn').onclick = doLogin;
-
-function doLogin() {
-  if (document.getElementById('lPwd').value === getAdminPwd()) {
-    sessionStorage.setItem('adminAuth', '1');
-    document.getElementById('loginWrap').style.display = 'none';
-    document.getElementById('app').classList.add('on');
-    document.getElementById('loginErr').textContent = '';
-    loadAll();
-  } else {
-    document.getElementById('loginErr').textContent = 'Incorrect password';
-    document.getElementById('lPwd').value = '';
-  }
-}
+/* ===== AUTH (Google sign-in + ADMIN_EMAILS gate) ===== */
+document.getElementById('loginBtn').onclick = async () => {
+  const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
+  if (error) document.getElementById('loginErr').textContent = error.message;
+};
 
 document.getElementById('logoutBtn').onclick = () => {
-  sessionStorage.removeItem('adminAuth');
-  document.getElementById('app').classList.remove('on');
-  document.getElementById('loginWrap').style.display = 'flex';
-  document.getElementById('lPwd').value = '';
+  sb.auth.signOut().then(() => {
+    document.getElementById('app').classList.remove('on');
+    document.getElementById('loginWrap').style.display = 'flex';
+  });
 };
+
+async function checkAdminSession() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session || !ADMIN_EMAILS.includes(session.user.email)) {
+    if (session) { document.getElementById('loginErr').textContent = 'This Google account is not an admin.'; sb.auth.signOut(); }
+    document.getElementById('loginWrap').style.display = 'flex';
+    document.getElementById('app').classList.remove('on');
+    return false;
+  }
+  document.getElementById('loginWrap').style.display = 'none';
+  document.getElementById('app').classList.add('on');
+  return true;
+}
 
 
 /* ===== SHORTCUTS ===== */
@@ -1024,19 +1045,71 @@ async function loadShortcuts() {
     </div>`).join('');
 }
 
+/* ===== VENDORS (via /api/admin-vendors.js — needs the service-role key, so
+   it can list pending/suspended vendors and change status; the admin panel
+   client itself only ever holds the anon key) ===== */
+async function adminApiCall(body) {
+  const { data: { session } } = await sb.auth.getSession();
+  const res = await fetch('/api/admin-vendors', {
+    method: body ? 'POST' : 'GET',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error || 'Request failed');
+  return json;
+}
+
+async function loadVendors() {
+  const pendingEl = document.getElementById('vendorsPending');
+  const allEl = document.getElementById('vendorsAll');
+  try {
+    const { vendors } = await adminApiCall(null);
+    const pending = vendors.filter(v => v.status === 'pending');
+    pendingEl.innerHTML = pending.length ? pending.map(vendorRowHtml).join('') : '<div class="no-items"><h3>No pending applications</h3></div>';
+    allEl.innerHTML = vendors.length ? vendors.map(vendorRowHtml).join('') : '<div class="no-items"><h3>No vendors yet</h3></div>';
+    document.getElementById('stVendors') && (document.getElementById('stVendors').textContent = vendors.length);
+  } catch (e) {
+    pendingEl.innerHTML = `<div class="no-items"><h3>Couldn't load vendors</h3><p>${e.message}. Have you deployed /api/admin-vendors.js with SUPABASE_SERVICE_ROLE_KEY and ADMIN_EMAIL set?</p></div>`;
+    allEl.innerHTML = '';
+  }
+}
+
+function vendorRowHtml(v) {
+  const badgeColor = v.status === 'approved' ? 'var(--green)' : v.status === 'suspended' ? 'var(--red)' : '#d97706';
+  return `
+    <div class="bitem">
+      <div class="bfoot" style="flex-wrap:wrap">
+        <span class="bfoot-name" style="flex:1"><b>${v.business_name}</b> · ${v.email || ''}<br><span style="color:${badgeColor};font-weight:700;text-transform:uppercase;font-size:11px">${v.status}</span></span>
+        ${v.status !== 'approved' ? `<button class="btn-e" onclick="setVendorStatus('${v.id}','approved')">Approve</button>` : ''}
+        ${v.status !== 'suspended' ? `<button class="btn-d" onclick="setVendorStatus('${v.id}','suspended')">Suspend</button>` : ''}
+      </div>
+    </div>`;
+}
+
+window.setVendorStatus = async (vendor_id, status) => {
+  showLoad(status === 'approved' ? 'Approving...' : 'Suspending...');
+  try {
+    await adminApiCall({ vendor_id, status });
+    toast(`Vendor ${status}`);
+    await loadVendors();
+  } catch (e) {
+    toast('Failed: ' + e.message, true);
+  } finally { hideLoad(); }
+};
+
 /* ===== LOAD ALL ===== */
 async function loadAll() {
   await loadSettings();
-  await Promise.all([loadProducts(), loadBanners(), loadShortcuts(), loadOrders(), loadDash()]);
+  await Promise.all([loadProducts(), loadBanners(), loadShortcuts(), loadOrders(), loadDash(), loadVendors()]);
 }
 
 /* ===== INIT ===== */
-document.addEventListener('DOMContentLoaded', () => {
-  if (sessionStorage.getItem('adminAuth')) {
-    document.getElementById('loginWrap').style.display = 'none';
-    document.getElementById('app').classList.add('on');
-    loadAll();
-  }
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { scope: '/admin/' }).catch(() => {});
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const ok = await checkAdminSession();
+  if (ok) loadAll();
 });
 </script>
 </body>

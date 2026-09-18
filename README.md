@@ -1,12 +1,44 @@
 # Store - PWA with Supabase
 
+## ⚡ Multi-vendor upgrade (read this first)
+
+This repo now has three separate installable PWAs:
+- `index.html` — buyer storefront
+- `/vendor` — vendor board (vendors sign in with Google, list products, manage orders)
+- `/admin` — admin panel (approve vendors, moderate products/banners/orders)
+
+### 1. Run the new migration
+In Supabase SQL Editor, run `migration_vendors.sql` (adds `vendors`, `order_items`, `vendor_id` columns, and turns RLS back on — the old setup had RLS disabled everywhere).
+
+### 2. Enable Google sign-in
+Supabase Dashboard → Authentication → Providers → Google → enable it, and add your Google OAuth Client ID/Secret from Google Cloud Console. Add this site's URL(s) to the provider's authorized redirect URIs.
+
+### 3. Set your admin email
+In `admin/index.html`, find `ADMIN_EMAILS` near the top of the `<script>` block and replace the placeholder with your real Google account(s).
+
+### 4. Deploy `/api/admin-vendors.js` (needs a Node serverless host, e.g. Vercel)
+Set these environment variables in your hosting project (never in the repo):
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY` (Supabase Dashboard → Project Settings → API)
+- `ADMIN_EMAIL` (comma-separated, must match `ADMIN_EMAILS` in admin/index.html)
+
+Without this deployed, the admin panel's Vendors tab can't list or approve vendors (by design — the anon key can't bypass RLS for other users' rows).
+
+### 5. Still to do
+- Supabase email templates (vendor approval, order confirmation)
+- Storefront homepage reorder: featured → categories → vendors → recommended for you → recently viewed → hot deals → per-category scrollable rows (currently: hero → categories → vendors → flash sale → featured → all products)
+
+
 ## Files
 - index.html — Customer storefront (PWA)
-- admin.html — Admin panel
-- sw.js — Service worker (offline support)
-- manifest.json — PWA manifest
+- /admin — Admin panel (PWA)
+- /vendor — Vendor board (PWA)
+- /api/admin-vendors.js — Serverless function (list/approve/suspend vendors)
+- sw.js — Service worker (offline support, storefront only)
+- manifest.json — PWA manifest (storefront)
 - icon.svg — App icon
-- setup.sql — Database setup (run once)
+- setup.sql — Original database setup (run once)
+- migration_vendors.sql — Multi-vendor migration (run once, after setup.sql)
 
 ---
 
@@ -71,13 +103,19 @@ Go to your site settings and add your domain.
 
 ## Using the Admin Panel
 
-1. Open yoursite.com/admin.html
-2. Default password: admin123
-3. Change password immediately in Settings tab
+1. Open yoursite.com/admin
+2. Sign in with an admin Google account (must be listed in `ADMIN_EMAILS` in `admin/index.html` and in the `ADMIN_EMAIL` env var — see the multi-vendor setup steps above)
 
 ### Add Products
 - Go to Products tab
 - Fill in name, price, and upload image
+
+## Using the Vendor Portal
+
+1. Open yoursite.com/vendor
+2. Sign in with Google, fill in the store profile form
+3. Wait for an admin to approve the application in /admin → Vendors tab
+4. Once approved: add products, they show up on the storefront automatically; view/update orders as they come in
 - Toggle "Featured" to show in Featured section
 - Toggle "Flash Sale" to include in flash sale
 

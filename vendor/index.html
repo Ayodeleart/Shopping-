@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#D91C2D">
+<meta name="robots" content="noindex,nofollow">
+<title>Vendor Portal</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="../icon.svg">
+<link rel="apple-touch-icon" href="../icon.svg">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root{--bg:#fff;--bg2:#f5f5f5;--bg3:#ebebeb;--card:#fff;--txt:#111;--txt2:#555;--txt3:#999;--red:#D91C2D;--red2:#a81422;--green:#16a34a;--amber:#d97706;--border:#e0e0e0;--shadow:0 2px 12px rgba(0,0,0,.06);--r:12px}
+[data-theme=dark]{--bg:#0d0d0d;--bg2:#1a1a1a;--bg3:#242424;--card:#1a1a1a;--txt:#f5f5f5;--txt2:#aaa;--txt3:#666;--red:#e8192c;--red2:#c01525;--green:#22c55e;--amber:#f59e0b;--border:#2a2a2a;--shadow:0 2px 12px rgba(0,0,0,.4)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh}
+button{cursor:pointer;border:none;background:none;font-family:inherit;color:inherit}
+input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
+
+/* CENTER SCREENS (auth / onboarding / pending / suspended) */
+.centerWrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px}
+.cbox{background:var(--card);border-radius:20px;padding:32px 22px;width:100%;max-width:360px;box-shadow:0 4px 24px rgba(0,0,0,.1);text-align:center}
+.clogo{width:60px;height:60px;background:var(--red);border-radius:15px;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;color:#fff;font-weight:900;font-size:24px}
+.ctitle{font-size:20px;font-weight:900;margin-bottom:6px}
+.csub{font-size:13px;color:var(--txt2);line-height:1.5;margin-bottom:22px}
+.gBtn{width:100%;height:50px;background:#fff;border:1.5px solid var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;gap:10px;font-size:15px;font-weight:700;color:#111}
+.gBtn:active{background:#f2f2f2}
+.badge-pending{display:inline-flex;align-items:center;gap:6px;background:rgba(217,119,6,.12);color:var(--amber);font-size:12px;font-weight:800;padding:6px 12px;border-radius:20px;margin-bottom:14px}
+.badge-suspended{display:inline-flex;align-items:center;gap:6px;background:rgba(217,28,45,.12);color:var(--red);font-size:12px;font-weight:800;padding:6px 12px;border-radius:20px;margin-bottom:14px}
+.fld{margin-bottom:12px;text-align:left}
+.fld label{display:block;font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.fld input,.fld textarea{width:100%;min-height:48px;border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;font-size:15px;background:var(--bg);outline:none}
+.fld input:focus,.fld textarea:focus{border-color:var(--red)}
+.primaryBtn{width:100%;height:50px;background:var(--red);color:#fff;font-size:16px;font-weight:800;border-radius:12px;margin-top:8px}
+.primaryBtn:active{background:var(--red2);transform:scale(.98)}
+.ghostBtn{width:100%;height:44px;color:var(--txt2);font-size:13px;font-weight:700;margin-top:10px}
+.errMsg{color:var(--red);font-size:13px;margin-top:10px;min-height:16px}
+
+/* APP SHELL */
+#app{display:none;min-height:100vh;flex-direction:column}
+#app.on{display:flex}
+#vhdr{position:sticky;top:0;z-index:100;height:52px;background:var(--red);display:flex;align-items:center;padding:0 14px;gap:8px;color:#fff}
+#vhdr h1{flex:1;font-size:15px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vhbtn{width:36px;height:36px;background:rgba(255,255,255,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0}
+.vhbtn:active{background:rgba(255,255,255,.3)}
+#tabs{background:var(--bg);border-bottom:2px solid var(--border);display:flex;overflow-x:auto;scrollbar-width:none;position:sticky;top:52px;z-index:99}
+#tabs::-webkit-scrollbar{display:none}
+.tab{flex:1;min-width:80px;height:42px;font-size:12px;font-weight:700;color:var(--txt3);border-bottom:2px solid transparent;margin-bottom:-2px;padding:0 6px;white-space:nowrap}
+.tab.on{color:var(--red);border-bottom-color:var(--red)}
+.panel{display:none;padding:14px}
+.panel.on{display:block}
+
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+.scard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;box-shadow:var(--shadow)}
+.sval{font-size:24px;font-weight:900;line-height:1}
+.slbl{font-size:11px;color:var(--txt3);margin-top:4px;font-weight:600;text-transform:uppercase}
+
+.fcard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px;box-shadow:var(--shadow)}
+.fcard h3{font-size:14px;font-weight:800;margin-bottom:14px}
+.frow2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.imgPick{width:100%;height:130px;border:1.5px dashed var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--txt3);font-size:12px;overflow:hidden;position:relative;margin-bottom:12px;background:var(--bg2)}
+.imgPick img{width:100%;height:100%;object-fit:cover}
+.progWrap{height:4px;background:var(--bg3);border-radius:4px;overflow:hidden;margin-top:8px;display:none}
+.progWrap.on{display:block}
+.progBar{height:100%;width:0;background:var(--red);transition:width .2s}
+.tgl{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--border)}
+.tgl:first-child{border-top:none}
+.sw{width:44px;height:26px;border-radius:20px;background:var(--bg3);position:relative;transition:background .2s}
+.sw.on{background:var(--red)}
+.sw::after{content:'';position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .2s}
+.sw.on::after{left:20px}
+.btnRow{display:flex;gap:8px;margin-top:14px}
+.btnRow button{flex:1;height:44px;border-radius:10px;font-size:13px;font-weight:700}
+.btnSave{background:var(--red);color:#fff}
+.btnCancel{background:var(--bg2);color:var(--txt2)}
+
+.plist{display:flex;flex-direction:column;gap:8px}
+.pitem{display:flex;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px;align-items:center}
+.pitem img{width:48px;height:48px;border-radius:8px;object-fit:cover;background:var(--bg2);flex-shrink:0}
+.pitem .pinfo{flex:1;min-width:0}
+.pitem .pname{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pitem .pmeta{font-size:11px;color:var(--txt3);margin-top:2px}
+.pitem .pacts{display:flex;gap:6px}
+.iconBtn{width:32px;height:32px;border-radius:8px;background:var(--bg2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+.ordCard{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px}
+.ordTop{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.ordName{font-size:13px;font-weight:800}
+.ordDate{font-size:11px;color:var(--txt3)}
+.ordLine{display:flex;justify-content:space-between;font-size:12px;color:var(--txt2);margin-top:3px}
+.statusSel{margin-top:8px;height:34px;border-radius:8px;border:1px solid var(--border);background:var(--bg);font-size:12px;font-weight:700;padding:0 8px;width:100%}
+
+.empty{padding:40px 20px;text-align:center;color:var(--txt3);font-size:13px}
+
+#loadOverlay{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:400}
+#loadOverlay.on{display:flex}
+.spinBox{background:var(--card);padding:20px 26px;border-radius:14px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.spin{width:26px;height:26px;border:3px solid var(--bg3);border-top-color:var(--red);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#vtoast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--txt);color:var(--bg);font-size:13px;font-weight:600;padding:11px 20px;border-radius:30px;opacity:0;pointer-events:none;transition:opacity .25s,bottom .25s;z-index:500;white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis}
+#vtoast.on{opacity:1;bottom:34px}
+</style>
+</head>
+<body>
+
+<div id="loadOverlay"><div class="spinBox"><div class="spin"></div><span id="loadMsg" style="font-size:12px;color:var(--txt3)">Loading...</span></div></div>
+<div id="vtoast"></div>
+
+<!-- 1. SIGN IN -->
+<div id="authWrap" class="centerWrap">
+  <div class="cbox">
+    <div class="clogo">V</div>
+    <div class="ctitle">Vendor Portal</div>
+    <div class="csub">Sign in to list products and manage your orders on the marketplace.</div>
+    <button class="gBtn" id="googleBtn">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.9 32.7 29.4 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.6 18.9 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 16.3 4 9.6 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.5 0 10.4-1.9 14.2-5.1l-6.5-5.5C29.6 35.3 27 36 24 36c-5.4 0-9.9-3.3-11.4-7.9l-6.6 5.1C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.7l6.5 5.5C41.5 36.4 44 30.7 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>
+      Continue with Google
+    </button>
+    <div class="errMsg" id="authErr"></div>
+  </div>
+</div>
+
+<!-- 2. ONBOARDING (first-time vendor, no row yet) -->
+<div id="onboardWrap" class="centerWrap" style="display:none">
+  <div class="cbox">
+    <div class="clogo">V</div>
+    <div class="ctitle">Set up your store</div>
+    <div class="csub">Tell us about your business. An admin will review and approve it before it goes live.</div>
+    <div class="fld"><label>Business Name</label><input id="obName" placeholder="e.g. Ada's Fashion House"></div>
+    <div class="fld"><label>Phone Number</label><input id="obPhone" placeholder="080..."></div>
+    <button class="primaryBtn" id="obSubmitBtn">Submit application</button>
+    <div class="errMsg" id="obErr"></div>
+  </div>
+</div>
+
+<!-- 3. PENDING -->
+<div id="pendingWrap" class="centerWrap" style="display:none">
+  <div class="cbox">
+    <div class="badge-pending">⏳ Pending review</div>
+    <div class="ctitle">Your store is being reviewed</div>
+    <div class="csub">We'll notify you by email once an admin approves your store. This usually takes 1-2 days.</div>
+    <button class="ghostBtn" id="pendingSignOut">Sign out</button>
+  </div>
+</div>
+
+<!-- 4. SUSPENDED -->
+<div id="suspendedWrap" class="centerWrap" style="display:none">
+  <div class="cbox">
+    <div class="badge-suspended">⛔ Suspended</div>
+    <div class="ctitle">Your store is suspended</div>
+    <div class="csub">Contact the marketplace admin to find out why and resolve it.</div>
+    <button class="ghostBtn" id="suspendedSignOut">Sign out</button>
+  </div>
+</div>
+
+<!-- 5. DASHBOARD APP -->
+<div id="app">
+  <div id="vhdr">
+    <h1 id="vShopName">Vendor Portal</h1>
+    <button class="vhbtn" id="vThemeBtn">🌓</button>
+    <button class="vhbtn" id="vSignOutBtn">⏻</button>
+  </div>
+  <div id="tabs">
+    <button class="tab on" data-tab="dash">Dashboard</button>
+    <button class="tab" data-tab="products">Products</button>
+    <button class="tab" data-tab="orders">Orders</button>
+    <button class="tab" data-tab="settings">Settings</button>
+  </div>
+
+  <div class="panel on" id="panel-dash">
+    <div class="sgrid">
+      <div class="scard"><div class="sval" id="statProducts">0</div><div class="slbl">Products</div></div>
+      <div class="scard"><div class="sval" id="statOrders">0</div><div class="slbl">Orders</div></div>
+      <div class="scard"><div class="sval" id="statPending">0</div><div class="slbl">Pending Orders</div></div>
+      <div class="scard"><div class="sval" id="statRevenue">₦0</div><div class="slbl">Completed Revenue</div></div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-products">
+    <div class="fcard">
+      <h3 id="pFormTitle">Add Product</h3>
+      <div class="imgPick" id="pImgPick" onclick="document.getElementById('pImgFile').click()">
+        <span id="pImgPickTxt">Tap to add photo</span>
+        <img id="pImgPreview" style="display:none">
+      </div>
+      <input type="file" id="pImgFile" accept="image/*" style="display:none">
+      <div class="progWrap" id="pImgProg"><div class="progBar" id="pImgProgBar"></div></div>
+      <div class="fld"><label>Product Name</label><input id="pName" placeholder="e.g. Colorblock Zip-Up Jacket"></div>
+      <div class="frow2">
+        <div class="fld"><label>Price (₦)</label><input id="pPrice" type="number" placeholder="0"></div>
+        <div class="fld"><label>Was Price (₦)</label><input id="pOrig" type="number" placeholder="optional"></div>
+      </div>
+      <div class="frow2">
+        <div class="fld"><label>Category</label><input id="pCat" placeholder="e.g. Fashion"></div>
+        <div class="fld"><label>Stock</label><input id="pStock" type="number" placeholder="0"></div>
+      </div>
+      <div class="fld"><label>Description</label><textarea id="pDesc" rows="3" placeholder="Short description"></textarea></div>
+      <div class="btnRow">
+        <button class="btnCancel" id="pCancelBtn" style="display:none">Cancel</button>
+        <button class="btnSave" id="pSaveBtn">Add Product</button>
+      </div>
+    </div>
+    <div class="plist" id="pList"></div>
+  </div>
+
+  <div class="panel" id="panel-orders">
+    <div id="ordList"><div class="empty">No orders yet.</div></div>
+  </div>
+
+  <div class="panel" id="panel-settings">
+    <div class="fcard">
+      <h3>Store Profile</h3>
+      <div class="fld"><label>Business Name</label><input id="sName"></div>
+      <div class="fld"><label>Phone</label><input id="sPhone"></div>
+      <button class="primaryBtn" id="sSaveBtn">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/* ===== SUPABASE ===== */
+const SB_URL = 'https://qmwlphribvncdtgzbixt.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtd2xwaHJpYnZuY2R0Z3piaXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMDkwMjcsImV4cCI6MjA5NTg4NTAyN30.kmXKSrnQxG6n8RdK6ppNvn05vi7Xl68LKUNW5f7CQCU';
+const BUCKET = 'avatars';
+const sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
+
+let session = null;
+let vendorRow = null;
+let editProdId = null;
+
+/* ===== THEME ===== */
+let dark = localStorage.getItem('theme') === 'dark';
+document.body.dataset.theme = dark ? 'dark' : 'light';
+document.getElementById('vThemeBtn').onclick = () => { dark = !dark; localStorage.setItem('theme', dark ? 'dark' : 'light'); document.body.dataset.theme = dark ? 'dark' : 'light'; };
+
+/* ===== TOAST / LOAD ===== */
+let toastT;
+function toast(msg, isErr = false) {
+  const el = document.getElementById('vtoast');
+  el.textContent = msg; el.style.background = isErr ? '#dc2626' : 'var(--txt)';
+  el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2600);
+}
+function showLoad(msg = 'Loading...') { document.getElementById('loadMsg').textContent = msg; document.getElementById('loadOverlay').classList.add('on'); }
+function hideLoad() { document.getElementById('loadOverlay').classList.remove('on'); }
+
+/* ===== SCREEN SWITCHING ===== */
+function showScreen(id) {
+  ['authWrap','onboardWrap','pendingWrap','suspendedWrap','app'].forEach(s => {
+    const el = document.getElementById(s);
+    if (s === 'app') el.classList.toggle('on', s === id);
+    else el.style.display = s === id ? 'flex' : 'none';
+  });
+}
+
+/* ===== AUTH ===== */
+document.getElementById('googleBtn').onclick = async () => {
+  const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
+  if (error) document.getElementById('authErr').textContent = error.message;
+};
+document.getElementById('pendingSignOut').onclick = () => sb.auth.signOut().then(() => location.reload());
+document.getElementById('suspendedSignOut').onclick = () => sb.auth.signOut().then(() => location.reload());
+document.getElementById('vSignOutBtn').onclick = () => sb.auth.signOut().then(() => location.reload());
+
+async function boot() {
+  showLoad('Checking session...');
+  const { data: { session: s } } = await sb.auth.getSession();
+  session = s;
+  if (!session) { hideLoad(); showScreen('authWrap'); return; }
+
+  const { data: v } = await sb.from('vendors').select('*').eq('id', session.user.id).maybeSingle();
+  vendorRow = v;
+  hideLoad();
+
+  if (!vendorRow) { showScreen('onboardWrap'); return; }
+  if (vendorRow.status === 'pending') { showScreen('pendingWrap'); return; }
+  if (vendorRow.status === 'suspended') { showScreen('suspendedWrap'); return; }
+
+  document.getElementById('vShopName').textContent = vendorRow.business_name;
+  document.getElementById('sName').value = vendorRow.business_name || '';
+  document.getElementById('sPhone').value = vendorRow.phone || '';
+  showScreen('app');
+  await Promise.all([loadDash(), loadProducts(), loadOrders()]);
+}
+
+document.getElementById('obSubmitBtn').onclick = async () => {
+  const business_name = document.getElementById('obName').value.trim();
+  const phone = document.getElementById('obPhone').value.trim();
+  if (!business_name) { document.getElementById('obErr').textContent = 'Business name is required'; return; }
+  showLoad('Submitting...');
+  const { error } = await sb.from('vendors').insert([{ id: session.user.id, business_name, phone, email: session.user.email, status: 'pending' }]);
+  hideLoad();
+  if (error) { document.getElementById('obErr').textContent = error.message; return; }
+  showScreen('pendingWrap');
+};
+
+/* ===== TABS ===== */
+document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('on'));
+  document.querySelectorAll('.panel').forEach(x => x.classList.remove('on'));
+  t.classList.add('on');
+  document.getElementById('panel-' + t.dataset.tab).classList.add('on');
+});
+
+/* ===== IMAGE UPLOAD (same pattern as admin panel) ===== */
+async function uploadImage(file, folder) {
+  const prog = document.getElementById('pImgProg');
+  const bar = document.getElementById('pImgProgBar');
+  prog.classList.add('on'); bar.style.width = '0%';
+
+  const blob = await new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const maxW = 900;
+        let w = img.width, h = img.height;
+        if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        bar.style.width = '40%';
+        canvas.toBlob(b => b ? res(b) : rej(new Error('Canvas failed')), 'image/jpeg', 0.82);
+      };
+      img.onerror = rej;
+      img.src = e.target.result;
+    };
+    reader.onerror = rej;
+    reader.readAsDataURL(file);
+  });
+
+  bar.style.width = '60%';
+  const path = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
+  const { error } = await sb.storage.from(BUCKET).upload(path, blob, { contentType: 'image/jpeg', cacheControl: '31536000' });
+  if (error) { prog.classList.remove('on'); throw error; }
+  bar.style.width = '100%'; setTimeout(() => prog.classList.remove('on'), 600);
+  return sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+}
+
+document.getElementById('pImgFile').onchange = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    document.getElementById('pImgPreview').src = ev.target.result;
+    document.getElementById('pImgPreview').style.display = 'block';
+    document.getElementById('pImgPickTxt').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+};
+
+/* ===== PRODUCTS (scoped to this vendor only) ===== */
+async function loadProducts() {
+  const { data, error } = await sb.from('products').select('*').eq('vendor_id', session.user.id).order('created_at', { ascending: false });
+  if (error) { toast('Failed to load products: ' + error.message, true); return; }
+  const list = document.getElementById('pList');
+  if (!data || !data.length) { list.innerHTML = '<div class="empty">No products yet. Add your first one above.</div>'; return; }
+  list.innerHTML = data.map(p => `
+    <div class="pitem">
+      <img src="${p.image_url || ''}" onerror="this.style.opacity=0">
+      <div class="pinfo">
+        <div class="pname">${p.name}</div>
+        <div class="pmeta">₦${Number(p.price).toLocaleString()} · Stock ${p.stock ?? 0} · ${p.category || 'Uncategorized'}</div>
+      </div>
+      <div class="pacts">
+        <button class="iconBtn" onclick="editProduct(${p.id})">✏️</button>
+        <button class="iconBtn" onclick="deleteProduct(${p.id})">🗑️</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+window.editProduct = async (id) => {
+  const { data: p } = await sb.from('products').select('*').eq('id', id).single();
+  if (!p) return;
+  editProdId = id;
+  document.getElementById('pFormTitle').textContent = 'Edit Product';
+  document.getElementById('pName').value = p.name || '';
+  document.getElementById('pPrice').value = p.price || '';
+  document.getElementById('pOrig').value = p.original_price || '';
+  document.getElementById('pCat').value = p.category || '';
+  document.getElementById('pStock').value = p.stock || 0;
+  document.getElementById('pDesc').value = p.description || '';
+  if (p.image_url) {
+    document.getElementById('pImgPreview').src = p.image_url;
+    document.getElementById('pImgPreview').style.display = 'block';
+    document.getElementById('pImgPickTxt').style.display = 'none';
+  }
+  document.getElementById('pCancelBtn').style.display = 'block';
+  document.getElementById('pSaveBtn').textContent = 'Update Product';
+  document.getElementById('panel-products').scrollIntoView({ behavior: 'smooth' });
+};
+
+window.deleteProduct = (id) => {
+  if (!confirm('Delete this product?')) return;
+  sb.from('products').delete().eq('id', id).eq('vendor_id', session.user.id).then(({ error }) => {
+    if (error) { toast('Delete failed: ' + error.message, true); return; }
+    toast('Product deleted');
+    loadProducts(); loadDash();
+  });
+};
+
+document.getElementById('pCancelBtn').onclick = resetProdForm;
+function resetProdForm() {
+  editProdId = null;
+  document.getElementById('pFormTitle').textContent = 'Add Product';
+  document.getElementById('pName').value = '';
+  document.getElementById('pPrice').value = '';
+  document.getElementById('pOrig').value = '';
+  document.getElementById('pCat').value = '';
+  document.getElementById('pStock').value = '';
+  document.getElementById('pDesc').value = '';
+  document.getElementById('pImgFile').value = '';
+  document.getElementById('pImgPreview').style.display = 'none';
+  document.getElementById('pImgPickTxt').style.display = 'block';
+  document.getElementById('pCancelBtn').style.display = 'none';
+  document.getElementById('pSaveBtn').textContent = 'Add Product';
+}
+
+document.getElementById('pSaveBtn').onclick = async () => {
+  const name = document.getElementById('pName').value.trim();
+  const price = parseFloat(document.getElementById('pPrice').value);
+  if (!name) { toast('Product name required', true); return; }
+  if (!price || price <= 0) { toast('Valid price required', true); return; }
+
+  showLoad('Saving product...');
+  try {
+    let imageUrl = null;
+    const file = document.getElementById('pImgFile').files[0];
+    if (file) {
+      imageUrl = await uploadImage(file, 'vendor-products');
+    } else if (editProdId) {
+      const { data } = await sb.from('products').select('image_url').eq('id', editProdId).single();
+      imageUrl = data?.image_url || null;
+    }
+
+    const prod = {
+      name, price,
+      original_price: parseFloat(document.getElementById('pOrig').value) || null,
+      category: document.getElementById('pCat').value.trim() || null,
+      stock: parseInt(document.getElementById('pStock').value) || 0,
+      description: document.getElementById('pDesc').value.trim() || null,
+      image_url: imageUrl,
+      vendor_id: session.user.id
+    };
+
+    let error;
+    if (editProdId) ({ error } = await sb.from('products').update(prod).eq('id', editProdId).eq('vendor_id', session.user.id));
+    else ({ error } = await sb.from('products').insert([prod]));
+    if (error) throw error;
+
+    toast(editProdId ? 'Product updated' : 'Product added');
+    resetProdForm();
+    await loadProducts(); await loadDash();
+  } catch (e) {
+    toast('Save failed: ' + e.message, true);
+  } finally {
+    hideLoad();
+  }
+};
+
+/* ===== ORDERS (only this vendor's line items) ===== */
+async function loadOrders() {
+  const { data, error } = await sb.from('order_items')
+    .select('*, orders(customer_name, phone, address, created_at)')
+    .eq('vendor_id', session.user.id)
+    .order('created_at', { ascending: false });
+  const list = document.getElementById('ordList');
+  if (error) { list.innerHTML = `<div class="empty">Failed to load orders: ${error.message}</div>`; return; }
+  if (!data || !data.length) { list.innerHTML = '<div class="empty">No orders yet.</div>'; return; }
+
+  list.innerHTML = data.map(oi => `
+    <div class="ordCard">
+      <div class="ordTop">
+        <div class="ordName">${oi.orders?.customer_name || 'Customer'}</div>
+        <div class="ordDate">${new Date(oi.created_at).toLocaleDateString()}</div>
+      </div>
+      <div class="ordLine"><span>${oi.name} × ${oi.qty}</span><span>₦${Number(oi.price * oi.qty).toLocaleString()}</span></div>
+      <div style="font-size:11px;color:var(--txt3);margin-top:4px">${oi.orders?.phone || ''} · ${oi.orders?.address || ''}</div>
+      <select class="statusSel" onchange="updateOrderStatus(${oi.id}, this.value)">
+        ${['pending','processing','shipped','completed','cancelled'].map(s => `<option value="${s}" ${oi.status === s ? 'selected' : ''}>${s[0].toUpperCase() + s.slice(1)}</option>`).join('')}
+      </select>
+    </div>
+  `).join('');
+}
+
+window.updateOrderStatus = async (id, status) => {
+  const { error } = await sb.from('order_items').update({ status }).eq('id', id).eq('vendor_id', session.user.id);
+  if (error) { toast('Failed to update: ' + error.message, true); return; }
+  toast('Order updated');
+  loadDash();
+};
+
+/* ===== DASHBOARD STATS ===== */
+async function loadDash() {
+  const { data: prods } = await sb.from('products').select('id', { count: 'exact', head: false }).eq('vendor_id', session.user.id);
+  const { data: items } = await sb.from('order_items').select('status, price, qty').eq('vendor_id', session.user.id);
+  document.getElementById('statProducts').textContent = prods?.length || 0;
+  document.getElementById('statOrders').textContent = items?.length || 0;
+  document.getElementById('statPending').textContent = items?.filter(i => i.status === 'pending').length || 0;
+  const revenue = (items || []).filter(i => i.status === 'completed').reduce((s, i) => s + i.price * i.qty, 0);
+  document.getElementById('statRevenue').textContent = '₦' + revenue.toLocaleString();
+}
+
+/* ===== SETTINGS ===== */
+document.getElementById('sSaveBtn').onclick = async () => {
+  const business_name = document.getElementById('sName').value.trim();
+  const phone = document.getElementById('sPhone').value.trim();
+  if (!business_name) { toast('Business name required', true); return; }
+  showLoad('Saving...');
+  const { error } = await sb.from('vendors').update({ business_name, phone }).eq('id', session.user.id);
+  hideLoad();
+  if (error) { toast('Save failed: ' + error.message, true); return; }
+  vendorRow.business_name = business_name;
+  document.getElementById('vShopName').textContent = business_name;
+  toast('Profile updated');
+};
+
+/* ===== PWA INSTALL ===== */
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { scope: '/vendor/' }).catch(() => {});
+
+boot();
+</script>
+</body>
+</html>
