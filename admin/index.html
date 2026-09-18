@@ -421,7 +421,7 @@ const sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession
    this same list (via ADMIN_EMAIL env var) before using the service-role key,
    and RLS on the vendors/products tables blocks direct writes from anon/authenticated
    clients that aren't the row owner. Add every admin's Google email here. */
-const ADMIN_EMAILS = ['YOUR_ADMIN_EMAIL@gmail.com']; // TODO: replace with your real admin Google account(s)
+const ADMIN_EMAILS = ['ayodeleart1@gmail.com']; // lower-cased; compared case-insensitively below
 
 /* ===== THEME ===== */
 let dark = localStorage.getItem('theme') === 'dark';
@@ -940,7 +940,7 @@ document.getElementById('logoutBtn').onclick = () => {
 
 async function checkAdminSession() {
   const { data: { session } } = await sb.auth.getSession();
-  if (!session || !ADMIN_EMAILS.includes(session.user.email)) {
+  if (!session || !ADMIN_EMAILS.includes((session.user.email || '').toLowerCase())) {
     if (session) { document.getElementById('loginErr').textContent = 'This Google account is not an admin.'; sb.auth.signOut(); }
     document.getElementById('loginWrap').style.display = 'flex';
     document.getElementById('app').classList.remove('on');
