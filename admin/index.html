@@ -18,19 +18,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 button{cursor:pointer;border:none;background:none;font-family:inherit;color:inherit}
 input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 
-/* LOGIN */
-#loginWrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;background:var(--bg)}
-.lbox{background:var(--card);border-radius:20px;padding:32px 22px;width:100%;max-width:340px;box-shadow:0 4px 24px rgba(0,0,0,.1)}
-.llogo{width:60px;height:60px;background:var(--red);border-radius:15px;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;color:#fff}
-.ltitle{font-size:20px;font-weight:900;text-align:center;margin-bottom:4px}
-.lsub{font-size:13px;color:var(--txt3);text-align:center;margin-bottom:24px}
-.lfield{margin-bottom:12px}
-.lfield label{display:block;font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
-.lfield input{width:100%;height:48px;border:1.5px solid var(--border);border-radius:10px;padding:0 14px;font-size:16px;background:var(--bg);outline:none;transition:border-color .2s}
-.lfield input:focus{border-color:var(--red)}
-#loginBtn{width:100%;height:50px;background:var(--red);color:#fff;font-size:16px;font-weight:800;border-radius:12px;margin-top:8px;transition:background .15s,transform .15s}
-#loginBtn:active{background:var(--red2);transform:scale(.98)}
-#loginErr{color:var(--red);font-size:13px;text-align:center;margin-top:10px;min-height:18px}
+/* LOGIN (dark, matches reference design) */
+#loginWrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;background:radial-gradient(ellipse at 50% 0%, #132030 0%, #0a0e14 55%, #05070a 100%)}
+.lbox{width:100%;max-width:340px;text-align:center}
+.llogo{width:72px;height:72px;background:#161a20;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 22px;color:#22c55e;animation:llogoSpin 3.2s linear infinite}
+@keyframes llogoSpin{to{transform:rotate(360deg)}}
+.ltitle{font-size:26px;font-weight:800;color:#fff;margin-bottom:6px}
+.lsub{font-size:13px;color:#8a93a3;margin-bottom:30px;line-height:1.5}
+#loginBtn{width:100%;height:52px;background:#fff;border:none;color:#111;font-size:15px;font-weight:700;border-radius:14px;transition:transform .15s,opacity .15s}
+#loginBtn:active{transform:scale(.98);opacity:.9}
+#loginErr{color:#f87171;font-size:13px;text-align:center;margin-top:14px;min-height:18px}
 
 /* APP */
 #app{display:none;min-height:100vh;flex-direction:column}
@@ -209,10 +206,10 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 <!-- LOGIN -->
 <div id="loginWrap">
   <div class="lbox">
-    <div class="llogo"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 3H8l-2 4h12l-2-4z"/></svg></div>
-    <div class="ltitle">Admin Panel</div>
-    <div class="lsub">Sign in with an authorized admin Google account</div>
-    <button id="loginBtn" style="background:#fff;border:1.5px solid var(--border);color:#111;display:flex;align-items:center;justify-content:center;gap:10px">
+    <div class="llogo"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 01-15.3 6.4M3 12a9 9 0 0115.3-6.4"/><path d="M3 3v6h6M21 21v-6h-6"/></svg></div>
+    <div class="ltitle">Admin Login</div>
+    <div class="lsub">Sign in with an authorized admin<br>Google account</div>
+    <button id="loginBtn" style="display:flex;align-items:center;justify-content:center;gap:10px">
       <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.9 32.7 29.4 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.6 18.9 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 16.3 4 9.6 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.5 0 10.4-1.9 14.2-5.1l-6.5-5.5C29.6 35.3 27 36 24 36c-5.4 0-9.9-3.3-11.4-7.9l-6.6 5.1C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.7l6.5 5.5C41.5 36.4 44 30.7 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>
       Continue with Google
     </button>
