@@ -10,6 +10,11 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="app-icon-32.png">
 <title>Maccato</title>
+<link rel="stylesheet" href="components/promotional-carousel.css">
+<script defer src="components/drag-gesture.js"></script>
+<script defer src="components/promotion-slide.js"></script>
+<script defer src="components/promotional-carousel.js"></script>
+<script defer src="data/promotions.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 /* ── THEME TOKENS ─────────────────────────────────── */
@@ -100,27 +105,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 #instBtn{margin-left:auto;background:#fff;color:var(--red);font-weight:800;font-size:11px;padding:5px 12px;border-radius:20px;flex-shrink:0}
 #instX{width:28px;height:28px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 
-/* ── HERO CAROUSEL ────────────────────────────────── */
-#hero{position:relative;overflow:hidden;background:var(--bg2)}
-#heroTrack{display:flex;transition:transform .5s cubic-bezier(.4,0,.2,1);will-change:transform}
-.hSlide{
-  min-width:100%;height:196px;flex-shrink:0;
-  position:relative;overflow:hidden;
-  display:flex;align-items:flex-end;
-}
-.hSlide img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.hGrad{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.6) 0%,transparent 55%)}
-.hContent{position:relative;z-index:1;padding:14px 14px 18px;color:#fff;width:100%}
-.hBadge{display:inline-block;background:var(--red);font-size:10px;font-weight:800;padding:3px 9px;border-radius:20px;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
-.hTitle{font-size:20px;font-weight:900;line-height:1.15;text-shadow:0 1px 4px rgba(0,0,0,.4)}
-.hSub{font-size:12px;opacity:.9;margin-top:3px;margin-bottom:8px}
-.hCta{display:inline-block;background:#fff;color:var(--red);font-size:12px;font-weight:800;padding:6px 15px;border-radius:20px}
-.noSlide{height:196px;display:flex;align-items:center;justify-content:center;color:var(--txt3);font-size:13px}
-#heroDots{position:absolute;bottom:9px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:2}
-.hdot{width:6px;height:6px;border-radius:3px;background:rgba(255,255,255,.4);transition:all .3s;cursor:pointer}
-.hdot.on{background:#fff;width:18px}
-.hArrow{position:absolute;top:50%;transform:translateY(-50%);z-index:2;background:rgba(0,0,0,.3);color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
-#hPrev{left:8px}#hNext{right:8px}
+/* ── HERO: styles live in components/promotional-carousel.css ── */
 
 /* ── SHORTCUT CARDS ───────────────────────────────── */
 #shortcutRow{
@@ -494,12 +479,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 <main id="main">
 
   <!-- HERO CAROUSEL -->
-  <section id="hero">
-    <div id="heroTrack"></div>
-    <div id="heroDots"></div>
-    <button class="hArrow" id="hPrev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="15 18 9 12 15 6"/></svg></button>
-    <button class="hArrow" id="hNext"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"/></svg></button>
-  </section>
+  <section id="hero" hidden></section>
 
   <!-- SHORTCUT CARDS -->
   <div id="shortcutRow"></div>
@@ -728,62 +708,16 @@ function toggleTheme() {
 document.getElementById('themeBtn') && (document.getElementById('themeBtn').onclick = toggleTheme);
 applyTheme();
 
-/* ── CAROUSEL ─────────────────────────────────────── */
-let cIdx = 0, cBanners = [], cTimer;
-let tx0 = 0, ty0 = 0;
+/* ── HERO / PROMOTIONAL CAROUSEL ──────────────────── */
+/* Component: components/promotional-carousel.js  ·  Campaign data: data/promotions.js */
+let promoCarousel = null;
 
 function buildCarousel(banners) {
-  cBanners = banners;
-  const track = document.getElementById('heroTrack');
-  const dots  = document.getElementById('heroDots');
-
-  if (!banners.length) {
-    document.getElementById('hero').innerHTML = `<div class="noSlide">No banners yet — add some in Admin</div>`;
-    return;
-  }
-
-  track.innerHTML = banners.map(b => `
-    <div class="hSlide">
-      ${b.image_url
-        ? `<img src="${b.image_url}" alt="${b.title||''}" loading="eager">`
-        : `<div style="position:absolute;inset:0;background:${b.bg_color||'#D91C2D'}"></div>`}
-      <div class="hGrad"></div>
-      <div class="hContent">
-        ${b.badge   ? `<span class="hBadge">${b.badge}</span>` : ''}
-        ${b.title   ? `<div class="hTitle">${b.title}</div>` : ''}
-        ${b.subtitle? `<div class="hSub">${b.subtitle}</div>` : ''}
-        ${b.cta_text? `<span class="hCta">${b.cta_text}</span>` : ''}
-      </div>
-    </div>`).join('');
-
-  dots.innerHTML = banners.map((_,i) =>
-    `<div class="hdot${i===0?' on':''}" onclick="goTo(${i})"></div>`).join('');
-
-  goTo(0);
-  startCarousel();
-
-  const hero = document.getElementById('hero');
-  hero.addEventListener('touchstart', e => {
-    tx0 = e.touches[0].clientX; ty0 = e.touches[0].clientY; stopCarousel();
-  }, {passive:true});
-  hero.addEventListener('touchend', e => {
-    const dx = e.changedTouches[0].clientX - tx0;
-    const dy = e.changedTouches[0].clientY - ty0;
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 35)
-      dx < 0 ? goTo(cIdx+1) : goTo(cIdx-1);
-    startCarousel();
-  }, {passive:true});
+  if (promoCarousel) promoCarousel.destroy();
+  promoCarousel = new PromotionalCarousel(document.getElementById('hero'), {
+    promotions: Promotions.resolve(banners)
+  });
 }
-
-function goTo(i) {
-  cIdx = ((i % cBanners.length) + cBanners.length) % cBanners.length;
-  document.getElementById('heroTrack').style.transform = `translateX(-${cIdx*100}%)`;
-  document.querySelectorAll('.hdot').forEach((d,j) => d.classList.toggle('on', j===cIdx));
-}
-function startCarousel() { stopCarousel(); if (cBanners.length > 1) cTimer = setInterval(() => goTo(cIdx+1), 3800); }
-function stopCarousel()  { clearInterval(cTimer); }
-document.getElementById('hNext').onclick = () => { goTo(cIdx+1); stopCarousel(); startCarousel(); };
-document.getElementById('hPrev').onclick = () => { goTo(cIdx-1); stopCarousel(); startCarousel(); };
 
 /* ── SHORTCUT CARDS ───────────────────────────────── */
 function buildShortcuts(shortcuts) {
