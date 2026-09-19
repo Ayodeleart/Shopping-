@@ -7,8 +7,8 @@
 <meta name="robots" content="noindex,nofollow">
 <title>Admin Panel</title>
 <link rel="manifest" href="manifest.json">
-<link rel="icon" href="../icon.svg">
-<link rel="apple-touch-icon" href="../icon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="app-icon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 :root{--bg:#fff;--bg2:#f5f5f5;--bg3:#ebebeb;--card:#fff;--txt:#111;--txt2:#555;--txt3:#999;--red:#D91C2D;--red2:#a81422;--green:#16a34a;--border:#e0e0e0;--shadow:0 2px 12px rgba(0,0,0,.06);--r:12px}
@@ -21,7 +21,8 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 /* LOGIN (dark, matches reference design) */
 #loginWrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;background:radial-gradient(ellipse at 50% 0%, #132030 0%, #0a0e14 55%, #05070a 100%)}
 .lbox{width:100%;max-width:340px;text-align:center}
-.llogo{width:72px;height:72px;background:#161a20;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 22px;color:#22c55e;animation:llogoSpin 3.2s linear infinite}
+.llogo{width:88px;height:88px;border-radius:50%;overflow:hidden;margin:0 auto 22px;box-shadow:0 0 0 1px rgba(255,255,255,.1)}
+.llogo img{width:100%;height:100%;display:block;object-fit:cover}
 @keyframes llogoSpin{to{transform:rotate(360deg)}}
 .ltitle{font-size:26px;font-weight:800;color:#fff;margin-bottom:6px}
 .lsub{font-size:13px;color:#8a93a3;margin-bottom:30px;line-height:1.5}
@@ -206,7 +207,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 <!-- LOGIN -->
 <div id="loginWrap">
   <div class="lbox">
-    <div class="llogo"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 01-15.3 6.4M3 12a9 9 0 0115.3-6.4"/><path d="M3 3v6h6M21 21v-6h-6"/></svg></div>
+    <div class="llogo"><img src="app-icon-192.png" alt=""></div>
     <div class="ltitle">Admin Login</div>
     <div class="lsub">Sign in with an authorized admin<br>Google account</div>
     <button id="loginBtn" style="display:flex;align-items:center;justify-content:center;gap:10px">
