@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#D91C2D">
 <meta name="robots" content="noindex,nofollow">
-<title>Vendor Portal</title>
+<title>Maccato Vendor</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" sizes="32x32" href="app-icon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -30,10 +30,14 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 .gBtn:active{transform:scale(.98);opacity:.9}
 .badge-pending{display:inline-flex;align-items:center;gap:6px;background:rgba(217,119,6,.15);color:#fbbf24;font-size:12px;font-weight:800;padding:6px 12px;border-radius:20px;margin-bottom:14px}
 .badge-suspended{display:inline-flex;align-items:center;gap:6px;background:rgba(248,113,113,.15);color:#f87171;font-size:12px;font-weight:800;padding:6px 12px;border-radius:20px;margin-bottom:14px}
+.centerWrap .fld{margin-bottom:12px;text-align:left}
+.centerWrap .fld label{display:block;font-size:11px;font-weight:700;color:#8a93a3;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.centerWrap .fld input,.centerWrap .fld textarea{width:100%;min-height:48px;border:1.5px solid #262b33;border-radius:10px;padding:10px 14px;font-size:15px;background:#161a20;color:#fff;outline:none}
+.centerWrap .fld input:focus,.centerWrap .fld textarea:focus{border-color:#22c55e}
 .fld{margin-bottom:12px;text-align:left}
-.fld label{display:block;font-size:11px;font-weight:700;color:#8a93a3;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
-.fld input,.fld textarea{width:100%;min-height:48px;border:1.5px solid #262b33;border-radius:10px;padding:10px 14px;font-size:15px;background:#161a20;color:#fff;outline:none}
-.fld input:focus,.fld textarea:focus{border-color:#22c55e}
+.fld label{display:block;font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.fld input,.fld select,.fld textarea{width:100%;min-height:48px;border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;font-size:15px;background:var(--bg);color:var(--txt);outline:none;-webkit-appearance:none;appearance:none}
+.fld input:focus,.fld select:focus,.fld textarea:focus{border-color:var(--red)}
 .primaryBtn{width:100%;height:52px;background:#22c55e;color:#0a0e14;font-size:16px;font-weight:800;border-radius:14px;margin-top:8px;transition:transform .15s,opacity .15s}
 .primaryBtn:active{transform:scale(.98);opacity:.9}
 .ghostBtn{width:100%;height:44px;color:#8a93a3;font-size:13px;font-weight:700;margin-top:10px}
@@ -46,11 +50,11 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 #vhdr h1{flex:1;font-size:15px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .vhbtn{width:36px;height:36px;background:rgba(255,255,255,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0}
 .vhbtn:active{background:rgba(255,255,255,.3)}
-#tabs{background:var(--bg);border-bottom:2px solid var(--border);display:flex;overflow-x:auto;scrollbar-width:none;position:sticky;top:52px;z-index:99}
+#tabs{background:var(--bg);border-top:2px solid var(--border);display:flex;overflow-x:auto;scrollbar-width:none;position:fixed;left:0;right:0;bottom:0;z-index:99;padding:0;padding-bottom:env(safe-area-inset-bottom,0)}
 #tabs::-webkit-scrollbar{display:none}
-.tab{flex:1;min-width:80px;height:42px;font-size:12px;font-weight:700;color:var(--txt3);border-bottom:2px solid transparent;margin-bottom:-2px;padding:0 6px;white-space:nowrap}
-.tab.on{color:var(--red);border-bottom-color:var(--red)}
-.panel{display:none;padding:14px}
+.tab{flex:1;min-width:80px;height:52px;font-size:11px;font-weight:700;color:var(--txt3);border-top:2px solid transparent;margin-top:-2px;padding:0 6px;white-space:nowrap}
+.tab.on{color:var(--red);border-top-color:var(--red)}
+.panel{display:none;padding:14px;padding-bottom:calc(66px + env(safe-area-inset-bottom,0))}
 .panel.on{display:block}
 
 .sgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
@@ -139,7 +143,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 <!-- 3. PENDING -->
 <div id="pendingWrap" class="centerWrap" style="display:none">
   <div class="cbox">
-    <div class="badge-pending">⏳ Pending review</div>
+    <div class="badge-pending"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Pending review</div>
     <div class="ctitle">Your store is being reviewed</div>
     <div class="csub">We'll notify you by email once an admin approves your store. This usually takes 1-2 days.</div>
     <button class="ghostBtn" id="pendingSignOut">Sign out</button>
@@ -149,7 +153,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 <!-- 4. SUSPENDED -->
 <div id="suspendedWrap" class="centerWrap" style="display:none">
   <div class="cbox">
-    <div class="badge-suspended">⛔ Suspended</div>
+    <div class="badge-suspended"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.9" y1="4.9" x2="19.1" y2="19.1"/></svg> Suspended</div>
     <div class="ctitle">Your store is suspended</div>
     <div class="csub">Contact the marketplace admin to find out why and resolve it.</div>
     <button class="ghostBtn" id="suspendedSignOut">Sign out</button>
@@ -159,9 +163,8 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 <!-- 5. DASHBOARD APP -->
 <div id="app">
   <div id="vhdr">
-    <h1 id="vShopName">Vendor Portal</h1>
-    <button class="vhbtn" id="vThemeBtn">🌓</button>
-    <button class="vhbtn" id="vSignOutBtn">⏻</button>
+    <h1 id="vShopName">Maccato Vendor</h1>
+    <button class="vhbtn" id="vSignOutBtn" aria-label="Sign out"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
   </div>
   <div id="tabs">
     <button class="tab on" data-tab="dash">Dashboard</button>
@@ -194,7 +197,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
         <div class="fld"><label>Was Price (₦)</label><input id="pOrig" type="number" placeholder="optional"></div>
       </div>
       <div class="frow2">
-        <div class="fld"><label>Category</label><input id="pCat" placeholder="e.g. Fashion"></div>
+        <div class="fld"><label>Category</label><select id="pCat"><option value="">Select a category</option></select></div>
         <div class="fld"><label>Stock</label><input id="pStock" type="number" placeholder="0"></div>
       </div>
       <div class="fld"><label>Description</label><textarea id="pDesc" rows="3" placeholder="Short description"></textarea></div>
@@ -234,9 +237,8 @@ let vendorRow = null;
 let editProdId = null;
 
 /* ===== THEME ===== */
-let dark = localStorage.getItem('theme') === 'dark';
-document.body.dataset.theme = dark ? 'dark' : 'light';
-document.getElementById('vThemeBtn').onclick = () => { dark = !dark; localStorage.setItem('theme', dark ? 'dark' : 'light'); document.body.dataset.theme = dark ? 'dark' : 'light'; };
+/* Theme is fixed (no user-facing toggle) */
+document.body.dataset.theme = 'light';
 
 /* ===== TOAST / LOAD ===== */
 let toastT;
@@ -284,7 +286,19 @@ async function boot() {
   document.getElementById('sName').value = vendorRow.business_name || '';
   document.getElementById('sPhone').value = vendorRow.phone || '';
   showScreen('app');
+  await loadCategories();
   await Promise.all([loadDash(), loadProducts(), loadOrders()]);
+}
+
+/* ===== CATEGORIES (admin-managed list, product form picks from it) ===== */
+async function loadCategories() {
+  const { data } = await sb.from('store_settings').select('*').eq('key', 'categories').maybeSingle();
+  let cats = [];
+  try { cats = JSON.parse(data?.value || '[]'); } catch { cats = []; }
+  const sel = document.getElementById('pCat');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Select a category</option>' + cats.map(c => `<option value="${c}">${c}</option>`).join('');
+  if (cur) sel.value = cur;
 }
 
 document.getElementById('obSubmitBtn').onclick = async () => {
@@ -367,8 +381,8 @@ async function loadProducts() {
         <div class="pmeta">₦${Number(p.price).toLocaleString()} · Stock ${p.stock ?? 0} · ${p.category || 'Uncategorized'}</div>
       </div>
       <div class="pacts">
-        <button class="iconBtn" onclick="editProduct(${p.id})">✏️</button>
-        <button class="iconBtn" onclick="deleteProduct(${p.id})">🗑️</button>
+        <button class="iconBtn" onclick="editProduct(${p.id})" aria-label="Edit"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg></button>
+        <button class="iconBtn" onclick="deleteProduct(${p.id})" aria-label="Delete"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
       </div>
     </div>
   `).join('');

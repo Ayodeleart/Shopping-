@@ -1,6 +1,6 @@
 {
-  "name": "Vendor Portal",
-  "short_name": "Vendor",
+  "name": "Maccato Vendor",
+  "short_name": "Maccato Vendor",
   "description": "Manage your store, products and orders",
   "start_url": "/vendor/",
   "scope": "/vendor/",

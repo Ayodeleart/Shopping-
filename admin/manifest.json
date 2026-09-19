@@ -1,6 +1,6 @@
 {
-  "name": "Store Admin",
-  "short_name": "Admin",
+  "name": "Maccato Admin",
+  "short_name": "Maccato Admin",
   "description": "Manage the marketplace: vendors, products, banners and orders",
   "start_url": "/admin/",
   "scope": "/admin/",

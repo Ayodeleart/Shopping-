@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#D91C2D">
 <meta name="robots" content="noindex,nofollow">
-<title>Admin Panel</title>
+<title>Maccato Admin</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" sizes="32x32" href="app-icon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -41,13 +41,13 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 .ahbtn:active{background:rgba(255,255,255,.3)}
 
 /* TABS */
-#tabs{background:var(--bg);border-bottom:2px solid var(--border);display:flex;overflow-x:auto;scrollbar-width:none;position:sticky;top:52px;z-index:99}
+#tabs{background:var(--bg);border-top:2px solid var(--border);display:flex;overflow-x:auto;scrollbar-width:none;position:fixed;left:0;right:0;bottom:0;z-index:99;padding:0;padding-bottom:env(safe-area-inset-bottom,0)}
 #tabs::-webkit-scrollbar{display:none}
-.tab{flex:1;min-width:72px;height:42px;font-size:12px;font-weight:700;color:var(--txt3);border-bottom:2px solid transparent;margin-bottom:-2px;padding:0 6px;transition:color .2s,border-color .2s;white-space:nowrap}
-.tab.on{color:var(--red);border-bottom-color:var(--red)}
+.tab{flex:1;min-width:72px;height:52px;font-size:11px;font-weight:700;color:var(--txt3);border-top:2px solid transparent;margin-top:-2px;padding:0 6px;transition:color .2s,border-color .2s;white-space:nowrap}
+.tab.on{color:var(--red);border-top-color:var(--red)}
 
 /* PANELS */
-.panel{display:none;padding:14px}
+.panel{display:none;padding:14px;padding-bottom:calc(66px + env(safe-area-inset-bottom,0))}
 .panel.on{display:block}
 
 /* STATS */
@@ -221,8 +221,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 <!-- ADMIN APP -->
 <div id="app">
   <header id="ahdr">
-    <h1 id="ahdrTitle">Admin Panel</h1>
-    <button class="ahbtn" id="athemeBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></button>
+    <h1 id="ahdrTitle">Maccato Admin</h1>
     <a class="ahbtn" href="/index.html" target="_blank"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><path d="M15 3h6v6M10 14L21 3"/></svg></a>
     <button class="ahbtn" id="logoutBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg></button>
   </header>
@@ -232,7 +231,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
     <button class="tab" data-tab="vendors">Vendors</button>
     <button class="tab" data-tab="products">Products</button>
     <button class="tab" data-tab="banners">Banners</button>
-    <button class="tab" data-tab="shortcuts">Shortcuts</button>
+    <button class="tab" data-tab="shortcuts">Categories</button>
     <button class="tab" data-tab="orders">Orders</button>
     <button class="tab" data-tab="settings">Settings</button>
   </div>
@@ -337,8 +336,8 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
   <!-- SHORTCUTS -->
   <div class="panel" id="p-shortcuts">
     <div class="fcard">
-      <h3 id="scFormTitle">Add Shortcut Card</h3>
-      <div class="fg"><label>Title *</label><input type="text" id="scTitle" placeholder="e.g. Up to 70% Off"></div>
+      <h3 id="scFormTitle">Add Category</h3>
+      <div class="fg"><label>Category Name *</label><input type="text" id="scTitle" placeholder="e.g. Fashion"></div>
       <div class="fg"><label>Background Color</label><input type="color" id="scBg" value="#f5f5f5" style="width:100%;height:40px;border:1.5px solid var(--border);border-radius:9px;cursor:pointer;background:var(--bg)"></div>
       <div class="fg"><label>Display Order</label><input type="number" id="scOrder" value="1" min="1"></div>
       <div class="fg">
@@ -355,7 +354,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
         <button class="btn-s" id="cancelScBtn" style="display:none" onclick="cancelScEdit()">Cancel</button>
       </div>
     </div>
-    <div class="ph"><span class="pt">All Shortcuts</span></div>
+    <div class="ph"><span class="pt">All Categories</span></div>
     <div id="scList"></div>
   </div>
 
@@ -395,12 +394,6 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
       </div>
     </div>
 
-    <div class="ssec">
-      <div class="ssec-ttl">Change Password</div>
-      <div class="srow"><label>New Password</label><input type="password" id="sNewPwd" placeholder="Min 6 characters"></div>
-      <div class="srow"><label>Confirm Password</label><input type="password" id="sConfPwd" placeholder="Confirm"></div>
-    </div>
-
     <button class="save-full" onclick="saveSettings()">Save All Settings</button>
   </div>
 </div>
@@ -422,9 +415,8 @@ const sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession
 const ADMIN_EMAILS = ['ayodeleart1@gmail.com']; // lower-cased; compared case-insensitively below
 
 /* ===== THEME ===== */
-let dark = localStorage.getItem('theme') === 'dark';
-document.body.dataset.theme = dark ? 'dark' : 'light';
-document.getElementById('athemeBtn').onclick = () => { dark = !dark; localStorage.setItem('theme', dark ? 'dark' : 'light'); document.body.dataset.theme = dark ? 'dark' : 'light'; };
+/* Theme is fixed (no user-facing toggle) */
+document.body.dataset.theme = 'light';
 
 /* ===== TOAST ===== */
 let toastT;
@@ -854,16 +846,6 @@ async function saveSettings() {
   const tag = document.getElementById('sTag').value.trim();
   const curr = document.getElementById('sCurr').value.trim() || '₦';
   const flashVal = document.getElementById('sFlash').value;
-  const np = document.getElementById('sNewPwd').value;
-  const cp = document.getElementById('sConfPwd').value;
-
-  if (np) {
-    if (np !== cp) { toast('Passwords do not match', true); return; }
-    if (np.length < 6) { toast('Password must be 6+ characters', true); return; }
-    localStorage.setItem('adminPwd', np);
-    document.getElementById('sNewPwd').value = '';
-    document.getElementById('sConfPwd').value = '';
-  }
 
   showLoad('Saving settings...');
   try {
