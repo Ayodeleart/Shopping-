@@ -2,7 +2,7 @@
 -- MACCATO STOREFRONT V2 MIGRATION
 -- Brands (searchable, with logos), favorites, real rating summaries, vendor logo uploads.
 -- Run once in the Supabase SQL editor. Safe to run again (idempotent).
--- Requires: migration_vendors.sql, migration_reviews_accounts.sql and migration_ads_and_images.sql
+-- Requires: migration_vendors.sql, migration_reviews_accounts.sql and the ads and storage SQL
 -- (it uses public.is_admin(), public.vendors and public.reviews from those files).
 -- ============================================================
 

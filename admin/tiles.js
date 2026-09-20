@@ -2,7 +2,7 @@
  *
  * A tile is a square looping GIF (or image) with a caption, shown as a row under the hero banner, or inside the
  * product feed after N rows. Each tile opens what the admin tagged it with (see dest-picker.js): a brand's
- * products, everything 30% off, hand picked products, an ad page or a link. Table: tiles (migration_tiles.sql).
+ * products, everything 30% off, hand picked products, an ad page or a link. Table: tiles (the tiles SQL).
  *
  * Uses globals from admin/index.html: sb, toast, confirm, showLoad, hideLoad, uploadImage.
  */
@@ -16,14 +16,14 @@
   function blank() { return { id: null, image_url: '', caption: '', place: 'hero', after_rows: 5, sort_order: 1, active: true, target: null }; }
 
   function explain(m) {
-    if (/relation .*tiles|schema cache|does not exist|Could not find the table/i.test(m)) return 'The tiles table is missing. Run migration_tiles.sql in the Supabase SQL editor.';
-    if (/row-level security/i.test(m)) return 'Blocked by row-level security. Run migration_tiles.sql and sign in with the admin Google account.';
+    if (/relation .*tiles|schema cache|does not exist|Could not find the table/i.test(m)) return 'The tiles table is missing. Run the tiles SQL in the Supabase SQL editor.';
+    if (/row-level security/i.test(m)) return 'Blocked by row-level security. Run the tiles SQL and sign in with the admin Google account.';
     return m;
   }
 
   function uploadMsg(err) {
     var m = (err && err.message) || String(err);
-    return /row-level security|policy/i.test(m) ? 'Upload blocked by the storage policy. Run migration_ads_and_images.sql in the Supabase SQL editor.' : m;
+    return /row-level security|policy/i.test(m) ? 'Upload blocked by the storage policy. Run the ads and storage SQL in the Supabase SQL editor.' : m;
   }
 
   async function checkSquare(file) {
@@ -63,7 +63,7 @@
     pane().innerHTML =
       '<div class="ph"><span class="pt">GIF Tiles</span><button class="abtn solid" data-a="new">+ New Tile</button></div>' +
       '<div class="ad-hint" style="margin:-4px 0 12px">Square tiles that sit under the hero banner (or inside the product feed). Each one opens the brand or the products you tag it with.</div>' +
-      (tableMissing ? '<div class="ad-empty">The tiles table is not set up yet. Run <b>migration_tiles.sql</b> in the Supabase SQL editor, then reopen this tab.</div>' : '') +
+      (tableMissing ? '<div class="ad-empty">The tiles table is not set up yet. Run <b>the tiles SQL</b> in the Supabase SQL editor, then reopen this tab.</div>' : '') +
       (tiles.length ? tiles.map(itemHTML).join('') : (tableMissing ? '' : '<div class="ad-empty">No tiles yet. Add a square GIF such as "30% off" and tag it to the products it should open.</div>'));
   }
 

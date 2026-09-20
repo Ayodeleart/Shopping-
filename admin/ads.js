@@ -5,7 +5,7 @@
  *   - a brand page (components/ad-page.js) built from the hero, sections and contact details set here
  *
  * Uses globals from admin/index.html: sb, toast, confirm, showLoad, hideLoad, uploadImage.
- * Section editing lives in ads-sections.js. Table + columns: migration_ads_and_images.sql.
+ * Section editing lives in ads-sections.js. Table + columns: the ads and storage SQL.
  */
 (function () {
   'use strict';
@@ -43,13 +43,13 @@
 
   function uploadMsg(err) {
     var m = (err && err.message) || String(err);
-    if (/row-level security|policy/i.test(m)) return 'Upload blocked by the storage policy. Run migration_ads_and_images.sql in the Supabase SQL editor.';
+    if (/row-level security|policy/i.test(m)) return 'Upload blocked by the storage policy. Run the ads and storage SQL in the Supabase SQL editor.';
     return m;
   }
 
   function explain(m) {
-    if (/relation .*ads|schema cache|does not exist|Could not find the table/i.test(m)) return 'The ads table is missing. Run migration_ads_and_images.sql in the Supabase SQL editor.';
-    if (/row-level security/i.test(m)) return 'Blocked by row-level security. Run migration_ads_and_images.sql and sign in with the admin Google account.';
+    if (/relation .*ads|schema cache|does not exist|Could not find the table/i.test(m)) return 'The ads table is missing. Run the ads and storage SQL in the Supabase SQL editor.';
+    if (/row-level security/i.test(m)) return 'Blocked by row-level security. Run the ads and storage SQL and sign in with the admin Google account.';
     return m;
   }
 
@@ -86,7 +86,7 @@
     cur = null;
     pane().innerHTML =
       '<div class="ph"><span class="pt">Ads</span><button class="abtn solid" data-a="new">+ New Ad</button></div>' +
-      (tableMissing ? '<div class="ad-empty">The ads table is not set up yet. Run <b>migration_ads_and_images.sql</b> in the Supabase SQL editor, then reopen this tab.</div>' : '') +
+      (tableMissing ? '<div class="ad-empty">The ads table is not set up yet. Run <b>the ads and storage SQL</b> in the Supabase SQL editor, then reopen this tab.</div>' : '') +
       (ads.length ? ads.map(itemHTML).join('') : (tableMissing ? '' : '<div class="ad-empty">No ads yet. An ad shows a sponsored card in the home feed and opens a full brand page.</div>'));
   }
 

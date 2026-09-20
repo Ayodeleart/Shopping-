@@ -532,7 +532,7 @@ async function uploadImage(file, folder, progressBarId, progressId, transparent)
     const up = await sb.storage.from(BUCKET).upload(gifPath, file, { contentType: 'image/gif', cacheControl: '31536000' });
     if (up.error) {
       if (prog) prog.classList.remove('on');
-      if (/row-level security|policy/i.test(up.error.message)) throw new Error('Upload blocked by the storage policy. Run migration_ads_and_images.sql in the Supabase SQL editor.');
+      if (/row-level security|policy/i.test(up.error.message)) throw new Error('Upload blocked by the storage policy. Run the ads and storage SQL in the Supabase SQL editor.');
       throw up.error;
     }
     if (prog) { bar.style.width = '100%'; setTimeout(() => prog.classList.remove('on'), 600); }
@@ -568,7 +568,7 @@ async function uploadImage(file, folder, progressBarId, progressId, transparent)
   const { error } = await sb.storage.from(BUCKET).upload(path, blob, { contentType: fmt, cacheControl: '31536000' });
   if (error) {
     if (prog) prog.classList.remove('on');
-    if (/row-level security|policy/i.test(error.message)) throw new Error('Upload blocked by the storage policy. Run migration_ads_and_images.sql in the Supabase SQL editor.');
+    if (/row-level security|policy/i.test(error.message)) throw new Error('Upload blocked by the storage policy. Run the ads and storage SQL in the Supabase SQL editor.');
     throw error;
   }
   if (prog) { bar.style.width = '100%'; setTimeout(() => prog.classList.remove('on'), 600); }
@@ -838,7 +838,7 @@ async function saveBanner() {
     }
     if (error) throw error;
 
-    toast(legacy ? 'Saved without the tap destination. Run migration_ads_and_images.sql first.' : (editBannerId ? 'Banner updated' : 'Banner added'));
+    toast(legacy ? 'Saved without the tap destination. Run the ads and storage SQL first.' : (editBannerId ? 'Banner updated' : 'Banner added'));
     cancelBannerEdit();
     await loadBanners();
     await loadDash();

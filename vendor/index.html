@@ -415,7 +415,7 @@ async function uploadImage(file, folder, transparent) {
   const { error } = await sb.storage.from(BUCKET).upload(path, blob, { contentType: fmt, cacheControl: '31536000' });
   if (error) {
     prog.classList.remove('on');
-    if (/row-level security|policy/i.test(error.message)) throw new Error('Upload blocked by the storage policy. Ask the store admin to run migration_ads_and_images.sql and migration_storefront_v2.sql.');
+    if (/row-level security|policy/i.test(error.message)) throw new Error('Upload blocked by the storage policy. Ask the store admin to run the ads and storage SQL and migration_storefront_v2.sql.');
     throw error;
   }
   bar.style.width = '100%'; setTimeout(() => prog.classList.remove('on'), 600);
@@ -584,7 +584,7 @@ document.getElementById('pSaveBtn').onclick = async () => {
     }
     if (error) throw error;
 
-    toast(legacy ? 'Saved with the main photo only. Ask the store admin to run migration_ads_and_images.sql.' : (editProdId ? 'Product updated' : 'Product added'));
+    toast(legacy ? 'Saved with the main photo only. Ask the store admin to run the ads and storage SQL.' : (editProdId ? 'Product updated' : 'Product added'));
     resetProdForm();
     await loadProducts(); await loadDash();
   } catch (e) {
