@@ -20,4 +20,4 @@ create policy "push_subs_own_all" on push_subscriptions
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 grant select, insert, update, delete on push_subscriptions to authenticated;
-grant usage, select on sequence push_subscriptions_id_seq to authenticated;
+grant usage, select on all sequences in schema public to authenticated;
