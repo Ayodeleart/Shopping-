@@ -18,6 +18,9 @@
 <link rel="stylesheet" href="components/ad-page.css">
 <script defer src="components/ad-page.js"></script>
 <script defer src="data/ads.js"></script>
+<link rel="stylesheet" href="components/categories.css">
+<script defer src="data/categories.js"></script>
+<script defer src="components/category-page.js"></script>
 <link rel="stylesheet" href="components/product-page.css">
 <script defer src="components/product-gallery.js"></script>
 <script defer src="components/image-viewer.js"></script>
@@ -379,6 +382,17 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 .pCardBd{padding:14px}
 #pModalDesc{font-size:15px;color:var(--txt2);line-height:1.6;white-space:pre-line;overflow-wrap:anywhere}
 #pModalDesc.clamp{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+#pModalDesc:empty{display:none}
+#pBlocks{display:flex;flex-direction:column;gap:12px}
+#pModalDesc:not(:empty) + #pBlocks:not(:empty){margin-top:14px}
+.pBlkH{font-size:16px;font-weight:800}
+.pBlkP{font-size:15px;color:var(--txt2);line-height:1.6;white-space:pre-line;overflow-wrap:anywhere}
+.pBlkImg{width:100%;border-radius:10px;background:#fff;cursor:zoom-in}
+.pBullets{margin:0 0 12px 18px;font-size:15px;color:var(--txt2);line-height:1.6}
+.pSpecRow{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-top:1px solid var(--border);font-size:14px}
+.pSpecRow:first-child{border-top:0}
+.pSpecRow span{color:var(--txt3);flex-shrink:0}
+.pSpecRow b{font-weight:600;text-align:right;overflow-wrap:anywhere}
 .pInfoRow{display:flex;gap:12px;align-items:flex-start;padding:10px 0}
 .pInfoRow + .pInfoRow{border-top:1px solid var(--border)}
 .pInfoRow svg{width:28px;height:28px;flex-shrink:0;color:var(--red)}
@@ -743,6 +757,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
     <div class="ftCol">
       <div class="ftHead">Shop</div>
       <a href="#allSec">All Products</a>
+      <a href="#cat=all">All Categories</a>
       <a href="#flashSec">Flash Sales</a>
       <a href="/vendor/" target="_blank">Sell on Maccato</a>
     </div>
@@ -806,6 +821,9 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
     <a class="mLink" href="#flashSec" onclick="closeMenu()">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Flash Sales
     </a>
+    <a class="mLink" href="#cat=all" onclick="closeMenu()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>All Categories
+    </a>
     <a class="mLink" href="#allSec" onclick="closeMenu()">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>All Products
     </a>
@@ -830,6 +848,9 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 
 <!-- AD PAGE (brand page opened from an ad) -->
 <div id="adPage"></div>
+
+<!-- CATEGORY PAGE (#cat=slug) -->
+<div id="catPage"></div>
 
 <!-- PRODUCT PAGE -->
 <div id="pModal">
@@ -888,7 +909,12 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 
     <section class="pCard" id="pDescCard">
       <div class="pCardHd"><h3>Product Description</h3><button id="pDescMore" onclick="toggleDesc()" style="display:none">See more <i>&rsaquo;</i></button></div>
-      <div class="pCardBd"><p id="pModalDesc" class="clamp"></p></div>
+      <div class="pCardBd"><p id="pModalDesc" class="clamp"></p><div id="pBlocks"></div></div>
+    </section>
+
+    <section class="pCard" id="pSpecCard" style="display:none">
+      <div class="pCardHd"><h3>Product Details</h3></div>
+      <div class="pCardBd" id="pSpecBody"></div>
     </section>
 
     <section class="pCard" id="pDelivCard">
@@ -1001,7 +1027,6 @@ let storePhone = '';
 let storeName = 'Maccato';
 let brandsList = [], brandById = {}, brandBySlug = {}, vendorsMap = {}, ratingMap = {};
 let policy = { delivery: '', returns: '', warranty: '' };
-let navCats = [];
 const $ = id => document.getElementById(id);
 const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const normSlug = v => String(v == null ? '' : v).trim().replace(/\s+/g, ' ').toLowerCase();
@@ -1036,41 +1061,47 @@ function buildCarousel(banners) {
   });
 }
 
-/* ── CATEGORIES ───────────────────────────────────── */
+/* ── CATEGORY NAVIGATION ──────────────────────────── */
 /* The image tiles live in the side menu only. The bar under the header (shown once the search bar has
-   scrolled away) is titles only. */
-function buildMenuCats(shortcuts, cats) {
-  const items = shortcuts.length
-    ? shortcuts.map(sc => ({ title: sc.title || '', image: sc.image_url, bg: sc.bg_color }))
-    : cats.map(c => ({ title: c }));
+   scrolled away) is titles only. Items are the main categories from the `categories` table, or the old
+   shortcut cards until that table exists. */
+let navItems = [];    /* { title, slug?, thumb?, image?, bg? } */
+
+function setNavItems(items) { navItems = items; buildMenuCats(); renderCatNav(); }
+
+function buildMenuCats() {
   const wrap = $('menuCatsWrap');
-  if (!items.length) { wrap.style.display = 'none'; return; }
+  if (!navItems.length) { wrap.style.display = 'none'; return; }
   wrap.style.display = '';
-  $('menuCats').innerHTML = items.map((it, i) => `
+  $('menuCats').innerHTML = navItems.map((it, i) => `
     <button class="mcat" data-i="${i}">
-      <span class="mcat-img" style="background:${esc(it.bg || '')}">${it.image
-        ? `<img src="${esc(it.image)}" alt="" loading="lazy">`
-        : esc((it.title[0] || '?').toUpperCase())}</span>
+      <span class="mcat-img"${it.thumb ? '' : ` style="background:${esc(it.bg || '')}"`}>${it.thumb
+        ? it.thumb
+        : it.image ? `<img src="${esc(it.image)}" alt="" loading="lazy">` : esc((it.title[0] || '?').toUpperCase())}</span>
       <span class="mcat-lbl">${esc(it.title)}</span>
     </button>`).join('');
-  $('menuCats').onclick = e => {
-    const btn = e.target.closest('.mcat');
-    if (!btn) return;
-    closeMenu();
-    catNavGo(items[Number(btn.dataset.i)].title);
-  };
 }
+$('menuCats').addEventListener('click', e => {
+  const btn = e.target.closest('.mcat');
+  if (!btn) return;
+  closeMenu();
+  goNavItem(navItems[Number(btn.dataset.i)]);
+});
+
+function goNavItem(it) { if (it.slug) openCategory(it.slug); else catNavGo(it.title); }
 
 function renderCatNav() {
   const row = $('catNavRow');
-  row.innerHTML = ['All', ...navCats].map(c =>
-    `<button class="cnTab${c === activeCat ? ' on' : ''}" data-c="${esc(c)}">${c === 'All' ? 'Home' : esc(c)}</button>`).join('');
+  row.innerHTML = `<button class="cnTab${activeCat === 'All' ? ' on' : ''}" data-i="-1">Home</button>` +
+    navItems.map((it, i) => `<button class="cnTab${!it.slug && it.title === activeCat ? ' on' : ''}" data-i="${i}">${esc(it.title)}</button>`).join('');
   const on = row.querySelector('.on');
   if (on) row.scrollLeft = on.offsetLeft - (row.clientWidth - on.clientWidth) / 2;
 }
 $('catNavRow').addEventListener('click', e => {
   const b = e.target.closest('.cnTab');
-  if (b) catNavGo(b.dataset.c);
+  if (!b) return;
+  const i = Number(b.dataset.i);
+  if (i < 0) catNavGo('All'); else goNavItem(navItems[i]);
 });
 
 function catNavGo(c) {
@@ -1116,6 +1147,60 @@ function filterByBrand(id) {
   showList(b.name, allProds.filter(p => { const pb = brandOf(p); return pb && pb.id === b.id; }));
 }
 
+/* ── CATEGORIES (table `categories`, see data/categories.js) ───────
+   Main categories become the side-menu tiles, the title bar under the header and the per-category product rows;
+   tapping one opens the category page. */
+let catTree = null, catPage = null, catDeepLinked = false;
+
+function buildCategoryTiles() {
+  setNavItems(catTree.visibleRoots().map(c => ({ title: c.name, slug: c.slug, thumb: Pcx.Categories.thumb(catTree, c, 'fill') })));
+}
+
+function buildCategoryRowsTree(prods) {
+  const wrap = document.getElementById('catRows');
+  const esc = Pcx.Categories.esc;
+  wrap.innerHTML = catTree.visibleRoots().map(root => {
+    const matches = prods.filter(catTree.productMatcher(root.id));
+    if (!matches.length) return '';
+    return `
+      <div class="catRowSec">
+        <div class="catRowHd">
+          <span class="catRowBar" style="background:var(--red)"></span>
+          <span class="catRowName" style="color:var(--red)" onclick="openCategory('${esc(root.slug)}')">${esc(root.name)}</span>
+          <span class="catRowCount">${matches.length} item${matches.length!==1?'s':''}</span>
+        </div>
+        <div class="catRowScroll">
+          ${matches.slice(0, 12).map(p => `<div class="fcard-wrap au">${cardHTML(p)}</div>`).join('')}
+        </div>
+      </div>`;
+  }).join('');
+  observeAll(wrap.querySelectorAll('.au'));
+}
+
+/* Category page: opened through #cat=slug so the back button closes it (same idea as the ad page). */
+function catFromHash() { const m = /^#cat=([a-z0-9-]+)/.exec(location.hash); return m ? m[1] : null; }
+function openCategory(slug) { location.hash = 'cat=' + slug; }
+function syncCatPage() {
+  if (!catPage) return;
+  const slug = catFromHash();
+  if (!slug) { catPage.close(); return; }
+  if (catTree) catPage.open(slug);
+}
+function closeCatPage() {
+  if (catDeepLinked) {          /* opened from a shared link: there is no earlier page to go back to */
+    catDeepLinked = false;
+    history.replaceState(null, '', location.pathname + location.search);
+    catPage.close();
+  } else history.back();
+}
+function initCategoryPage() {
+  catPage = new Pcx.CategoryPage(document.getElementById('catPage'), {
+    tree: () => catTree, products: () => allProds, cardHTML, go: openCategory, onBack: closeCatPage
+  });
+  catDeepLinked = !!catFromHash();
+  window.addEventListener('hashchange', syncCatPage);
+}
+
 /* ── VENDOR ROW ───────────────────────────────────── */
 function buildVendorRow(vendors) {
   const sec = document.getElementById('vendorSec');
@@ -1145,7 +1230,7 @@ function showList(title, list, emptyMsg) {
 }
 
 /* ── CATEGORY FILTER ──────────────────────────────── */
-let activeCat = 'All', allProds = [];
+let activeCat = 'All', allProds = [], catPills = [];
 
 function buildCatFilter(cats) {
   const row = document.getElementById('catFilter');
@@ -1160,16 +1245,19 @@ function buildCatFilter(cats) {
       color:${c===activeCat?'#fff':'var(--txt2)'};
       border:1.5px solid ${c===activeCat?'var(--red)':'var(--border)'};
       transition:all .18s;
-    " onclick="filterCat('${c}')">${c}</button>`).join('');
+    " data-c="${Pcx.Categories.esc(c)}" onclick="filterCat(this.dataset.c)">${Pcx.Categories.esc(c)}</button>`).join('');
 }
 
 function filterCat(cat) {
   activeCat = cat;
   $('allSecTitle').textContent = cat === 'All' ? 'All Products' : cat;
   renderCatNav();
-  const filtered = cat === 'All' ? allProds : allProds.filter(p => p.category === cat);
-  buildCatFilter(cat === 'All' ? [...new Set(allProds.map(p => p.category).filter(Boolean))] :
-    [...new Set(allProds.map(p => p.category).filter(Boolean))]);
+  let filtered = allProds;
+  if (cat !== 'All') {
+    const root = catTree && catTree.visibleRoots().find(r => r.name === cat);
+    filtered = root ? allProds.filter(catTree.productMatcher(root.id)) : allProds.filter(p => p.category === cat);
+  }
+  buildCatFilter(catPills);
   renderGrid(filtered, 'allGrid', cat === 'All');
   document.getElementById('pCount').textContent = `${filtered.length} item${filtered.length!==1?'s':''}`;
 }
@@ -1204,33 +1292,167 @@ function startCountdown(endTs) {
 let currency = '₦';
 const fmt = n => currency + Number(n).toLocaleString('en-NG');
 
+/* ── FAVORITES ────────────────────────────────────── */
+/* Guests: saved on this device. Signed in: also synced to the `favorites` table (migration_storefront_v2.sql). */
+let favs = new Set(), favSyncedFor = null;
+try { favs = new Set((JSON.parse(localStorage.getItem('favs_v1')) || []).map(Number)); } catch { favs = new Set(); }
+const HEART_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>';
+
+function updateFavCount() { $('menuFavCount').textContent = favs.size ? String(favs.size) : ''; }
+function saveFavs() { localStorage.setItem('favs_v1', JSON.stringify([...favs])); updateFavCount(); }
+function paintFavBtns() {
+  document.querySelectorAll('[data-fav]').forEach(b => b.classList.toggle('on', favs.has(Number(b.dataset.fav))));
+}
+
+async function toggleFav(id) {
+  const on = !favs.has(id);
+  if (on) favs.add(id); else favs.delete(id);
+  saveFavs();
+  document.querySelectorAll(`[data-fav="${id}"]`).forEach(b => {
+    b.classList.toggle('on', on);
+    b.classList.remove('pop'); void b.offsetWidth; if (on) b.classList.add('pop');
+  });
+  if (!buyerSession) return;
+  try {
+    if (on) await sb.from('favorites').upsert([{ user_id: buyerSession.user.id, product_id: id }], { onConflict: 'user_id,product_id' });
+    else await sb.from('favorites').delete().eq('user_id', buyerSession.user.id).eq('product_id', id);
+  } catch (e) { /* table not created yet: favorites still work on this device */ }
+}
+
+/* after sign-in: merge this device's favorites with the account's */
+async function syncFavsFromServer() {
+  if (!buyerSession || favSyncedFor === buyerSession.user.id || !allProds.length) return;
+  favSyncedFor = buyerSession.user.id;
+  try {
+    const { data, error } = await sb.from('favorites').select('product_id');
+    if (error) return;
+    const server = new Set((data || []).map(r => Number(r.product_id)));
+    const live = new Set(allProds.map(p => p.id));
+    const missing = [...favs].filter(id => !server.has(id) && live.has(id));
+    if (missing.length) await sb.from('favorites').upsert(missing.map(id => ({ user_id: buyerSession.user.id, product_id: id })), { onConflict: 'user_id,product_id' });
+    server.forEach(id => favs.add(id));
+    saveFavs(); paintFavBtns();
+  } catch (e) { /* ignore */ }
+}
+
+function showFavorites() {
+  closeMenu();
+  showList('Favorites', allProds.filter(p => favs.has(p.id)), 'Tap the heart on a product to save it here.');
+}
+
+/* ── STARS (real ratings only) ────────────────────── */
+function starsHTML(avg, px) {
+  const pct = Math.max(0, Math.min(100, avg / 5 * 100));
+  const star = `<svg width="${px}" height="${px}" viewBox="0 0 24 24" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+  const row = star.repeat(5);
+  return `<span class="stars" role="img" aria-label="${avg.toFixed(1)} out of 5"><span class="st-bg">${row}</span><span class="st-fg" style="width:${pct}%">${row}</span></span>`;
+}
+
 /* ── PRODUCT CARD (JUMIA STYLE) ───────────────────── */
+/* Add to Cart turns into a - 1 + stepper once the product is in the cart (see ctlHTML / syncCardCtls). */
+function ctlHTML(id) {
+  const it = cart.find(x => x.id === id);
+  if (!it) return `<button class="pcAdd" onclick="event.stopPropagation();addToCart(${id},this)">Add to Cart</button>`;
+  return `
+    <div class="pcStep" onclick="event.stopPropagation()">
+      <button class="pcStepB" onclick="event.stopPropagation();cardQty(${id},-1)" aria-label="Remove one"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+      <span class="pcStepN">${it.qty}</span>
+      <button class="pcStepB" onclick="event.stopPropagation();cardQty(${id},1)" aria-label="Add one"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+    </div>`;
+}
+
+/* every card of a product (home grid, rails, category page ...) follows the cart */
+function syncCardCtls() {
+  document.querySelectorAll('.pcCtl').forEach(el => {
+    const id = Number(el.dataset.pid), it = cart.find(x => x.id === id), q = String(it ? it.qty : 0);
+    if (el.dataset.q === q) return;
+    el.dataset.q = q;
+    el.innerHTML = ctlHTML(id);
+  });
+}
+
+function cardQty(id, d) {
+  const it = cart.find(x => x.id === id);
+  if (!it) return;
+  it.qty += d;
+  if (it.qty <= 0) cart = cart.filter(x => x !== it);
+  saveCart(); updateCartBadge();
+}
+
 function cardHTML(p) {
   const disc = p.original_price && p.original_price > p.price
     ? Math.round((1 - p.price/p.original_price)*100) : 0;
   const tot = p.max_stock || (p.stock ? p.stock + 15 : 0);
   const pct = tot > 0 ? Math.min(100, Math.round(p.stock/tot*100)) : 0;
+  const r = ratingMap[p.id];
+  const inCart = cart.find(x => x.id === p.id);
 
   return `
     <div class="pcard" onclick="openProduct(${p.id})">
       <div class="pcImg">
         ${p.image_url
-          ? `<img src="${p.image_url}" alt="${p.name}" loading="lazy">`
+          ? `<img src="${esc(p.image_url)}" alt="${esc(p.name)}" loading="lazy">`
           : `<div class="noImgPh"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>`}
         ${disc > 0 ? `<span class="discBadge">-${disc}%</span>` : ''}
       </div>
       <div class="pcBody">
-        <div class="pcName">${p.name}</div>
-        <div class="pcPrice">${fmt(p.price)}</div>
+        <div class="pcName">${esc(p.name)}</div>
+        <div class="pcPriceRow">
+          <div class="pcPrice">${fmt(p.price)}</div>
+          <button class="favBtn${favs.has(p.id) ? ' on' : ''}" data-fav="${p.id}" aria-label="Save to favorites" onclick="event.stopPropagation();toggleFav(${p.id})">${HEART_SVG}</button>
+        </div>
         ${disc > 0 ? `<div class="pcWas">${fmt(p.original_price)}</div>` : ''}
+        ${r && r.n > 0 ? `<div class="pcRate">${starsHTML(r.avg, 12)}<span>(${r.n})</span></div>` : ''}
         ${p.stock > 0 ? `
           <div class="pcStockRow">
             <div class="pcBar"><div class="pcBarFill" style="width:${pct}%"></div></div>
             <span class="pcStockTxt">${p.stock} left</span>
           </div>` : ''}
-        <button class="pcAdd" onclick="event.stopPropagation();addToCart(${p.id})">Add to Cart</button>
+        <div class="pcCtl" data-pid="${p.id}" data-q="${inCart ? inCart.qty : 0}">${ctlHTML(p.id)}</div>
       </div>
     </div>`;
+}
+
+/* ── FLY TO CART ──────────────────────────────────── */
+/* The product photo flies to whichever cart icon is on screen (product page, brand page or main header). */
+function cartTarget() {
+  for (const el of document.querySelectorAll('#pCartBtn, .adp-cart, #cartBtn')) {
+    const r = el.getBoundingClientRect();
+    if (!r.width || !r.height) continue;
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    if (cx < 0 || cy < 0 || cx > innerWidth || cy > innerHeight) continue;
+    const top = document.elementFromPoint(cx, cy);
+    if (top && el.contains(top)) return el;
+  }
+  return $('cartBtn');
+}
+
+function flyToCart(src) {
+  const target = cartTarget();
+  if (!target) return;
+  const bump = () => { target.classList.remove('cart-bump'); void target.offsetWidth; target.classList.add('cart-bump'); };
+  const img = src && (src.tagName === 'IMG' ? src : (src.closest && src.closest('.pcard') && src.closest('.pcard').querySelector('.pcImg img')));
+  const from = (img || src || target).getBoundingClientRect();
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce || !from.width || !document.body.animate) { bump(); return; }
+
+  const size = 72;
+  const el = img && (img.currentSrc || img.src) ? document.createElement('img') : document.createElement('div');
+  el.className = 'flyImg' + (el.tagName === 'IMG' ? '' : ' flyDot');
+  if (el.tagName === 'IMG') { el.src = img.currentSrc || img.src; el.alt = ''; }
+  el.style.cssText = `left:${from.left + from.width / 2 - size / 2}px;top:${from.top + from.height / 2 - size / 2}px;width:${size}px;height:${size}px`;
+  document.body.appendChild(el);
+
+  const t = target.getBoundingClientRect();
+  const dx = (t.left + t.width / 2) - (from.left + from.width / 2);
+  const dy = (t.top + t.height / 2) - (from.top + from.height / 2);
+  const anim = el.animate([
+    { transform: 'translate(0,0) scale(1)', opacity: 1 },
+    { transform: `translate(${dx * 0.55}px,${dy * 0.3 - 60}px) scale(.7)`, opacity: .95, offset: .45 },
+    { transform: `translate(${dx}px,${dy}px) scale(.14)`, opacity: .35 }
+  ], { duration: 720, easing: 'cubic-bezier(.45,.05,.55,.95)' });
+  const done = () => { el.remove(); bump(); };
+  anim.onfinish = done; anim.oncancel = done;
 }
 
 function buildFlash(prods) {
@@ -1263,10 +1485,10 @@ function buildCategoryRows(shortcuts, prods) {
   observeAll(wrap.querySelectorAll('.au'));
 }
 
-function renderGrid(prods, id, withAds) {
+function renderGrid(prods, id, withAds, emptyMsg) {
   const el = document.getElementById(id);
   if (!prods.length) {
-    el.innerHTML = `<div class="empty"><h3>No products here</h3><p>Check back soon.</p></div>`;
+    el.innerHTML = `<div class="empty"><h3>No products here</h3><p>${esc(emptyMsg || 'Check back soon.')}</p></div>`;
     return;
   }
   let cells = prods.map((p,i) =>
@@ -1278,50 +1500,231 @@ function renderGrid(prods, id, withAds) {
   observeAll(el.querySelectorAll('.au'));
 }
 
-/* ── PRODUCT MODAL ────────────────────────────────── */
-let pGallery = null;
-function openProduct(id) {
-  const p = allProds.find(x => x.id===id);
-  if (!p) return;
-  document.getElementById('pModalTitle').textContent = p.name;
-  document.getElementById('pModalName').textContent  = p.name;
-  const imgEl = document.getElementById('pModalImgEl');
-  const gal = document.getElementById('pModalGal');
-  const imgs = Ads.productImages(p);
-  if (pGallery) { pGallery.destroy(); pGallery = null; }
-  if (imgs.length > 1) {
-    gal.hidden = false;
-    pGallery = new PromotionalCarousel(gal, { promotions: imgs.map(u => ({ image: u, alt: p.name })), variant: 'gallery', autoplay: false, ariaLabel: p.name });
-    document.getElementById('pModalImg').style.display = 'none';
-  } else {
-    gal.hidden = true;
-    if (p.image_url) { imgEl.src = p.image_url; document.getElementById('pModalImg').style.display=''; }
-    else document.getElementById('pModalImg').style.display='none';
-  }
-  document.getElementById('pModalPrice').textContent = fmt(p.price);
-  const disc = p.original_price && p.original_price > p.price
-    ? Math.round((1-p.price/p.original_price)*100) : 0;
-  document.getElementById('pModalWas').textContent  = disc ? fmt(p.original_price) : '';
-  document.getElementById('pModalDisc').textContent = disc ? `-${disc}% OFF` : '';
-  document.getElementById('pModalDesc').textContent = p.description || '';
-  if (p.stock > 0) {
-    const tot = p.max_stock || p.stock+15;
-    document.getElementById('pModalSFill').style.width = Math.min(100,Math.round(p.stock/tot*100))+'%';
-    document.getElementById('pModalSLbl').textContent = `${p.stock} items left`;
-    document.querySelector('.mStockRow').style.display='flex';
-  } else { document.querySelector('.mStockRow').style.display='none'; }
-  document.getElementById('pModalAddBtn').onclick = () => { addToCart(id); closePModal(); };
-  document.getElementById('pModal').classList.add('open');
-  document.body.style.overflow='hidden';
-  loadReviews(id);
-}
-function closePModal() {
-  if (pGallery) { pGallery.destroy(); pGallery = null; }
-  document.getElementById('pModal').classList.remove('open');
-  document.body.style.overflow='';
+/* ── PRODUCT PAGE ─────────────────────────────────── */
+/* Photos: components/product-gallery.js (auto-rotating) + components/image-viewer.js (full screen).
+   Everything shown here comes from real data: no placeholder ratings, reviews or counts. */
+let pGal = null, pViewer = null, pCur = null, pQty = 1, pHist = [];
+
+const ICON_TRUCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="14" height="11" rx="1"/><path d="M15 9h4l3 3v5h-7"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>';
+const ICON_RETURN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>';
+const ICON_SHIELD = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>';
+
+function destroyProductMedia() {
+  if (pViewer) { const v = pViewer; pViewer = null; v.close(); }
+  if (pGal) { pGal.destroy(); pGal = null; }
 }
 
-/* ── REVIEWS ──────────────────────────────────────── */
+function openViewer(imgs, i, name) {
+  if (pViewer || !imgs.length) return;
+  pViewer = new Pcx.ImageViewer({ images: imgs, alt: name, onClose: () => { pViewer = null; if (pGal) pGal.resume(); } });
+  if (pGal) pGal.pause();
+  pViewer.open(i);
+}
+
+function openProduct(id, isBack) {
+  const p = allProds.find(x => x.id === id);
+  if (!p) return;
+  const modal = $('pModal');
+  if (modal.classList.contains('open') && pCur && pCur.id !== id && !isBack) pHist.push(pCur.id);
+  destroyProductMedia();
+  pCur = p; pQty = 1;
+  $('pQtyN').textContent = '1';
+
+  $('pModalTitle').textContent = p.name;
+  $('pModalName').textContent = p.name;
+
+  /* photos */
+  const imgs = Ads.productImages(p);
+  pGal = new Pcx.ProductGallery($('pGal'), { images: imgs, alt: p.name, onOpen: i => openViewer(imgs, i, p.name) });
+
+  /* favorite */
+  const fb = $('pFavBtn');
+  fb.dataset.fav = p.id;
+  fb.classList.toggle('on', favs.has(p.id));
+  fb.onclick = () => toggleFav(p.id);
+
+  /* sold by: the vendor's own logo when they uploaded one, else their first letter */
+  const v = p.vendor_id ? vendorsMap[p.vendor_id] : null;
+  const sellerName = v ? (v.business_name || 'Seller') : storeName;
+  const logo = v ? v.logo_url : 'store-logo.png';
+  const letter = esc((sellerName[0] || '?').toUpperCase());
+  $('pSold').innerHTML = `
+    <div class="pSoldAv${logo ? ' hasLogo' : ''}" data-l="${letter}">${logo
+      ? `<img src="${esc(logo)}" alt="" onerror="this.parentNode.classList.remove('hasLogo');this.replaceWith(document.createTextNode(this.parentNode.dataset.l))">`
+      : letter}</div>
+    <div class="pSoldTxt"><div class="pSoldLbl">Sold by</div><div class="pSoldName">${esc(sellerName)}</div></div>
+    <button class="pSoldBtn" onclick="viewSeller()">View Store</button>`;
+
+  /* brand */
+  const b = brandOf(p), bName = b ? b.name : (p.brand || '').trim();
+  const br = $('pBrandRow');
+  if (bName) {
+    br.style.display = 'flex';
+    br.innerHTML = (b ? `<span class="pBrandLogo" data-l="${esc((b.name[0] || '?').toUpperCase())}">${b.logo_url
+        ? `<img src="${esc(b.logo_url)}" alt="" onerror="this.replaceWith(document.createTextNode(this.parentNode.dataset.l))">`
+        : esc((b.name[0] || '?').toUpperCase())}</span>` : '') +
+      `<span>Brand:</span>` + (b ? `<button onclick="closePModal(true);filterByBrand(${b.id})">${esc(bName)}</button>` : `<b>${esc(bName)}</b>`);
+  } else { br.style.display = 'none'; br.innerHTML = ''; }
+
+  /* price */
+  $('pModalPrice').textContent = fmt(p.price);
+  const disc = p.original_price && p.original_price > p.price
+    ? Math.round((1-p.price/p.original_price)*100) : 0;
+  $('pModalWas').textContent  = disc ? fmt(p.original_price) : '';
+  $('pModalDisc').textContent = disc ? `-${disc}% OFF` : '';
+  renderPRating();
+  $('pCode').innerHTML = `Product Code: <b>${esc(p.id)}</b>`;
+  $('pStockLine').textContent = p.stock > 0 ? `${p.stock} in stock` : '';
+
+  /* call vendor (falls back to the store number) */
+  const phone = ((v && v.phone) || storePhone || '').trim();
+  const tel = phone ? 'tel:' + phone.replace(/[^0-9+]/g, '') : '';
+  $('pBulk').style.display = phone ? '' : 'none';
+  $('pCallBtn').style.display = phone ? '' : 'none';
+  if (phone) { $('pBulk').href = tel; $('pBulkNum').textContent = phone; $('pCallBtn').href = tel; }
+
+  /* description: the short text, then the vendor's full description (text and photos), then category details */
+  const d = (p.description || '').trim();
+  const blocks = (Array.isArray(p.description_blocks) ? p.description_blocks : [])
+    .filter(x => x && (x.type === 'image' ? x.url : String(x.text || '').trim()));
+  $('pDescCard').style.display = (d || blocks.length) ? '' : 'none';
+  const de = $('pModalDesc');
+  de.textContent = d; de.classList.add('clamp');
+  $('pDescMore').style.display = 'none';
+  $('pDescMore').firstChild.textContent = 'See more ';
+  renderBlocks(blocks);
+  renderSpecs(p);
+
+  renderDelivery();
+  buildRails(p, sellerName);
+
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  modal.scrollTop = 0;
+  setTimeout(() => { if (pCur === p && de.scrollHeight > de.clientHeight + 2) $('pDescMore').style.display = ''; }, 60);
+  loadReviews(id);
+}
+
+function closePModal(force) {
+  if (!force && pHist.length) { openProduct(pHist.pop(), true); return; }
+  pHist = [];
+  destroyProductMedia();
+  $('pModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+let blockImgs = [];
+function renderBlocks(blocks) {
+  blockImgs = blocks.filter(b => b.type === 'image').map(b => b.url);
+  let k = -1;
+  $('pBlocks').innerHTML = blocks.map(b => {
+    if (b.type === 'image') { k++; return `<img class="pBlkImg" src="${esc(b.url)}" alt="" loading="lazy" onclick="openBlockImage(${k})">`; }
+    if (b.type === 'heading') return `<h4 class="pBlkH">${esc(b.text)}</h4>`;
+    return `<p class="pBlkP">${esc(b.text)}</p>`;
+  }).join('');
+}
+function openBlockImage(i) { openViewer(blockImgs, i, pCur ? pCur.name : ''); }
+
+/* Product Details: what the vendor filled in for this kind of product (sizes, colours, specs ...).
+   The formatter lives in components/product-attributes.js, loaded only when a product actually has details. */
+let attrLib = null;
+function ensureAttrLib() {
+  if (window.Pcx && Pcx.ProductAttributes) return Promise.resolve();
+  if (!attrLib) attrLib = new Promise((res, rej) => {
+    const sc = document.createElement('script');
+    sc.src = 'components/product-attributes.js'; sc.onload = res; sc.onerror = rej;
+    document.head.appendChild(sc);
+  });
+  return attrLib;
+}
+function renderSpecs(p) {
+  const card = $('pSpecCard'), body = $('pSpecBody'), a = p.attributes;
+  card.style.display = 'none'; body.innerHTML = '';
+  if (!a || typeof a !== 'object' || !Object.keys(a).length) return;
+  ensureAttrLib().then(() => {
+    if (pCur !== p) return;
+    const PA = Pcx.ProductAttributes;
+    const t = (PA.TEMPLATES && (PA.TEMPLATES[a._type] || PA.TEMPLATES.general)) || { fields: [] };
+    const bullets = t.fields.filter(f => f.type === 'bullets').flatMap(f => Array.isArray(a[f.key]) ? a[f.key] : []).filter(Boolean);
+    const rows = PA.summarize(a);
+    if (!bullets.length && !rows.length) return;
+    body.innerHTML = (bullets.length ? `<ul class="pBullets">${bullets.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '') +
+      rows.map(r => `<div class="pSpecRow"><span>${esc(r.label)}</span><b>${esc(r.value)}</b></div>`).join('');
+    card.style.display = '';
+  }).catch(() => {});
+}
+
+function toggleDesc() {
+  const de = $('pModalDesc'), on = de.classList.toggle('clamp');
+  $('pDescMore').firstChild.textContent = on ? 'See more ' : 'See less ';
+}
+
+function pQtyChange(d) { pQty = Math.max(1, Math.min(99, pQty + d)); $('pQtyN').textContent = String(pQty); }
+
+function pAddToCart() { if (pCur) addToCart(pCur.id, pGal && pGal.currentImage(), pQty, true); }
+
+function pBuyNow() {
+  if (!pCur) return;
+  const ex = cart.find(x => x.id === pCur.id);
+  if (ex) { ex.qty = pQty; saveCart(); updateCartBadge(); } else cartAdd(pCur, pQty);
+  openCheckout();
+}
+
+function viewSeller() {
+  const vid = pCur ? pCur.vendor_id : null;
+  closePModal(true);
+  filterByVendor(vid || null);
+}
+
+async function shareProduct() {
+  if (!pCur) return;
+  const url = `${location.origin}/?p=${pCur.id}`;
+  try {
+    if (navigator.share) { await navigator.share({ title: pCur.name, text: `${pCur.name} - ${fmt(pCur.price)}`, url }); return; }
+    await navigator.clipboard.writeText(url);
+    toast('Link copied');
+  } catch (e) { if (e && e.name !== 'AbortError') toast('Could not share this product'); }
+}
+
+function renderPRating() {
+  const el = $('pRating'), r = pCur && ratingMap[pCur.id];
+  if (!r || !r.n) { el.innerHTML = ''; return; }
+  el.innerHTML = `<button onclick="document.getElementById('reviewsSec').scrollIntoView({behavior:'smooth'})">${starsHTML(r.avg, 17)}<span>${r.avg.toFixed(1)} (${r.n} review${r.n !== 1 ? 's' : ''})</span></button>`;
+}
+
+/* Delivery text comes from Admin > Settings. Nothing is promised that the store has not written. */
+function renderDelivery() {
+  const rows = [[ICON_TRUCK, 'Delivery', policy.delivery || "We'll contact you after you place your order to confirm delivery details."]];
+  if (policy.returns) rows.push([ICON_RETURN, 'Return Policy', policy.returns]);
+  if (policy.warranty) rows.push([ICON_SHIELD, 'Warranty', policy.warranty]);
+  $('pDelivBody').innerHTML = rows.map(([icon, title, text]) =>
+    `<div class="pInfoRow">${icon}<div><h4>${title}</h4><p>${esc(text)}</p></div></div>`).join('');
+}
+
+function buildRails(p, sellerName) {
+  const railCard = x => `<div class="fcard-wrap">${cardHTML(x)}</div>`;
+  const more = $('pMore'), sim = $('pSimilar');
+
+  const same = allProds.filter(x => (x.vendor_id || null) === (p.vendor_id || null) && x.id !== p.id);
+  if (same.length) {
+    more.style.display = '';
+    more.innerHTML = `<div class="pRailHd dark"><span>More from ${esc(sellerName)}</span><button onclick="viewSeller()">See all items <i>&rsaquo;</i></button></div>
+      <div class="catRowScroll">${same.slice(0, 12).map(railCard).join('')}</div>`;
+  } else { more.style.display = 'none'; more.innerHTML = ''; }
+
+  const b = brandOf(p);
+  const sameBrand = b ? allProds.filter(x => x.id !== p.id && (brandOf(x) || {}).id === b.id) : [];
+  const sameCat = allProds.filter(x => x.id !== p.id && !sameBrand.includes(x) &&
+    ((p.category_id != null && x.category_id === p.category_id) || (p.category_id == null && p.category && x.category === p.category)));
+  const similar = [...sameBrand, ...sameCat].slice(0, 12);
+  if (similar.length) {
+    sim.style.display = '';
+    sim.innerHTML = `<div class="pRailHd tint"><span>Similar Items You May Like</span></div>
+      <div class="catRowScroll">${similar.map(railCard).join('')}</div>`;
+  } else { sim.style.display = 'none'; sim.innerHTML = ''; }
+}
+
+/* ── REVIEWS (real, signed-in buyers only) ────────── */
 function starSvg(filled) {
   return `<svg viewBox="0 0 24 24" fill="${filled?'currentColor':'none'}" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
 }
@@ -1331,29 +1734,35 @@ async function loadReviews(productId) {
   curProductId = productId;
   pickedRating = 0;
   const { data } = await sb.from('reviews').select('*').eq('product_id', productId).order('created_at', { ascending: false });
+  if (curProductId !== productId) return;          /* another product was opened meanwhile */
   const reviews = data || [];
 
-  const avgEl = document.getElementById('revAvg');
+  const avgEl = $('revAvg');
   if (reviews.length) {
     const avg = reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;
-    avgEl.innerHTML = `${starSvg(true)} ${avg.toFixed(1)} (${reviews.length})`;
-  } else avgEl.innerHTML = '';
+    ratingMap[productId] = { avg, n: reviews.length };
+    avgEl.innerHTML = `${starsHTML(avg, 16)}<span>${avg.toFixed(1)} (${reviews.length})</span>`;
+  } else {
+    delete ratingMap[productId];
+    avgEl.innerHTML = '';
+  }
+  renderPRating();
 
-  const list = document.getElementById('revList');
+  const list = $('revList');
   list.innerHTML = reviews.length ? reviews.map(r => `
     <div class="revItem">
-      <div class="revItem-top"><span class="revItem-name">${r.name}</span><span class="revItem-date">${new Date(r.created_at).toLocaleDateString()}</span></div>
-      <div class="revStars">${[1,2,3,4,5].map(n => `<span class="${n<=r.rating?'':'off'}">${starSvg(n<=r.rating)}</span>`).join('')}</div>
-      ${r.comment ? `<div class="revItem-cmt">${r.comment}</div>` : ''}
-    </div>`).join('') : '<div class="revEmpty">No reviews yet — be the first.</div>';
+      <div class="revItem-top"><span class="revItem-name">${esc(r.name)}</span><span class="revItem-date">${new Date(r.created_at).toLocaleDateString()}</span></div>
+      <div class="revStars">${[1,2,3,4,5].map(n => `<span>${starSvg(n<=r.rating)}</span>`).join('')}</div>
+      ${r.comment ? `<div class="revItem-cmt">${esc(r.comment)}</div>` : ''}
+    </div>`).join('') : `<div class="revEmpty">${starSvg(false)}<b>No reviews yet</b><span>Be the first to review this product</span></div>`;
 
   renderReviewForm();
 }
 
 function renderReviewForm() {
-  const wrap = document.getElementById('revFormWrap');
+  const wrap = $('revFormWrap');
   if (!buyerSession) {
-    wrap.innerHTML = `<button class="revSignInBtn" onclick="closePModal();openAccount()">Sign in to write a review</button>`;
+    wrap.innerHTML = `<button class="revSignInBtn" onclick="closePModal(true);openAccount()">Sign in to write a review</button>`;
     return;
   }
   wrap.innerHTML = `
@@ -1395,13 +1804,18 @@ function loadCart() {
 }
 function saveCart() { localStorage.setItem('cart_v3', JSON.stringify(cart)); }
 
-function addToCart(id) {
+function cartAdd(p, qty) {
+  const ex = cart.find(x => x.id === p.id);
+  if (ex) ex.qty += qty; else cart.push({id:p.id, name:p.name, price:p.price, image_url:p.image_url, vendor_id:p.vendor_id||null, qty});
+  saveCart(); updateCartBadge();
+}
+/* src = the element to fly from (a card button or the product photo); note = also show the toast */
+function addToCart(id, src, qty, note) {
   const p = allProds.find(x => x.id===id);
   if (!p) return;
-  const ex = cart.find(x => x.id===id);
-  if (ex) ex.qty++; else cart.push({id, name:p.name, price:p.price, image_url:p.image_url, vendor_id:p.vendor_id||null, qty:1});
-  saveCart(); updateCartBadge();
-  toast('Added to cart');
+  cartAdd(p, qty || 1);
+  if (src) flyToCart(src);
+  if (note || !src) toast('Added to cart');
 }
 function removeFromCart(id) { cart=cart.filter(x=>x.id!==id); saveCart(); updateCartBadge(); renderCartList(); }
 function changeQty(id, d) {
@@ -1412,6 +1826,9 @@ function updateCartBadge() {
   const n = cart.reduce((s,x)=>s+x.qty,0);
   const dot = document.getElementById('cartDot');
   dot.textContent = n; dot.style.display = n>0 ? 'flex' : 'none';
+  const pdot = $('pCartDot');
+  pdot.textContent = n; pdot.style.display = n>0 ? 'flex' : 'none';
+  syncCardCtls();
   document.getElementById('cartTotal').textContent = fmt(cart.reduce((s,x)=>s+x.price*x.qty,0));
   if (window.Pcx && Pcx.AdPage) Pcx.AdPage.refreshCartDot();
 }
@@ -1427,7 +1844,7 @@ function renderCartList() {
         ? `<img class="cItemImg" src="${item.image_url}" alt="">`
         : `<div class="cItemImg" style="display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--txt3)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div>`}
       <div class="cItemInfo">
-        <div class="cItemName">${item.name}</div>
+        <div class="cItemName">${esc(item.name)}</div>
         <div class="cItemPrice">${fmt(item.price)}</div>
         <div class="cQty">
           <button class="qb" onclick="changeQty(${item.id},-1)">-</button>
@@ -1441,7 +1858,7 @@ function renderCartList() {
     </div>`).join('');
 }
 function openCart()  { renderCartList(); document.getElementById('cartDrawer').classList.add('open'); document.getElementById('cartOver').classList.add('open'); document.body.style.overflow='hidden'; }
-function closeCart() { document.getElementById('cartDrawer').classList.remove('open'); document.getElementById('cartOver').classList.remove('open'); document.body.style.overflow=''; }
+function closeCart() { document.getElementById('cartDrawer').classList.remove('open'); document.getElementById('cartOver').classList.remove('open'); document.body.style.overflow = $('pModal').classList.contains('open') ? 'hidden' : ''; }
 
 /* ── CHECKOUT ─────────────────────────────────────── */
 function openCheckout()  { if (!cart.length) { toast('Cart is empty'); return; } closeCart(); document.getElementById('chkOver').classList.add('open'); }
@@ -1492,8 +1909,10 @@ document.getElementById('searchInput').addEventListener('input', e => {
   const res = allProds.filter(p =>
     p.name.toLowerCase().includes(q) ||
     (p.description||'').toLowerCase().includes(q) ||
-    (p.category||'').toLowerCase().includes(q)
+    (p.category||'').toLowerCase().includes(q) ||
+    (p.brand||'').toLowerCase().includes(q)
   );
+  dd.style.top = Math.max(parseInt(getComputedStyle(document.documentElement).getPropertyValue('--hh'), 10) || 52, $('searchWrap').getBoundingClientRect().bottom) + 'px';
   dd.classList.add('open');
   if (!res.length) { dd.innerHTML='<div id="srchEmpty">No results found</div>'; return; }
   dd.innerHTML = res.map(p => `
@@ -1501,7 +1920,7 @@ document.getElementById('searchInput').addEventListener('input', e => {
       ${p.image_url
         ? `<img class="sri-img" src="${p.image_url}" alt="">`
         : `<div class="sri-img" style="display:flex;align-items:center;justify-content:center;background:var(--bg2)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--txt3)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div>`}
-      <div><div class="sri-name">${p.name}</div><div class="sri-price">${fmt(p.price)}</div></div>
+      <div><div class="sri-name">${esc(p.name)}</div><div class="sri-price">${fmt(p.price)}</div></div>
     </div>`).join('');
 });
 function clearSearch() {
@@ -1642,9 +2061,14 @@ function focusSearch() {
   document.getElementById('searchWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
   setTimeout(() => document.getElementById('searchInput').focus(), 350);
 }
+/* While the search bar is on screen the header shows no search icon and no category bar.
+   Once it has scrolled up under the header, the icon appears and the category titles stick below the header. */
+const HDR_H = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--hh'), 10) || 52;
 new IntersectionObserver(([entry]) => {
-  document.getElementById('hdrSearchBtn').style.display = entry.isIntersecting ? 'none' : 'flex';
-}, { rootMargin: `-${getComputedStyle(document.documentElement).getPropertyValue('--hh') || '54px'} 0px 0px 0px` }).observe(document.getElementById('searchWrap'));
+  const past = !entry.isIntersecting && entry.boundingClientRect.top < HDR_H;
+  document.getElementById('hdrSearchBtn').style.display = past ? 'flex' : 'none';
+  $('catNav').classList.toggle('show', past);
+}, { rootMargin: `-${HDR_H}px 0px 0px 0px` }).observe(document.getElementById('searchWrap'));
 function openWhatsAppHelp() {
   const digits = storePhone.replace(/[^0-9]/g, '');
   if (digits) window.open(`https://wa.me/${digits}`, '_blank');
@@ -1755,7 +2179,11 @@ function initAds(rows) {
 
 async function init() {
   await checkBuyerSession();
-  sb.auth.onAuthStateChange((_event, session) => { buyerSession = session; checkBuyerSession(); });
+  sb.auth.onAuthStateChange((_event, session) => {
+    buyerSession = session;
+    if (!session) favSyncedFor = null;
+    checkBuyerSession().then(syncFavsFromServer);
+  });
   try {
     const [
       {data:products},
@@ -1763,24 +2191,35 @@ async function init() {
       {data:shortcuts},
       {data:settings},
       {data:vendors},
-      {data:adRows}
+      {data:adRows},
+      {data:catRows},
+      {data:brandRows},
+      {data:ratingRows}
     ] = await Promise.all([
       sb.from('products').select('*').order('created_at',{ascending:false}),
       sb.from('banners').select('*').order('sort_order',{ascending:true}),
       sb.from('shortcuts').select('*').order('sort_order',{ascending:true}),
       sb.from('store_settings').select('*'),
       sb.from('vendors').select('*').eq('status','approved').order('business_name',{ascending:true}),
-      sb.from('ads').select('*').eq('active',true).order('sort_order',{ascending:true})
+      sb.from('ads').select('*').eq('active',true).order('sort_order',{ascending:true}),
+      Pcx.Categories.fetchAll(sb).then(r => ({ data: r.rows })),
+      sb.from('brands').select('*').order('name',{ascending:true}),
+      sb.from('product_ratings').select('*')
     ]);
 
     const get = k => settings?.find(s=>s.key===k)?.value;
-    const storeName  = get('storeName')  || 'Maccato';
+    storeName  = get('storeName')  || 'Maccato';
     const tagline    = get('tagline')    || 'Fast delivery. Real deals.';
     const flashEnd   = get('flashSaleEnd') ? parseInt(get('flashSaleEnd')) : null;
     const catsJSON   = get('categories');
     const phone      = get('phone') || '';
     currency = get('currency') || '₦';
     storePhone = phone;
+    policy = { delivery: get('deliveryInfo') || '', returns: get('returnPolicy') || '', warranty: get('warrantyInfo') || '' };
+    brandsList = brandRows || [];
+    brandsList.forEach(b => { brandById[b.id] = b; brandBySlug[normSlug(b.name)] = b; });
+    (ratingRows || []).forEach(r => { ratingMap[r.product_id] = { avg: Number(r.avg_rating), n: Number(r.review_count) }; });
+    (vendors || []).forEach(v => { vendorsMap[v.id] = v; });
 
     document.getElementById('storeLogo').textContent = storeName;
     document.getElementById('mName').textContent     = storeName;
@@ -1791,7 +2230,6 @@ async function init() {
       const bar = document.getElementById('callBar');
       bar.textContent = `CALL TO ORDER: ${phone}`;
       bar.classList.add('show');
-      document.getElementById('main').style.paddingTop = `calc(var(--hh) + 57px + 37px)`;
     }
 
     populateFooter(storeName, tagline, phone, get('contactEmail'), get('contactAddress'), get('socialInstagram'), get('socialFacebook'), get('socialX'));
@@ -1799,14 +2237,25 @@ async function init() {
     allProds = products || [];
     initAds(adRows);
     buildCarousel(banners || []);
-    buildShortcuts(shortcuts || []);
     buildVendorRow(vendors || []);
-    buildCategoryRows(shortcuts || [], allProds);
+    buildBrandRow();
 
-    const cats = catsJSON
-      ? JSON.parse(catsJSON)
-      : [...new Set(allProds.map(p=>p.category).filter(Boolean))];
-    buildCatFilter(cats);
+    /* Categories come from the `categories` table. If it is empty or not created yet, fall back to the old shortcut cards. */
+    Pcx.Categories.init(sb);
+    catTree = catRows && catRows.length ? new Pcx.Categories.Tree(catRows) : null;
+    if (catTree) {
+      initCategoryPage();
+      buildCategoryTiles();
+      buildCategoryRowsTree(allProds);
+      catPills = catTree.visibleRoots().filter(r => allProds.some(catTree.productMatcher(r.id))).map(r => r.name);
+    } else {
+      setNavItems((shortcuts || []).filter(sc => sc.title).map(sc => ({ title: sc.title, image: sc.image_url, bg: sc.bg_color })));
+      buildCategoryRows(shortcuts || [], allProds);
+      catPills = catsJSON
+        ? JSON.parse(catsJSON)
+        : [...new Set(allProds.map(p=>p.category).filter(Boolean))];
+    }
+    buildCatFilter(catPills);
 
     const flashProds = allProds.filter(p => p.flash_sale);
     if (flashEnd && Date.now() < flashEnd && flashProds.length) {
@@ -1825,8 +2274,14 @@ async function init() {
 
     renderGrid(allProds, 'allGrid', true);
     syncAdPage();
+    syncCatPage();
     document.getElementById('pCount').textContent =
       `${allProds.length} item${allProds.length!==1?'s':''}`;
+
+    updateFavCount();
+    syncFavsFromServer();
+    const sharedId = Number(new URLSearchParams(location.search).get('p'));   /* shared link: /?p=ID */
+    if (sharedId) openProduct(sharedId);
 
   } catch(err) {
     console.error(err);

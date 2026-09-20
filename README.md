@@ -1,5 +1,28 @@
 # Store - PWA with Supabase
 
+## Storefront v2: brands with logos, favorites, new product page (run `migration_storefront_v2.sql`)
+
+Run `migration_storefront_v2.sql` once in the Supabase SQL editor (after the older migrations). It adds:
+`brands` (+ `products.brand_id`), `favorites`, the `product_ratings` view (real review averages only) and the
+storage policy that lets a vendor upload their logo to `avatars/vendor-logos/<their id>/`.
+
+- **Brand search when adding a product** (vendor and admin forms): the vendor types a brand, sees brands already
+  saved plus results from logo.dev, and can add a brand nobody has listed yet with their own logo, so nobody is ever
+  stuck. Chosen brands are saved to `brands` and shown as "Shop by Brand" logo tiles on the home page.
+  Code: `components/brand-picker.js`, `api/brand-search.js`.
+- **Set these environment variables in Vercel** (never in the repo): `LOGO_DEV_SECRET_KEY` (sk_..., search) and
+  `LOGO_DEV_PUBLISHABLE_KEY` (pk_..., logo images). `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and `ADMIN_EMAIL`
+  are the ones `admin-vendors.js` already uses. Only approved vendors and admins can call the search endpoint.
+  logo.dev's free plan needs the "Logos provided by Logo.dev" link, which is in the storefront footer.
+- **Vendor logo**: Vendor > Settings > Store Logo. Shown next to "Sold by" on product pages and in the vendor row.
+- **Home page**: the search bar stays visible; once it scrolls away the header search icon appears and the category
+  titles stick under the header. Category image tiles live in the side menu only.
+- **Product cards**: favorites (heart), fly-to-cart, and Add to Cart becomes a `- 1 +` stepper once in the cart.
+- **Product page**: auto-rotating photos, full-screen viewer (pinch/double-tap zoom), Sold by + View Store, brand,
+  real rating and reviews only, delivery and returns text from Admin > Settings, more from this seller, similar items.
+  Shared links look like `/?p=PRODUCT_ID`.
+
+
 ## Ads, brand pages and multi-photo products (run `migration_ads_and_images.sql` first)
 
 Run `migration_ads_and_images.sql` once in the Supabase SQL editor. It also fixes admin image uploads

@@ -139,6 +139,9 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 #vtoast.on{opacity:1;bottom:calc(94px + env(safe-area-inset-bottom,0px))}
 </style>
 <link rel="stylesheet" href="../components/multi-image-picker.css">
+<link rel="stylesheet" href="../components/product-attributes.css">
+<link rel="stylesheet" href="../components/categories.css">
+<link rel="stylesheet" href="../components/brand-picker.css">
 </head>
 <body>
 
@@ -225,16 +228,16 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
       <label class="rmbgToggle"><input type="checkbox" id="pRmBg"> Remove background from new photos</label>
       <div class="progWrap" id="pImgProg"><div class="progBar" id="pImgProgBar"></div></div>
       <div class="fld"><label>Product Name</label><input id="pName" placeholder="e.g. Colorblock Zip-Up Jacket"></div>
-      <div class="fld"><label>Brand (optional)</label><input id="pBrand" placeholder="e.g. Oraimo"></div>
+      <div class="fld"><label>Brand (optional)</label><div id="pBrandBox"></div></div>
       <div class="frow2">
         <div class="fld"><label>Price (₦)</label><input id="pPrice" type="number" placeholder="0"></div>
         <div class="fld"><label>Was Price (₦)</label><input id="pOrig" type="number" placeholder="optional"></div>
       </div>
-      <div class="frow2">
-        <div class="fld"><label>Category</label><select id="pCat"><option value="">Select a category</option></select></div>
-        <div class="fld"><label>Stock</label><input id="pStock" type="number" placeholder="0"></div>
-      </div>
-      <div class="fld"><label>Description</label><textarea id="pDesc" rows="3" placeholder="Short description"></textarea></div>
+      <div class="fld"><label>Category</label><div id="pCat"></div></div>
+      <div class="fld"><label>Stock</label><input id="pStock" type="number" placeholder="0"></div>
+      <div id="pAttrs"></div>
+      <div class="fld"><label>Short description</label><textarea id="pDesc" rows="3" placeholder="One or two lines about the product"></textarea></div>
+      <div class="fld"><label>Full description (optional)</label><div id="pBlocks"></div></div>
       <div class="btnRow">
         <button class="btnCancel" id="pCancelBtn" style="display:none">Cancel</button>
         <button class="btnSave" id="pSaveBtn">Add Product</button>
@@ -250,6 +253,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
   <div class="panel" id="panel-settings">
     <div class="fcard">
       <h3>Store Profile</h3>
+      <div class="fld"><label>Store Logo</label><div id="sLogoPicker"></div><div style="font-size:11.5px;color:var(--txt3);margin-top:6px">Shown next to "Sold by" on your products and on the vendor row of the home page.</div></div>
       <div class="fld"><label>Business Name</label><input id="sName"></div>
       <div class="fld"><label>Phone</label><input id="sPhone"></div>
       <button class="primaryBtn" id="sSaveBtn">Save Changes</button>
@@ -275,6 +279,10 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 </div>
 
 <script src="../components/multi-image-picker.js"></script>
+<script src="../components/product-attributes.js"></script>
+<script src="../data/categories.js"></script>
+<script src="../components/category-picker.js"></script>
+<script src="../components/brand-picker.js"></script>
 <script>
 'use strict';
 
@@ -337,21 +345,21 @@ async function boot() {
   document.getElementById('vShopName').textContent = vendorRow.business_name;
   document.getElementById('sName').value = vendorRow.business_name || '';
   document.getElementById('sPhone').value = vendorRow.phone || '';
+  sLogoPicker.setImages(vendorRow.logo_url ? [vendorRow.logo_url] : []);
   showScreen('app');
   await loadCategories();
   await Promise.all([loadDash(), loadProducts(), loadOrders()]);
   checkUnreadNotifs();
 }
 
-/* ===== CATEGORIES (admin-managed list, product form picks from it) ===== */
+/* ===== CATEGORIES (table `categories`, managed by the admin; the product form picks from it) ===== */
+let catTree = null;
 async function loadCategories() {
-  const { data } = await sb.from('store_settings').select('*').eq('key', 'categories').maybeSingle();
-  let cats = [];
-  try { cats = JSON.parse(data?.value || '[]'); } catch { cats = []; }
-  const sel = document.getElementById('pCat');
-  const cur = sel.value;
-  sel.innerHTML = '<option value="">Select a category</option>' + cats.map(c => `<option value="${c}">${c}</option>`).join('');
-  if (cur) sel.value = cur;
+  Pcx.Categories.init(sb);
+  const { rows, error } = await Pcx.Categories.fetchAll(sb);
+  if (error) toast('Could not load categories: ' + error.message, true);
+  catTree = new Pcx.Categories.Tree(rows);
+  catPicker.setTree(catTree);
 }
 
 document.getElementById('obSubmitBtn').onclick = async () => {
@@ -407,7 +415,7 @@ async function uploadImage(file, folder, transparent) {
   const { error } = await sb.storage.from(BUCKET).upload(path, blob, { contentType: fmt, cacheControl: '31536000' });
   if (error) {
     prog.classList.remove('on');
-    if (/row-level security|policy/i.test(error.message)) throw new Error('Upload blocked by the storage policy. Ask the store admin to run migration_ads_and_images.sql.');
+    if (/row-level security|policy/i.test(error.message)) throw new Error('Upload blocked by the storage policy. Ask the store admin to run migration_ads_and_images.sql and migration_storefront_v2.sql.');
     throw error;
   }
   bar.style.width = '100%'; setTimeout(() => prog.classList.remove('on'), 600);
@@ -424,6 +432,18 @@ async function removeImageBackground(file) {
 }
 
 const pPicker = new Pcx.MultiImagePicker(document.getElementById('pPicker'), { max: 8, label: 'Add photos' });
+const sLogoPicker = new Pcx.MultiImagePicker(document.getElementById('sLogoPicker'), { max: 1, label: 'Upload logo' });
+const pAttrs = new Pcx.ProductAttributes(document.getElementById('pAttrs'));
+const pBlocks = new Pcx.DescriptionBlocks(document.getElementById('pBlocks'), { onError: m => toast(m, true) });
+/* Brand: search brands already saved, then logo.dev (through /api/brand-search); a brand nobody has listed yet can be added with its own logo. */
+const brandPicker = new Pcx.BrandPicker(document.getElementById('pBrandBox'), {
+  sb,
+  searchUrl: '/api/brand-search',
+  getToken: async () => { const { data: { session: s } } = await sb.auth.getSession(); return s ? s.access_token : null; },
+  getUserId: () => session ? session.user.id : null,
+  upload: file => uploadImage(file, 'vendor-products', true)
+});
+const catPicker = new Pcx.CategoryPicker(document.getElementById('pCat'), { onChange: () => pAttrs.setCategory(catPicker.names()) });
 
 /* ===== PRODUCTS (scoped to this vendor only) ===== */
 async function loadProducts() {
@@ -452,13 +472,20 @@ window.editProduct = async (id) => {
   editProdId = id;
   document.getElementById('pFormTitle').textContent = 'Edit Product';
   document.getElementById('pName').value = p.name || '';
-  document.getElementById('pBrand').value = p.brand || '';
+  brandPicker.setByProduct(p.brand_id, p.brand);
   document.getElementById('pPrice').value = p.price || '';
   document.getElementById('pOrig').value = p.original_price || '';
-  document.getElementById('pCat').value = p.category || '';
+  let catId = p.category_id;
+  if (catId == null && p.category && catTree) {      // saved before categories existed: match the old text name if it is unambiguous
+    const m = catTree.list.filter(c => c.name.toLowerCase() === String(p.category).toLowerCase());
+    if (m.length === 1) catId = m[0].id;
+  }
+  catPicker.setValue(catId);
   document.getElementById('pStock').value = p.stock || 0;
   document.getElementById('pDesc').value = p.description || '';
   pPicker.setImages(Array.isArray(p.images) && p.images.length ? p.images : (p.image_url ? [p.image_url] : []));
+  pAttrs.load(p.attributes, catPicker.names().length ? catPicker.names() : p.category);
+  pBlocks.setBlocks(p.description_blocks);
   document.getElementById('pCancelBtn').style.display = 'block';
   document.getElementById('pSaveBtn').textContent = 'Update Product';
   document.getElementById('panel-products').scrollIntoView({ behavior: 'smooth' });
@@ -478,14 +505,16 @@ function resetProdForm() {
   editProdId = null;
   document.getElementById('pFormTitle').textContent = 'Add Product';
   document.getElementById('pName').value = '';
-  document.getElementById('pBrand').value = '';
+  brandPicker.clear();
   document.getElementById('pPrice').value = '';
   document.getElementById('pOrig').value = '';
-  document.getElementById('pCat').value = '';
+  catPicker.clear();
   document.getElementById('pStock').value = '';
   document.getElementById('pDesc').value = '';
   document.getElementById('pRmBg').checked = false;
   pPicker.clear();
+  pAttrs.clear();
+  pBlocks.clear();
   document.getElementById('pCancelBtn').style.display = 'none';
   document.getElementById('pSaveBtn').textContent = 'Add Product';
 }
@@ -495,6 +524,9 @@ document.getElementById('pSaveBtn').onclick = async () => {
   const price = parseFloat(document.getElementById('pPrice').value);
   if (!name) { toast('Product name required', true); return; }
   if (!price || price <= 0) { toast('Valid price required', true); return; }
+  if (catTree && catTree.list.length && catPicker.getValue() == null) { toast('Choose a category', true); return; }
+  const attrErr = pAttrs.validate();
+  if (attrErr) { toast(attrErr, true); document.getElementById('pAttrs').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
 
   showLoad('Saving product...');
   try {
@@ -510,11 +542,25 @@ document.getElementById('pSaveBtn').onclick = async () => {
       return uploadImage(f, 'vendor-products', transparent);
     });
 
+    const description_blocks = await pBlocks.resolve(f => uploadImage(f, 'vendor-products', false));
+
+    /* make sure the chosen brand is in the brands table (saved with its logo) */
+    let brandRow = null;
+    const brandPick = brandPicker.getValue();
+    if (brandPick) {
+      try { brandRow = await brandPicker.commit(); }
+      catch (e) { console.warn('Brand not added to the brand list:', e); }
+    }
+
     const prod = {
       name, price,
-      brand: document.getElementById('pBrand').value.trim() || null,
+      attributes: pAttrs.collect(),
+      description_blocks,
+      brand: brandPick ? brandPick.name : null,
+      brand_id: brandRow ? brandRow.id : null,
       original_price: parseFloat(document.getElementById('pOrig').value) || null,
-      category: document.getElementById('pCat').value.trim() || null,
+      category: catPicker.names()[0] || null,
+      category_id: catPicker.getValue(),
       stock: parseInt(document.getElementById('pStock').value) || 0,
       description: document.getElementById('pDesc').value.trim() || null,
       image_url: urls[0] || null,
@@ -527,8 +573,12 @@ document.getElementById('pSaveBtn').onclick = async () => {
       : sb.from('products').insert([p]);
     let { error } = await write(prod);
     let legacy = false;
+    if (error && /brand_id/i.test(error.message)) {       // brands table not created yet: keep the brand name
+      const { brand_id, ...noBrandId } = prod;
+      ({ error } = await write(noBrandId));
+    }
     if (error && /images|brand/i.test(error.message)) {   // columns not added yet: save the main photo anyway
-      const { images, brand, ...rest } = prod;
+      const { images, brand, brand_id, ...rest } = prod;
       ({ error } = await write(rest));
       legacy = !error;
     }
@@ -538,7 +588,7 @@ document.getElementById('pSaveBtn').onclick = async () => {
     resetProdForm();
     await loadProducts(); await loadDash();
   } catch (e) {
-    toast('Save failed: ' + e.message, true);
+    toast(/attributes|description_blocks|category_id/i.test(e.message) ? 'The database needs the latest product columns. Run the newest SQL in Supabase first, then try again.' : 'Save failed: ' + e.message, true);
   } finally {
     hideLoad();
   }
@@ -594,12 +644,21 @@ document.getElementById('sSaveBtn').onclick = async () => {
   const phone = document.getElementById('sPhone').value.trim();
   if (!business_name) { toast('Business name required', true); return; }
   showLoad('Saving...');
-  const { error } = await sb.from('vendors').update({ business_name, phone }).eq('id', session.user.id);
-  hideLoad();
-  if (error) { toast('Save failed: ' + error.message, true); return; }
-  vendorRow.business_name = business_name;
-  document.getElementById('vShopName').textContent = business_name;
-  toast('Profile updated');
+  try {
+    /* logo goes to avatars/vendor-logos/<your id>/ (see migration_storefront_v2.sql) */
+    const logos = await sLogoPicker.resolve(file => uploadImage(file, 'vendor-logos/' + session.user.id, true));
+    const logo_url = logos[0] || null;
+    const { error } = await sb.from('vendors').update({ business_name, phone, logo_url }).eq('id', session.user.id);
+    if (error) throw error;
+    vendorRow.business_name = business_name;
+    vendorRow.logo_url = logo_url;
+    document.getElementById('vShopName').textContent = business_name;
+    toast('Profile updated');
+  } catch (e) {
+    toast('Save failed: ' + e.message, true);
+  } finally {
+    hideLoad();
+  }
 };
 
 /* ===== PUSH NOTIFICATIONS ===== */
