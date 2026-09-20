@@ -1,4 +1,4 @@
-const CACHE = 'vendor-v1';
+const CACHE = 'vendor-v2';
 const PRECACHE = ['/vendor/', '/vendor/index.html', '/vendor/manifest.json', '/icon.svg'];
 
 self.addEventListener('install', e => {

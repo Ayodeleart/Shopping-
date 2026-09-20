@@ -1,4 +1,4 @@
-const CACHE = 'admin-v1';
+const CACHE = 'admin-v2';
 const PRECACHE = ['/admin/', '/admin/index.html', '/admin/manifest.json', '/icon.svg'];
 
 self.addEventListener('install', e => {
