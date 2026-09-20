@@ -139,6 +139,8 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 #vtoast.on{opacity:1;bottom:calc(94px + env(safe-area-inset-bottom,0px))}
 </style>
 <link rel="stylesheet" href="../components/multi-image-picker.css">
+<link rel="stylesheet" href="../components/product-attributes.css">
+<link rel="stylesheet" href="../components/categories.css">
 </head>
 <body>
 
@@ -230,11 +232,11 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
         <div class="fld"><label>Price (₦)</label><input id="pPrice" type="number" placeholder="0"></div>
         <div class="fld"><label>Was Price (₦)</label><input id="pOrig" type="number" placeholder="optional"></div>
       </div>
-      <div class="frow2">
-        <div class="fld"><label>Category</label><select id="pCat"><option value="">Select a category</option></select></div>
-        <div class="fld"><label>Stock</label><input id="pStock" type="number" placeholder="0"></div>
-      </div>
-      <div class="fld"><label>Description</label><textarea id="pDesc" rows="3" placeholder="Short description"></textarea></div>
+      <div class="fld"><label>Category</label><div id="pCat"></div></div>
+      <div class="fld"><label>Stock</label><input id="pStock" type="number" placeholder="0"></div>
+      <div id="pAttrs"></div>
+      <div class="fld"><label>Short description</label><textarea id="pDesc" rows="3" placeholder="One or two lines about the product"></textarea></div>
+      <div class="fld"><label>Full description (optional)</label><div id="pBlocks"></div></div>
       <div class="btnRow">
         <button class="btnCancel" id="pCancelBtn" style="display:none">Cancel</button>
         <button class="btnSave" id="pSaveBtn">Add Product</button>
@@ -275,6 +277,9 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 </div>
 
 <script src="../components/multi-image-picker.js"></script>
+<script src="../components/product-attributes.js"></script>
+<script src="../data/categories.js"></script>
+<script src="../components/category-picker.js"></script>
 <script>
 'use strict';
 
@@ -343,15 +348,14 @@ async function boot() {
   checkUnreadNotifs();
 }
 
-/* ===== CATEGORIES (admin-managed list, product form picks from it) ===== */
+/* ===== CATEGORIES (table `categories`, managed by the admin; the product form picks from it) ===== */
+let catTree = null;
 async function loadCategories() {
-  const { data } = await sb.from('store_settings').select('*').eq('key', 'categories').maybeSingle();
-  let cats = [];
-  try { cats = JSON.parse(data?.value || '[]'); } catch { cats = []; }
-  const sel = document.getElementById('pCat');
-  const cur = sel.value;
-  sel.innerHTML = '<option value="">Select a category</option>' + cats.map(c => `<option value="${c}">${c}</option>`).join('');
-  if (cur) sel.value = cur;
+  Pcx.Categories.init(sb);
+  const { rows, error } = await Pcx.Categories.fetchAll(sb);
+  if (error) toast('Could not load categories: ' + error.message, true);
+  catTree = new Pcx.Categories.Tree(rows);
+  catPicker.setTree(catTree);
 }
 
 document.getElementById('obSubmitBtn').onclick = async () => {
@@ -424,6 +428,9 @@ async function removeImageBackground(file) {
 }
 
 const pPicker = new Pcx.MultiImagePicker(document.getElementById('pPicker'), { max: 8, label: 'Add photos' });
+const pAttrs = new Pcx.ProductAttributes(document.getElementById('pAttrs'));
+const pBlocks = new Pcx.DescriptionBlocks(document.getElementById('pBlocks'), { onError: m => toast(m, true) });
+const catPicker = new Pcx.CategoryPicker(document.getElementById('pCat'), { onChange: () => pAttrs.setCategory(catPicker.names()) });
 
 /* ===== PRODUCTS (scoped to this vendor only) ===== */
 async function loadProducts() {
@@ -455,10 +462,17 @@ window.editProduct = async (id) => {
   document.getElementById('pBrand').value = p.brand || '';
   document.getElementById('pPrice').value = p.price || '';
   document.getElementById('pOrig').value = p.original_price || '';
-  document.getElementById('pCat').value = p.category || '';
+  let catId = p.category_id;
+  if (catId == null && p.category && catTree) {      // saved before categories existed: match the old text name if it is unambiguous
+    const m = catTree.list.filter(c => c.name.toLowerCase() === String(p.category).toLowerCase());
+    if (m.length === 1) catId = m[0].id;
+  }
+  catPicker.setValue(catId);
   document.getElementById('pStock').value = p.stock || 0;
   document.getElementById('pDesc').value = p.description || '';
   pPicker.setImages(Array.isArray(p.images) && p.images.length ? p.images : (p.image_url ? [p.image_url] : []));
+  pAttrs.load(p.attributes, catPicker.names().length ? catPicker.names() : p.category);
+  pBlocks.setBlocks(p.description_blocks);
   document.getElementById('pCancelBtn').style.display = 'block';
   document.getElementById('pSaveBtn').textContent = 'Update Product';
   document.getElementById('panel-products').scrollIntoView({ behavior: 'smooth' });
@@ -481,11 +495,13 @@ function resetProdForm() {
   document.getElementById('pBrand').value = '';
   document.getElementById('pPrice').value = '';
   document.getElementById('pOrig').value = '';
-  document.getElementById('pCat').value = '';
+  catPicker.clear();
   document.getElementById('pStock').value = '';
   document.getElementById('pDesc').value = '';
   document.getElementById('pRmBg').checked = false;
   pPicker.clear();
+  pAttrs.clear();
+  pBlocks.clear();
   document.getElementById('pCancelBtn').style.display = 'none';
   document.getElementById('pSaveBtn').textContent = 'Add Product';
 }
@@ -495,6 +511,9 @@ document.getElementById('pSaveBtn').onclick = async () => {
   const price = parseFloat(document.getElementById('pPrice').value);
   if (!name) { toast('Product name required', true); return; }
   if (!price || price <= 0) { toast('Valid price required', true); return; }
+  if (catTree && catTree.list.length && catPicker.getValue() == null) { toast('Choose a category', true); return; }
+  const attrErr = pAttrs.validate();
+  if (attrErr) { toast(attrErr, true); document.getElementById('pAttrs').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
 
   showLoad('Saving product...');
   try {
@@ -510,11 +529,16 @@ document.getElementById('pSaveBtn').onclick = async () => {
       return uploadImage(f, 'vendor-products', transparent);
     });
 
+    const description_blocks = await pBlocks.resolve(f => uploadImage(f, 'vendor-products', false));
+
     const prod = {
       name, price,
+      attributes: pAttrs.collect(),
+      description_blocks,
       brand: document.getElementById('pBrand').value.trim() || null,
       original_price: parseFloat(document.getElementById('pOrig').value) || null,
-      category: document.getElementById('pCat').value.trim() || null,
+      category: catPicker.names()[0] || null,
+      category_id: catPicker.getValue(),
       stock: parseInt(document.getElementById('pStock').value) || 0,
       description: document.getElementById('pDesc').value.trim() || null,
       image_url: urls[0] || null,
@@ -538,7 +562,7 @@ document.getElementById('pSaveBtn').onclick = async () => {
     resetProdForm();
     await loadProducts(); await loadDash();
   } catch (e) {
-    toast('Save failed: ' + e.message, true);
+    toast(/attributes|description_blocks|category_id/i.test(e.message) ? 'The database needs the latest product columns. Run the newest SQL in Supabase first, then try again.' : 'Save failed: ' + e.message, true);
   } finally {
     hideLoad();
   }

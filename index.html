@@ -18,6 +18,9 @@
 <link rel="stylesheet" href="components/ad-page.css">
 <script defer src="components/ad-page.js"></script>
 <script defer src="data/ads.js"></script>
+<link rel="stylesheet" href="components/categories.css">
+<script defer src="data/categories.js"></script>
+<script defer src="components/category-page.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 /* ── THEME TOKENS ─────────────────────────────────── */
@@ -624,6 +627,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
     <div class="ftCol">
       <div class="ftHead">Shop</div>
       <a href="#allSec">All Products</a>
+      <a href="#cat=all">All Categories</a>
       <a href="#flashSec">Flash Sales</a>
       <a href="/vendor/" target="_blank">Sell on Maccato</a>
     </div>
@@ -679,6 +683,9 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
     <a class="mLink" href="#flashSec" onclick="closeMenu()">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Flash Sales
     </a>
+    <a class="mLink" href="#cat=all" onclick="closeMenu()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>All Categories
+    </a>
     <a class="mLink" href="#allSec" onclick="closeMenu()">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>All Products
     </a>
@@ -703,6 +710,9 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 
 <!-- AD PAGE (brand page opened from an ad) -->
 <div id="adPage"></div>
+
+<!-- CATEGORY PAGE (#cat=slug) -->
+<div id="catPage"></div>
 
 <!-- PRODUCT MODAL -->
 <div id="pModal">
@@ -875,6 +885,73 @@ function buildShortcuts(shortcuts) {
   observeAll(row.querySelectorAll('.au'));
 }
 
+/* ── CATEGORIES (table `categories`, see data/categories.js) ───────
+   Main categories become the home tile row and the per-category product rows; tapping one opens the category page. */
+let catTree = null, catPage = null, catDeepLinked = false;
+
+function buildCategoryTiles() {
+  const row = document.getElementById('shortcutRow');
+  const roots = catTree.visibleRoots();
+  if (!roots.length) { row.style.display = 'none'; return; }
+  const esc = Pcx.Categories.esc;
+  row.style.display = '';
+  row.innerHTML = `
+    <div class="scut au d0" onclick="openCategory('all')">
+      <div class="scut-img" style="background:var(--bg2);font-size:28px">&#128450;&#65039;</div>
+      <span class="scut-lbl">All</span>
+    </div>` + roots.map((c, i) => `
+    <div class="scut au d${Math.min(i + 1, 3)}" onclick="openCategory('${esc(c.slug)}')">
+      <div class="scut-img">${Pcx.Categories.thumb(catTree, c, 'fill')}</div>
+      <span class="scut-lbl">${esc(c.name)}</span>
+    </div>`).join('');
+  observeAll(row.querySelectorAll('.au'));
+}
+
+function buildCategoryRowsTree(prods) {
+  const wrap = document.getElementById('catRows');
+  const esc = Pcx.Categories.esc;
+  wrap.innerHTML = catTree.visibleRoots().map(root => {
+    const matches = prods.filter(catTree.productMatcher(root.id));
+    if (!matches.length) return '';
+    return `
+      <div class="catRowSec">
+        <div class="catRowHd">
+          <span class="catRowBar" style="background:var(--red)"></span>
+          <span class="catRowName" style="color:var(--red)" onclick="openCategory('${esc(root.slug)}')">${esc(root.name)}</span>
+          <span class="catRowCount">${matches.length} item${matches.length!==1?'s':''}</span>
+        </div>
+        <div class="catRowScroll">
+          ${matches.slice(0, 12).map(p => `<div class="fcard-wrap au">${cardHTML(p)}</div>`).join('')}
+        </div>
+      </div>`;
+  }).join('');
+  observeAll(wrap.querySelectorAll('.au'));
+}
+
+/* Category page: opened through #cat=slug so the back button closes it (same idea as the ad page). */
+function catFromHash() { const m = /^#cat=([a-z0-9-]+)/.exec(location.hash); return m ? m[1] : null; }
+function openCategory(slug) { location.hash = 'cat=' + slug; }
+function syncCatPage() {
+  if (!catPage) return;
+  const slug = catFromHash();
+  if (!slug) { catPage.close(); return; }
+  if (catTree) catPage.open(slug);
+}
+function closeCatPage() {
+  if (catDeepLinked) {          /* opened from a shared link: there is no earlier page to go back to */
+    catDeepLinked = false;
+    history.replaceState(null, '', location.pathname + location.search);
+    catPage.close();
+  } else history.back();
+}
+function initCategoryPage() {
+  catPage = new Pcx.CategoryPage(document.getElementById('catPage'), {
+    tree: () => catTree, products: () => allProds, cardHTML, go: openCategory, onBack: closeCatPage
+  });
+  catDeepLinked = !!catFromHash();
+  window.addEventListener('hashchange', syncCatPage);
+}
+
 /* ── VENDOR ROW ───────────────────────────────────── */
 function buildVendorRow(vendors) {
   const sec = document.getElementById('vendorSec');
@@ -897,7 +974,7 @@ function filterByVendor(vendorId, vendorName) {
 }
 
 /* ── CATEGORY FILTER ──────────────────────────────── */
-let activeCat = 'All', allProds = [];
+let activeCat = 'All', allProds = [], catPills = [];
 
 function buildCatFilter(cats) {
   const row = document.getElementById('catFilter');
@@ -912,14 +989,17 @@ function buildCatFilter(cats) {
       color:${c===activeCat?'#fff':'var(--txt2)'};
       border:1.5px solid ${c===activeCat?'var(--red)':'var(--border)'};
       transition:all .18s;
-    " onclick="filterCat('${c}')">${c}</button>`).join('');
+    " data-c="${Pcx.Categories.esc(c)}" onclick="filterCat(this.dataset.c)">${Pcx.Categories.esc(c)}</button>`).join('');
 }
 
 function filterCat(cat) {
   activeCat = cat;
-  const filtered = cat === 'All' ? allProds : allProds.filter(p => p.category === cat);
-  buildCatFilter(cat === 'All' ? [...new Set(allProds.map(p => p.category).filter(Boolean))] :
-    [...new Set(allProds.map(p => p.category).filter(Boolean))]);
+  let filtered = allProds;
+  if (cat !== 'All') {
+    const root = catTree && catTree.visibleRoots().find(r => r.name === cat);
+    filtered = root ? allProds.filter(catTree.productMatcher(root.id)) : allProds.filter(p => p.category === cat);
+  }
+  buildCatFilter(catPills);
   renderGrid(filtered, 'allGrid', cat === 'All');
   document.getElementById('pCount').textContent = `${filtered.length} item${filtered.length!==1?'s':''}`;
 }
@@ -1513,14 +1593,16 @@ async function init() {
       {data:shortcuts},
       {data:settings},
       {data:vendors},
-      {data:adRows}
+      {data:adRows},
+      {data:catRows}
     ] = await Promise.all([
       sb.from('products').select('*').order('created_at',{ascending:false}),
       sb.from('banners').select('*').order('sort_order',{ascending:true}),
       sb.from('shortcuts').select('*').order('sort_order',{ascending:true}),
       sb.from('store_settings').select('*'),
       sb.from('vendors').select('*').eq('status','approved').order('business_name',{ascending:true}),
-      sb.from('ads').select('*').eq('active',true).order('sort_order',{ascending:true})
+      sb.from('ads').select('*').eq('active',true).order('sort_order',{ascending:true}),
+      Pcx.Categories.fetchAll(sb).then(r => ({ data: r.rows }))
     ]);
 
     const get = k => settings?.find(s=>s.key===k)?.value;
@@ -1549,14 +1631,24 @@ async function init() {
     allProds = products || [];
     initAds(adRows);
     buildCarousel(banners || []);
-    buildShortcuts(shortcuts || []);
     buildVendorRow(vendors || []);
-    buildCategoryRows(shortcuts || [], allProds);
 
-    const cats = catsJSON
-      ? JSON.parse(catsJSON)
-      : [...new Set(allProds.map(p=>p.category).filter(Boolean))];
-    buildCatFilter(cats);
+    /* Categories come from the `categories` table. If it is empty or not created yet, fall back to the old shortcut cards. */
+    Pcx.Categories.init(sb);
+    catTree = catRows && catRows.length ? new Pcx.Categories.Tree(catRows) : null;
+    if (catTree) {
+      initCategoryPage();
+      buildCategoryTiles();
+      buildCategoryRowsTree(allProds);
+      catPills = catTree.visibleRoots().filter(r => allProds.some(catTree.productMatcher(r.id))).map(r => r.name);
+    } else {
+      buildShortcuts(shortcuts || []);
+      buildCategoryRows(shortcuts || [], allProds);
+      catPills = catsJSON
+        ? JSON.parse(catsJSON)
+        : [...new Set(allProds.map(p=>p.category).filter(Boolean))];
+    }
+    buildCatFilter(catPills);
 
     const flashProds = allProds.filter(p => p.flash_sale);
     if (flashEnd && Date.now() < flashEnd && flashProds.length) {
@@ -1575,6 +1667,7 @@ async function init() {
 
     renderGrid(allProds, 'allGrid', true);
     syncAdPage();
+    syncCatPage();
     document.getElementById('pCount').textContent =
       `${allProds.length} item${allProds.length!==1?'s':''}`;
 
