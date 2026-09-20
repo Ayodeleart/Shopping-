@@ -128,7 +128,7 @@
       fieldInput('Support phone (optional)', 'page.contact.phone', 'type="tel" placeholder="Uses the store phone when empty"') +
 
       '<div class="adgrp">Page sections</div>' +
-      window.AdsSections.html(c, { products: products, cats: (typeof cats !== 'undefined' ? cats : []), esc: esc }) +
+      window.AdsSections.html(c, { products: products, cats: (typeof cats !== 'undefined' ? cats : []), catOptions: (window.DestPicker ? DestPicker.data.cats : []), esc: esc }) +
 
       '<div class="form-btns" style="margin-top:14px">' +
         '<button class="btn-p" data-a="save">Save Ad</button>' +
@@ -184,7 +184,12 @@
       return false;
     }).map(function (s) {
       var out = clone(s);
-      if (out.type === 'products') { out.limit = parseInt(out.limit, 10) || 12; out.ids = (out.ids || []).map(Number); }
+      if (out.type === 'products') {
+        out.limit = parseInt(out.limit, 10) || 12; out.ids = (out.ids || []).map(Number);
+        ['discountMin', 'priceMax'].forEach(function (k) { out[k] = parseFloat(out[k]) || undefined; });
+        out.categoryId = parseInt(out.categoryId, 10) || undefined;
+        ['category', 'keyword', 'flag', 'sort'].forEach(function (k) { if (!out[k]) delete out[k]; });
+      }
       if (out.type === 'cards') out.items = (out.items || []).map(function (i) { i.product_id = Number(i.product_id) || null; return i; });
       if (out.type === 'banner') out.product_id = Number(out.product_id) || null;
       return out;
@@ -292,7 +297,7 @@
     products: function () { return products; },
     open: async function () {
       bind();
-      if (!loaded) { pane().innerHTML = '<div class="ad-empty">Loading ads...</div>'; try { await load(); } catch (e) { tableMissing = true; } renderList(); }
+      if (!loaded) { pane().innerHTML = '<div class="ad-empty">Loading ads...</div>'; try { await load(); await DestPicker.prepare(); } catch (e) { tableMissing = true; } renderList(); }
       else if (!cur) renderList();
     },
     reload: async function () { loaded = false; if (pane().offsetParent) await this.open(); }
@@ -302,8 +307,10 @@
   window.switchBannerSub = function (which) {
     document.querySelectorAll('.bsub-tab').forEach(function (t) { t.classList.toggle('on', t.dataset.sub === which); });
     document.getElementById('bannersPane').style.display = which === 'banners' ? '' : 'none';
+    document.getElementById('tilesPane').style.display = which === 'tiles' ? '' : 'none';
     document.getElementById('adsPane').style.display = which === 'ads' ? '' : 'none';
     document.getElementById('announcePane').style.display = which === 'announce' ? '' : 'none';
     if (which === 'ads') window.AdsAdmin.open();
+    if (which === 'tiles') window.TilesAdmin.open();
   };
 })();

@@ -62,9 +62,17 @@
           out += '<div class="fg"><button class="abtn" data-a="pick" data-i="' + i + '">Choose products (' + (s.ids || []).length + ' selected)</button></div>';
         } else {
           out += '<div class="row2">' +
-            sel('Only category', base + '.category', [['', 'All categories']].concat((ctx.cats || []).map(function (c) { return [c, c]; })), s.category) +
-            '<div class="fg"><label>Max products</label><input type="number" min="1" data-f="' + base + '.limit" value="' + esc(s.limit || 12) + '"></div>' +
-          '</div>';
+            (ctx.catOptions && ctx.catOptions.length
+              ? sel('Category', base + '.categoryId', [['', 'All categories']].concat(ctx.catOptions.map(function (c) { return [c.id, c.label]; })), s.categoryId)
+              : inp('Category', base + '.category', 'type="text" placeholder="All (or e.g. Cosmetics)"')) +
+            inp('Keyword', base + '.keyword', 'type="text" placeholder="e.g. skincare, cream"') +
+          '</div><div class="row2">' +
+            inp('Discount at least (%)', base + '.discountMin', 'type="number" min="0" max="95" placeholder="e.g. 20"') +
+            inp('Max price', base + '.priceMax', 'type="number" min="0" placeholder="optional"') +
+          '</div><div class="row2">' +
+            sel('Only', base + '.flag', [['', 'All products'], ['flash', 'Flash sale'], ['featured', 'Featured']], s.flag) +
+            sel('Sort by', base + '.sort', [['', 'Newest'], ['discount', 'Biggest discount'], ['price_asc', 'Price: low to high'], ['price_desc', 'Price: high to low']], s.sort) +
+          '</div><div class="fg"><label>Max products</label><input type="number" min="1" data-f="' + base + '.limit" value="' + esc(s.limit || 12) + '"></div>';
         }
         out += '<div class="tgl-row"><label>Show in the menu links</label><div class="tgl' + (s.nav !== false ? ' on' : '') + '" data-tgl-sec="' + i + '"><div class="tgl-k"></div></div></div>';
         return out;
@@ -176,5 +184,5 @@
     if (draft) draft.page.sections[parseInt(t.dataset.tglSec, 10)].nav = t.classList.contains('on');
   });
 
-  window.AdsSections = { html: html, act: act };
+  window.AdsSections = { html: html, act: act, pickProducts: openPicker };
 })();

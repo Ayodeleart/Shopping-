@@ -50,3 +50,6 @@
 .pk-row input{width:20px;height:20px;accent-color:var(--red);flex-shrink:0;-webkit-appearance:auto;appearance:auto}
 #adPickFoot{display:flex;gap:8px;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--border)}
 #adPickFoot button{flex:1;height:46px;border-radius:11px;font-size:15px;font-weight:700}
+
+.dest-box{background:var(--bg2);border-radius:10px;padding:12px 12px 2px;margin-bottom:14px}
+.dest-box .fg input,.dest-box .fg select{background-color:var(--card)}

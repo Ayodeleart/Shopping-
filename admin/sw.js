@@ -1,7 +1,8 @@
-const CACHE = 'admin-v5';
+const CACHE = 'admin-v6';
 const PRECACHE = ['/admin/', '/admin/index.html', '/admin/manifest.json', '/icon.svg', '/admin/ads.js', '/admin/ads-sections.js', '/admin/ads.css', '/components/multi-image-picker.js', '/components/multi-image-picker.css',
   '/admin/categories.js', '/admin/categories.css', '/components/categories.css', '/components/category-picker.js', '/data/categories.js',
-  '/components/brand-picker.js', '/components/brand-picker.css'];
+  '/components/brand-picker.js', '/components/brand-picker.css',
+  '/admin/dest-picker.js', '/admin/tiles.js', '/components/tile-row.js', '/data/ads.js'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(PRECACHE).catch(() => {})));

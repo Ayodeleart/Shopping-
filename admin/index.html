@@ -344,6 +344,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
   <div class="panel" id="p-banners">
     <div id="bannerSubnav" style="display:flex;border-bottom:2px solid var(--border);margin-bottom:14px">
       <button class="bsub-tab on" data-sub="banners" onclick="switchBannerSub('banners')">Banners</button>
+      <button class="bsub-tab" data-sub="tiles" onclick="switchBannerSub('tiles')">Tiles</button>
       <button class="bsub-tab" data-sub="ads" onclick="switchBannerSub('ads')">Ads</button>
       <button class="bsub-tab" data-sub="announce" onclick="switchBannerSub('announce')">Announcements</button>
     </div>
@@ -371,6 +372,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
         <div class="uprog" id="bImgProg"><div class="uprog-bar" id="bImgProgBar" style="width:0%"></div></div>
         <img class="iup-prev" id="bImgPrev" alt="">
       </div>
+      <div id="bDestMount"></div>
       <div class="form-btns">
         <button class="btn-p" id="saveBannerBtn" onclick="saveBanner()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg>Save Banner</button>
         <button class="btn-s" id="cancelBannerBtn" style="display:none" onclick="cancelBannerEdit()">Cancel</button>
@@ -380,6 +382,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
     <div class="ph"><span class="pt">All Banners</span></div>
     <div id="bList"></div>
     </div>
+    <div id="tilesPane" style="display:none"></div>
     <div id="adsPane" style="display:none"></div>
     <div id="announcePane" style="display:none">
       <div id="announceSubnav" style="display:flex;border-bottom:2px solid var(--border);margin-bottom:14px">
@@ -521,6 +524,20 @@ async function uploadImage(file, folder, progressBarId, progressId, transparent)
   const prog = document.getElementById(progressId);
   const bar = document.getElementById(progressBarId);
   if (prog) { prog.classList.add('on'); bar.style.width = '0%'; }
+
+  if (file.type === 'image/gif') {   // animated GIFs go up untouched: drawing them on a canvas would keep only the first frame
+    if (file.size > 4 * 1024 * 1024) { if (prog) prog.classList.remove('on'); throw new Error('This GIF is over 4 MB. Compress it (about 480 x 480) and try again.'); }
+    if (prog) bar.style.width = '60%';
+    const gifPath = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2)}.gif`;
+    const up = await sb.storage.from(BUCKET).upload(gifPath, file, { contentType: 'image/gif', cacheControl: '31536000' });
+    if (up.error) {
+      if (prog) prog.classList.remove('on');
+      if (/row-level security|policy/i.test(up.error.message)) throw new Error('Upload blocked by the storage policy. Run migration_ads_and_images.sql in the Supabase SQL editor.');
+      throw up.error;
+    }
+    if (prog) { bar.style.width = '100%'; setTimeout(() => prog.classList.remove('on'), 600); }
+    return sb.storage.from(BUCKET).getPublicUrl(gifPath).data.publicUrl;
+  }
 
   const fmt = transparent ? 'image/png' : 'image/jpeg';
   const ext = transparent ? 'png' : 'jpg';
@@ -805,16 +822,23 @@ async function saveBanner() {
       bg_color: document.getElementById('bBgColor').value,
       image_url: imageUrl
     };
+    const target = BannerDest.read();
+    banner.target = target;
+    banner.link_url = target && target.type === 'url' ? target.url : null;
 
-    let error;
-    if (editBannerId) {
-      ({ error } = await sb.from('banners').update(banner).eq('id', editBannerId));
-    } else {
-      ({ error } = await sb.from('banners').insert([banner]));
+    const write = b => editBannerId
+      ? sb.from('banners').update(b).eq('id', editBannerId)
+      : sb.from('banners').insert([b]);
+    let { error } = await write(banner);
+    let legacy = false;
+    if (error && /target|link_url/i.test(error.message)) {   // columns not added yet: save the banner without a destination
+      const { target: _t, link_url: _l, ...rest } = banner;
+      ({ error } = await write(rest));
+      legacy = !error;
     }
     if (error) throw error;
 
-    toast(editBannerId ? 'Banner updated' : 'Banner added');
+    toast(legacy ? 'Saved without the tap destination. Run migration_ads_and_images.sql first.' : (editBannerId ? 'Banner updated' : 'Banner added'));
     cancelBannerEdit();
     await loadBanners();
     await loadDash();
@@ -835,7 +859,8 @@ function cancelBannerEdit() {
   document.getElementById('bImgPrev').classList.remove('on');
   document.getElementById('bImgPrev').src = '';
   document.getElementById('bImgTxt').textContent = 'Tap to upload image';
-  document.getElementById('bFormTitle').textContent = 'Add Banner / Ad';
+  document.getElementById('bFormTitle').textContent = 'Add Banner';
+  BannerDest.reset();
   document.getElementById('cancelBannerBtn').style.display = 'none';
   document.getElementById('saveBannerBtn').textContent = 'Save Banner';
 }
@@ -852,6 +877,7 @@ async function editBanner(id) {
   document.getElementById('bBgColor').value = b.bg_color || '#D91C2D';
   if (b.image_url) { document.getElementById('bImgPrev').src = b.image_url; document.getElementById('bImgPrev').classList.add('on'); document.getElementById('bImgTxt').textContent = 'Image loaded. Tap to replace.'; }
   document.getElementById('bFormTitle').textContent = 'Edit Banner';
+  BannerDest.write(b.target || (b.link_url ? { type: 'url', url: b.link_url } : null));
   document.getElementById('cancelBannerBtn').style.display = '';
   document.getElementById('saveBannerBtn').textContent = 'Update Banner';
   document.getElementById('p-banners').scrollTo(0, 0);
@@ -1223,8 +1249,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (ok) loadAll();
 });
 </script>
+<script src="../data/ads.js"></script>
+<script src="dest-picker.js"></script>
 <script src="ads-sections.js"></script>
 <script src="ads.js"></script>
+<script src="tiles.js"></script>
 <script src="categories.js"></script>
 </body>
 </html>

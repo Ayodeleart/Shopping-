@@ -61,6 +61,7 @@ do $$
 begin
   if to_regclass('public.banners') is not null then
     execute 'alter table public.banners add column if not exists link_url text';
+    execute 'alter table public.banners add column if not exists target jsonb';   -- what a hero banner opens: product page, ad page or link
   end if;
 end $$;
 

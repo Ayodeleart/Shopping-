@@ -23,6 +23,20 @@ storage policy that lets a vendor upload their logo to `avatars/vendor-logos/<th
   Shared links look like `/?p=PRODUCT_ID`.
 
 
+## Square GIF tiles and pages that open from banners (run `migration_tiles.sql`)
+
+Run `migration_tiles.sql` once in the Supabase SQL editor (after `migration_ads_and_images.sql` and `migration_storefront_v2.sql`).
+
+- **Admin > Banners > Tiles**: add a square looping GIF (for example 480 x 480, under 4 MB) with a caption. Non-square files are
+  refused, and GIFs are uploaded untouched so they keep animating. Choose where it shows: in a row under the hero banner, or
+  inside the product feed after N rows. Tiles in the same place share one row (four fit the screen, more slide sideways).
+- **Tag each tile (and each hero banner) to what it opens**: a brand's products (brand logo page), products matching filters
+  (discount at least 30%, a category and its subcategories, a keyword, max price, flash sale or featured, sort order),
+  products you pick by hand, an ad page, or a link. A "30% off" GIF opens every product 30% off or more; an Apple GIF opens only Apple.
+- The page is the same layout as an ad page (`#tile=ID` for tiles, `#promo=ID` for banners), so back closes it.
+- Vendors pick a product's brand with the brand search in the upload form; a brand tile matches on that brand.
+- Code: `components/tile-row.js`, `admin/tiles.js`, `admin/dest-picker.js`, `data/ads.js`.
+
 ## Ads, brand pages and multi-photo products (run `migration_ads_and_images.sql` first)
 
 Run `migration_ads_and_images.sql` once in the Supabase SQL editor. It also fixes admin image uploads

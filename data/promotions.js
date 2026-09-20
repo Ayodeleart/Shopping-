@@ -16,7 +16,7 @@
   var STATIC_PROMOTIONS = [];
 
   /* Maps a Supabase `banners` row to a promotion.
-   * `link_url` (or `href`) is the destination; the column is optional until it is added to the table. */
+   * The destination comes from `target` (product page, ad page or link; see data/ads.js), or the older `link_url`. */
   function fromBanner(row) {
     return {
       id: row.id,
@@ -25,7 +25,7 @@
       label: row.badge || '',
       meta: row.subtitle || '',
       cta: row.cta_text || '',
-      href: row.link_url || row.href || '',
+      href: global.Ads ? global.Ads.bannerHref(row) : (row.link_url || row.href || ''),
       accent: row.bg_color || ''
     };
   }

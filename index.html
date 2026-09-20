@@ -16,6 +16,8 @@
 <script defer src="components/promotional-carousel.js"></script>
 <script defer src="data/promotions.js"></script>
 <link rel="stylesheet" href="components/ad-page.css">
+<link rel="stylesheet" href="components/tile-row.css">
+<script defer src="components/tile-row.js"></script>
 <script defer src="components/ad-page.js"></script>
 <script defer src="data/ads.js"></script>
 <link rel="stylesheet" href="components/categories.css">
@@ -692,6 +694,9 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 
   <!-- HERO CAROUSEL -->
   <section id="hero" hidden></section>
+
+  <!-- SQUARE GIF TILES (admin: Banners > Tiles) -->
+  <section id="tileSec" hidden><div id="tileRow" hidden></div></section>
 
   <!-- SHOP BY BRAND -->
   <section id="brandSec" style="display:none">
@@ -1493,10 +1498,10 @@ function renderGrid(prods, id, withAds, emptyMsg) {
   }
   let cells = prods.map((p,i) =>
     `<div class="au d${Math.min(i%4,3)}">${cardHTML(p)}</div>`);
-  const ads = withAds && adsList.length;
-  if (ads) cells = Ads.interleave(cells, adsList, 2);
+  const slots = withAds ? feedSlots() : [];
+  if (slots.length) cells = Ads.interleave(cells, slots, 2);
   el.innerHTML = cells.join('');
-  if (ads) mountFeedAds(el);
+  if (slots.length) { mountFeedAds(el); mountFeedTiles(el); }
   observeAll(el.querySelectorAll('.au'));
 }
 
@@ -2135,10 +2140,11 @@ async function showMyOrders() {
     </div>`).join('');
 }
 
-/* ── ADS ──────────────────────────────────────────── */
+/* ── ADS + BANNER PAGES ───────────────────────────── */
 /* Feed cards: data/ads.js decides where they go; each card is the PromotionalCarousel in single-card mode.
-   Brand page: components/ad-page.js, opened through #ad=ID so the back button closes it. */
-let adsList = [], adPage = null, adDeepLinked = false;
+   Pages: components/ad-page.js, opened through #ad=ID (an ad) or #promo=ID (a hero banner that opens a filtered
+   product page) so the back button closes them. */
+let adsList = [], promoList = [], tilesList = [], adPage = null, adDeepLinked = false;
 
 function mountFeedAds(root) {
   root.querySelectorAll('.adslot:not([data-ready])').forEach(slot => {
@@ -2149,14 +2155,41 @@ function mountFeedAds(root) {
   });
 }
 
-function adFromHash() { const m = /^#ad=(\d+)/.exec(location.hash); return m ? m[1] : null; }
+/* square tiles: under the hero, or inside the feed after N rows (tiles in the same place share a row) */
+function feedTileGroups() {
+  const groups = {};
+  tilesList.filter(t => t.place === 'rows').forEach(t => (groups[t.afterRows] = groups[t.afterRows] || []).push(t));
+  return groups;
+}
+function feedSlots() {
+  const tileSlots = Object.keys(feedTileGroups()).map(n => ({
+    afterRows: +n, order: -1, html: `<div class="tileslot au" data-rows="${n}" style="grid-column:1/-1"></div>`
+  }));
+  return adsList.concat(tileSlots);
+}
+function mountFeedTiles(root) {
+  const groups = feedTileGroups();
+  root.querySelectorAll('.tileslot:not([data-ready])').forEach(slot => {
+    slot.dataset.ready = '1';
+    Pcx.TileRow.mount(slot, groups[slot.dataset.rows] || []);
+  });
+}
+function mountTiles() {
+  const under = tilesList.filter(t => t.place === 'hero');
+  Pcx.TileRow.mount($('tileRow'), under);
+  $('tileSec').hidden = !under.length;
+}
+
+function adFromHash() { const m = /^#(ad|promo|tile)=(\d+)/.exec(location.hash); return m ? { kind: m[1], id: m[2] } : null; }
 
 function syncAdPage() {
   if (!adPage) return;
-  const id = adFromHash();
-  if (!id) { adPage.close(); return; }
-  const ad = adsList.find(a => String(a.id) === id);
-  if (ad) adPage.open(ad);
+  const h = adFromHash();
+  if (!h) { adPage.close(); return; }
+  const page = h.kind === 'ad'
+    ? adsList.find(a => String(a.id) === h.id)
+    : promoList.find(c => c.id === h.kind + '-' + h.id);
+  if (page) adPage.open(page);
 }
 
 function closeAdPage() {
@@ -2167,8 +2200,14 @@ function closeAdPage() {
   } else history.back();
 }
 
-function initAds(rows) {
+function initAds(rows, banners, tileRows) {
   adsList = Ads.list(rows || []);
+  tilesList = Ads.tileList(tileRows || []);
+  /* banners and tiles that open a filtered product page / brand page become ad-style pages */
+  const ctx = { brandsById: brandById };
+  promoList = (banners || []).map(b => Ads.campaignFromBanner(b, ctx)).filter(Boolean)
+    .concat(tilesList.map(t => Ads.campaignFromTarget('tile', t.row, t.target, ctx)).filter(Boolean));
+  mountTiles();
   adPage = new Pcx.AdPage(document.getElementById('adPage'), {
     products: () => allProds, cardHTML, openProduct, openCart,
     phone: () => storePhone, onBack: closeAdPage
@@ -2192,6 +2231,7 @@ async function init() {
       {data:settings},
       {data:vendors},
       {data:adRows},
+      {data:tileRows},
       {data:catRows},
       {data:brandRows},
       {data:ratingRows}
@@ -2202,6 +2242,7 @@ async function init() {
       sb.from('store_settings').select('*'),
       sb.from('vendors').select('*').eq('status','approved').order('business_name',{ascending:true}),
       sb.from('ads').select('*').eq('active',true).order('sort_order',{ascending:true}),
+      sb.from('tiles').select('*').eq('active',true).order('sort_order',{ascending:true}),
       Pcx.Categories.fetchAll(sb).then(r => ({ data: r.rows })),
       sb.from('brands').select('*').order('name',{ascending:true}),
       sb.from('product_ratings').select('*')
@@ -2235,7 +2276,7 @@ async function init() {
     populateFooter(storeName, tagline, phone, get('contactEmail'), get('contactAddress'), get('socialInstagram'), get('socialFacebook'), get('socialX'));
 
     allProds = products || [];
-    initAds(adRows);
+    initAds(adRows, banners, tileRows);
     buildCarousel(banners || []);
     buildVendorRow(vendors || []);
     buildBrandRow();
@@ -2243,6 +2284,7 @@ async function init() {
     /* Categories come from the `categories` table. If it is empty or not created yet, fall back to the old shortcut cards. */
     Pcx.Categories.init(sb);
     catTree = catRows && catRows.length ? new Pcx.Categories.Tree(catRows) : null;
+    if (catTree) Ads.setCategoryResolver(id => catTree.productMatcher(id));   // a main category also matches its subcategories
     if (catTree) {
       initCategoryPage();
       buildCategoryTiles();

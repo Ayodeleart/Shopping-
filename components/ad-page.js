@@ -1,5 +1,6 @@
 /* Pcx.AdPage
- * Full-screen brand page opened from an ad in the home feed (#ad=ID).
+ * Full-screen page opened from an ad in the home feed (#ad=ID) or from a hero banner (#promo=ID).
+ * It takes a "campaign": an ad row from data/ads.js, or campaignFromBanner() for a banner that opens a product page.
  * Layout follows a brand store page: brand logo with section links, auto-advancing hero, then the
  * sections the admin arranged (product rails, feature cards, banners, video, text) and a contact footer.
  * It reuses the storefront's own product card, cart and product modal through the injected `deps`.
@@ -73,7 +74,7 @@
   P.isOpen = function () { return this.root.classList.contains('open'); };
 
   P.open = function (ad) {
-    if (this.ad && this.ad.id === ad.id && this.isOpen()) return;
+    if (this.ad && String(this.ad.id) === String(ad.id) && this.isOpen()) return;
     this._teardown();
     this.ad = ad;
     this._build(ad);
@@ -120,7 +121,7 @@
     root.appendChild(hdr);
 
     /* sections (fall back to "everything from this brand" so a bare ad still works) */
-    var sections = ad.page.sections.length ? ad.page.sections : [{ type: 'products', title: ad.brand || ad.name, mode: 'auto', layout: 'grid' }];
+    var sections = ad.page.sections.length ? ad.page.sections : [{ type: 'products', title: ad.brand || ad.name, mode: 'auto', layout: 'grid', showEmpty: true }];
     var built = [];
     sections.forEach(function (sec, i) {
       var el = self._section(ad, sec, i);
@@ -130,10 +131,13 @@
     /* brand block: logo + links to product sections */
     var brand = h('div', 'adp-brand');
     if (ad.logo) {
-      var logo = h('img', 'adp-logo'); logo.alt = ad.brand || ad.name; logo.src = ad.logo; brand.appendChild(logo);
+      var logo = h('img', 'adp-logo'); logo.alt = ad.brand || ad.name;
+      logo.addEventListener('error', function () { logo.replaceWith(h('div', 'adp-brandname', ad.brand || ad.name)); });   // a dead logo link falls back to the name
+      logo.src = ad.logo; brand.appendChild(logo);
     } else {
       brand.appendChild(h('div', 'adp-brandname', ad.brand || ad.name));
     }
+    if (ad.tagline) brand.appendChild(h('p', 'adp-tagline', ad.tagline));
     var navItems = built.filter(function (b) { return b.sec.type === 'products' && b.sec.title && b.sec.nav !== false; });
     if (navItems.length > 1) {
       var nav = h('nav', 'adp-links');
@@ -193,13 +197,20 @@
   P._products = function (ad, sec, i) {
     var d = this.d;
     var prods = global.Ads.productsFor(ad, sec, d.products());
-    if (!prods.length) return null;
+    if (!prods.length && !sec.showEmpty) return null;
     var el = h('section', 'adp-sec'); el.id = 'adp-s-' + i;
 
     var band = h('div', 'adp-band');
     band.appendChild(h('h3', 'adp-band__t', sec.title || ad.brand || 'Products'));
+    if (!prods.length) {
+      el.appendChild(band);
+      el.appendChild(h('div', 'adp-empty', 'No products match this yet. Check back soon.'));
+      return el;
+    }
     var wrap = h('div', 'adp-rail-wrap' + (sec.layout === 'grid' ? ' is-grid' : ''));
-    if (sec.layout !== 'grid' && prods.length > 2) {
+    if (sec.layout === 'grid') {
+      band.appendChild(h('span', 'adp-count', prods.length + ' item' + (prods.length === 1 ? '' : 's')));
+    } else if (prods.length > 2) {
       var more = h('button', 'adp-more'); more.type = 'button';
       more.innerHTML = '<span>See more</span><i>' + CHEV + '</i>';
       more.addEventListener('click', function () {
