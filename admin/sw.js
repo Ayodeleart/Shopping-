@@ -1,5 +1,5 @@
-const CACHE = 'admin-v2';
-const PRECACHE = ['/admin/', '/admin/index.html', '/admin/manifest.json', '/icon.svg'];
+const CACHE = 'admin-v3';
+const PRECACHE = ['/admin/', '/admin/index.html', '/admin/manifest.json', '/icon.svg', '/admin/ads.js', '/admin/ads-sections.js', '/admin/ads.css', '/components/multi-image-picker.js', '/components/multi-image-picker.css'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(PRECACHE).catch(() => {})));

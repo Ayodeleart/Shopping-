@@ -1,0 +1,90 @@
+/* Pcx.AdPage: brand page opened from an ad. Uses the storefront's theme tokens. */
+#adPage{
+  position:fixed;inset:0;z-index:240;background:var(--bg);color:var(--txt);
+  overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+  transform:translateY(100%);visibility:hidden;
+  transition:transform .32s cubic-bezier(.4,0,.2,1),visibility 0s linear .32s;
+}
+#adPage.open{transform:none;visibility:visible;transition-delay:0s}
+
+/* header */
+.adp-hdr{position:sticky;top:0;z-index:5;height:52px;display:flex;align-items:center;gap:10px;padding:0 12px;background:var(--bg);border-bottom:1px solid var(--border)}
+.adp-back,.adp-cart{position:relative;width:36px;height:36px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--txt)}
+.adp-back:active,.adp-cart:active{opacity:.6}
+.adp-title{flex:1;font-size:15px;font-weight:800;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+#adCartDot{position:absolute;top:4px;right:4px;min-width:16px;height:16px;padding:0 3px;background:var(--red);color:#fff;font-size:9px;font-weight:800;border-radius:8px;display:none;align-items:center;justify-content:center}
+
+/* brand block */
+.adp-brand{padding:26px 16px 22px;text-align:center}
+.adp-logo{height:46px;width:auto;max-width:70%;margin:0 auto;object-fit:contain}
+.adp-brandname{font-size:34px;font-weight:900;letter-spacing:3px;text-transform:uppercase;line-height:1.1}
+.adp-links{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 0;margin-top:26px}
+.adp-link{padding:2px 18px;font-size:15px;font-weight:500;color:var(--txt);border-right:1px solid var(--txt3);line-height:1.6}
+.adp-link:last-child{border-right:0}
+.adp-link:active{color:var(--red)}
+
+/* hero: edge to edge, dots sit on the artwork */
+.adp-hero{position:relative;background:var(--bg2)}
+.adp-hero .pcx__link{cursor:pointer}
+
+/* sections */
+.adp-sec{margin-top:26px;scroll-margin-top:60px}
+.adp-band{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:64px;padding:0 16px;background:var(--adp-accent);color:#fff}
+.adp-band__t{font-size:20px;font-weight:500;letter-spacing:2.5px;text-transform:uppercase;line-height:1.15;min-width:0;overflow-wrap:anywhere}
+.adp-more{display:flex;align-items:center;gap:9px;flex-shrink:0;font-size:15px;font-weight:500;color:#fff}
+.adp-more i{width:28px;height:28px;border-radius:50%;background:#fff;color:#111;display:flex;align-items:center;justify-content:center}
+
+.adp-rail-wrap{position:relative;background:var(--bg)}
+.adp-rail{display:flex;overflow-x:auto;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:12px 6px 14px}
+.adp-rail::-webkit-scrollbar{display:none}
+.adp-cell{flex:0 0 158px;padding:0 3px;scroll-snap-align:start;min-width:0;display:flex}
+.adp-cell .pcard{flex:1;display:flex;flex-direction:column}
+.adp-cell .pcBody{flex:1;display:flex;flex-direction:column}
+.adp-cell .pcAdd{margin-top:auto}
+.adp-rail-wrap.is-grid .adp-rail{display:grid;grid-template-columns:1fr 1fr;gap:1px;overflow:visible;padding:0;background:var(--border)}
+.adp-rail-wrap.is-grid .adp-cell{flex:none;padding:0;background:var(--bg);display:flex}
+.adp-rail-wrap.is-grid .adp-cell .pcard{border-radius:0;border:0}
+.adp-arrow{display:none;position:absolute;top:34%;width:38px;height:38px;border-radius:50%;background:rgba(40,40,40,.78);color:#fff;align-items:center;justify-content:center;z-index:2}
+.adp-arrow--prev{left:8px}
+.adp-arrow--next{right:8px}
+.adp-rail-wrap.is-grid .adp-arrow{display:none !important}
+@media (hover:hover) and (pointer:fine){.adp-arrow{display:flex}}
+
+/* feature cards */
+.adp-cards{padding:0 12px}
+.adp-fcard{display:flex;flex-direction:column;align-items:center;gap:14px;padding:20px 16px 22px;margin-bottom:12px;border-radius:20px;background:var(--bg2);text-align:center}
+.adp-fcard[role=link]{cursor:pointer}
+.adp-fcard__t{font-size:22px;font-weight:500;line-height:1.2}
+.adp-fcard__img{width:100%;display:flex;justify-content:center}
+.adp-fcard__img img{max-width:78%;max-height:250px;width:auto;height:auto;object-fit:contain}
+.adp-black{display:inline-flex;align-items:center;justify-content:center;min-width:170px;height:46px;padding:0 26px;border-radius:24px;background:#000;color:#fff;font-size:16px;font-weight:500}
+[data-theme=dark] .adp-black{background:#f0f0f0;color:#111}
+
+/* banner + video */
+.adp-banner img{width:100%;height:auto;display:block;object-fit:cover}
+.adp-banner.is-link{cursor:pointer}
+.adp-video{padding:0 12px}
+.adp-vbox{position:relative;aspect-ratio:16/9;border-radius:16px;overflow:hidden;background:#000}
+.adp-vbox img,.adp-vbox iframe,.adp-vbox video{position:absolute;inset:0;width:100%;height:100%;border:0;object-fit:cover}
+.adp-play{position:absolute;left:50%;top:50%;width:72px;height:52px;margin:-26px 0 0 -36px;border-radius:14px;background:#f00;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+
+/* text block */
+.adp-text{padding:34px 22px;background:var(--bg2);margin-top:30px}
+.adp-text__t{font-size:22px;font-weight:800;line-height:1.35;text-align:center;margin-bottom:22px}
+.adp-text__b{max-width:680px;margin:0 auto;font-size:15px;line-height:1.75;color:var(--txt2);text-align:justify}
+.adp-text__b p{margin-bottom:1.3em}
+.adp-text__b strong{color:var(--txt);font-weight:700}
+
+/* footer */
+.adp-foot{padding:24px 18px calc(28px + env(safe-area-inset-bottom,0px));background:#2b2b2d;color:#fff}
+.adp-foot__row{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+.adp-foot__ico{width:48px;height:48px;border-radius:50%;background:#fff;color:#2b2b2d;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.adp-foot__lbl{font-size:15px;font-weight:700;color:#d6d6d6;letter-spacing:.3px}
+.adp-foot__val{font-size:16px;color:#e8e8e8;overflow-wrap:anywhere}
+.adp-foot__note{margin-top:6px;font-size:12px;color:#9a9a9a}
+
+@media (min-width:720px){
+  .adp-hero,.adp-sec,.adp-brand{max-width:960px;margin-left:auto;margin-right:auto}
+  .adp-sec{margin-top:34px}
+}
+@media (prefers-reduced-motion:reduce){#adPage{transition:none}}

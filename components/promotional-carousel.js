@@ -8,6 +8,7 @@
  *     interval: 4500,        // ms between automatic advances
  *     duration: 700,         // ms of a programmatic slide
  *     ariaLabel: 'Promotions',
+ *     variant: '',           // 'flat' = edge to edge, one card, no peek (page heroes); 'gallery' = flat + contained product photos
  *     onSelect(event, promotion, index) {}   // call event.preventDefault() to route it yourself
  *   });
  *   carousel.next(); carousel.prev(); carousel.goTo(2);
@@ -31,6 +32,7 @@
     interval: 4500,
     duration: 700,
     ariaLabel: 'Promotions',
+    variant: '',
     onSelect: null
   };
 
@@ -110,6 +112,8 @@
 
     root.classList.add('pcx');
     root.classList.toggle('pcx--single', n < 2);
+    root.classList.toggle('pcx--flat', o.variant === 'flat' || o.variant === 'gallery');
+    root.classList.toggle('pcx--gallery', o.variant === 'gallery');
     root.setAttribute('role', 'region');
     root.setAttribute('aria-roledescription', 'carousel');
     root.setAttribute('aria-label', o.ariaLabel);

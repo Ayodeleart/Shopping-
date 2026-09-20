@@ -1,5 +1,5 @@
-const CACHE = 'vendor-v2';
-const PRECACHE = ['/vendor/', '/vendor/index.html', '/vendor/manifest.json', '/icon.svg'];
+const CACHE = 'vendor-v3';
+const PRECACHE = ['/vendor/', '/vendor/index.html', '/vendor/manifest.json', '/icon.svg', '/components/multi-image-picker.js', '/components/multi-image-picker.css'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(PRECACHE).catch(() => {})));

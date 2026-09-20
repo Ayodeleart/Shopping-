@@ -1,7 +1,8 @@
-const CACHE = 'store-v2';
+const CACHE = 'store-v3';
 const PRECACHE = ['/', '/index.html', '/manifest.json', '/icon.svg',
   '/components/promotional-carousel.css', '/components/promotional-carousel.js',
-  '/components/promotion-slide.js', '/components/drag-gesture.js', '/data/promotions.js'];
+  '/components/promotion-slide.js', '/components/drag-gesture.js', '/data/promotions.js',
+  '/components/ad-page.css', '/components/ad-page.js', '/data/ads.js'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(PRECACHE).catch(() => {})));

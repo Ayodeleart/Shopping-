@@ -15,6 +15,9 @@
 <script defer src="components/promotion-slide.js"></script>
 <script defer src="components/promotional-carousel.js"></script>
 <script defer src="data/promotions.js"></script>
+<link rel="stylesheet" href="components/ad-page.css">
+<script defer src="components/ad-page.js"></script>
+<script defer src="data/ads.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 /* ── THEME TOKENS ─────────────────────────────────── */
@@ -262,6 +265,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 }
 #pModalBack{width:36px;height:36px;display:flex;align-items:center;justify-content:center;color:var(--txt)}
 #pModalTitle{flex:1;font-size:15px;font-weight:700;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+#pModalGal{background:#fff;border-bottom:1px solid var(--border)}
 #pModalImg{background:#fff;border-bottom:1px solid var(--border)}
 #pModalImg img{width:100%;aspect-ratio:1/1;object-fit:contain;padding:12px;max-height:300px}
 #pModalBody{padding:14px}
@@ -697,6 +701,9 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
   </div>
 </nav>
 
+<!-- AD PAGE (brand page opened from an ad) -->
+<div id="adPage"></div>
+
 <!-- PRODUCT MODAL -->
 <div id="pModal">
   <div id="pModalHdr">
@@ -705,6 +712,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
     </button>
     <span id="pModalTitle">Product</span>
   </div>
+  <div id="pModalGal" hidden></div>
   <div id="pModalImg"><img id="pModalImgEl" src="" alt=""></div>
   <div id="pModalBody">
     <h2 id="pModalName"></h2>
@@ -912,7 +920,7 @@ function filterCat(cat) {
   const filtered = cat === 'All' ? allProds : allProds.filter(p => p.category === cat);
   buildCatFilter(cat === 'All' ? [...new Set(allProds.map(p => p.category).filter(Boolean))] :
     [...new Set(allProds.map(p => p.category).filter(Boolean))]);
-  renderGrid(filtered, 'allGrid');
+  renderGrid(filtered, 'allGrid', cat === 'All');
   document.getElementById('pCount').textContent = `${filtered.length} item${filtered.length!==1?'s':''}`;
 }
 
@@ -1005,27 +1013,41 @@ function buildCategoryRows(shortcuts, prods) {
   observeAll(wrap.querySelectorAll('.au'));
 }
 
-function renderGrid(prods, id) {
+function renderGrid(prods, id, withAds) {
   const el = document.getElementById(id);
   if (!prods.length) {
     el.innerHTML = `<div class="empty"><h3>No products here</h3><p>Check back soon.</p></div>`;
     return;
   }
-  el.innerHTML = prods.map((p,i) =>
-    `<div class="au d${Math.min(i%4,3)}">${cardHTML(p)}</div>`
-  ).join('');
+  let cells = prods.map((p,i) =>
+    `<div class="au d${Math.min(i%4,3)}">${cardHTML(p)}</div>`);
+  const ads = withAds && adsList.length;
+  if (ads) cells = Ads.interleave(cells, adsList, 2);
+  el.innerHTML = cells.join('');
+  if (ads) mountFeedAds(el);
   observeAll(el.querySelectorAll('.au'));
 }
 
 /* ── PRODUCT MODAL ────────────────────────────────── */
+let pGallery = null;
 function openProduct(id) {
   const p = allProds.find(x => x.id===id);
   if (!p) return;
   document.getElementById('pModalTitle').textContent = p.name;
   document.getElementById('pModalName').textContent  = p.name;
   const imgEl = document.getElementById('pModalImgEl');
-  if (p.image_url) { imgEl.src = p.image_url; document.getElementById('pModalImg').style.display=''; }
-  else document.getElementById('pModalImg').style.display='none';
+  const gal = document.getElementById('pModalGal');
+  const imgs = Ads.productImages(p);
+  if (pGallery) { pGallery.destroy(); pGallery = null; }
+  if (imgs.length > 1) {
+    gal.hidden = false;
+    pGallery = new PromotionalCarousel(gal, { promotions: imgs.map(u => ({ image: u, alt: p.name })), variant: 'gallery', autoplay: false, ariaLabel: p.name });
+    document.getElementById('pModalImg').style.display = 'none';
+  } else {
+    gal.hidden = true;
+    if (p.image_url) { imgEl.src = p.image_url; document.getElementById('pModalImg').style.display=''; }
+    else document.getElementById('pModalImg').style.display='none';
+  }
   document.getElementById('pModalPrice').textContent = fmt(p.price);
   const disc = p.original_price && p.original_price > p.price
     ? Math.round((1-p.price/p.original_price)*100) : 0;
@@ -1044,6 +1066,7 @@ function openProduct(id) {
   loadReviews(id);
 }
 function closePModal() {
+  if (pGallery) { pGallery.destroy(); pGallery = null; }
   document.getElementById('pModal').classList.remove('open');
   document.body.style.overflow='';
 }
@@ -1140,6 +1163,7 @@ function updateCartBadge() {
   const dot = document.getElementById('cartDot');
   dot.textContent = n; dot.style.display = n>0 ? 'flex' : 'none';
   document.getElementById('cartTotal').textContent = fmt(cart.reduce((s,x)=>s+x.price*x.qty,0));
+  if (window.Pcx && Pcx.AdPage) Pcx.AdPage.refreshCartDot();
 }
 function renderCartList() {
   const el = document.getElementById('cartList');
@@ -1437,6 +1461,48 @@ async function showMyOrders() {
     </div>`).join('');
 }
 
+/* ── ADS ──────────────────────────────────────────── */
+/* Feed cards: data/ads.js decides where they go; each card is the PromotionalCarousel in single-card mode.
+   Brand page: components/ad-page.js, opened through #ad=ID so the back button closes it. */
+let adsList = [], adPage = null, adDeepLinked = false;
+
+function mountFeedAds(root) {
+  root.querySelectorAll('.adslot:not([data-ready])').forEach(slot => {
+    const ad = adsList.find(a => String(a.id) === slot.dataset.ad);
+    if (!ad) { slot.remove(); return; }
+    slot.dataset.ready = '1';
+    new PromotionalCarousel(slot, { promotions: [Ads.feedPromo(ad)], autoplay: false, ariaLabel: 'Sponsored' });
+  });
+}
+
+function adFromHash() { const m = /^#ad=(\d+)/.exec(location.hash); return m ? m[1] : null; }
+
+function syncAdPage() {
+  if (!adPage) return;
+  const id = adFromHash();
+  if (!id) { adPage.close(); return; }
+  const ad = adsList.find(a => String(a.id) === id);
+  if (ad) adPage.open(ad);
+}
+
+function closeAdPage() {
+  if (adDeepLinked) {           /* opened from a shared link: there is no earlier page to go back to */
+    adDeepLinked = false;
+    history.replaceState(null, '', location.pathname + location.search);
+    adPage.close();
+  } else history.back();
+}
+
+function initAds(rows) {
+  adsList = Ads.list(rows || []);
+  adPage = new Pcx.AdPage(document.getElementById('adPage'), {
+    products: () => allProds, cardHTML, openProduct, openCart,
+    phone: () => storePhone, onBack: closeAdPage
+  });
+  adDeepLinked = !!adFromHash();
+  window.addEventListener('hashchange', syncAdPage);
+}
+
 async function init() {
   await checkBuyerSession();
   sb.auth.onAuthStateChange((_event, session) => { buyerSession = session; checkBuyerSession(); });
@@ -1446,13 +1512,15 @@ async function init() {
       {data:banners},
       {data:shortcuts},
       {data:settings},
-      {data:vendors}
+      {data:vendors},
+      {data:adRows}
     ] = await Promise.all([
       sb.from('products').select('*').order('created_at',{ascending:false}),
       sb.from('banners').select('*').order('sort_order',{ascending:true}),
       sb.from('shortcuts').select('*').order('sort_order',{ascending:true}),
       sb.from('store_settings').select('*'),
-      sb.from('vendors').select('*').eq('status','approved').order('business_name',{ascending:true})
+      sb.from('vendors').select('*').eq('status','approved').order('business_name',{ascending:true}),
+      sb.from('ads').select('*').eq('active',true).order('sort_order',{ascending:true})
     ]);
 
     const get = k => settings?.find(s=>s.key===k)?.value;
@@ -1479,6 +1547,7 @@ async function init() {
     populateFooter(storeName, tagline, phone, get('contactEmail'), get('contactAddress'), get('socialInstagram'), get('socialFacebook'), get('socialX'));
 
     allProds = products || [];
+    initAds(adRows);
     buildCarousel(banners || []);
     buildShortcuts(shortcuts || []);
     buildVendorRow(vendors || []);
@@ -1504,7 +1573,8 @@ async function init() {
       renderGrid(featured, 'featGrid');
     }
 
-    renderGrid(allProds, 'allGrid');
+    renderGrid(allProds, 'allGrid', true);
+    syncAdPage();
     document.getElementById('pCount').textContent =
       `${allProds.length} item${allProds.length!==1?'s':''}`;
 

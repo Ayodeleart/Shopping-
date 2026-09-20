@@ -1,5 +1,17 @@
 # Store - PWA with Supabase
 
+## Ads, brand pages and multi-photo products (run `migration_ads_and_images.sql` first)
+
+Run `migration_ads_and_images.sql` once in the Supabase SQL editor. It also fixes admin image uploads
+(`new row violates row-level security policy`) by adding storage and admin policies.
+
+- **Admin > Banners > Ads**: create an ad, choose how many product rows come before it in the home feed, set a brand
+  keyword, and build the brand page (logo, sliding hero banners, product rows, feature cards, banners, video, text).
+- **Brand page**: tapping an ad opens `#ad=ID`, a full page showing only that brand's products in a different layout
+  from the home grid. Products match by `products.brand` or the brand word in the name.
+- **Products**: admin and vendors can add several photos; the first is the main photo. The product page shows a swipe gallery.
+- Code: `components/ad-page.js`, `components/multi-image-picker.js`, `data/ads.js`, `admin/ads.js`, `admin/ads-sections.js`.
+
 ## ⚡ Multi-vendor upgrade (read this first)
 
 This repo now has three separate installable PWAs:

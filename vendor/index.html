@@ -83,7 +83,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 .imgPick img{width:100%;height:100%;object-fit:cover}
 .progWrap{height:4px;background:var(--bg3);border-radius:4px;overflow:hidden;margin-top:8px;display:none}
 .rmbgToggle{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--txt2);margin-bottom:12px;cursor:pointer}
-.rmbgToggle input{width:16px;height:16px;accent-color:var(--red)}
+.rmbgToggle input{width:16px;height:16px;accent-color:var(--red);-webkit-appearance:checkbox;appearance:auto}
 .progWrap.on{display:block}
 .progBar{height:100%;width:0;background:var(--red);transition:width .2s}
 .tgl{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--border)}
@@ -138,6 +138,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 #vtoast{position:fixed;bottom:calc(84px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--txt);color:var(--bg);font-size:13px;font-weight:600;padding:11px 20px;border-radius:30px;opacity:0;pointer-events:none;transition:opacity .25s,bottom .25s;z-index:500;white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis}
 #vtoast.on{opacity:1;bottom:calc(94px + env(safe-area-inset-bottom,0px))}
 </style>
+<link rel="stylesheet" href="../components/multi-image-picker.css">
 </head>
 <body>
 
@@ -220,14 +221,11 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
   <div class="panel" id="panel-products">
     <div class="fcard">
       <h3 id="pFormTitle">Add Product</h3>
-      <div class="imgPick" id="pImgPick" onclick="document.getElementById('pImgFile').click()">
-        <span id="pImgPickTxt">Tap to add photo</span>
-        <img id="pImgPreview" style="display:none">
-      </div>
-      <input type="file" id="pImgFile" accept="image/*" style="display:none">
-      <label class="rmbgToggle"><input type="checkbox" id="pRmBg"> Remove background from this photo</label>
+      <div class="fld"><label>Product Photos</label><div id="pPicker"></div></div>
+      <label class="rmbgToggle"><input type="checkbox" id="pRmBg"> Remove background from new photos</label>
       <div class="progWrap" id="pImgProg"><div class="progBar" id="pImgProgBar"></div></div>
       <div class="fld"><label>Product Name</label><input id="pName" placeholder="e.g. Colorblock Zip-Up Jacket"></div>
+      <div class="fld"><label>Brand (optional)</label><input id="pBrand" placeholder="e.g. Oraimo"></div>
       <div class="frow2">
         <div class="fld"><label>Price (₦)</label><input id="pPrice" type="number" placeholder="0"></div>
         <div class="fld"><label>Was Price (₦)</label><input id="pOrig" type="number" placeholder="optional"></div>
@@ -276,6 +274,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
   <div id="notifList" style="padding:8px 14px"></div>
 </div>
 
+<script src="../components/multi-image-picker.js"></script>
 <script>
 'use strict';
 
@@ -406,7 +405,11 @@ async function uploadImage(file, folder, transparent) {
   bar.style.width = '60%';
   const path = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
   const { error } = await sb.storage.from(BUCKET).upload(path, blob, { contentType: fmt, cacheControl: '31536000' });
-  if (error) { prog.classList.remove('on'); throw error; }
+  if (error) {
+    prog.classList.remove('on');
+    if (/row-level security|policy/i.test(error.message)) throw new Error('Upload blocked by the storage policy. Ask the store admin to run migration_ads_and_images.sql.');
+    throw error;
+  }
   bar.style.width = '100%'; setTimeout(() => prog.classList.remove('on'), 600);
   return sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
 }
@@ -420,17 +423,7 @@ async function removeImageBackground(file) {
   return _removeBgFn(file);
 }
 
-document.getElementById('pImgFile').onchange = (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    document.getElementById('pImgPreview').src = ev.target.result;
-    document.getElementById('pImgPreview').style.display = 'block';
-    document.getElementById('pImgPickTxt').style.display = 'none';
-  };
-  reader.readAsDataURL(file);
-};
+const pPicker = new Pcx.MultiImagePicker(document.getElementById('pPicker'), { max: 8, label: 'Add photos' });
 
 /* ===== PRODUCTS (scoped to this vendor only) ===== */
 async function loadProducts() {
@@ -459,16 +452,13 @@ window.editProduct = async (id) => {
   editProdId = id;
   document.getElementById('pFormTitle').textContent = 'Edit Product';
   document.getElementById('pName').value = p.name || '';
+  document.getElementById('pBrand').value = p.brand || '';
   document.getElementById('pPrice').value = p.price || '';
   document.getElementById('pOrig').value = p.original_price || '';
   document.getElementById('pCat').value = p.category || '';
   document.getElementById('pStock').value = p.stock || 0;
   document.getElementById('pDesc').value = p.description || '';
-  if (p.image_url) {
-    document.getElementById('pImgPreview').src = p.image_url;
-    document.getElementById('pImgPreview').style.display = 'block';
-    document.getElementById('pImgPickTxt').style.display = 'none';
-  }
+  pPicker.setImages(Array.isArray(p.images) && p.images.length ? p.images : (p.image_url ? [p.image_url] : []));
   document.getElementById('pCancelBtn').style.display = 'block';
   document.getElementById('pSaveBtn').textContent = 'Update Product';
   document.getElementById('panel-products').scrollIntoView({ behavior: 'smooth' });
@@ -488,15 +478,14 @@ function resetProdForm() {
   editProdId = null;
   document.getElementById('pFormTitle').textContent = 'Add Product';
   document.getElementById('pName').value = '';
+  document.getElementById('pBrand').value = '';
   document.getElementById('pPrice').value = '';
   document.getElementById('pOrig').value = '';
   document.getElementById('pCat').value = '';
   document.getElementById('pStock').value = '';
   document.getElementById('pDesc').value = '';
-  document.getElementById('pImgFile').value = '';
   document.getElementById('pRmBg').checked = false;
-  document.getElementById('pImgPreview').style.display = 'none';
-  document.getElementById('pImgPickTxt').style.display = 'block';
+  pPicker.clear();
   document.getElementById('pCancelBtn').style.display = 'none';
   document.getElementById('pSaveBtn').textContent = 'Add Product';
 }
@@ -509,42 +498,43 @@ document.getElementById('pSaveBtn').onclick = async () => {
 
   showLoad('Saving product...');
   try {
-    let imageUrl = null;
-    let file = document.getElementById('pImgFile').files[0];
-    let transparent = false;
-    if (file && document.getElementById('pRmBg').checked) {
-      showLoad('Removing background...');
-      try {
-        file = await removeImageBackground(file);
-        transparent = true;
-      } catch (e) {
-        toast('Background removal failed — using original photo', true);
+    const removeBg = document.getElementById('pRmBg').checked;
+    const urls = await pPicker.resolve(async (file) => {
+      let f = file, transparent = false;
+      if (removeBg) {
+        showLoad('Removing background...');
+        try { f = await removeImageBackground(file); transparent = true; }
+        catch (e) { toast('Background removal failed -- using original photo', true); }
+        showLoad('Saving product...');
       }
-      showLoad('Saving product...');
-    }
-    if (file) {
-      imageUrl = await uploadImage(file, 'vendor-products', transparent);
-    } else if (editProdId) {
-      const { data } = await sb.from('products').select('image_url').eq('id', editProdId).single();
-      imageUrl = data?.image_url || null;
-    }
+      return uploadImage(f, 'vendor-products', transparent);
+    });
 
     const prod = {
       name, price,
+      brand: document.getElementById('pBrand').value.trim() || null,
       original_price: parseFloat(document.getElementById('pOrig').value) || null,
       category: document.getElementById('pCat').value.trim() || null,
       stock: parseInt(document.getElementById('pStock').value) || 0,
       description: document.getElementById('pDesc').value.trim() || null,
-      image_url: imageUrl,
+      image_url: urls[0] || null,
+      images: urls,
       vendor_id: session.user.id
     };
 
-    let error;
-    if (editProdId) ({ error } = await sb.from('products').update(prod).eq('id', editProdId).eq('vendor_id', session.user.id));
-    else ({ error } = await sb.from('products').insert([prod]));
+    const write = p => editProdId
+      ? sb.from('products').update(p).eq('id', editProdId).eq('vendor_id', session.user.id)
+      : sb.from('products').insert([p]);
+    let { error } = await write(prod);
+    let legacy = false;
+    if (error && /images|brand/i.test(error.message)) {   // columns not added yet: save the main photo anyway
+      const { images, brand, ...rest } = prod;
+      ({ error } = await write(rest));
+      legacy = !error;
+    }
     if (error) throw error;
 
-    toast(editProdId ? 'Product updated' : 'Product added');
+    toast(legacy ? 'Saved with the main photo only. Ask the store admin to run migration_ads_and_images.sql.' : (editProdId ? 'Product updated' : 'Product added'));
     resetProdForm();
     await loadProducts(); await loadDash();
   } catch (e) {
