@@ -298,11 +298,12 @@
     reload: async function () { loaded = false; if (pane().offsetParent) await this.open(); }
   };
 
-  /* Banners | Ads switch (its own class so it never touches the Announcements sub-nav) */
+  /* Banners | Ads | Announcements switch */
   window.switchBannerSub = function (which) {
     document.querySelectorAll('.bsub-tab').forEach(function (t) { t.classList.toggle('on', t.dataset.sub === which); });
     document.getElementById('bannersPane').style.display = which === 'banners' ? '' : 'none';
     document.getElementById('adsPane').style.display = which === 'ads' ? '' : 'none';
+    document.getElementById('announcePane').style.display = which === 'announce' ? '' : 'none';
     if (which === 'ads') window.AdsAdmin.open();
   };
 })();
