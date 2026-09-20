@@ -18,6 +18,9 @@
 <link rel="stylesheet" href="components/ad-page.css">
 <script defer src="components/ad-page.js"></script>
 <script defer src="data/ads.js"></script>
+<link rel="stylesheet" href="components/product-page.css">
+<script defer src="components/product-gallery.js"></script>
+<script defer src="components/image-viewer.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 /* ── THEME TOKENS ─────────────────────────────────── */
@@ -25,6 +28,7 @@
   --bg:#fff;--bg2:#f5f5f5;--bg3:#ebebeb;--card:#fff;
   --txt:#111;--txt2:#555;--txt3:#888;
   --red:#D91C2D;--red2:#a81422;
+  --gold:#F5B301;
   --border:#e8e8e8;
   --hh:52px;
 }
@@ -36,7 +40,7 @@
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{scroll-behavior:smooth}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--txt);overflow-x:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--txt);overflow-x:hidden;padding-top:var(--hh)}
 button{cursor:pointer;border:none;background:none;font-family:inherit;color:inherit}
 img{display:block;object-fit:cover}
 a{text-decoration:none;color:inherit}
@@ -60,6 +64,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 #searchWrap{
   background:var(--bg);padding:8px 12px;
   border-bottom:1px solid var(--border);
+  scroll-margin-top:var(--hh);
 }
 #searchBar{
   display:flex;align-items:center;gap:8px;
@@ -96,7 +101,8 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 #callBar.show{display:block}
 
 /* ── MAIN ─────────────────────────────────────────── */
-#main{padding-top:calc(var(--hh) + 57px)}
+#main{padding-top:0}
+#allSec{scroll-margin-top:calc(var(--hh) + 46px)}
 
 /* ── INSTALL BANNER ───────────────────────────────── */
 #instBar{
@@ -109,44 +115,63 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 
 /* ── HERO: styles live in components/promotional-carousel.css ── */
 
-/* ── SHORTCUT CARDS (sticky under header, horizontally slideable) ──*/
-#shortcutRow{
-  display:flex;gap:0;overflow-x:auto;
-  padding:12px 10px 4px;scrollbar-width:none;
-  background:var(--bg);border-bottom:6px solid var(--bg2);
-  position:sticky;top:var(--hh);z-index:190;
-}
-#shortcutRow::-webkit-scrollbar{display:none}
 #vendorRow{display:flex;gap:14px;overflow-x:auto;padding:2px 13px 14px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 #vendorRow::-webkit-scrollbar{display:none}
 .vcard{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:6px;width:64px}
 .vcard-img{width:56px;height:56px;border-radius:50%;background:var(--bg2);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;font-weight:800;font-size:18px;color:var(--txt3)}
 .vcard-img img{width:100%;height:100%;object-fit:cover}
 .vcard-lbl{font-size:11px;font-weight:600;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:64px}
-.scut{
-  flex-shrink:0;width:88px;display:flex;flex-direction:column;
-  align-items:center;gap:5px;padding:0 4px 8px;cursor:pointer;
+/* ── STICKY CATEGORY TITLES (appear under the header once the search bar has scrolled away) ── */
+#catNav{
+  position:fixed;top:var(--hh);left:0;right:0;z-index:190;
+  background:var(--bg);border-bottom:1px solid var(--border);
+  transform:translateY(-100%);opacity:0;pointer-events:none;
+  transition:transform .22s ease,opacity .22s ease;
 }
-.scut:active .scut-img{transform:scale(.95)}
-.scut-img{
-  width:76px;height:76px;border-radius:10px;overflow:hidden;
-  background:var(--bg2);display:flex;align-items:center;justify-content:center;
-  transition:transform .15s;position:relative;
+#catNav.show{transform:none;opacity:1;pointer-events:auto}
+#catNavRow{display:flex;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding:0 6px}
+#catNavRow::-webkit-scrollbar{display:none}
+.cnTab{
+  flex:0 0 auto;height:44px;padding:0 14px;font-size:14px;font-weight:600;color:var(--txt2);
+  white-space:nowrap;position:relative;
 }
-.scut-img::after{
-  content:'';position:absolute;inset:0;pointer-events:none;
-  background:linear-gradient(115deg,transparent 20%,rgba(255,255,255,.35) 50%,transparent 80%);
-  background-size:200% 100%;background-position:150% 0;
-  animation:scutShine 3.6s ease-in-out infinite;
+.cnTab.on{color:var(--red);font-weight:800}
+.cnTab.on::after{content:'';position:absolute;left:10px;right:10px;bottom:0;height:3px;border-radius:3px 3px 0 0;background:var(--red)}
+
+/* ── SHOP BY BRAND (logo tiles) ───────────────────── */
+#brandRow{display:flex;gap:12px;overflow-x:auto;padding:2px 13px 14px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+#brandRow::-webkit-scrollbar{display:none}
+.bcard{flex:0 0 auto;width:84px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.bcard:active .bcard-tile{transform:scale(.95)}
+.bcard-tile{
+  position:relative;width:84px;height:84px;border-radius:14px;overflow:hidden;background:#1d1d1f;
+  display:flex;align-items:center;justify-content:center;transition:transform .15s;
 }
-@keyframes scutShine{0%,45%{background-position:150% 0}100%{background-position:-50% 0}}
-.scut-img img{width:100%;height:100%;object-fit:cover}
-.scut-lbl{
-  font-size:11px;font-weight:600;color:var(--txt2);
-  text-align:center;line-height:1.3;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
-  width:100%;
+.bcard-tile::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.28),rgba(0,0,0,.55))}
+.bcard-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.55}
+.bcard-logo{
+  position:relative;z-index:1;width:58px;height:58px;border-radius:13px;background:#fff;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 10px rgba(0,0,0,.4);font-size:22px;font-weight:900;color:#666;
 }
+.bcard-logo img{width:100%;height:100%;object-fit:contain;padding:6px}
+.bcard-logo.nologo::after{content:attr(data-l)}
+.bcard-name{font-size:11.5px;font-weight:600;color:var(--txt2);width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ── SIDE MENU: CATEGORY TILES ────────────────────── */
+.mSec{padding:12px 15px 6px;font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3)}
+.mCats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 8px;padding:2px 12px 12px}
+.mcat{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0}
+.mcat:active .mcat-img{transform:scale(.95)}
+.mcat-img{
+  width:100%;aspect-ratio:1/1;border-radius:10px;overflow:hidden;background:var(--bg2);
+  display:flex;align-items:center;justify-content:center;transition:transform .15s;
+  font-size:20px;font-weight:800;color:var(--txt3);
+}
+.mcat-img img{width:100%;height:100%;object-fit:cover}
+.mcat-lbl{font-size:11px;font-weight:600;color:var(--txt2);text-align:center;line-height:1.25;width:100%;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.mLink .mCount{margin-left:auto;font-size:12px;font-weight:700;color:var(--txt3)}
 
 /* ── SECTION GAP ──────────────────────────────────── */
 .sgap{height:8px;background:var(--bg2)}
@@ -218,7 +243,23 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
   line-height:1.3;margin-bottom:5px;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
 }
+.pcPriceRow{display:flex;align-items:center;justify-content:space-between;gap:4px}
 .pcPrice{font-size:17px;font-weight:900;color:var(--txt);margin-bottom:1px}
+.favBtn{
+  width:32px;height:32px;margin:-4px -7px -4px 0;flex-shrink:0;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;color:var(--txt2);
+}
+.favBtn svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linejoin:round}
+.favBtn.on{color:var(--red)}
+.favBtn.on svg{fill:currentColor}
+.favBtn.pop svg{animation:favPop .34s ease-out}
+@keyframes favPop{0%{transform:scale(.7)}55%{transform:scale(1.3)}100%{transform:scale(1)}}
+.pcRate{display:flex;align-items:center;gap:4px;margin-bottom:6px;font-size:11px;color:var(--txt3)}
+.stars{position:relative;display:inline-flex;line-height:0;vertical-align:middle}
+.stars .st-bg,.stars .st-fg{display:inline-flex;gap:1px;flex-wrap:nowrap}
+.stars svg{flex:0 0 auto;fill:currentColor}
+.stars .st-bg{color:var(--bg3)}
+.stars .st-fg{position:absolute;left:0;top:0;overflow:hidden;color:var(--gold)}
 .pcWas{font-size:12px;color:var(--txt3);text-decoration:line-through;margin-bottom:5px}
 .pcStockRow{display:flex;align-items:center;gap:6px;margin-bottom:7px}
 .pcBar{flex:1;height:4px;background:var(--bg3);border-radius:2px;overflow:hidden}
@@ -230,6 +271,16 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
   transition:background .12s;
 }
 .pcAdd:active{background:var(--red2)}
+.pcStep{display:flex;align-items:center;justify-content:space-between;height:34px;background:var(--red);border-radius:4px;color:#fff}
+.pcStepB{width:44px;height:100%;display:flex;align-items:center;justify-content:center;color:#fff;border-radius:4px}
+.pcStepB:active{background:var(--red2)}
+.pcStepN{font-size:14px;font-weight:800;min-width:24px;text-align:center;font-variant-numeric:tabular-nums}
+
+/* fly-to-cart */
+.flyImg{position:fixed;z-index:1200;pointer-events:none;object-fit:contain;background:#fff;border-radius:14px;box-shadow:0 10px 26px rgba(0,0,0,.32);will-change:transform,opacity}
+.flyDot{background:var(--red);border-radius:50%}
+.cart-bump{animation:cartBump .42s ease-out}
+@keyframes cartBump{0%{transform:scale(1)}35%{transform:scale(1.28)}65%{transform:scale(.92)}100%{transform:scale(1)}}
 
 /* GRID */
 .pgrid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);padding:0}
@@ -249,47 +300,106 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 .au{opacity:0}.au.v{animation:fadeUp .3s ease-out forwards}
 .d0{animation-delay:0ms}.d1{animation-delay:40ms}.d2{animation-delay:80ms}.d3{animation-delay:120ms}
 
-/* ── PRODUCT MODAL (FULL SCREEN SLIDE UP) ──────────── */
+/* ── PRODUCT PAGE (FULL SCREEN SLIDE UP) ───────────── */
 #pModal{
   position:fixed;inset:0;z-index:300;
-  background:var(--bg);transform:translateY(100%);
+  background:var(--bg2);transform:translateY(100%);
   transition:transform .32s cubic-bezier(.4,0,.2,1);
   overflow-y:auto;-webkit-overflow-scrolling:touch;
 }
 #pModal.open{transform:translateY(0)}
 #pModalHdr{
-  position:sticky;top:0;z-index:1;
+  position:sticky;top:0;z-index:5;
   height:var(--hh);background:var(--bg);
   display:flex;align-items:center;padding:0 12px;gap:10px;
   border-bottom:1px solid var(--border);
 }
-#pModalBack{width:36px;height:36px;display:flex;align-items:center;justify-content:center;color:var(--txt)}
+#pModalBack{width:36px;height:36px;display:flex;align-items:center;justify-content:center;color:var(--txt);flex-shrink:0}
 #pModalTitle{flex:1;font-size:15px;font-weight:700;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-#pModalGal{background:#fff;border-bottom:1px solid var(--border)}
-#pModalImg{background:#fff;border-bottom:1px solid var(--border)}
-#pModalImg img{width:100%;aspect-ratio:1/1;object-fit:contain;padding:12px;max-height:300px}
-#pModalBody{padding:14px}
-#pModalName{font-size:17px;font-weight:800;margin-bottom:10px;line-height:1.3}
-.mpRow{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-#pModalPrice{font-size:24px;font-weight:900}
+#pCartDot{position:absolute;top:4px;right:4px;min-width:16px;height:16px;padding:0 4px;background:var(--red);color:#fff;font-size:9px;font-weight:800;border-radius:8px;display:none;align-items:center;justify-content:center}
+#pBody{padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))}
+
+.pGalCard{position:relative;background:var(--bg);padding:12px}
+.pGalCard .pgal{border:1px solid var(--border)}
+.pGalTools{position:absolute;top:24px;right:24px;z-index:3;display:flex;align-items:center;gap:6px}
+.pTool{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.92);color:#111;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 6px rgba(0,0,0,.16)}
+.pTool svg{width:21px;height:21px}
+.pTool.favBtn{margin:0;color:#111}
+.pTool.favBtn.on{color:var(--red)}
+
+.pSold{display:flex;align-items:center;gap:12px;padding:14px 14px;background:var(--bg);border-top:1px solid var(--border)}
+.pSoldAv{width:46px;height:46px;border-radius:50%;flex-shrink:0;overflow:hidden;background:var(--red2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:800;border:1px solid var(--border)}
+.pSoldAv.hasLogo{background:#fff}
+.pSoldAv img{width:100%;height:100%;object-fit:contain;padding:3px}
+.pSoldTxt{flex:1;min-width:0}
+.pSoldLbl{font-size:15px;font-weight:600;color:var(--txt)}
+.pSoldName{font-size:16px;font-weight:800;color:var(--red);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pSoldBtn{height:44px;padding:0 18px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;color:var(--red);flex-shrink:0}
+.pSoldBtn:active{background:var(--bg2)}
+
+.pInfo{padding:14px 14px 16px;background:var(--bg);border-top:1px solid var(--border)}
+#pModalName{font-size:21px;font-weight:600;line-height:1.28;margin-bottom:10px;letter-spacing:-.2px}
+.pBrand{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--txt2);margin-bottom:10px}
+.pBrandLogo{width:26px;height:26px;border-radius:6px;background:#fff;border:1px solid var(--border);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--txt3)}
+.pBrandLogo img{width:100%;height:100%;object-fit:contain;padding:2px}
+.pBrand button{font-weight:800;color:var(--txt);text-decoration:underline;text-underline-offset:2px}
+.mpRow{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+#pModalPrice{font-size:26px;font-weight:900}
 #pModalWas{font-size:14px;color:var(--txt3);text-decoration:line-through}
 #pModalDisc{font-size:13px;font-weight:800;color:var(--red)}
-#pModalDesc{font-size:14px;color:var(--txt2);line-height:1.65;margin-bottom:14px}
-.mStockRow{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--txt2);margin-bottom:18px}
-.mSbar{flex:1;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden}
-.mSfill{height:100%;background:var(--red);border-radius:3px}
-#pModalAddBtn{
-  width:100%;height:50px;background:var(--red);color:#fff;
-  font-size:16px;font-weight:800;border-radius:6px;
-  margin-bottom:calc(env(safe-area-inset-bottom) + 8px);
-}
-#pModalAddBtn:active{background:var(--red2)}
+#pRating{display:flex;align-items:center;gap:6px;margin-bottom:8px;font-size:13px;color:var(--txt2);font-weight:600}
+#pRating:empty{display:none}
+#pRating button{display:flex;align-items:center;gap:6px;color:inherit;font-weight:inherit}
+.pCode{font-size:14px;color:var(--txt3);margin-bottom:6px}
+.pCode b{color:var(--txt);font-weight:600}
+.pStockLine{font-size:13px;color:#16a34a;font-weight:600;margin-bottom:6px}
+.pStockLine:empty{display:none}
+.pQtyRow{display:flex;align-items:center;gap:10px;margin:14px 0 12px;padding-top:14px;border-top:1px solid var(--border)}
+.pQtyRow > span{font-size:17px;color:var(--txt2)}
+.pQty{display:flex;align-items:center;border:1.5px solid var(--border);border-radius:8px;overflow:hidden;height:46px}
+.pQty button{width:46px;height:100%;display:flex;align-items:center;justify-content:center;color:var(--txt);font-size:20px}
+.pQty button:active{background:var(--bg2)}
+.pQty b{min-width:64px;text-align:center;font-size:16px;font-weight:700;border-left:1.5px solid var(--border);border-right:1.5px solid var(--border);height:100%;display:flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums}
+.pBulk{display:block;padding:10px 14px;margin-bottom:14px;border-radius:8px;background:color-mix(in srgb,var(--red) 9%,var(--bg));font-size:15px;color:var(--txt);line-height:1.4}
+.pBulk b{display:block;color:var(--red);font-weight:800}
+.pActions{display:flex;gap:10px}
+.pCallBtn{width:58px;height:54px;flex-shrink:0;border:1.5px solid var(--red);border-radius:8px;color:var(--red);display:flex;align-items:center;justify-content:center}
+.pCallBtn svg{width:24px;height:24px}
+#pModalAddBtn,#pBuyBtn{flex:1;height:54px;border-radius:8px;font-size:16px;font-weight:800}
+#pModalAddBtn{background:var(--bg);border:1.5px solid var(--red);color:var(--red)}
+#pModalAddBtn:active{background:var(--bg2)}
+#pBuyBtn{background:var(--red);color:#fff;border:1.5px solid var(--red)}
+#pBuyBtn:active{background:var(--red2)}
+
+.pCard{margin-top:10px;background:var(--bg)}
+.pCardHd{display:flex;align-items:center;justify-content:space-between;padding:16px 14px 14px;border-bottom:1px solid var(--border)}
+.pCardHd h3{font-size:19px;font-weight:800}
+.pCardHd button{display:flex;align-items:center;gap:6px;font-size:15px;font-weight:700;color:var(--red)}
+.pCardHd button i{width:24px;height:24px;border-radius:50%;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-style:normal}
+.pCardBd{padding:14px}
+#pModalDesc{font-size:15px;color:var(--txt2);line-height:1.6;white-space:pre-line;overflow-wrap:anywhere}
+#pModalDesc.clamp{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.pInfoRow{display:flex;gap:12px;align-items:flex-start;padding:10px 0}
+.pInfoRow + .pInfoRow{border-top:1px solid var(--border)}
+.pInfoRow svg{width:28px;height:28px;flex-shrink:0;color:var(--red)}
+.pInfoRow h4{font-size:17px;font-weight:700;margin-bottom:3px}
+.pInfoRow p{font-size:14px;color:var(--txt2);line-height:1.55;white-space:pre-line;overflow-wrap:anywhere}
+
+.pRail{margin-top:10px;background:var(--bg)}
+.pRailHd{display:flex;align-items:center;justify-content:space-between;padding:14px 14px}
+.pRailHd span{font-size:19px;font-weight:800}
+.pRailHd button{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600}
+.pRailHd button i{width:22px;height:22px;border-radius:50%;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-style:normal}
+.pRailHd.dark{background:#000;color:#fff}
+.pRailHd.tint{background:color-mix(in srgb,var(--red) 11%,var(--bg))}
+.pRail .catRowScroll{padding:12px 12px 14px}
+.pRail .fcard-wrap{padding:0;width:158px}
 
 /* ── CART (full screen page) ─────────────────────────*/
-#cartOver{position:fixed;inset:0;z-index:250;background:rgba(0,0,0,0);pointer-events:none;transition:background .28s}
+#cartOver{position:fixed;inset:0;z-index:310;background:rgba(0,0,0,0);pointer-events:none;transition:background .28s}
 #cartOver.open{background:rgba(0,0,0,.5);pointer-events:all}
 #cartDrawer{
-  position:fixed;inset:0;z-index:260;
+  position:fixed;inset:0;z-index:320;
   background:var(--bg);
   display:flex;flex-direction:column;
   transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
@@ -386,26 +496,29 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 #legalBody h4{font-size:14px;color:var(--txt);margin:16px 0 6px}
 #legalBody h4:first-child{margin-top:0}
 
-#reviewsSec{margin-top:22px;border-top:1px solid var(--bg2);padding-top:16px}
+#reviewsSec{margin-top:10px;background:var(--bg)}
+#reviewsSec .pCardBd{padding-top:6px}
 .revHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .revTitle{font-size:15px;font-weight:800}
 #revAvg{display:flex;align-items:center;gap:4px;font-size:13px;font-weight:700;color:var(--txt2)}
-#revAvg svg{color:#f5a623}
 .revItem{padding:12px 0;border-bottom:1px solid var(--bg2)}
 .revItem-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
 .revItem-name{font-size:13px;font-weight:700}
 .revItem-date{font-size:11px;color:var(--txt3)}
-.revStars{display:flex;gap:1px;color:#f5a623;margin-bottom:4px}
+.revStars{display:flex;gap:1px;color:var(--gold);margin-bottom:4px}
 .revStars svg{width:13px;height:13px}
 .revStars.off{color:var(--bg3)}
 .revItem-cmt{font-size:13px;color:var(--txt2);line-height:1.5}
-.revEmpty{font-size:13px;color:var(--txt3);padding:10px 0}
+.revEmpty{display:flex;flex-direction:column;align-items:center;gap:4px;padding:26px 10px 14px;text-align:center}
+.revEmpty svg{width:46px;height:46px;color:var(--gold);opacity:.75;margin-bottom:6px}
+.revEmpty b{font-size:19px;font-weight:700;color:var(--txt2)}
+.revEmpty span{font-size:14px;color:var(--txt3)}
 .revSignInBtn{width:100%;height:44px;background:var(--bg2);color:var(--txt);border-radius:10px;font-size:13px;font-weight:700;margin-top:10px}
 .revForm{margin-top:14px;background:var(--bg2);border-radius:12px;padding:14px}
 .revForm-lbl{font-size:12px;font-weight:700;color:var(--txt2);margin-bottom:8px}
 .revPicker{display:flex;gap:6px;margin-bottom:12px}
 .revPicker svg{width:26px;height:26px;color:var(--bg3);cursor:pointer}
-.revPicker svg.on{color:#f5a623}
+.revPicker svg.on,.revPicker span.on svg{color:var(--gold)}
 .revForm textarea{width:100%;min-height:60px;border:1.5px solid var(--border);border-radius:10px;padding:10px;font-size:13px;background:var(--bg);color:var(--txt);outline:none;resize:vertical;font-family:inherit}
 .revSubmitBtn{width:100%;height:44px;background:var(--red);color:#fff;border-radius:10px;font-size:13px;font-weight:700;margin-top:10px}
 .cTop{display:flex;align-items:center;gap:10px;padding:calc(env(safe-area-inset-top,0) + 14px) 15px 12px;border-bottom:1px solid var(--bg2)}
@@ -531,7 +644,10 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
   </button>
 </header>
 
-<!-- STICKY SEARCH BAR -->
+<!-- CATEGORY TITLES: fixed under the header, shown only after the search bar has scrolled away -->
+<nav id="catNav" aria-label="Categories"><div id="catNavRow"></div></nav>
+
+<!-- SEARCH BAR (scrolls away with the page; the header search icon takes over) -->
 <div id="searchWrap">
   <div id="searchBar">
     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="16" height="16"><path d="M11 6C13.7614 6 16 8.23858 16 11M16.6588 16.6549L21 21M19 11C19 15.4183 15.4183 19 11 19C6.58172 19 3 15.4183 3 11C3 6.58172 6.58172 3 11 3C15.4183 3 19 6.58172 19 11Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -563,8 +679,11 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
   <!-- HERO CAROUSEL -->
   <section id="hero" hidden></section>
 
-  <!-- SHORTCUT CARDS -->
-  <div id="shortcutRow"></div>
+  <!-- SHOP BY BRAND -->
+  <section id="brandSec" style="display:none">
+    <div class="secHd"><span class="secTtl">Shop by Brand</span></div>
+    <div id="brandRow"></div>
+  </section>
 
   <section id="vendorSec" style="display:none">
     <div class="secHd"><span class="secTtl">Vendors</span></div>
@@ -644,6 +763,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
     <span id="ftCopyright"></span>
     <a href="#" onclick="openLegal('privacy');return false">Privacy Policy</a>
     <a href="#" onclick="openLegal('terms');return false">Terms of Service</a>
+    <a href="https://logo.dev" target="_blank" rel="noopener">Logos provided by Logo.dev</a>
   </div>
 </footer>
 
@@ -669,6 +789,13 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
   <div class="mLinks">
     <a class="mLink" href="#" onclick="closeMenu();scrollTo(0,0);return false">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home
+    </a>
+    <div id="menuCatsWrap" style="display:none">
+      <div class="mSec">Shop by category</div>
+      <div class="mCats" id="menuCats"></div>
+    </div>
+    <a class="mLink" href="#" onclick="showFavorites();return false">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>Favorites<span class="mCount" id="menuFavCount"></span>
     </a>
     <a class="mLink" href="#" onclick="closeMenu();openAccount();return false">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path opacity="0.4" d="M12.1207 12.78C12.0507 12.77 11.9607 12.77 11.8807 12.78C10.1207 12.72 8.7207 11.28 8.7207 9.50998C8.7207 7.69998 10.1807 6.22998 12.0007 6.22998C13.8107 6.22998 15.2807 7.69998 15.2807 9.50998C15.2707 11.28 13.8807 12.72 12.1207 12.78Z" stroke="currentColor" stroke-width="1.5"/><path opacity="0.34" d="M18.7398 19.3801C16.9598 21.0101 14.5998 22.0001 11.9998 22.0001C9.39977 22.0001 7.03977 21.0101 5.25977 19.3801C5.35977 18.4401 5.95977 17.5201 7.02977 16.8001C9.76977 14.9801 14.2498 14.9801 16.9698 16.8001C18.0398 17.5201 18.6398 18.4401 18.7398 19.3801Z" stroke="currentColor" stroke-width="1.5"/><path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="1.5"/></svg>My Account
@@ -704,38 +831,81 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 <!-- AD PAGE (brand page opened from an ad) -->
 <div id="adPage"></div>
 
-<!-- PRODUCT MODAL -->
+<!-- PRODUCT PAGE -->
 <div id="pModal">
   <div id="pModalHdr">
-    <button id="pModalBack" onclick="closePModal()">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+    <button id="pModalBack" onclick="closePModal()" aria-label="Back">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
     </button>
     <span id="pModalTitle">Product</span>
+    <button class="hdr-icon" id="pCartBtn" aria-label="Cart" onclick="openCart()">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="22" height="22"><path d="M7.5 18C8.32843 18 9 18.6716 9 19.5C9 20.3284 8.32843 21 7.5 21C6.67157 21 6 20.3284 6 19.5C6 18.6716 6.67157 18 7.5 18Z" stroke="currentColor" stroke-width="1.5"/><path d="M16.5 18.0001C17.3284 18.0001 18 18.6716 18 19.5001C18 20.3285 17.3284 21.0001 16.5 21.0001C15.6716 21.0001 15 20.3285 15 19.5001C15 18.6716 15.6716 18.0001 16.5 18.0001Z" stroke="currentColor" stroke-width="1.5"/><path d="M2 3L2.26121 3.09184C3.5628 3.54945 4.2136 3.77826 4.58584 4.32298C4.95808 4.86771 4.95808 5.59126 4.95808 7.03836V9.76C4.95808 12.7016 5.02132 13.6723 5.88772 14.5862C6.75412 15.5 8.14857 15.5 10.9375 15.5H12M16.2404 15.5C17.8014 15.5 18.5819 15.5 19.1336 15.0504C19.6853 14.6008 19.8429 13.8364 20.158 12.3075L20.6578 9.88275C21.0049 8.14369 21.1784 7.27417 20.7345 6.69708C20.2906 6.12 18.7738 6.12 17.0888 6.12H11.0235M4.95808 6.12H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <span id="pCartDot"></span>
+    </button>
   </div>
-  <div id="pModalGal" hidden></div>
-  <div id="pModalImg"><img id="pModalImgEl" src="" alt=""></div>
-  <div id="pModalBody">
-    <h2 id="pModalName"></h2>
-    <div class="mpRow">
-      <span id="pModalPrice"></span>
-      <span id="pModalWas"></span>
-      <span id="pModalDisc"></span>
-    </div>
-    <p id="pModalDesc"></p>
-    <div class="mStockRow">
-      <div class="mSbar"><div class="mSfill" id="pModalSFill"></div></div>
-      <span id="pModalSLbl"></span>
-    </div>
-    <button id="pModalAddBtn">Add to Cart</button>
 
-    <div id="reviewsSec">
-      <div class="revHead">
-        <span class="revTitle">Reviews</span>
-        <span id="revAvg"></span>
+  <div id="pBody">
+    <div class="pGalCard">
+      <div id="pGal"></div>
+      <div class="pGalTools">
+        <button class="pTool" id="pShareBtn" aria-label="Share" onclick="shareProduct()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        </button>
+        <button class="pTool favBtn" id="pFavBtn" aria-label="Favorite"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg></button>
       </div>
-      <div id="revList"></div>
-      <div id="revFormWrap"></div>
     </div>
+
+    <div class="pSold" id="pSold"></div>
+
+    <div class="pInfo">
+      <h2 id="pModalName"></h2>
+      <div class="pBrand" id="pBrandRow" style="display:none"></div>
+      <div class="mpRow">
+        <span id="pModalPrice"></span>
+        <span id="pModalWas"></span>
+        <span id="pModalDisc"></span>
+      </div>
+      <div id="pRating"></div>
+      <div class="pCode" id="pCode"></div>
+      <div class="pStockLine" id="pStockLine"></div>
+      <div class="pQtyRow">
+        <span>Quantity:</span>
+        <div class="pQty">
+          <button onclick="pQtyChange(-1)" aria-label="Decrease quantity">&minus;</button>
+          <b id="pQtyN">1</b>
+          <button onclick="pQtyChange(1)" aria-label="Increase quantity">+</button>
+        </div>
+      </div>
+      <a class="pBulk" id="pBulk" href="#" style="display:none">Call us for Bulk Purchases<b id="pBulkNum"></b></a>
+      <div class="pActions">
+        <a class="pCallBtn" id="pCallBtn" href="#" aria-label="Call" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+        </a>
+        <button id="pModalAddBtn" onclick="pAddToCart()">Add to Cart</button>
+        <button id="pBuyBtn" onclick="pBuyNow()">Buy Now</button>
+      </div>
+    </div>
+
+    <section class="pCard" id="pDescCard">
+      <div class="pCardHd"><h3>Product Description</h3><button id="pDescMore" onclick="toggleDesc()" style="display:none">See more <i>&rsaquo;</i></button></div>
+      <div class="pCardBd"><p id="pModalDesc" class="clamp"></p></div>
+    </section>
+
+    <section class="pCard" id="pDelivCard">
+      <div class="pCardHd"><h3>Delivery &amp; Returns</h3></div>
+      <div class="pCardBd" id="pDelivBody"></div>
+    </section>
+
+    <section class="pCard" id="reviewsSec">
+      <div class="pCardHd"><h3>Customer Feedback</h3><span id="revAvg"></span></div>
+      <div class="pCardBd">
+        <div id="revList"></div>
+        <div id="revFormWrap"></div>
+      </div>
+    </section>
+
+    <section class="pRail" id="pMore" style="display:none"></section>
+    <section class="pRail" id="pSimilar" style="display:none"></section>
   </div>
 </div>
 
@@ -828,6 +998,13 @@ const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 const sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
 let buyerSession = null;
 let storePhone = '';
+let storeName = 'Maccato';
+let brandsList = [], brandById = {}, brandBySlug = {}, vendorsMap = {}, ratingMap = {};
+let policy = { delivery: '', returns: '', warranty: '' };
+let navCats = [];
+const $ = id => document.getElementById(id);
+const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const normSlug = v => String(v == null ? '' : v).trim().replace(/\s+/g, ' ').toLowerCase();
 
 /* ── THEME ────────────────────────────────────────── */
 let dark = localStorage.getItem('theme') === 'dark' ||
@@ -859,20 +1036,84 @@ function buildCarousel(banners) {
   });
 }
 
-/* ── SHORTCUT CARDS ───────────────────────────────── */
-function buildShortcuts(shortcuts) {
-  const row = document.getElementById('shortcutRow');
-  if (!shortcuts.length) { row.style.display = 'none'; return; }
-  row.innerHTML = shortcuts.map((s,i) => `
-    <div class="scut au d${Math.min(i,3)}">
-      <div class="scut-img" style="background:${s.bg_color||'#f5f5f5'}">
-        ${s.image_url
-          ? `<img src="${s.image_url}" alt="${s.title||''}" loading="lazy">`
-          : `<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--txt3)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>`}
-      </div>
-      <span class="scut-lbl">${s.title||''}</span>
-    </div>`).join('');
-  observeAll(row.querySelectorAll('.au'));
+/* ── CATEGORIES ───────────────────────────────────── */
+/* The image tiles live in the side menu only. The bar under the header (shown once the search bar has
+   scrolled away) is titles only. */
+function buildMenuCats(shortcuts, cats) {
+  const items = shortcuts.length
+    ? shortcuts.map(sc => ({ title: sc.title || '', image: sc.image_url, bg: sc.bg_color }))
+    : cats.map(c => ({ title: c }));
+  const wrap = $('menuCatsWrap');
+  if (!items.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+  $('menuCats').innerHTML = items.map((it, i) => `
+    <button class="mcat" data-i="${i}">
+      <span class="mcat-img" style="background:${esc(it.bg || '')}">${it.image
+        ? `<img src="${esc(it.image)}" alt="" loading="lazy">`
+        : esc((it.title[0] || '?').toUpperCase())}</span>
+      <span class="mcat-lbl">${esc(it.title)}</span>
+    </button>`).join('');
+  $('menuCats').onclick = e => {
+    const btn = e.target.closest('.mcat');
+    if (!btn) return;
+    closeMenu();
+    catNavGo(items[Number(btn.dataset.i)].title);
+  };
+}
+
+function renderCatNav() {
+  const row = $('catNavRow');
+  row.innerHTML = ['All', ...navCats].map(c =>
+    `<button class="cnTab${c === activeCat ? ' on' : ''}" data-c="${esc(c)}">${c === 'All' ? 'Home' : esc(c)}</button>`).join('');
+  const on = row.querySelector('.on');
+  if (on) row.scrollLeft = on.offsetLeft - (row.clientWidth - on.clientWidth) / 2;
+}
+$('catNavRow').addEventListener('click', e => {
+  const b = e.target.closest('.cnTab');
+  if (b) catNavGo(b.dataset.c);
+});
+
+function catNavGo(c) {
+  filterCat(c);
+  if (c === 'All') window.scrollTo({ top: 0, behavior: 'smooth' });
+  else $('allSec').scrollIntoView({ behavior: 'smooth' });
+}
+
+/* ── BRANDS ───────────────────────────────────────── */
+function brandOf(p) {
+  if (p.brand_id && brandById[p.brand_id]) return brandById[p.brand_id];
+  const n = normSlug(p.brand);
+  return n ? (brandBySlug[n] || null) : null;
+}
+
+function buildBrandRow() {
+  const sec = $('brandSec'), row = $('brandRow');
+  const items = brandsList
+    .map(b => ({ b, prods: allProds.filter(p => { const pb = brandOf(p); return pb && pb.id === b.id; }) }))
+    .filter(x => x.prods.length)
+    .sort((x, y) => y.prods.length - x.prods.length || x.b.name.localeCompare(y.b.name));
+  if (!items.length) { sec.style.display = 'none'; return; }
+  sec.style.display = '';
+  row.innerHTML = items.map(({ b, prods }) => {
+    const bg = prods.find(p => p.image_url);
+    const letter = esc((b.name[0] || '?').toUpperCase());
+    return `
+      <button class="bcard" onclick="filterByBrand(${b.id})">
+        <span class="bcard-tile">
+          ${bg ? `<img class="bcard-bg" src="${esc(bg.image_url)}" alt="" loading="lazy">` : ''}
+          <span class="bcard-logo${b.logo_url ? '' : ' nologo'}" data-l="${letter}">${b.logo_url
+            ? `<img src="${esc(b.logo_url)}" alt="${esc(b.name)}" loading="lazy" onerror="this.parentNode.classList.add('nologo');this.remove()">`
+            : ''}</span>
+        </span>
+        <span class="bcard-name">${esc(b.name)}</span>
+      </button>`;
+  }).join('');
+}
+
+function filterByBrand(id) {
+  const b = brandById[id];
+  if (!b) return;
+  showList(b.name, allProds.filter(p => { const pb = brandOf(p); return pb && pb.id === b.id; }));
 }
 
 /* ── VENDOR ROW ───────────────────────────────────── */
@@ -882,18 +1123,25 @@ function buildVendorRow(vendors) {
   if (!vendors.length) { sec.style.display = 'none'; return; }
   sec.style.display = '';
   row.innerHTML = vendors.map(v => `
-    <div class="vcard" onclick="filterByVendor('${v.id}','${(v.business_name||'').replace(/'/g,"\\'")}')">
-      <div class="vcard-img">${v.logo_url ? `<img src="${v.logo_url}" alt="">` : (v.business_name||'?')[0].toUpperCase()}</div>
-      <span class="vcard-lbl">${v.business_name||''}</span>
+    <div class="vcard" onclick="filterByVendor('${esc(v.id)}')">
+      <div class="vcard-img">${v.logo_url ? `<img src="${esc(v.logo_url)}" alt="">` : esc((v.business_name||'?')[0].toUpperCase())}</div>
+      <span class="vcard-lbl">${esc(v.business_name||'')}</span>
     </div>`).join('');
 }
 
-function filterByVendor(vendorId, vendorName) {
-  const filtered = allProds.filter(p => p.vendor_id === vendorId);
-  document.getElementById('allSecTitle').textContent = vendorName;
-  document.getElementById('pCount').textContent = `${filtered.length} item${filtered.length!==1?'s':''}`;
-  renderGrid(filtered, 'allGrid');
-  document.getElementById('allSec').scrollIntoView({behavior:'smooth'});
+/* a vendor's shop (vendorId null = products the store itself sells) */
+function filterByVendor(vendorId) {
+  const v = vendorId ? vendorsMap[vendorId] : null;
+  showList(v ? (v.business_name || 'Store') : storeName, allProds.filter(p => (p.vendor_id || null) === (vendorId || null)));
+}
+
+/* show a list in the All Products section (vendor shop, brand, favorites) */
+function showList(title, list, emptyMsg) {
+  activeCat = 'All'; renderCatNav();
+  $('allSecTitle').textContent = title;
+  $('pCount').textContent = `${list.length} item${list.length!==1?'s':''}`;
+  renderGrid(list, 'allGrid', false, emptyMsg);
+  $('allSec').scrollIntoView({ behavior: 'smooth' });
 }
 
 /* ── CATEGORY FILTER ──────────────────────────────── */
@@ -917,6 +1165,8 @@ function buildCatFilter(cats) {
 
 function filterCat(cat) {
   activeCat = cat;
+  $('allSecTitle').textContent = cat === 'All' ? 'All Products' : cat;
+  renderCatNav();
   const filtered = cat === 'All' ? allProds : allProds.filter(p => p.category === cat);
   buildCatFilter(cat === 'All' ? [...new Set(allProds.map(p => p.category).filter(Boolean))] :
     [...new Set(allProds.map(p => p.category).filter(Boolean))]);
