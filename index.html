@@ -53,9 +53,8 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 .hdr-icon:active{opacity:.6}
 #cartDot{position:absolute;top:4px;right:4px;width:16px;height:16px;background:var(--red);color:#fff;font-size:9px;font-weight:800;border-radius:8px;display:none;align-items:center;justify-content:center}
 
-/* ── STICKY SEARCH ────────────────────────────────── */
+/* ── SEARCH (not sticky — scrolls away normally) ─────*/
 #searchWrap{
-  position:sticky;top:var(--hh);z-index:190;
   background:var(--bg);padding:8px 12px;
   border-bottom:1px solid var(--border);
 }
@@ -107,11 +106,12 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 
 /* ── HERO: styles live in components/promotional-carousel.css ── */
 
-/* ── SHORTCUT CARDS ───────────────────────────────── */
+/* ── SHORTCUT CARDS (sticky under header, horizontally slideable) ──*/
 #shortcutRow{
   display:flex;gap:0;overflow-x:auto;
   padding:12px 10px 4px;scrollbar-width:none;
   background:var(--bg);border-bottom:6px solid var(--bg2);
+  position:sticky;top:var(--hh);z-index:190;
 }
 #shortcutRow::-webkit-scrollbar{display:none}
 #vendorRow{display:flex;gap:14px;overflow-x:auto;padding:2px 13px 14px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
@@ -281,29 +281,40 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 }
 #pModalAddBtn:active{background:var(--red2)}
 
-/* ── CART DRAWER ──────────────────────────────────── */
+/* ── CART (full screen page) ─────────────────────────*/
 #cartOver{position:fixed;inset:0;z-index:250;background:rgba(0,0,0,0);pointer-events:none;transition:background .28s}
 #cartOver.open{background:rgba(0,0,0,.5);pointer-events:all}
 #cartDrawer{
-  position:fixed;bottom:0;left:0;right:0;z-index:260;
-  background:var(--bg);border-radius:20px 20px 0 0;
-  max-height:88vh;display:flex;flex-direction:column;
-  transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
+  position:fixed;inset:0;z-index:260;
+  background:var(--bg);
+  display:flex;flex-direction:column;
+  transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
 }
-#cartDrawer.open{transform:translateY(0)}
-.cDrag{width:36px;height:4px;background:var(--bg3);border-radius:2px;margin:10px auto 0}
+#cartDrawer.open{transform:translateX(0)}
+.cDrag{display:none}
 
 #acctOver{position:fixed;inset:0;z-index:250;background:rgba(0,0,0,0);pointer-events:none;transition:background .28s}
 #acctOver.open{background:rgba(0,0,0,.5);pointer-events:all}
 #acctDrawer{
-  position:fixed;bottom:0;left:0;right:0;z-index:260;
-  background:var(--bg);border-radius:20px 20px 0 0;
-  max-height:88vh;display:flex;flex-direction:column;overflow-y:auto;
-  transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
+  position:fixed;inset:0;z-index:260;
+  background:var(--bg);
+  display:flex;flex-direction:column;overflow-y:auto;
+  transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
   padding-bottom:env(safe-area-inset-bottom,0);
 }
-#acctDrawer.open{transform:translateY(0)}
+#acctDrawer.open{transform:translateX(0)}
 .acctPane{padding:8px 20px 24px;text-align:center}
+#acctSignedOut{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at 50% 0%, #132030 0%, #0a0e14 55%, #05070a 100%);
+  padding:24px;position:relative;
+}
+#acctSignedOut .acctBack{position:absolute;top:calc(env(safe-area-inset-top,0) + 16px);left:16px;color:#fff}
+#acctSignedOut .acctLogo{width:88px;height:88px;border-radius:50%;overflow:hidden;margin:0 auto 22px;box-shadow:0 0 0 1px rgba(255,255,255,.1)}
+#acctSignedOut .acctLogo img{width:100%;height:100%;object-fit:cover;display:block}
+#acctSignedOut .ctitle{font-size:26px;font-weight:800;color:#fff;margin-bottom:6px}
+#acctSignedOut .csub{font-size:13px;color:#8a93a3;line-height:1.5;margin-bottom:28px;max-width:300px}
+#acctSignedOut #acctGoogleBtn{width:100%;max-width:320px;height:52px;background:#fff;border:none;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:10px;font-size:15px;font-weight:700;color:#111}
 .acctIcon{width:60px;height:60px;border-radius:50%;background:var(--bg2);color:var(--txt3);display:flex;align-items:center;justify-content:center;margin:4px auto 14px}
 .acctMsg{font-size:14px;color:var(--txt2);margin-bottom:18px;line-height:1.5}
 #acctEmail{font-weight:700;color:var(--txt)}
@@ -315,6 +326,61 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 .myOrd{background:var(--bg2);border-radius:12px;padding:12px;margin-bottom:8px}
 .myOrd-top{display:flex;justify-content:space-between;font-size:12px;color:var(--txt3);margin-bottom:4px}
 .myOrd-line{font-size:13px;font-weight:600}
+
+/* ── COOKIE CONSENT ───────────────────────────────── */
+#cookieBar{
+  position:fixed;left:12px;right:12px;bottom:12px;z-index:400;
+  background:var(--card,var(--bg));color:var(--txt);
+  border:1px solid var(--border);border-radius:16px;
+  box-shadow:0 8px 30px rgba(0,0,0,.15);
+  padding:16px;display:none;
+  padding-bottom:calc(16px + env(safe-area-inset-bottom,0));
+}
+#cookieBar.show{display:block}
+#cookieBar p{font-size:12.5px;line-height:1.5;color:var(--txt2);margin-bottom:12px}
+#cookieBar p a{color:var(--red);text-decoration:underline}
+.cookieBtns{display:flex;gap:8px}
+.cookieBtns button{flex:1;height:42px;border-radius:10px;font-size:13px;font-weight:700}
+#cookieAccept{background:var(--red);color:#fff}
+#cookieDecline{background:var(--bg2);color:var(--txt)}
+
+/* ── FOOTER ───────────────────────────────────────── */
+#siteFooter{background:var(--bg2);padding:32px 16px calc(24px + 66px);margin-top:20px}
+.ftTop{display:grid;grid-template-columns:1fr 1fr;gap:24px 16px;margin-bottom:24px}
+.ftCol{display:flex;flex-direction:column;gap:9px}
+.ftLogo{display:flex;align-items:center;gap:8px;margin-bottom:2px}
+.ftLogo img{height:26px;width:auto}
+.ftLogo span{font-size:17px;font-weight:900;color:var(--txt)}
+.ftTag{font-size:12.5px;color:var(--txt3);line-height:1.5}
+.ftHead{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--txt3);margin-bottom:2px}
+.ftCol a,.ftCol span{font-size:13.5px;color:var(--txt2);text-decoration:none}
+.ftSocial{display:flex;gap:10px;margin-top:4px}
+.ftSocial a{width:32px;height:32px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;color:var(--txt2)}
+.ftBottom{border-top:1px solid var(--border);padding-top:16px;display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--txt3)}
+.ftBottom a{color:var(--txt3);text-decoration:underline}
+
+/* ── PER-CATEGORY ROWS (admin-chosen accent color) ───*/
+.catRowSec{margin-bottom:4px}
+.catRowHd{display:flex;align-items:center;gap:9px;padding:16px 13px 8px}
+.catRowBar{width:5px;height:19px;border-radius:3px;flex-shrink:0}
+.catRowName{font-size:15px;font-weight:800;color:var(--txt)}
+.catRowCount{font-size:12px;color:var(--txt3);margin-left:auto}
+.catRowScroll{display:flex;gap:10px;overflow-x:auto;padding:0 13px 6px;scrollbar-width:none}
+.catRowScroll::-webkit-scrollbar{display:none}
+.catRowScroll .fcard-wrap{flex-shrink:0}
+
+/* ── LEGAL MODAL ──────────────────────────────────── */
+#legalOver{position:fixed;inset:0;z-index:250;background:rgba(0,0,0,0);pointer-events:none;transition:background .28s}
+#legalOver.open{background:rgba(0,0,0,.5);pointer-events:all}
+#legalDrawer{
+  position:fixed;inset:0;z-index:260;background:var(--bg);
+  display:flex;flex-direction:column;overflow-y:auto;
+  transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
+}
+#legalDrawer.open{transform:translateX(0)}
+#legalBody{font-size:13.5px;line-height:1.7;color:var(--txt2)}
+#legalBody h4{font-size:14px;color:var(--txt);margin:16px 0 6px}
+#legalBody h4:first-child{margin-top:0}
 
 #reviewsSec{margin-top:22px;border-top:1px solid var(--bg2);padding-top:16px}
 .revHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
@@ -338,7 +404,9 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 .revPicker svg.on{color:#f5a623}
 .revForm textarea{width:100%;min-height:60px;border:1.5px solid var(--border);border-radius:10px;padding:10px;font-size:13px;background:var(--bg);color:var(--txt);outline:none;resize:vertical;font-family:inherit}
 .revSubmitBtn{width:100%;height:44px;background:var(--red);color:#fff;border-radius:10px;font-size:13px;font-weight:700;margin-top:10px}
-.cTop{display:flex;align-items:center;justify-content:space-between;padding:12px 15px 8px}
+.cTop{display:flex;align-items:center;gap:10px;padding:calc(env(safe-area-inset-top,0) + 14px) 15px 12px;border-bottom:1px solid var(--bg2)}
+.cTop h3{flex:1}
+.cTop .hdr-icon{color:var(--txt)}
 .cTop h3{font-size:17px;font-weight:800}
 #cartCloseBtn{width:30px;height:30px;background:var(--bg2);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--txt2)}
 #cartList{flex:1;overflow-y:auto;padding:0 13px}
@@ -432,6 +500,13 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 
 <div id="loader"><div class="spin"></div><span style="font-size:12px;color:var(--txt3)">Loading...</span></div>
 <div id="toast"></div>
+<div id="cookieBar">
+  <p>We use cookies to keep you signed in, remember your cart, and understand how the store is used. See our <a href="#siteFooter" onclick="document.getElementById('siteFooter').scrollIntoView({behavior:'smooth'})">Privacy Policy</a> for details.</p>
+  <div class="cookieBtns">
+    <button id="cookieDecline" onclick="setCookieConsent(false)">Decline</button>
+    <button id="cookieAccept" onclick="setCookieConsent(true)">Accept</button>
+  </div>
+</div>
 
 <!-- HEADER -->
 <header id="hdr">
@@ -440,6 +515,9 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
   </button>
   <img src="store-logo.png" alt="" style="height:30px;width:auto;flex-shrink:0;object-fit:contain">
   <span id="storeLogo">Maccato</span>
+  <button class="hdr-icon" id="hdrSearchBtn" aria-label="Search" onclick="focusSearch()" style="display:none">
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="20" height="20"><path d="M11 6C13.7614 6 16 8.23858 16 11M16.6588 16.6549L21 21M19 11C19 15.4183 15.4183 19 11 19C6.58172 19 3 15.4183 3 11C3 6.58172 6.58172 3 11 3C15.4183 3 19 6.58172 19 11Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
   <button class="hdr-icon" id="profileBtn" aria-label="Account" onclick="openAccount()">
     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="22" height="22"><path opacity="0.4" d="M12.1207 12.78C12.0507 12.77 11.9607 12.77 11.8807 12.78C10.1207 12.72 8.7207 11.28 8.7207 9.50998C8.7207 7.69998 10.1807 6.22998 12.0007 6.22998C13.8107 6.22998 15.2807 7.69998 15.2807 9.50998C15.2707 11.28 13.8807 12.72 12.1207 12.78Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path opacity="0.34" d="M18.7398 19.3801C16.9598 21.0101 14.5998 22.0001 11.9998 22.0001C9.39977 22.0001 7.03977 21.0101 5.25977 19.3801C5.35977 18.4401 5.95977 17.5201 7.02977 16.8001C9.76977 14.9801 14.2498 14.9801 16.9698 16.8001C18.0398 17.5201 18.6398 18.4401 18.7398 19.3801Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </button>
@@ -452,7 +530,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 <!-- STICKY SEARCH BAR -->
 <div id="searchWrap">
   <div id="searchBar">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="16" height="16"><path d="M11 6C13.7614 6 16 8.23858 16 11M16.6588 16.6549L21 21M19 11C19 15.4183 15.4183 19 11 19C6.58172 19 3 15.4183 3 11C3 6.58172 6.58172 3 11 3C15.4183 3 19 6.58172 19 11Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
     <input type="search" id="searchInput" placeholder="Search products, brands and categories" autocomplete="off">
     <button id="srchClearBtn" onclick="clearSearch()">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -527,7 +605,55 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
     <div class="pgrid-wrap"><div class="pgrid" id="allGrid"></div></div>
   </section>
 
+  <div id="catRows"></div>
+
 </main>
+
+<!-- FOOTER -->
+<footer id="siteFooter">
+  <div class="ftTop">
+    <div class="ftCol">
+      <div class="ftLogo"><img src="store-logo.png" alt=""><span>Maccato</span></div>
+      <p class="ftTag" id="ftTagline"></p>
+      <div class="ftSocial" id="ftSocial"></div>
+    </div>
+    <div class="ftCol">
+      <div class="ftHead">Shop</div>
+      <a href="#allSec">All Products</a>
+      <a href="#flashSec">Flash Sales</a>
+      <a href="/vendor/" target="_blank">Sell on Maccato</a>
+    </div>
+    <div class="ftCol">
+      <div class="ftHead">Account</div>
+      <a href="#" onclick="openAccount();return false">My Account</a>
+      <a href="#" onclick="openAccount();setTimeout(showMyOrders,150);return false">My Orders</a>
+      <a href="#" onclick="openCart();return false">My Cart</a>
+    </div>
+    <div class="ftCol" id="ftContactCol">
+      <div class="ftHead">Contact</div>
+      <a href="#" id="ftPhone" style="display:none"></a>
+      <a href="#" id="ftEmail" style="display:none"></a>
+      <span id="ftAddress" style="display:none"></span>
+    </div>
+  </div>
+  <div class="ftBottom">
+    <span id="ftCopyright"></span>
+    <a href="#" onclick="openLegal('privacy');return false">Privacy Policy</a>
+    <a href="#" onclick="openLegal('terms');return false">Terms of Service</a>
+  </div>
+</footer>
+
+<!-- LEGAL MODAL -->
+<div id="legalOver" onclick="closeLegal()"></div>
+<div id="legalDrawer">
+  <div class="cTop">
+    <button class="hdr-icon" onclick="closeLegal()" aria-label="Back">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    </button>
+    <h3 id="legalTitle">Privacy Policy</h3>
+  </div>
+  <div id="legalBody" class="acctPane" style="text-align:left"></div>
+</div>
 
 <!-- SIDE MENU -->
 <div id="menuOver" onclick="closeMenu()"></div>
@@ -605,15 +731,15 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
   </div>
 </div>
 
-<!-- CART DRAWER -->
+<!-- CART (full screen) -->
 <div id="cartOver" onclick="closeCart()"></div>
 <div id="cartDrawer">
-  <div class="cDrag"></div>
   <div class="cTop">
-    <h3>My Cart</h3>
-    <button id="cartCloseBtn" onclick="closeCart()">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    <button id="cartCloseBtn" class="hdr-icon" onclick="closeCart()" aria-label="Back">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
     </button>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7.5 18C8.32843 18 9 18.6716 9 19.5C9 20.3284 8.32843 21 7.5 21C6.67157 21 6 20.3284 6 19.5C6 18.6716 6.67157 18 7.5 18Z" stroke="currentColor" stroke-width="1.5"/><path d="M16.5 18.0001C17.3284 18.0001 18 18.6716 18 19.5001C18 20.3285 17.3284 21.0001 16.5 21.0001C15.6716 21.0001 15 20.3285 15 19.5001C15 18.6716 15.6716 18.0001 16.5 18.0001Z" stroke="currentColor" stroke-width="1.5"/><path d="M2 3L2.26121 3.09184C3.5628 3.54945 4.2136 3.77826 4.58584 4.32298C4.95808 4.86771 4.95808 5.59126 4.95808 7.03836V9.76C4.95808 12.7016 5.02132 13.6723 5.88772 14.5862C6.75412 15.5 8.14857 15.5 10.9375 15.5H12M16.2404 15.5C17.8014 15.5 18.5819 15.5 19.1336 15.0504C19.6853 14.6008 19.8429 13.8364 20.158 12.3075L20.6578 9.88275C21.0049 8.14369 21.1784 7.27417 20.7345 6.69708C20.2906 6.12 18.7738 6.12 17.0888 6.12H11.0235M4.95808 6.12H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    <h3>My Cart</h3>
   </div>
   <div id="cartList"></div>
   <div class="cFoot">
@@ -625,26 +751,27 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 <!-- ACCOUNT DRAWER -->
 <div id="acctOver" onclick="closeAccount()"></div>
 <div id="acctDrawer">
-  <div class="cDrag"></div>
-  <div class="cTop">
-    <h3>My Account</h3>
-    <button id="acctCloseBtn" onclick="closeAccount()">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
-  </div>
-
   <div id="acctSignedOut" class="acctPane">
-    <div class="acctIcon">
-      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="34" height="34"><path opacity="0.4" d="M12.1207 12.78C12.0507 12.77 11.9607 12.77 11.8807 12.78C10.1207 12.72 8.7207 11.28 8.7207 9.50998C8.7207 7.69998 10.1807 6.22998 12.0007 6.22998C13.8107 6.22998 15.2807 7.69998 15.2807 9.50998C15.2707 11.28 13.8807 12.72 12.1207 12.78Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path opacity="0.34" d="M18.7398 19.3801C16.9598 21.0101 14.5998 22.0001 11.9998 22.0001C9.39977 22.0001 7.03977 21.0101 5.25977 19.3801C5.35977 18.4401 5.95977 17.5201 7.02977 16.8001C9.76977 14.9801 14.2498 14.9801 16.9698 16.8001C18.0398 17.5201 18.6398 18.4401 18.7398 19.3801Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </div>
-    <p class="acctMsg">Sign in to track orders, save items and leave reviews.</p>
+    <button class="acctBack" onclick="closeAccount()" aria-label="Back">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    </button>
+    <div class="acctLogo"><img src="app-icon-192.png" alt=""></div>
+    <div class="ctitle">Login</div>
+    <div class="csub">Sign in to track orders, save items and leave reviews.</div>
     <button id="acctGoogleBtn">
       <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.9 32.7 29.4 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.6 18.9 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 16.3 4 9.6 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.5 0 10.4-1.9 14.2-5.1l-6.5-5.5C29.6 35.3 27 36 24 36c-5.4 0-9.9-3.3-11.4-7.9l-6.6 5.1C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.7l6.5 5.5C41.5 36.4 44 30.7 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>
       Continue with Google
     </button>
   </div>
 
-  <div id="acctSignedIn" class="acctPane" style="display:none">
+  <div id="acctSignedIn" style="display:none">
+    <div class="cTop">
+      <button class="hdr-icon" onclick="closeAccount()" aria-label="Back">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      </button>
+      <h3>My Account</h3>
+    </div>
+    <div class="acctPane">
     <div class="acctIcon">
       <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="34" height="34"><path opacity="0.4" d="M12.1207 12.78C12.0507 12.77 11.9607 12.77 11.8807 12.78C10.1207 12.72 8.7207 11.28 8.7207 9.50998C8.7207 7.69998 10.1807 6.22998 12.0007 6.22998C13.8107 6.22998 15.2807 7.69998 15.2807 9.50998C15.2707 11.28 13.8807 12.72 12.1207 12.78Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path opacity="0.34" d="M18.7398 19.3801C16.9598 21.0101 14.5998 22.0001 11.9998 22.0001C9.39977 22.0001 7.03977 21.0101 5.25977 19.3801C5.35977 18.4401 5.95977 17.5201 7.02977 16.8001C9.76977 14.9801 14.2498 14.9801 16.9698 16.8001C18.0398 17.5201 18.6398 18.4401 18.7398 19.3801Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </div>
@@ -653,6 +780,10 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
       <a href="#" onclick="showMyOrders();return false;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
         My Orders
+      </a>
+      <a href="#" onclick="closeAccount();openNotifPrefs();return false;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+        Notifications
       </a>
       <a href="/vendor/" target="_blank">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8L18 3H6L3 8m18 0v11a1 1 0 01-1 1H4a1 1 0 01-1-1V8m18 0H3m9 4v6"/><path d="M3 8l2.5 5H8l1-3 2 5 2-5 1 3h2.5L21 8"/></svg>
@@ -664,6 +795,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
       </a>
     </div>
     <div id="myOrdersList"></div>
+    </div>
   </div>
 </div>
 
@@ -849,6 +981,28 @@ function buildFlash(prods) {
     `<div class="fcard-wrap au">${cardHTML(p)}</div>`
   ).join('');
   observeAll(el.querySelectorAll('.au'));
+}
+
+function buildCategoryRows(shortcuts, prods) {
+  const wrap = document.getElementById('catRows');
+  const rows = (shortcuts || []).map(sc => {
+    const matches = prods.filter(p => (p.category || '').trim().toLowerCase() === (sc.title || '').trim().toLowerCase());
+    if (!matches.length) return '';
+    const color = sc.bg_color || '#D91C2D';
+    return `
+      <div class="catRowSec">
+        <div class="catRowHd">
+          <span class="catRowBar" style="background:${color}"></span>
+          <span class="catRowName" style="color:${color}">${sc.title}</span>
+          <span class="catRowCount">${matches.length} item${matches.length!==1?'s':''}</span>
+        </div>
+        <div class="catRowScroll">
+          ${matches.slice(0, 12).map(p => `<div class="fcard-wrap au">${cardHTML(p)}</div>`).join('')}
+        </div>
+      </div>`;
+  }).join('');
+  wrap.innerHTML = rows;
+  observeAll(wrap.querySelectorAll('.au'));
 }
 
 function renderGrid(prods, id) {
@@ -1041,6 +1195,8 @@ document.getElementById('placeBtn').onclick = async () => {
     const { error: itemsErr } = await sb.from('order_items').insert(lineItems);
     if (itemsErr) console.error('order_items insert failed:', itemsErr);
 
+    fetch('/api/notify-order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'placed', orderId: orderRow.id }) }).catch(() => {});
+
     cart=[]; saveCart(); updateCartBadge(); closeCheckout();
     ['oName','oPhone','oAddr'].forEach(id=>document.getElementById(id).value='');
     toast('Order placed! We will contact you soon.');
@@ -1130,6 +1286,91 @@ function dismissInstall() {
 /* ── INIT ─────────────────────────────────────────── */
 /* ── BUYER ACCOUNT ────────────────────────────────── */
 function openAccount() { document.getElementById('acctOver').classList.add('open'); document.getElementById('acctDrawer').classList.add('open'); document.body.style.overflow='hidden'; }
+/* ── COOKIE CONSENT ───────────────────────────────── */
+/* ── FOOTER + LEGAL ───────────────────────────────── */
+function populateFooter(storeName, tagline, phone, email, address, ig, fb, x) {
+  document.getElementById('ftTagline').textContent = tagline || '';
+  document.getElementById('ftCopyright').textContent = `© ${new Date().getFullYear()} ${storeName}. All rights reserved.`;
+
+  const phoneEl = document.getElementById('ftPhone');
+  if (phone) { phoneEl.textContent = phone; phoneEl.href = `tel:${phone.replace(/[^0-9+]/g,'')}`; phoneEl.style.display = ''; }
+
+  const emailEl = document.getElementById('ftEmail');
+  if (email) { emailEl.textContent = email; emailEl.href = `mailto:${email}`; emailEl.style.display = ''; }
+
+  const addrEl = document.getElementById('ftAddress');
+  if (address) { addrEl.textContent = address; addrEl.style.display = ''; }
+
+  if (!phone && !email && !address) {
+    document.getElementById('ftContactCol').style.display = 'none';
+  }
+
+  const socialIcons = {
+    instagram: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><line x1="17.5" y1="6.5" x2="17.5" y2="6.5"/></svg>',
+    facebook: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>',
+    x: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+  };
+  const socials = [['instagram', ig], ['facebook', fb], ['x', x]].filter(([, url]) => url);
+  document.getElementById('ftSocial').innerHTML = socials.map(([type, url]) =>
+    `<a href="${url}" target="_blank" rel="noopener">${socialIcons[type]}</a>`
+  ).join('');
+  if (!socials.length) document.getElementById('ftSocial').style.display = 'none';
+}
+
+const LEGAL_TEXT = {
+  privacy: `
+    <h4>What we collect</h4>
+    <p>When you check out, we store your name, phone number and delivery address so vendors and our team can fulfil your order. If you sign in with Google, we store your name and email to run your account, order history and reviews.</p>
+    <h4>Cookies</h4>
+    <p>We use cookies and local storage to keep you signed in, remember your cart between visits, and remember choices like theme and this cookie banner. We don't use cookies for third-party advertising.</p>
+    <h4>Who sees your data</h4>
+    <p>Order details are shared with the vendor(s) whose products you bought, so they can fulfil and ship your order. We don't sell your data to anyone else.</p>
+    <h4>Push notifications</h4>
+    <p>If you enable notifications, we store a device subscription so we can notify you about your own order status. You can turn this off any time from My Account.</p>
+    <h4>Your rights</h4>
+    <p>You can ask us to delete your account data at any time by contacting us using the details in the footer.</p>`,
+  terms: `
+    <h4>Using Maccato</h4>
+    <p>Maccato is a marketplace: products are listed and sold by independent vendors, not by Maccato directly. Each vendor is responsible for the accuracy, quality and delivery of what they list.</p>
+    <h4>Orders</h4>
+    <p>Placing an order is an offer to buy at the listed price. A vendor may cancel an order they can't fulfil; you'll be notified if that happens.</p>
+    <h4>Reviews</h4>
+    <p>Reviews must be from a real signed-in customer describing their own experience. We may remove reviews that are abusive, fake, or unrelated to the product.</p>
+    <h4>Vendor accounts</h4>
+    <p>Vendor applications are reviewed before approval. We can suspend a vendor account that violates these terms or repeatedly fails to fulfil orders.</p>
+    <h4>Changes</h4>
+    <p>We may update these terms as the platform grows; continued use after a change means you accept the update.</p>`
+};
+
+function openLegal(which) {
+  document.getElementById('legalTitle').textContent = which === 'privacy' ? 'Privacy Policy' : 'Terms of Service';
+  document.getElementById('legalBody').innerHTML = LEGAL_TEXT[which];
+  document.getElementById('legalOver').classList.add('open');
+  document.getElementById('legalDrawer').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeLegal() {
+  document.getElementById('legalOver').classList.remove('open');
+  document.getElementById('legalDrawer').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.getElementById('legalOver').onclick = closeLegal;
+
+function setCookieConsent(accepted) {
+  localStorage.setItem('cookieConsent', accepted ? 'accepted' : 'declined');
+  document.getElementById('cookieBar').classList.remove('show');
+}
+if (!localStorage.getItem('cookieConsent')) {
+  setTimeout(() => document.getElementById('cookieBar').classList.add('show'), 1200);
+}
+
+function focusSearch() {
+  document.getElementById('searchWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  setTimeout(() => document.getElementById('searchInput').focus(), 350);
+}
+new IntersectionObserver(([entry]) => {
+  document.getElementById('hdrSearchBtn').style.display = entry.isIntersecting ? 'none' : 'flex';
+}, { rootMargin: `-${getComputedStyle(document.documentElement).getPropertyValue('--hh') || '54px'} 0px 0px 0px` }).observe(document.getElementById('searchWrap'));
 function openWhatsAppHelp() {
   const digits = storePhone.replace(/[^0-9]/g, '');
   if (digits) window.open(`https://wa.me/${digits}`, '_blank');
@@ -1149,6 +1390,33 @@ async function checkBuyerSession() {
 document.getElementById('acctGoogleBtn').onclick = async () => {
   await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
 };
+
+const VAPID_PUBLIC_KEY = 'BK5N0qYpBt9XtWB4Nb2zvlGovVHWEHo2GdT-bWaOcnt_5Iq8eW0TF6NFswJQG18HkyWbjbYDUuw8pZ9LogiY_s4';
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+async function openNotifPrefs() {
+  if (!buyerSession) { openAccount(); return; }
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) { toast('Push notifications are not supported on this device', true); return; }
+  const perm = await Notification.requestPermission();
+  if (perm !== 'granted') { toast('Notification permission was not granted', true); return; }
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) });
+    const j = sub.toJSON();
+    const { error } = await sb.from('push_subscriptions').upsert([{
+      user_id: buyerSession.user.id, role: 'buyer', endpoint: j.endpoint, p256dh: j.keys.p256dh, auth_key: j.keys.auth
+    }], { onConflict: 'endpoint' });
+    if (error) throw error;
+    toast('You\'ll now get order updates as push notifications');
+  } catch (e) {
+    toast('Could not enable notifications: ' + e.message, true);
+  }
+}
 
 async function buyerSignOut() {
   await sb.auth.signOut();
@@ -1208,10 +1476,13 @@ async function init() {
       document.getElementById('main').style.paddingTop = `calc(var(--hh) + 57px + 37px)`;
     }
 
+    populateFooter(storeName, tagline, phone, get('contactEmail'), get('contactAddress'), get('socialInstagram'), get('socialFacebook'), get('socialX'));
+
     allProds = products || [];
     buildCarousel(banners || []);
     buildShortcuts(shortcuts || []);
     buildVendorRow(vendors || []);
+    buildCategoryRows(shortcuts || [], allProds);
 
     const cats = catsJSON
       ? JSON.parse(catsJSON)

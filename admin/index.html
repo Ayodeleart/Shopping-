@@ -59,6 +59,24 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 [data-theme=dark] .tab::before{background:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,.08));box-shadow:0 3px 12px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.25)}
 @supports not ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){#tabs{background:rgba(255,255,255,.95)}[data-theme=dark] #tabs{background:rgba(30,30,30,.96)}}
 
+.subnav-tab{flex:1;height:38px;font-size:12.5px;font-weight:700;color:var(--txt3);border-bottom:2px solid transparent;margin-bottom:-2px;background:none}
+.subnav-tab.on{color:var(--red);border-bottom-color:var(--red)}
+.bellDot{position:absolute;top:5px;right:5px;width:8px;height:8px;border-radius:50%;background:#fff}
+#notifOver{position:fixed;inset:0;z-index:350;background:rgba(0,0,0,0);pointer-events:none;transition:background .28s}
+#notifOver.open{background:rgba(0,0,0,.5);pointer-events:all}
+#notifDrawer{
+  position:fixed;inset:0;z-index:360;background:var(--bg);
+  display:flex;flex-direction:column;overflow-y:auto;
+  transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
+}
+#notifDrawer.open{transform:translateX(0)}
+.cTop{display:flex;align-items:center;gap:10px;height:52px;padding:0 14px;border-bottom:1px solid var(--border);flex-shrink:0}
+.cTop h3{flex:1;font-size:15px;font-weight:800}
+.notifItem{background:var(--card,#fff);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px}
+.notifItem-top{display:flex;justify-content:space-between;font-size:11px;color:var(--txt3);margin-bottom:4px}
+.notifItem-msg{font-size:13px;font-weight:600}
+.deviceItem{display:flex;justify-content:space-between;align-items:center;background:var(--card,#fff);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:12.5px}
+
 /* PANELS */
 .panel{display:none;padding:14px;padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 .panel.on{display:block}
@@ -175,6 +193,8 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 
 /* UPLOAD PROGRESS */
 .uprog{height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-top:8px;display:none}
+.rmbgToggle{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--txt2);margin-top:10px;cursor:pointer}
+.rmbgToggle input{width:16px;height:16px;accent-color:var(--red)}
 .uprog-bar{height:100%;background:var(--red);border-radius:2px;transition:width .3s}
 .uprog.on{display:block}
 
@@ -235,6 +255,10 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 <div id="app">
   <header id="ahdr">
     <h1 id="ahdrTitle">Maccato Admin</h1>
+    <button class="ahbtn" id="aBellBtn" aria-label="Notifications" onclick="openNotifPanel()" style="position:relative">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="16" height="16"><path d="M8.35179 20.2418C9.19288 21.311 10.5142 22 12 22C13.4858 22 14.8071 21.311 15.6482 20.2418C13.2264 20.57 10.7736 20.57 8.35179 20.2418Z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="M18.7491 9.7041V9C18.7491 5.13401 15.7274 2 12 2C8.27256 2 5.25087 5.13401 5.25087 9V9.7041C5.25087 10.5491 5.00972 11.3752 4.5578 12.0782L3.45036 13.8012C2.43882 15.3749 3.21105 17.5139 4.97036 18.0116C9.57274 19.3134 14.4273 19.3134 19.0296 18.0116C20.789 17.5139 21.5612 15.3749 20.5496 13.8012L19.4422 12.0782C18.9903 11.3752 18.7491 10.5491 18.7491 9.7041ZM12 5.25C12.4142 5.25 12.75 5.58579 12.75 6V10C12.75 10.4142 12.4142 10.75 12 10.75C11.5858 10.75 11.25 10.4142 11.25 10V6C11.25 5.58579 11.5858 5.25 12 5.25Z" fill="currentColor"/></svg>
+      <span id="aBellDot" class="bellDot" style="display:none"></span>
+    </button>
     <a class="ahbtn" href="/index.html" target="_blank"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><path d="M15 3h6v6M10 14L21 3"/></svg></a>
     <button class="ahbtn" id="logoutBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg></button>
   </header>
@@ -245,6 +269,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
     <button class="tab" data-tab="products" aria-label="Products"><svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g fill="currentColor" fill-rule="evenodd" transform="translate(64.000000, 34.346667)"><path d="M192,7.10542736e-15 L384,110.851252 L384,332.553755 L192,443.405007 L1.42108547e-14,332.553755 L1.42108547e-14,110.851252 L192,7.10542736e-15 Z M127.999,206.918 L128,357.189 L170.666667,381.824 L170.666667,231.552 L127.999,206.918 Z M42.6666667,157.653333 L42.6666667,307.920144 L85.333,332.555 L85.333,182.286 L42.6666667,157.653333 Z M275.991,97.759 L150.413,170.595 L192,194.605531 L317.866667,121.936377 L275.991,97.759 Z M192,49.267223 L66.1333333,121.936377 L107.795,145.989 L233.374,73.154 L192,49.267223 Z"/></g></svg><span>Products</span></button>
     <button class="tab" data-tab="shortcuts" aria-label="Categories"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g fill="currentColor"><path d="M2 6.47762C2 5.1008 2 4.4124 2.22168 3.86821C2.52645 3.12007 3.12007 2.52645 3.86821 2.22168C4.4124 2 5.1008 2 6.47762 2V2C7.85443 2 8.54284 2 9.08702 2.22168C9.83517 2.52645 10.4288 3.12007 10.7336 3.86821C10.9552 4.4124 10.9552 5.1008 10.9552 6.47762V6.47762C10.9552 7.85443 10.9552 8.54284 10.7336 9.08702C10.4288 9.83517 9.83517 10.4288 9.08702 10.7336C8.54284 10.9552 7.85443 10.9552 6.47762 10.9552V10.9552C5.1008 10.9552 4.4124 10.9552 3.86821 10.7336C3.12007 10.4288 2.52645 9.83517 2.22168 9.08702C2 8.54284 2 7.85443 2 6.47762V6.47762Z"/><path d="M2 17.5224C2 16.1456 2 15.4572 2.22168 14.913C2.52645 14.1649 3.12007 13.5712 3.86821 13.2665C4.4124 13.0448 5.1008 13.0448 6.47762 13.0448V13.0448C7.85443 13.0448 8.54284 13.0448 9.08702 13.2665C9.83517 13.5712 10.4288 14.1649 10.7336 14.913C10.9552 15.4572 10.9552 16.1456 10.9552 17.5224V17.5224C10.9552 18.8992 10.9552 19.5876 10.7336 20.1318C10.4288 20.88 9.83517 21.4736 9.08702 21.7783C8.54284 22 7.85443 22 6.47762 22V22C5.1008 22 4.4124 22 3.86821 21.7783C3.12007 21.4736 2.52645 20.88 2.22168 20.1318C2 19.5876 2 18.8992 2 17.5224V17.5224Z"/><path d="M13.0449 17.5224C13.0449 16.1456 13.0449 15.4572 13.2666 14.913C13.5714 14.1649 14.165 13.5712 14.9131 13.2665C15.4573 13.0448 16.1457 13.0448 17.5225 13.0448V13.0448C18.8994 13.0448 19.5878 13.0448 20.1319 13.2665C20.8801 13.5712 21.4737 14.1649 21.7785 14.913C22.0002 15.4572 22.0002 16.1456 22.0002 17.5224V17.5224C22.0002 18.8992 22.0002 19.5876 21.7785 20.1318C21.4737 20.88 20.8801 21.4736 20.1319 21.7783C19.5878 22 18.8994 22 17.5225 22V22C16.1457 22 15.4573 22 14.9131 21.7783C14.165 21.4736 13.5714 20.88 13.2666 20.1318C13.0449 19.5876 13.0449 18.8992 13.0449 17.5224V17.5224Z"/><path clip-rule="evenodd" fill-rule="evenodd" d="M16.7725 9.47766C16.7725 9.89187 17.1082 10.2277 17.5225 10.2277C17.9367 10.2277 18.2725 9.89187 18.2725 9.47766V7.22766H20.5225C20.9367 7.22766 21.2725 6.89187 21.2725 6.47766C21.2725 6.06345 20.9367 5.72766 20.5225 5.72766H18.2725V3.47766C18.2725 3.06345 17.9367 2.72766 17.5225 2.72766C17.1082 2.72766 16.7725 3.06345 16.7725 3.47766L16.7725 5.72766H14.5225C14.1082 5.72766 13.7725 6.06345 13.7725 6.47766C13.7725 6.89187 14.1082 7.22766 14.5225 7.22766H16.7725L16.7725 9.47766Z"/></g></svg><span>Categories</span></button>
     <button class="tab" data-tab="banners" aria-label="Banners"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M3.63383 12.746L4.06509 11.6007L3.05817 8.92604C2.98587 8.73312 2.98082 8.52099 3.04384 8.32476C3.10686 8.12853 3.23418 7.95999 3.40472 7.84703L5.77089 6.2826L6.50924 3.52023C6.56258 3.32102 6.68161 3.14627 6.84656 3.025C7.01151 2.90372 7.21246 2.84322 7.41605 2.85352L10.2385 2.99876L12.4391 1.20039C12.5979 1.07072 12.7958 1 12.9999 1C13.2039 1 13.4018 1.07072 13.5606 1.20039L15.7612 2.99876L18.5837 2.85645C18.7873 2.84614 18.9882 2.90665 19.1531 3.02792C19.3181 3.1492 19.4371 3.32394 19.4905 3.52316L20.2288 6.28552L22.595 7.84995C22.7657 7.96279 22.8931 8.13133 22.9561 8.3276C23.0192 8.52387 23.014 8.73607 22.9415 8.92897L21.9356 11.6036L22.9415 14.2773C23.0141 14.4703 23.0193 14.6827 22.9562 14.8791C22.8932 15.0755 22.7657 15.2443 22.595 15.3573L20.2288 16.9168L19.4866 19.6802C19.4336 19.8796 19.3147 20.0547 19.1497 20.1762C18.9847 20.2977 18.7836 20.3583 18.5798 20.3478L15.7573 20.2055L13.5825 21.979"/><path d="M1.24805 18.3714L3.74324 22.1142"/><path d="M16.79 16.872L3 21L2 19.5L11.158 8L16.79 16.872Z"/><path d="M10.5 7L17.5 18"/><path d="M6 20.316L6.876 21.662C7.02084 21.8995 7.21269 22.1048 7.43977 22.2655C7.66685 22.4261 7.92437 22.5386 8.19651 22.5961C8.46865 22.6536 8.74967 22.6549 9.02231 22.5998C9.29496 22.5448 9.55348 22.4346 9.782 22.276C10.2492 21.9398 10.5702 21.4378 10.6793 20.8726C10.7884 20.3075 10.6774 19.722 10.369 19.236"/></g></svg><span>Banners</span></button>
+    <button class="tab" data-tab="announce" aria-label="Announcements"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M11 5L6 9H2v6h4l5 4V5z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.54 8.46a5 5 0 010 7.07" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M19.07 4.93a10 10 0 010 14.14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Announce</span></button>
     <button class="tab" data-tab="settings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M14.2788 2.15224C13.9085 2 13.439 2 12.5 2C11.561 2 11.0915 2 10.7212 2.15224C10.2274 2.35523 9.83509 2.74458 9.63056 3.23463C9.53719 3.45834 9.50065 3.7185 9.48635 4.09799C9.46534 4.65568 9.17716 5.17189 8.69017 5.45093C8.20318 5.72996 7.60864 5.71954 7.11149 5.45876C6.77318 5.2813 6.52789 5.18262 6.28599 5.15102C5.75609 5.08178 5.22018 5.22429 4.79616 5.5472C4.47814 5.78938 4.24339 6.1929 3.7739 6.99993C3.30441 7.80697 3.06967 8.21048 3.01735 8.60491C2.94758 9.1308 3.09118 9.66266 3.41655 10.0835C3.56506 10.2756 3.77377 10.437 4.0977 10.639C4.57391 10.936 4.88032 11.4419 4.88029 12C4.88026 12.5581 4.57386 13.0639 4.0977 13.3608C3.77372 13.5629 3.56497 13.7244 3.41645 13.9165C3.09108 14.3373 2.94749 14.8691 3.01725 15.395C3.06957 15.7894 3.30432 16.193 3.7738 17C4.24329 17.807 4.47804 18.2106 4.79606 18.4527C5.22008 18.7756 5.75599 18.9181 6.28589 18.8489C6.52778 18.8173 6.77305 18.7186 7.11133 18.5412C7.60852 18.2804 8.2031 18.27 8.69012 18.549C9.17714 18.8281 9.46533 19.3443 9.48635 19.9021C9.50065 20.2815 9.53719 20.5417 9.63056 20.7654C9.83509 21.2554 10.2274 21.6448 10.7212 21.8478C11.0915 22 11.561 22 12.5 22C13.439 22 13.9085 22 14.2788 21.8478C14.7726 21.6448 15.1649 21.2554 15.3694 20.7654C15.4628 20.5417 15.4994 20.2815 15.5137 19.902C15.5347 19.3443 15.8228 18.8281 16.3098 18.549C16.7968 18.2699 17.3914 18.2804 17.8886 18.5412C18.2269 18.7186 18.4721 18.8172 18.714 18.8488C19.2439 18.9181 19.7798 18.7756 20.2038 18.4527C20.5219 18.2105 20.7566 17.807 21.2261 16.9999C21.6956 16.1929 21.9303 15.7894 21.9827 15.395C22.0524 14.8691 21.9088 14.3372 21.5835 13.9164C21.4349 13.7243 21.2262 13.5628 20.9022 13.3608C20.4261 13.0639 20.1197 12.558 20.1197 11.9999C20.1197 11.4418 20.4261 10.9361 20.9022 10.6392C21.2263 10.4371 21.435 10.2757 21.5836 10.0835C21.9089 9.66273 22.0525 9.13087 21.9828 8.60497C21.9304 8.21055 21.6957 7.80703 21.2262 7C20.7567 6.19297 20.522 5.78945 20.2039 5.54727C19.7799 5.22436 19.244 5.08185 18.7141 5.15109C18.4722 5.18269 18.2269 5.28136 17.8887 5.4588C17.3915 5.71959 16.7969 5.73002 16.3099 5.45096C15.8229 5.17191 15.5347 4.65566 15.5136 4.09794C15.4993 3.71848 15.4628 3.45833 15.3694 3.23463C15.1649 2.74458 14.7726 2.35523 14.2788 2.15224ZM12.5 15C14.1695 15 15.5228 13.6569 15.5228 12C15.5228 10.3431 14.1695 9 12.5 9C10.8305 9 9.47716 10.3431 9.47716 12C9.47716 13.6569 10.8305 15 12.5 15Z" fill="currentColor"/></svg><span>Settings</span></button>
   </div>
 
@@ -294,6 +319,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
         </div>
         <div class="uprog" id="pImgProg"><div class="uprog-bar" id="pImgProgBar" style="width:0%"></div></div>
         <img class="iup-prev" id="pImgPrev" alt="">
+        <label class="rmbgToggle"><input type="checkbox" id="pRmBg"> Remove background from this photo</label>
       </div>
       <div style="background:var(--bg2);border-radius:10px;padding:2px 10px;margin-bottom:12px">
         <div class="tgl-row"><label>Featured</label><div class="tgl" id="pFeatTgl" onclick="this.classList.toggle('on')"><div class="tgl-k"></div></div></div>
@@ -348,6 +374,44 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
   </div>
 
 
+  <!-- ANNOUNCEMENTS (push notifications — its own nav bar, separate from Banners) -->
+  <div class="panel" id="p-announce">
+    <div class="ph"><span class="pt">Announcements</span></div>
+    <div id="announceSubnav" style="display:flex;border-bottom:2px solid var(--border);margin-bottom:14px">
+      <button class="subnav-tab on" data-sub="push" onclick="switchAnnounceSub('push')">Push Notifications</button>
+      <button class="subnav-tab" data-sub="devices" onclick="switchAnnounceSub('devices')">Enabled Devices</button>
+    </div>
+
+    <div id="announce-push" class="subnav-panel">
+      <div class="fcard">
+        <h3>Send a Broadcast</h3>
+        <div class="fg"><label>Title</label><input type="text" id="anTitle" placeholder="e.g. Weekend Flash Sale"></div>
+        <div class="fg"><label>Message</label><textarea id="anBody" placeholder="e.g. Up to 40% off everything, today only."></textarea></div>
+        <div class="fg"><label>Link (optional)</label><input type="text" id="anUrl" placeholder="/#allSec"></div>
+        <div class="fg">
+          <label>Send To</label>
+          <select id="anTarget">
+            <option value="buyers">Customers</option>
+            <option value="vendors">Vendors</option>
+            <option value="all">Everyone</option>
+          </select>
+        </div>
+        <button class="save-full" onclick="sendBroadcast()">Send Notification</button>
+      </div>
+      <div class="fcard">
+        <h3>Your Own Notifications</h3>
+        <p style="font-size:12.5px;color:var(--txt3);margin-bottom:12px">Get a push notification on this device whenever a new order is placed.</p>
+        <button class="save-full" onclick="enablePush()">Enable Push Notifications</button>
+      </div>
+    </div>
+
+    <div id="announce-devices" class="subnav-panel" style="display:none">
+      <div class="ph"><span class="pt">Subscribed Devices</span></div>
+      <div id="deviceList"></div>
+    </div>
+  </div>
+
+
   <!-- SHORTCUTS -->
   <div class="panel" id="p-shortcuts">
     <div class="fcard">
@@ -384,6 +448,15 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
     </div>
 
     <div class="ssec">
+      <div class="ssec-ttl">Footer Contact Details</div>
+      <div class="srow"><label>Support Email</label><input type="email" id="sEmail" placeholder="support@yourstore.com"></div>
+      <div class="srow"><label>Business Address</label><input type="text" id="sAddress" placeholder="e.g. 14 Allen Avenue, Ikeja, Lagos"></div>
+      <div class="srow"><label>Instagram URL (optional)</label><input type="url" id="sIG" placeholder="https://instagram.com/yourstore"></div>
+      <div class="srow"><label>Facebook URL (optional)</label><input type="url" id="sFB" placeholder="https://facebook.com/yourstore"></div>
+      <div class="srow"><label>X / Twitter URL (optional)</label><input type="url" id="sX" placeholder="https://x.com/yourstore"></div>
+    </div>
+
+    <div class="ssec">
       <div class="ssec-ttl">Flash Sale Timer</div>
       <div class="srow"><label>End Date &amp; Time</label><input type="datetime-local" id="sFlash"></div>
       <div class="srow" style="padding-top:8px"><button class="btn-d" onclick="clearFlash()">Clear Flash Sale</button></div>
@@ -402,6 +475,18 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 
     <button class="save-full" onclick="saveSettings()">Save All Settings</button>
   </div>
+</div>
+
+<!-- NOTIFICATIONS PANEL -->
+<div id="notifOver" onclick="closeNotifPanel()"></div>
+<div id="notifDrawer">
+  <div class="cTop">
+    <button class="ahbtn" onclick="closeNotifPanel()" aria-label="Back">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    </button>
+    <h3>Order Notifications</h3>
+  </div>
+  <div id="notifList" style="padding:8px 14px"></div>
 </div>
 
 <script>
@@ -446,11 +531,13 @@ function confirm(title, msg, cb) {
 }
 
 /* ===== IMAGE UPLOAD TO SUPABASE ===== */
-async function uploadImage(file, folder, progressBarId, progressId) {
+async function uploadImage(file, folder, progressBarId, progressId, transparent) {
   const prog = document.getElementById(progressId);
   const bar = document.getElementById(progressBarId);
   if (prog) { prog.classList.add('on'); bar.style.width = '0%'; }
 
+  const fmt = transparent ? 'image/png' : 'image/jpeg';
+  const ext = transparent ? 'png' : 'jpg';
   // Compress with canvas
   const blob = await new Promise((res, rej) => {
     const reader = new FileReader();
@@ -464,7 +551,7 @@ async function uploadImage(file, folder, progressBarId, progressId) {
         canvas.width = w; canvas.height = h;
         canvas.getContext('2d').drawImage(img, 0, 0, w, h);
         if (prog) bar.style.width = '40%';
-        canvas.toBlob(b => b ? res(b) : rej(new Error('Canvas failed')), 'image/jpeg', 0.82);
+        canvas.toBlob(b => b ? res(b) : rej(new Error('Canvas failed')), fmt, transparent ? undefined : 0.82);
       };
       img.onerror = rej;
       img.src = e.target.result;
@@ -474,11 +561,20 @@ async function uploadImage(file, folder, progressBarId, progressId) {
   });
 
   if (prog) bar.style.width = '60%';
-  const path = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
-  const { error } = await sb.storage.from(BUCKET).upload(path, blob, { contentType: 'image/jpeg', cacheControl: '31536000' });
+  const path = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+  const { error } = await sb.storage.from(BUCKET).upload(path, blob, { contentType: fmt, cacheControl: '31536000' });
   if (error) { if (prog) prog.classList.remove('on'); throw error; }
   if (prog) { bar.style.width = '100%'; setTimeout(() => prog.classList.remove('on'), 600); }
   return sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+}
+
+let _removeBgFn = null;
+async function removeImageBackground(file) {
+  if (!_removeBgFn) {
+    const mod = await import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/dist/index.mjs');
+    _removeBgFn = mod.removeBackground;
+  }
+  return _removeBgFn(file);
 }
 
 /* ===== IMAGE PREVIEW ===== */
@@ -551,9 +647,20 @@ async function saveProduct() {
   showLoad('Saving product...');
   try {
     let imageUrl = null;
-    const file = document.getElementById('pImgFile').files[0];
+    let file = document.getElementById('pImgFile').files[0];
+    let transparent = false;
+    if (file && document.getElementById('pRmBg').checked) {
+      showLoad('Removing background...');
+      try {
+        file = await removeImageBackground(file);
+        transparent = true;
+      } catch (e) {
+        toast('Background removal failed — using original photo', true);
+      }
+      showLoad('Saving product...');
+    }
     if (file) {
-      imageUrl = await uploadImage(file, 'products', 'pImgProgBar', 'pImgProg');
+      imageUrl = await uploadImage(file, 'products', 'pImgProgBar', 'pImgProg', transparent);
     } else if (editProdId) {
       const { data } = await sb.from('products').select('image_url').eq('id', editProdId).single();
       imageUrl = data?.image_url || null;
@@ -597,6 +704,7 @@ function cancelProdEdit() {
   document.getElementById('pPrice').value = '';
   document.getElementById('pCat').value = '';
   document.getElementById('pImgFile').value = '';
+  document.getElementById('pRmBg').checked = false;
   document.getElementById('pImgPrev').classList.remove('on');
   document.getElementById('pImgPrev').src = '';
   document.getElementById('pImgTxt').textContent = 'Tap to upload image';
@@ -835,6 +943,11 @@ async function loadSettings() {
   document.getElementById('sTag').value = get('tagline') || '';
   document.getElementById('sCurr').value = get('currency') || '₦';
     document.getElementById('sPhone').value = get('phone') || '';
+  document.getElementById('sEmail').value = get('contactEmail') || '';
+  document.getElementById('sAddress').value = get('contactAddress') || '';
+  document.getElementById('sIG').value = get('socialInstagram') || '';
+  document.getElementById('sFB').value = get('socialFacebook') || '';
+  document.getElementById('sX').value = get('socialX') || '';
   const flashEnd = get('flashSaleEnd');
   if (flashEnd) {
     const d = new Date(parseInt(flashEnd));
@@ -852,12 +965,24 @@ async function saveSettings() {
   const tag = document.getElementById('sTag').value.trim();
   const curr = document.getElementById('sCurr').value.trim() || '₦';
   const flashVal = document.getElementById('sFlash').value;
+  const phone = document.getElementById('sPhone').value.trim();
+  const email = document.getElementById('sEmail').value.trim();
+  const address = document.getElementById('sAddress').value.trim();
+  const ig = document.getElementById('sIG').value.trim();
+  const fb = document.getElementById('sFB').value.trim();
+  const x = document.getElementById('sX').value.trim();
 
   showLoad('Saving settings...');
   try {
     const rows = [
       { key: 'currency', value: curr },
-      { key: 'categories', value: JSON.stringify(cats) }
+      { key: 'categories', value: JSON.stringify(cats) },
+      { key: 'phone', value: phone },
+      { key: 'contactEmail', value: email },
+      { key: 'contactAddress', value: address },
+      { key: 'socialInstagram', value: ig },
+      { key: 'socialFacebook', value: fb },
+      { key: 'socialX', value: x }
     ];
     if (name) rows.push({ key: 'storeName', value: name });
     if (tag) rows.push({ key: 'tagline', value: tag });
@@ -1073,10 +1198,109 @@ window.setVendorStatus = async (vendor_id, status) => {
   } finally { hideLoad(); }
 };
 
+/* ===== ANNOUNCEMENTS (push broadcast) ===== */
+function switchAnnounceSub(which) {
+  document.querySelectorAll('.subnav-tab').forEach(t => t.classList.toggle('on', t.dataset.sub === which));
+  document.getElementById('announce-push').style.display = which === 'push' ? '' : 'none';
+  document.getElementById('announce-devices').style.display = which === 'devices' ? '' : 'none';
+  if (which === 'devices') loadDevices();
+}
+
+async function sendBroadcast() {
+  const title = document.getElementById('anTitle').value.trim();
+  const message = document.getElementById('anBody').value.trim();
+  const url = document.getElementById('anUrl').value.trim();
+  const target = document.getElementById('anTarget').value;
+  if (!title || !message) { toast('Title and message are required', true); return; }
+
+  showLoad('Sending...');
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    const res = await fetch('/api/notify-broadcast', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+      body: JSON.stringify({ title, message, url, target })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Failed to send');
+    toast(`Sent to ${json.sent} device${json.sent !== 1 ? 's' : ''}`);
+    document.getElementById('anTitle').value = '';
+    document.getElementById('anBody').value = '';
+    document.getElementById('anUrl').value = '';
+  } catch (e) {
+    toast('Failed: ' + e.message, true);
+  } finally {
+    hideLoad();
+  }
+}
+
+async function loadDevices() {
+  const el = document.getElementById('deviceList');
+  el.innerHTML = '<div class="no-items"><h3>Loading...</h3></div>';
+  const { data: { session } } = await sb.auth.getSession();
+  const { data, error } = await sb.from('push_subscriptions').select('role, created_at').eq('user_id', session.user.id);
+  if (error || !data?.length) { el.innerHTML = '<div class="no-items"><h3>No devices enabled yet</h3><p>Use "Enable Push Notifications" above on each device you want alerts on.</p></div>'; return; }
+  el.innerHTML = data.map(d => `<div class="deviceItem"><span>${d.role} device</span><span>${new Date(d.created_at).toLocaleDateString()}</span></div>`).join('');
+}
+
+/* ===== PUSH NOTIFICATIONS (admin's own device) ===== */
+const VAPID_PUBLIC_KEY = 'BK5N0qYpBt9XtWB4Nb2zvlGovVHWEHo2GdT-bWaOcnt_5Iq8eW0TF6NFswJQG18HkyWbjbYDUuw8pZ9LogiY_s4';
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+async function enablePush() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) { toast('Push notifications are not supported on this device', true); return; }
+  const perm = await Notification.requestPermission();
+  if (perm !== 'granted') { toast('Notification permission was not granted', true); return; }
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) });
+    const j = sub.toJSON();
+    const { data: { session } } = await sb.auth.getSession();
+    const { error } = await sb.from('push_subscriptions').upsert([{
+      user_id: session.user.id, role: 'admin', endpoint: j.endpoint, p256dh: j.keys.p256dh, auth_key: j.keys.auth
+    }], { onConflict: 'endpoint' });
+    if (error) throw error;
+    toast('Push notifications enabled on this device');
+  } catch (e) {
+    toast('Could not enable push: ' + e.message, true);
+  }
+}
+
+/* ===== NOTIFICATIONS PANEL (recent orders, across all vendors) ===== */
+function openNotifPanel() { loadNotifications(); document.getElementById('notifOver').classList.add('open'); document.getElementById('notifDrawer').classList.add('open'); document.body.style.overflow = 'hidden'; }
+function closeNotifPanel() { document.getElementById('notifOver').classList.remove('open'); document.getElementById('notifDrawer').classList.remove('open'); document.body.style.overflow = ''; }
+document.getElementById('notifOver').onclick = closeNotifPanel;
+
+async function loadNotifications() {
+  const { data } = await sb.from('orders').select('*').order('created_at', { ascending: false }).limit(30);
+  const list = document.getElementById('notifList');
+  if (!data || !data.length) { list.innerHTML = '<div class="no-items"><h3>No notifications yet</h3></div>'; return; }
+  list.innerHTML = data.map(o => `
+    <div class="notifItem">
+      <div class="notifItem-top"><span>New order</span><span>${new Date(o.created_at).toLocaleString()}</span></div>
+      <div class="notifItem-msg">${o.customer_name} · ${(o.items || []).length} item${(o.items || []).length !== 1 ? 's' : ''} · ${currency}${Number(o.total || 0).toLocaleString()}</div>
+    </div>`).join('');
+  localStorage.setItem('adminLastSeenNotif', data[0]?.created_at || '');
+  document.getElementById('aBellDot').style.display = 'none';
+}
+
+async function checkUnreadNotifs() {
+  const lastSeen = localStorage.getItem('adminLastSeenNotif');
+  const { data } = await sb.from('orders').select('created_at').order('created_at', { ascending: false }).limit(1);
+  const latest = data?.[0]?.created_at;
+  document.getElementById('aBellDot').style.display = (latest && latest !== lastSeen) ? 'block' : 'none';
+}
+
 /* ===== LOAD ALL ===== */
 async function loadAll() {
   await loadSettings();
   await Promise.all([loadProducts(), loadBanners(), loadShortcuts(), loadOrders(), loadDash(), loadVendors()]);
+  checkUnreadNotifs();
 }
 
 /* ===== INIT ===== */

@@ -30,3 +30,25 @@ self.addEventListener('fetch', e => {
     })
   );
 });
+
+self.addEventListener('push', e => {
+  let data = {};
+  try { data = e.data ? e.data.json() : {}; } catch (err) {}
+  const title = data.title || 'Notification';
+  const opts = {
+    body: data.body || '',
+    icon: 'app-icon-192.png',
+    badge: 'app-icon-192.png',
+    data: { url: data.url || '/' }
+  };
+  e.waitUntil(self.registration.showNotification(title, opts));
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || '/';
+  e.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    for (const c of list) { if (c.url.includes(url) && 'focus' in c) return c.focus(); }
+    if (clients.openWindow) return clients.openWindow(url);
+  }));
+});
