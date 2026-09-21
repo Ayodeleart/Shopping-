@@ -23,6 +23,7 @@
 <link rel="stylesheet" href="components/categories.css">
 <script defer src="data/categories.js"></script>
 <script defer src="components/category-page.js"></script>
+<script src="components/sw-register.js"></script>
 <link rel="stylesheet" href="components/search-page.css">
 <script defer src="data/search.js"></script>
 <script defer src="components/search-page.js"></script>
@@ -2300,8 +2301,7 @@ async function init() {
   }
 }
 
-if ('serviceWorker' in navigator)
-  window.addEventListener('load', ()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
+window.addEventListener('load', () => { if (window.registerSW) registerSW('/sw.js'); else if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {}); });
 
 loadCart();
 document.addEventListener('DOMContentLoaded', init);

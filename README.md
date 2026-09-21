@@ -34,6 +34,15 @@ shared helpers `data/tracking.js`, vendor fulfilment `vendor/orders.js`, admin o
 
 # Store - PWA with Supabase
 
+## Always fresh (service workers) and seller sign-up
+
+- **Updates show on the first open.** The service workers are network-first for pages, scripts and styles (the cache only answers offline or
+  when the network takes over 4 s), never touch Supabase, `/api/` or other origins, and serve images cache-first. A new version reloads the app
+  once by itself (`components/sw-register.js`: right away if just opened, otherwise when the app goes to the background).
+- **Admin**: a splash shows while the session is checked, so a signed-in admin never sees the login page flash by.
+- **Sell on Maccato** (`/vendor/`): opens on **Create account** (email + password), with a Sign in tab, Forgot password and a confirm-email screen. No Google button.
+  Turn on *Confirm email* in Supabase (Authentication > Providers > Email) and add `https://YOUR-DOMAIN/vendor/` to Authentication > URL Configuration > Redirect URLs.
+
 ## Storefront v2: brands with logos, favorites, search, new product page
 
 The SQL for this (brands, favorites, real rating summaries, vendor logo uploads, category tidy-up) is pasted in the chat when it is needed, never stored in this repo.
