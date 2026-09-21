@@ -1,5 +1,6 @@
-const CACHE = 'admin-v7';
-const PRECACHE = ['/admin/', '/admin/index.html', '/admin/manifest.json', '/icon.svg', '/admin/ads.js', '/admin/ads-sections.js', '/admin/ads.css', '/components/multi-image-picker.js', '/components/multi-image-picker.css',
+const CACHE = 'admin-v8';
+const SCOPE_HOME = '/admin/';
+const PRECACHE = ['/components/sw-register.js', '/admin/', '/admin/index.html', '/admin/manifest.json', '/icon.svg', '/admin/ads.js', '/admin/ads-sections.js', '/admin/ads.css', '/components/multi-image-picker.js', '/components/multi-image-picker.css',
   '/admin/categories.js', '/admin/categories.css', '/components/categories.css', '/components/category-picker.js', '/data/categories.js',
   '/components/brand-picker.js', '/components/brand-picker.css',
   '/admin/dest-picker.js', '/admin/tiles.js', '/components/tile-row.js', '/data/ads.js',
@@ -17,20 +18,46 @@ self.addEventListener('activate', e => {
   return self.clients.claim();
 });
 
+/* Freshness first. The old handler answered from the cache and only refreshed it in the background, so every
+   release (and every Supabase data request, which it cached too) showed up on the SECOND open only. Now:
+   - other origins (Supabase, logo.dev, fonts) and /api/ are never touched: they always go to the network
+   - pages, scripts, styles: network first; the cache only answers when offline or when the network is slower than 4 s
+   - images and icons: cache first (a changed image gets a new file name) */
+const NET_TIMEOUT = 4000;
+
+function fromCache(req) {
+  return caches.match(req).then(c => c || (req.mode === 'navigate' ? caches.match(SCOPE_HOME) : undefined));
+}
+
+function networkFirst(req, cacheable) {
+  return new Promise(resolve => {
+    let done = false;
+    const timer = setTimeout(() => { fromCache(req).then(c => { if (c && !done) { done = true; resolve(c); } }); }, NET_TIMEOUT);
+    fetch(req).then(res => {
+      clearTimeout(timer);
+      if (cacheable && res && res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
+      if (!done) { done = true; resolve(res); }
+    }).catch(() => {
+      clearTimeout(timer);
+      fromCache(req).then(c => { if (!done) { done = true; resolve(c || Response.error()); } });
+    });
+  });
+}
+
 self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET') return;
-  e.respondWith(
-    caches.match(e.request).then(cached => {
-      const network = fetch(e.request).then(res => {
-        if (res && res.ok) {
-          const clone = res.clone();
-          caches.open(CACHE).then(c => c.put(e.request, clone));
-        }
-        return res;
-      }).catch(() => cached);
-      return cached || network;
-    })
-  );
+  const req = e.request;
+  if (req.method !== 'GET') return;
+  const url = new URL(req.url);
+  if (url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
+
+  if (req.destination === 'image' || req.destination === 'font') {
+    e.respondWith(caches.match(req).then(c => c || fetch(req).then(res => {
+      if (res && res.ok) { const copy = res.clone(); caches.open(CACHE).then(k => k.put(req, copy)); }
+      return res;
+    })));
+    return;
+  }
+  e.respondWith(networkFirst(req, !url.search));     // pages with a ?query are not stored (shared links, tracking tags)
 });
 
 self.addEventListener('push', e => {

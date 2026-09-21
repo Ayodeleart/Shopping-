@@ -23,6 +23,7 @@
 <link rel="stylesheet" href="components/categories.css">
 <script defer src="data/categories.js"></script>
 <script defer src="components/category-page.js"></script>
+<script src="components/sw-register.js"></script>
 <link rel="stylesheet" href="components/search-page.css">
 <script defer src="data/search.js"></script>
 <script defer src="components/search-page.js"></script>
@@ -36,23 +37,12 @@
 <link rel="stylesheet" href="components/product-page.css">
 <script defer src="components/product-gallery.js"></script>
 <script defer src="components/image-viewer.js"></script>
+<link rel="stylesheet" href="components/theme-tokens.css">
+<link rel="stylesheet" href="components/product-card.css">
+<script src="components/product-card.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
-/* ── THEME TOKENS ─────────────────────────────────── */
-:root{
-  --bg:#fff;--bg2:#f5f5f5;--bg3:#ebebeb;--card:#fff;
-  --txt:#111;--txt2:#555;--txt3:#888;
-  --red:#D91C2D;--red2:#a81422;
-  --gold:#F5B301;
-  --border:#e8e8e8;
-  --hh:52px;
-}
-[data-theme=dark]{
-  --bg:#0d0d0d;--bg2:#1a1a1a;--bg3:#252525;--card:#1a1a1a;
-  --txt:#f0f0f0;--txt2:#aaa;--txt3:#666;
-  --red:#e8192c;--red2:#c01525;
-  --border:#2a2a2a;
-}
+/* Theme tokens now live in components/theme-tokens.css (shared with /store). */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{scroll-behavior:smooth}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--txt);overflow-x:hidden;padding-top:var(--hh)}
@@ -216,105 +206,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 .fcard-wrap:first-child{padding-left:12px}
 .fcard-wrap:last-child{padding-right:12px}
 
-/* ── PRODUCT CARD (JUMIA STYLE) ───────────────────── */
-.pcard{
-  background:var(--card);border-radius:4px;overflow:hidden;
-  cursor:pointer;border:1px solid var(--border);
-  transition:transform .15s;
-  -webkit-transform:translateZ(0);
-}
-.pcard:active{transform:scale(.97)}
-
-/* IMAGE AREA */
-.pcImg{
-  position:relative;padding-top:100%;
-  background:#fff;overflow:hidden;
-}
-.pcImg img{
-  position:absolute;inset:0;width:100%;height:100%;
-  object-fit:contain;padding:6px;
-}
-.noImgPh{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--txt3);background:var(--bg2)}
-
-/* DISCOUNT BADGE — circular, top right, like Jumia */
-.discBadge{
-  position:absolute;top:6px;right:6px;
-  background:var(--red);color:#fff;
-  font-size:11px;font-weight:800;
-  width:38px;height:38px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  text-align:center;line-height:1.1;
-  z-index:1;
-}
-
-/* BODY */
-.pcBody{padding:8px 9px 10px}
-.pcName{
-  font-size:13px;font-weight:400;color:var(--txt2);
-  line-height:1.3;margin-bottom:5px;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
-}
-.pcPriceRow{display:flex;align-items:center;justify-content:space-between;gap:4px}
-.pcPrice{font-size:17px;font-weight:900;color:var(--txt);margin-bottom:1px}
-.favBtn{
-  width:32px;height:32px;margin:-4px -7px -4px 0;flex-shrink:0;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;color:var(--txt2);
-}
-.favBtn svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linejoin:round}
-.favBtn.on{color:var(--red)}
-.favBtn.on svg{fill:currentColor}
-.favBtn.pop svg{animation:favPop .34s ease-out}
-@keyframes favPop{0%{transform:scale(.7)}55%{transform:scale(1.3)}100%{transform:scale(1)}}
-.pcRate{display:flex;align-items:center;gap:4px;margin-bottom:6px;font-size:11px;color:var(--txt3)}
-.stars{position:relative;display:inline-flex;line-height:0;vertical-align:middle}
-.stars .st-bg,.stars .st-fg{display:inline-flex;gap:1px;flex-wrap:nowrap}
-.stars svg{flex:0 0 auto;fill:currentColor}
-.stars .st-bg{color:var(--bg3)}
-.stars .st-fg{position:absolute;left:0;top:0;overflow:hidden;color:var(--gold)}
-.pcWas{font-size:12px;color:var(--txt3);text-decoration:line-through;margin-bottom:5px}
-.pcStockRow{display:flex;align-items:center;gap:6px;margin-bottom:7px}
-.pcBar{flex:1;height:4px;background:var(--bg3);border-radius:2px;overflow:hidden}
-.pcBarFill{height:100%;background:var(--red);border-radius:2px;transition:width .3s}
-.pcStockTxt{font-size:11px;color:var(--txt3);white-space:nowrap;flex-shrink:0}
-.pcAdd{
-  width:100%;height:36px;background:var(--red);color:#fff;
-  font-size:13px;font-weight:700;border-radius:8px;
-  transition:background .12s;
-}
-.pcAdd:active{background:var(--red2)}
-/* after adding: [ - ]  1  [ + ]  (square red buttons at both ends, quantity in the middle) */
-.pcStep{display:flex;align-items:center;justify-content:space-between;height:36px}
-.pcStepB{
-  width:36px;height:36px;border-radius:8px;background:var(--red);color:#fff;
-  display:flex;align-items:center;justify-content:center;
-  box-shadow:0 2px 6px rgba(217,28,45,.35);transition:transform .1s,background .12s;
-}
-.pcStepB:active{background:var(--red2);transform:scale(.92)}
-.pcStepN{flex:1;text-align:center;font-size:16px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums}
-
-/* fly-to-cart */
-.flyImg{position:fixed;z-index:1200;pointer-events:none;object-fit:contain;background:#fff;border-radius:14px;box-shadow:0 10px 26px rgba(0,0,0,.32);will-change:transform,opacity}
-.flyDot{background:var(--red);border-radius:50%}
-.cart-bump{animation:cartBump .42s ease-out}
-@keyframes cartBump{0%{transform:scale(1)}35%{transform:scale(1.28)}65%{transform:scale(.92)}100%{transform:scale(1)}}
-
-/* GRID */
-.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);padding:0}
-.pgrid-wrap{background:var(--bg);padding-bottom:16px}
-.pgrid > div{background:var(--bg)}
-
-/* EMPTY */
-.empty{
-  padding:48px 20px;text-align:center;color:var(--txt3);
-  grid-column:1/-1;background:var(--bg);
-}
-.empty h3{font-size:15px;font-weight:700;color:var(--txt2);margin-bottom:6px}
-.empty p{font-size:13px}
-
-/* SCROLL ANIMATIONS */
-@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-.au{opacity:0}.au.v{animation:fadeUp .3s ease-out forwards}
-.d0{animation-delay:0ms}.d1{animation-delay:40ms}.d2{animation-delay:80ms}.d3{animation-delay:120ms}
+/* Product card, grid and empty-state CSS now live in components/product-card.css (linked in head, shared with /store). */
 
 /* ── PRODUCT PAGE (FULL SCREEN SLIDE UP) ───────────── */
 #pModal{
@@ -1053,7 +945,7 @@ let storeName = 'Maccato';
 let brandsList = [], brandById = {}, brandBySlug = {}, vendorsMap = {}, ratingMap = {};
 let policy = { delivery: '', returns: '', warranty: '' };
 const $ = id => document.getElementById(id);
-const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+/* esc() now comes from components/product-card.js (loaded in <head>) */
 const normSlug = v => String(v == null ? '' : v).trim().replace(/\s+/g, ' ').toLowerCase();
 
 /* ── THEME ────────────────────────────────────────── */
@@ -1356,7 +1248,7 @@ const fmt = n => currency + Number(n).toLocaleString('en-NG');
 /* Guests: saved on this device. Signed in: also synced to the `favorites` table. */
 let favs = new Set(), favSyncedFor = null;
 try { favs = new Set((JSON.parse(localStorage.getItem('favs_v1')) || []).map(Number)); } catch { favs = new Set(); }
-const HEART_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>';
+/* HEART_SVG now comes from components/product-card.js (loaded in <head>) */
 
 function updateFavCount() { $('menuFavCount').textContent = favs.size ? String(favs.size) : ''; }
 function saveFavs() { localStorage.setItem('favs_v1', JSON.stringify([...favs])); updateFavCount(); }
@@ -1400,79 +1292,8 @@ function showFavorites() {
   showList('Favorites', allProds.filter(p => favs.has(p.id)), 'Tap the heart on a product to save it here.');
 }
 
-/* ── STARS (real ratings only) ────────────────────── */
-function starsHTML(avg, px) {
-  const pct = Math.max(0, Math.min(100, avg / 5 * 100));
-  const star = `<svg width="${px}" height="${px}" viewBox="0 0 24 24" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
-  const row = star.repeat(5);
-  return `<span class="stars" role="img" aria-label="${avg.toFixed(1)} out of 5"><span class="st-bg">${row}</span><span class="st-fg" style="width:${pct}%">${row}</span></span>`;
-}
-
-/* ── PRODUCT CARD (JUMIA STYLE) ───────────────────── */
-/* Add to Cart turns into a - 1 + stepper once the product is in the cart (see ctlHTML / syncCardCtls). */
-function ctlHTML(id) {
-  const it = cart.find(x => x.id === id);
-  if (!it) return `<button class="pcAdd" onclick="event.stopPropagation();addToCart(${id},this)">Add to Cart</button>`;
-  return `
-    <div class="pcStep" onclick="event.stopPropagation()">
-      <button class="pcStepB" onclick="event.stopPropagation();cardQty(${id},-1,this)" aria-label="Remove one"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
-      <span class="pcStepN">${it.qty}</span>
-      <button class="pcStepB" onclick="event.stopPropagation();cardQty(${id},1,this)" aria-label="Add one"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
-    </div>`;
-}
-
-/* every card of a product (home grid, rails, category page ...) follows the cart */
-function syncCardCtls() {
-  document.querySelectorAll('.pcCtl').forEach(el => {
-    const id = Number(el.dataset.pid), it = cart.find(x => x.id === id), q = String(it ? it.qty : 0);
-    if (el.dataset.q === q) return;
-    el.dataset.q = q;
-    el.innerHTML = ctlHTML(id);
-  });
-}
-
-function cardQty(id, d, src) {
-  const it = cart.find(x => x.id === id);
-  if (!it) return;
-  if (d > 0 && src) flyToCart(src);      /* before the cart updates: the card controls re-render and detach this button */
-  it.qty += d;
-  if (it.qty <= 0) cart = cart.filter(x => x !== it);
-  saveCart(); updateCartBadge();
-}
-
-function cardHTML(p) {
-  const disc = p.original_price && p.original_price > p.price
-    ? Math.round((1 - p.price/p.original_price)*100) : 0;
-  const tot = p.max_stock || (p.stock ? p.stock + 15 : 0);
-  const pct = tot > 0 ? Math.min(100, Math.round(p.stock/tot*100)) : 0;
-  const r = ratingMap[p.id];
-  const inCart = cart.find(x => x.id === p.id);
-
-  return `
-    <div class="pcard" onclick="openProduct(${p.id})">
-      <div class="pcImg">
-        ${p.image_url
-          ? `<img src="${esc(p.image_url)}" alt="${esc(p.name)}" loading="lazy">`
-          : `<div class="noImgPh"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>`}
-        ${disc > 0 ? `<span class="discBadge">-${disc}%</span>` : ''}
-      </div>
-      <div class="pcBody">
-        <div class="pcName">${esc(p.name)}</div>
-        <div class="pcPriceRow">
-          <div class="pcPrice">${fmt(p.price)}</div>
-          <button class="favBtn${favs.has(p.id) ? ' on' : ''}" data-fav="${p.id}" aria-label="Save to favorites" onclick="event.stopPropagation();toggleFav(${p.id})">${HEART_SVG}</button>
-        </div>
-        ${disc > 0 ? `<div class="pcWas">${fmt(p.original_price)}</div>` : ''}
-        ${r && r.n > 0 ? `<div class="pcRate">${starsHTML(r.avg, 12)}<span>(${r.n})</span></div>` : ''}
-        ${p.stock > 0 ? `
-          <div class="pcStockRow">
-            <div class="pcBar"><div class="pcBarFill" style="width:${pct}%"></div></div>
-            <span class="pcStockTxt">${p.stock} left</span>
-          </div>` : ''}
-        <div class="pcCtl" data-pid="${p.id}" data-q="${inCart ? inCart.qty : 0}">${ctlHTML(p.id)}</div>
-      </div>
-    </div>`;
-}
+/* starsHTML, ctlHTML, syncCardCtls, cardQty, cardHTML now come from
+   components/product-card.js (loaded in <head>), shared with /store/[slug]. */
 
 /* ── RECENTLY VIEWED (this device) ────────────────── */
 let recentViewed = [];
@@ -2515,8 +2336,7 @@ async function init() {
   }
 }
 
-if ('serviceWorker' in navigator)
-  window.addEventListener('load', ()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
+window.addEventListener('load', () => { if (window.registerSW) registerSW('/sw.js'); else if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {}); });
 
 loadCart();
 document.addEventListener('DOMContentLoaded', init);
