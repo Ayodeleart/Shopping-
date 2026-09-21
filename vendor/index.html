@@ -10,6 +10,8 @@
 <link rel="icon" type="image/png" sizes="32x32" href="app-icon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 :root{--bg:#fff;--bg2:#f5f5f5;--bg3:#ebebeb;--card:#fff;--txt:#111;--txt2:#555;--txt3:#999;--red:#D91C2D;--red2:#a81422;--green:#16a34a;--amber:#d97706;--border:#e0e0e0;--shadow:0 2px 12px rgba(0,0,0,.06);--r:12px}
 [data-theme=dark]{--bg:#0d0d0d;--bg2:#1a1a1a;--bg3:#242424;--card:#1a1a1a;--txt:#f5f5f5;--txt2:#aaa;--txt3:#666;--red:#e8192c;--red2:#c01525;--green:#22c55e;--amber:#f59e0b;--border:#2a2a2a;--shadow:0 2px 12px rgba(0,0,0,.4)}
@@ -42,6 +44,45 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 .primaryBtn:active{transform:scale(.98);opacity:.9}
 .ghostBtn{width:100%;height:44px;color:#8a93a3;font-size:13px;font-weight:700;margin-top:10px}
 .errMsg{color:#f87171;font-size:13px;margin-top:10px;min-height:16px}
+
+/* ── ONBOARDING WIZARD ────────────────────────────── */
+#onboardWrap{display:flex;flex-direction:column;min-height:100vh;background:var(--bg)}
+#obHdr{position:sticky;top:0;z-index:100;height:52px;background:var(--red);display:flex;align-items:center;padding:0 6px;color:#fff;flex-shrink:0}
+#obStepLabel{flex:1;text-align:center;font-size:15px;font-weight:800}
+#obDots{display:flex;justify-content:center;gap:6px;padding:14px 0 4px;flex-shrink:0}
+#obDots span{width:8px;height:8px;border-radius:50%;background:var(--bg3)}
+#obDots span.on{background:var(--red);width:20px;border-radius:4px}
+#obDots span.done{background:var(--green)}
+#obBody{flex:1;overflow-y:auto;padding:16px 20px 20px}
+.obStep{max-width:480px;margin:0 auto}
+.obIntro{font-size:13px;color:var(--txt3);line-height:1.5;margin-bottom:16px}
+.obSlugRow{display:flex;align-items:center;border:1.5px solid var(--border);border-radius:10px;overflow:hidden;background:var(--bg)}
+.obSlugRow span{padding:0 0 0 14px;font-size:13px;color:var(--txt3);white-space:nowrap}
+.obSlugRow input{border:none!important;min-height:48px;flex:1;padding-left:4px!important}
+.obHint{font-size:12px;margin-top:6px;color:var(--txt3)}
+.obHint.ok{color:#16a34a}
+.obHint.err{color:#dc2626}
+.obVerifiedField{display:flex;align-items:center;gap:8px}
+.obVerifiedField input{flex:1}
+.obVerifiedTag{font-size:11px;font-weight:700;color:#16a34a;background:rgba(22,163,74,.1);padding:5px 9px;border-radius:20px;white-space:nowrap;flex-shrink:0}
+.ghostActionBtn{width:100%;height:44px;border:1.5px solid var(--border);border-radius:10px;background:var(--bg);color:var(--txt);font-size:13px;font-weight:700;margin-top:6px}
+.ghostActionBtn:disabled{opacity:.5}
+#obMap{width:100%;height:220px;border-radius:12px;margin-top:8px;background:var(--bg2)}
+.obStatusCard{margin-top:12px;padding:12px;border-radius:10px;background:var(--bg2);font-size:13px;color:var(--txt2);min-height:0}
+.obStatusCard:empty{display:none;padding:0;margin:0}
+.obStatusCard.ok{background:rgba(22,163,74,.1);color:#16a34a}
+.obStatusCard.fail{background:rgba(220,38,38,.1);color:#dc2626}
+.obTermsBox{max-height:220px;overflow-y:auto;background:var(--bg2);border-radius:10px;padding:14px;margin-bottom:14px;font-size:12.5px;line-height:1.6;color:var(--txt2)}
+.obTermsBox p{margin-bottom:10px}
+.obTermsBox p:last-child{margin-bottom:0}
+.obCheckRow{display:flex;align-items:flex-start;gap:10px;padding:9px 0;font-size:13px;color:var(--txt)}
+.obCheckRow input{width:18px;height:18px;margin-top:1px;accent-color:var(--red);flex-shrink:0}
+.obReviewSec{margin-bottom:16px}
+.obReviewHd{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.obReviewHd span{font-size:13px;font-weight:800;color:var(--txt3);text-transform:uppercase;letter-spacing:.4px}
+.obReviewHd button{font-size:12px;font-weight:700;color:var(--red)}
+.obReviewBody{background:var(--bg2);border-radius:10px;padding:12px;font-size:13px;color:var(--txt);line-height:1.6}
+#obFoot{position:sticky;bottom:0;background:var(--bg);border-top:1px solid var(--border);padding:12px 20px calc(12px + env(safe-area-inset-bottom,0));flex-shrink:0}
 
 /* APP SHELL */
 #app{display:none;min-height:100vh;flex-direction:column}
@@ -168,26 +209,190 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
   </div>
 </div>
 
-<!-- 2. ONBOARDING (first-time vendor, no row yet) -->
-<div id="onboardWrap" class="centerWrap" style="display:none">
-  <div class="cbox">
-    <div class="clogo"><img src="app-icon-maskable-192.png" alt=""></div>
-    <div class="ctitle">Set up your store</div>
-    <div class="csub">Tell us about your business. An admin will review and approve it before it goes live.</div>
-    <div class="fld"><label>Business Name</label><input id="obName" placeholder="e.g. Ada's Fashion House"></div>
-    <div class="fld"><label>Phone Number</label><input id="obPhone" placeholder="080..."></div>
-    <button class="primaryBtn" id="obSubmitBtn">Submit application</button>
+<!-- 2. ONBOARDING WIZARD -->
+<div id="onboardWrap" style="display:none">
+  <div id="obHdr">
+    <button class="vhbtn" id="obBackBtn" onclick="obPrevStep()" aria-label="Back">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    </button>
+    <div id="obStepLabel">Store</div>
+    <button class="vhbtn" onclick="sb.auth.signOut().then(()=>location.reload())" aria-label="Sign out">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    </button>
+  </div>
+  <div id="obDots"></div>
+
+  <div id="obBody">
+
+    <!-- STEP 0: STORE -->
+    <div class="obStep" data-step="0">
+      <p class="obIntro">Tell us about the store you're opening on Maccato.</p>
+      <div class="fld"><label>Store / Brand Name</label><input id="obStoreName" placeholder="e.g. Ada's Fashion House" oninput="obSlugFromName()"></div>
+      <div class="fld">
+        <label>Store URL</label>
+        <div class="obSlugRow"><span>maccato.com/store/</span><input id="obStoreSlug" placeholder="ada-fashion-house" oninput="obCheckSlug()"></div>
+        <div class="obHint" id="obSlugHint"></div>
+      </div>
+      <div class="fld"><label>Store Description</label><textarea id="obStoreDesc" placeholder="What do you sell? What makes your store worth following?"></textarea></div>
+      <div class="fld">
+        <label>Brand Logo</label>
+        <div class="imgPick" id="obLogoPick" onclick="document.getElementById('obLogoFile').click()">
+          <span id="obLogoPickTxt">Tap to upload your logo (square works best)</span>
+          <img id="obLogoPreview" style="display:none">
+        </div>
+        <input type="file" id="obLogoFile" accept="image/png,image/jpeg,image/webp" style="display:none">
+        <div class="progWrap" id="obLogoProg"><div class="progBar" id="obLogoProgBar"></div></div>
+      </div>
+    </div>
+
+    <!-- STEP 1: PERSONAL -->
+    <div class="obStep" data-step="1" style="display:none">
+      <p class="obIntro">Your legal name should match your ID document — this is used for seller verification, not shown publicly.</p>
+      <div class="frow2">
+        <div class="fld"><label>Title</label>
+          <select id="obTitle"><option value="">Select</option><option>Mr</option><option>Mrs</option><option>Miss</option><option>Dr</option><option>Chief</option><option>Other</option></select>
+        </div>
+        <div class="fld"><label>Date of Birth</label><input type="date" id="obDob"></div>
+      </div>
+      <div class="fld"><label>First Name</label><input id="obFirstName"></div>
+      <div class="fld"><label>Middle Name (optional)</label><input id="obMiddleName"></div>
+      <div class="fld"><label>Last Name</label><input id="obLastName"></div>
+      <div class="fld"><label>Gender</label>
+        <select id="obGender"><option value="">Select</option><option>Female</option><option>Male</option><option>Prefer not to say</option></select>
+      </div>
+    </div>
+
+    <!-- STEP 2: CONTACT & ADDRESS -->
+    <div class="obStep" data-step="2" style="display:none">
+      <div class="fld">
+        <label>Email</label>
+        <div class="obVerifiedField"><input id="obEmail" disabled><span class="obVerifiedTag">Verified via Google</span></div>
+      </div>
+      <div class="fld">
+        <label>Phone Number</label>
+        <div class="obVerifiedField">
+          <input id="obPhone" placeholder="080..." oninput="document.getElementById('obPhoneVerifiedTag').style.display='none'">
+          <span class="obVerifiedTag" id="obPhoneVerifiedTag" style="display:none">Verified</span>
+        </div>
+        <div id="obPhoneOtpRow" style="display:flex;gap:8px;margin-top:8px">
+          <button class="ghostActionBtn" onclick="obSendPhoneOtp()" id="obSendOtpBtn">Send verification code</button>
+        </div>
+        <div id="obOtpEntryRow" style="display:none;gap:8px;margin-top:8px">
+          <input id="obOtpCode" placeholder="6-digit code" style="flex:1" maxlength="6">
+          <button class="ghostActionBtn" onclick="obVerifyPhoneOtp()">Verify</button>
+        </div>
+      </div>
+      <div class="fld"><label>Street Address</label><input id="obAddress" placeholder="e.g. 14 Allen Avenue"></div>
+      <div class="frow2">
+        <div class="fld"><label>State</label><select id="obState" onchange="document.getElementById('obLga').value=''"></select></div>
+        <div class="fld"><label>LGA</label><input id="obLga" placeholder="Local government area"></div>
+      </div>
+      <div class="frow2">
+        <div class="fld"><label>City / Town</label><input id="obCity"></div>
+        <div class="fld"><label>Landmark</label><input id="obLandmark" placeholder="Optional"></div>
+      </div>
+      <div class="fld">
+        <label>Pin Your Store Location</label>
+        <div id="obMap"></div>
+        <div class="obHint">Tap the map to drop a pin at your store/pickup location.</div>
+      </div>
+    </div>
+
+    <!-- STEP 3: IDENTITY -->
+    <div class="obStep" data-step="3" style="display:none">
+      <p class="obIntro">Choose your verification method.</p>
+      <div class="fld">
+        <label>Verification Method</label>
+        <select id="obIdMethod">
+          <option value="">Select a method</option>
+          <option value="nin">National Identity Number (NIN)</option>
+          <option value="bvn">Bank Verification Number (BVN)</option>
+          <option value="drivers_license">Driver's Licence</option>
+          <option value="passport">International Passport</option>
+        </select>
+      </div>
+      <div class="fld"><label>ID Number</label><input id="obIdNumber" placeholder="Enter the number on your document"></div>
+      <button class="ghostActionBtn" onclick="obVerifyIdentity()" id="obVerifyIdBtn">Verify Identity</button>
+      <div id="obIdStatus" class="obStatusCard"></div>
+    </div>
+
+    <!-- STEP 4: PAYOUT -->
+    <div class="obStep" data-step="4" style="display:none">
+      <p class="obIntro">Where should we pay you out? We verify this automatically.</p>
+      <div class="fld"><label>Bank</label><select id="obBank"><option value="">Loading banks...</option></select></div>
+      <div class="fld"><label>Account Number</label><input id="obAccountNumber" placeholder="10-digit account number" maxlength="10"></div>
+      <button class="ghostActionBtn" onclick="obVerifyBank()" id="obVerifyBankBtn">Verify Account</button>
+      <div id="obBankStatus" class="obStatusCard"></div>
+    </div>
+
+    <!-- STEP 5: TERMS -->
+    <div class="obStep" data-step="5" style="display:none">
+      <p class="obIntro">Please review and accept the following before applying.</p>
+      <div class="obTermsBox">
+        <p><b>Seller Terms.</b> You're entering a marketplace agreement with Maccato as an independent seller; you're responsible for the products you list, their accuracy, and fulfilling orders on time.</p>
+        <p><b>Marketplace Rules.</b> You'll deal with customers professionally, keep stock levels accurate, and won't manipulate reviews, pricing, or search ranking.</p>
+        <p><b>Product/Listing Policies.</b> Listings must be accurate, use images you have rights to, and correctly categorised.</p>
+        <p><b>Prohibited-Products Policy.</b> No counterfeit, stolen, hazardous, weapons, or items illegal to sell in Nigeria.</p>
+        <p><b>Returns/Refund Requirements.</b> You'll honour Maccato's baseline returns window and process refunds promptly for valid claims.</p>
+        <p><b>Payout/Commission Terms.</b> Maccato deducts an agreed commission per sale before payout to your verified bank account.</p>
+        <p><b>Privacy/Verification Consent.</b> You consent to Maccato verifying your identity and bank details as part of onboarding, and processing your data to run your seller account.</p>
+      </div>
+      <label class="obCheckRow"><input type="checkbox" class="obTermCheck" data-term="seller_terms"><span>I accept the Seller Terms</span></label>
+      <label class="obCheckRow"><input type="checkbox" class="obTermCheck" data-term="marketplace_rules"><span>I accept the Marketplace Rules</span></label>
+      <label class="obCheckRow"><input type="checkbox" class="obTermCheck" data-term="listing_policy"><span>I accept the Product/Listing Policies</span></label>
+      <label class="obCheckRow"><input type="checkbox" class="obTermCheck" data-term="prohibited_policy"><span>I accept the Prohibited-Products Policy</span></label>
+      <label class="obCheckRow"><input type="checkbox" class="obTermCheck" data-term="returns_policy"><span>I accept the Returns/Refund Requirements</span></label>
+      <label class="obCheckRow"><input type="checkbox" class="obTermCheck" data-term="payout_terms"><span>I accept the Payout/Commission Terms</span></label>
+      <label class="obCheckRow"><input type="checkbox" class="obTermCheck" data-term="privacy_consent"><span>I consent to identity and bank verification</span></label>
+    </div>
+
+    <!-- STEP 6: REVIEW -->
+    <div class="obStep" data-step="6" style="display:none">
+      <div class="obReviewSec">
+        <div class="obReviewHd"><span>Store</span><button onclick="obGoStep(0)">Edit</button></div>
+        <div id="obRevStore" class="obReviewBody"></div>
+      </div>
+      <div class="obReviewSec">
+        <div class="obReviewHd"><span>Personal</span><button onclick="obGoStep(1)">Edit</button></div>
+        <div id="obRevPersonal" class="obReviewBody"></div>
+      </div>
+      <div class="obReviewSec">
+        <div class="obReviewHd"><span>Address</span><button onclick="obGoStep(2)">Edit</button></div>
+        <div id="obRevAddress" class="obReviewBody"></div>
+      </div>
+      <div class="obReviewSec">
+        <div class="obReviewHd"><span>Verification</span><button onclick="obGoStep(3)">Edit</button></div>
+        <div id="obRevVerify" class="obReviewBody"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="obFoot">
     <div class="errMsg" id="obErr"></div>
+    <button class="primaryBtn" id="obContinueBtn" onclick="obNextStep()">Continue</button>
   </div>
 </div>
 
 <!-- 3. PENDING -->
 <div id="pendingWrap" class="centerWrap" style="display:none">
   <div class="cbox">
-    <div class="badge-pending"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Pending review</div>
-    <div class="ctitle">Your store is being reviewed</div>
-    <div class="csub">We'll notify you by email once an admin approves your store. This usually takes 1-2 days.</div>
+    <div class="badge-pending"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Under review</div>
+    <div class="ctitle">Your Maccato seller application is under review</div>
+    <div class="csub">We'll notify you once an admin approves your store.</div>
+    <div id="pendingChecklist" class="obStatusCard" style="text-align:left"></div>
     <button class="ghostBtn" id="pendingSignOut">Sign out</button>
+  </div>
+</div>
+
+<!-- 3b. REJECTED -->
+<div id="rejectedWrap" class="centerWrap" style="display:none">
+  <div class="cbox">
+    <div class="badge-suspended"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.9" y1="4.9" x2="19.1" y2="19.1"/></svg> Changes needed</div>
+    <div class="ctitle">Your application needs changes</div>
+    <div class="csub" id="rejectedReason"></div>
+    <button class="primaryBtn" onclick="obReopenForEdit()">Update Application</button>
+    <button class="ghostBtn" id="rejectedSignOut">Sign out</button>
   </div>
 </div>
 
@@ -320,7 +525,7 @@ function hideLoad() { document.getElementById('loadOverlay').classList.remove('o
 
 /* ===== SCREEN SWITCHING ===== */
 function showScreen(id) {
-  ['authWrap','onboardWrap','pendingWrap','suspendedWrap','app'].forEach(s => {
+  ['authWrap','onboardWrap','pendingWrap','rejectedWrap','suspendedWrap','app'].forEach(s => {
     const el = document.getElementById(s);
     if (s === 'app') el.classList.toggle('on', s === id);
     else el.style.display = s === id ? 'flex' : 'none';
@@ -333,6 +538,7 @@ document.getElementById('googleBtn').onclick = async () => {
   if (error) document.getElementById('authErr').textContent = error.message;
 };
 document.getElementById('pendingSignOut').onclick = () => sb.auth.signOut().then(() => location.reload());
+document.getElementById('rejectedSignOut').onclick = () => sb.auth.signOut().then(() => location.reload());
 document.getElementById('suspendedSignOut').onclick = () => sb.auth.signOut().then(() => location.reload());
 document.getElementById('vSignOutBtn').onclick = () => sb.auth.signOut().then(() => location.reload());
 
@@ -346,9 +552,23 @@ async function boot() {
   vendorRow = v;
   hideLoad();
 
-  if (!vendorRow) { showScreen('onboardWrap'); return; }
-  if (vendorRow.status === 'pending') { showScreen('pendingWrap'); return; }
+  if (!vendorRow || ['draft', 'pending_verification'].includes(vendorRow.application_status)) {
+    showScreen('onboardWrap');
+    obInit();
+    return;
+  }
+  if (vendorRow.application_status === 'rejected') {
+    document.getElementById('rejectedReason').textContent = vendorRow.rejection_reason
+      ? `Reason: ${vendorRow.rejection_reason}` : 'An admin has asked you to update some details.';
+    showScreen('rejectedWrap');
+    return;
+  }
   if (vendorRow.status === 'suspended') { showScreen('suspendedWrap'); return; }
+  if (vendorRow.status === 'pending') {
+    document.getElementById('pendingChecklist').innerHTML = obChecklistHtml(vendorRow);
+    showScreen('pendingWrap');
+    return;
+  }
 
   document.getElementById('vShopName').textContent = vendorRow.business_name;
   document.getElementById('sName').value = vendorRow.business_name || '';
@@ -358,6 +578,24 @@ async function boot() {
   await loadCategories();
   await Promise.all([loadDash(), loadProducts(), loadOrders()]);
   checkUnreadNotifs();
+}
+
+function obChecklistHtml(v) {
+  const row = (ok, label) => `<div style="display:flex;align-items:center;gap:8px;padding:5px 0">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${ok ? '#16a34a' : 'var(--txt3)'}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    <span style="color:${ok ? 'var(--txt)' : 'var(--txt3)'}">${label}</span></div>`;
+  return [
+    row(!!v.store_name || !!v.store_slug, 'Store information'),
+    row(!!v.email_verified_at, 'Email verified'),
+    row(!!v.phone_verified_at, 'Phone verified'),
+    row(v.id_verification_status === 'verified', v.id_verification_status === 'needs_review' ? 'Identity submitted (manual review)' : 'Identity verified'),
+    row(v.bank_verification_status === 'verified', v.bank_verification_status === 'pending' ? 'Bank details submitted (manual review)' : 'Bank account verified'),
+    row(!!v.terms_accepted_at, 'Seller agreement accepted')
+  ].join('');
+}
+
+function obReopenForEdit() {
+  sb.from('vendors').update({ application_status: 'draft' }).eq('id', session.user.id).then(() => location.reload());
 }
 
 /* ===== CATEGORIES (table `categories`, managed by the admin; the product form picks from it) ===== */
@@ -370,16 +608,295 @@ async function loadCategories() {
   catPicker.setTree(catTree);
 }
 
-document.getElementById('obSubmitBtn').onclick = async () => {
-  const business_name = document.getElementById('obName').value.trim();
-  const phone = document.getElementById('obPhone').value.trim();
-  if (!business_name) { document.getElementById('obErr').textContent = 'Business name is required'; return; }
-  showLoad('Submitting...');
-  const { error } = await sb.from('vendors').insert([{ id: session.user.id, business_name, phone, email: session.user.email, status: 'pending' }]);
-  hideLoad();
-  if (error) { document.getElementById('obErr').textContent = error.message; return; }
-  showScreen('pendingWrap');
+/* ===== ONBOARDING WIZARD ===== */
+const OB_STEPS = ['Store', 'Personal', 'Contact', 'Identity', 'Payout', 'Terms', 'Review'];
+let obStepIdx = 0;
+let obMapInstance = null, obMapMarker = null;
+let obPendingLat = null, obPendingLng = null;
+let obOtpPhoneOnFile = null;
+
+const NG_STATES = ['Abia','Adamawa','Akwa Ibom','Anambra','Bauchi','Bayelsa','Benue','Borno','Cross River','Delta','Ebonyi','Edo','Ekiti','Enugu','Gombe','Imo','Jigawa','Kaduna','Kano','Katsina','Kebbi','Kogi','Kwara','Lagos','Nasarawa','Niger','Ogun','Ondo','Osun','Oyo','Plateau','Rivers','Sokoto','Taraba','Yobe','Zamfara','FCT Abuja'];
+
+function obInit() {
+  document.getElementById('obEmail').value = session.user.email;
+  document.getElementById('obState').innerHTML = '<option value="">Select</option>' + NG_STATES.map(s => `<option>${s}</option>`).join('');
+
+  if (vendorRow) {
+    document.getElementById('obStoreName').value = vendorRow.business_name || '';
+    document.getElementById('obStoreSlug').value = vendorRow.store_slug || '';
+    document.getElementById('obStoreDesc').value = vendorRow.store_description || '';
+    if (vendorRow.logo_url) { document.getElementById('obLogoPreview').src = vendorRow.logo_url; document.getElementById('obLogoPreview').style.display = 'block'; document.getElementById('obLogoPickTxt').style.display = 'none'; }
+    document.getElementById('obTitle').value = vendorRow.title || '';
+    document.getElementById('obFirstName').value = vendorRow.first_name || '';
+    document.getElementById('obMiddleName').value = vendorRow.middle_name || '';
+    document.getElementById('obLastName').value = vendorRow.last_name || '';
+    document.getElementById('obDob').value = vendorRow.date_of_birth || '';
+    document.getElementById('obGender').value = vendorRow.gender || '';
+    document.getElementById('obPhone').value = vendorRow.phone || '';
+    if (vendorRow.phone_verified_at) document.getElementById('obPhoneVerifiedTag').style.display = '';
+    document.getElementById('obAddress').value = vendorRow.address || '';
+    document.getElementById('obState').value = vendorRow.state || '';
+    document.getElementById('obLga').value = vendorRow.lga || '';
+    document.getElementById('obCity').value = vendorRow.city || '';
+    document.getElementById('obLandmark').value = vendorRow.landmark || '';
+    obPendingLat = vendorRow.store_lat; obPendingLng = vendorRow.store_lng;
+    document.getElementById('obIdMethod').value = vendorRow.id_verification_method || '';
+    document.getElementById('obIdNumber').value = vendorRow.id_verification_number || '';
+    if (vendorRow.id_verification_status && vendorRow.id_verification_status !== 'not_started') obRenderIdStatus(vendorRow.id_verification_status);
+    document.getElementById('obAccountNumber').value = vendorRow.bank_account_number || '';
+    if (vendorRow.bank_verification_status === 'verified') obRenderBankStatus('verified', vendorRow.bank_account_name);
+  }
+
+  obLoadBanks();
+  obGoStep(vendorRow?.onboarding_step || 0);
+}
+
+function obGoStep(idx) {
+  obStepIdx = idx;
+  document.querySelectorAll('.obStep').forEach(el => el.style.display = Number(el.dataset.step) === idx ? '' : 'none');
+  document.getElementById('obStepLabel').textContent = OB_STEPS[idx];
+  document.getElementById('obBackBtn').style.visibility = idx === 0 ? 'hidden' : 'visible';
+  document.getElementById('obContinueBtn').textContent = idx === OB_STEPS.length - 1 ? 'Submit Seller Application' : 'Continue';
+  document.getElementById('obDots').innerHTML = OB_STEPS.map((_, i) =>
+    `<span class="${i === idx ? 'on' : i < idx ? 'done' : ''}"></span>`).join('');
+  document.getElementById('obErr').textContent = '';
+  document.getElementById('obBody').scrollTop = 0;
+  if (idx === 2) setTimeout(obInitMap, 50);
+  if (idx === 6) obRenderReview();
+}
+function obPrevStep() { if (obStepIdx > 0) obGoStep(obStepIdx - 1); }
+
+function obSlugFromName() {
+  const slugEl = document.getElementById('obStoreSlug');
+  if (slugEl.dataset.touched) return;
+  slugEl.value = document.getElementById('obStoreName').value.trim().toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  obCheckSlug();
+}
+document.getElementById('obStoreSlug').addEventListener('input', () => { document.getElementById('obStoreSlug').dataset.touched = '1'; });
+
+let obSlugTimer;
+function obCheckSlug() {
+  clearTimeout(obSlugTimer);
+  const hint = document.getElementById('obSlugHint');
+  const slug = document.getElementById('obStoreSlug').value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
+  document.getElementById('obStoreSlug').value = slug;
+  if (!slug) { hint.textContent = ''; hint.className = 'obHint'; return; }
+  hint.textContent = 'Checking availability...'; hint.className = 'obHint';
+  obSlugTimer = setTimeout(async () => {
+    try {
+      const res = await fetch('/api/check-slug', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug, excludeVendorId: session.user.id }) });
+      const json = await res.json();
+      hint.textContent = json.available ? `maccato.com/store/${slug} is available` : 'That URL is taken — try another';
+      hint.className = 'obHint ' + (json.available ? 'ok' : 'err');
+    } catch (e) { hint.textContent = ''; }
+  }, 400);
+}
+
+document.getElementById('obLogoFile').onchange = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => { document.getElementById('obLogoPreview').src = ev.target.result; document.getElementById('obLogoPreview').style.display = 'block'; document.getElementById('obLogoPickTxt').style.display = 'none'; };
+  reader.readAsDataURL(file);
+  try {
+    const url = await uploadImage(file, 'store-logos', false, 'obLogoProgBar', 'obLogoProg');
+    document.getElementById('obLogoFile').dataset.url = url;
+  } catch (err) { toast('Logo upload failed: ' + err.message, true); }
 };
+
+/* ===== MAP (Leaflet, no API key needed) ===== */
+function obInitMap() {
+  if (obMapInstance) { obMapInstance.invalidateSize(); return; }
+  const start = [obPendingLat || 6.5244, obPendingLng || 3.3792]; // default Lagos
+  obMapInstance = L.map('obMap').setView(start, obPendingLat ? 15 : 11);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(obMapInstance);
+  if (obPendingLat) obMapMarker = L.marker(start).addTo(obMapInstance);
+  obMapInstance.on('click', e => {
+    obPendingLat = e.latlng.lat; obPendingLng = e.latlng.lng;
+    if (obMapMarker) obMapMarker.setLatLng(e.latlng); else obMapMarker = L.marker(e.latlng).addTo(obMapInstance);
+  });
+}
+
+/* ===== PHONE OTP (Supabase Auth phone_change flow) ===== */
+async function obSendPhoneOtp() {
+  const phone = document.getElementById('obPhone').value.trim();
+  if (!phone) { toast('Enter a phone number first', true); return; }
+  document.getElementById('obSendOtpBtn').disabled = true;
+  const { error } = await sb.auth.updateUser({ phone });
+  document.getElementById('obSendOtpBtn').disabled = false;
+  if (error) { toast('Could not send code: ' + error.message, true); return; }
+  obOtpPhoneOnFile = phone;
+  document.getElementById('obOtpEntryRow').style.display = 'flex';
+  toast('Code sent by SMS');
+}
+async function obVerifyPhoneOtp() {
+  const code = document.getElementById('obOtpCode').value.trim();
+  if (!code) return;
+  const { error } = await sb.auth.verifyOtp({ phone: obOtpPhoneOnFile, token: code, type: 'phone_change' });
+  if (error) { toast('Invalid code: ' + error.message, true); return; }
+  await sb.from('vendors').update({ phone_verified_at: new Date().toISOString() }).eq('id', session.user.id);
+  document.getElementById('obPhoneVerifiedTag').style.display = '';
+  document.getElementById('obOtpEntryRow').style.display = 'none';
+  toast('Phone verified');
+}
+
+/* ===== IDENTITY VERIFICATION ===== */
+function obRenderIdStatus(status) {
+  const el = document.getElementById('obIdStatus');
+  const map = {
+    verified: ['ok', 'Identity verified.'],
+    needs_review: ['', 'Submitted — automated checks aren\'t enabled yet, so this will be checked manually before approval.'],
+    failed: ['fail', 'We couldn\'t verify this — check the number and try again.'],
+    pending: ['', 'Checking...']
+  };
+  const [cls, msg] = map[status] || ['', ''];
+  el.className = 'obStatusCard ' + cls;
+  el.textContent = msg;
+}
+async function obVerifyIdentity() {
+  const method = document.getElementById('obIdMethod').value;
+  const idNumber = document.getElementById('obIdNumber').value.trim();
+  if (!method || !idNumber) { toast('Select a method and enter your ID number', true); return; }
+  document.getElementById('obVerifyIdBtn').disabled = true;
+  obRenderIdStatus('pending');
+  try {
+    const { data: { session: s } } = await sb.auth.getSession();
+    const res = await fetch('/api/verify-identity', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${s.access_token}` }, body: JSON.stringify({ method, idNumber }) });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Verification failed');
+    obRenderIdStatus(json.status);
+  } catch (e) {
+    obRenderIdStatus('failed');
+    toast(e.message, true);
+  } finally {
+    document.getElementById('obVerifyIdBtn').disabled = false;
+  }
+}
+
+/* ===== BANK VERIFICATION (Paystack) ===== */
+async function obLoadBanks() {
+  const sel = document.getElementById('obBank');
+  try {
+    const res = await fetch('/api/paystack-banks');
+    const json = await res.json();
+    if (!json.configured || !json.banks.length) { sel.innerHTML = '<option value="">Enter bank name manually below</option>'; return; }
+    sel.innerHTML = '<option value="">Select your bank</option>' + json.banks.map(b => `<option value="${b.code}" data-name="${b.name.replace(/"/g, '')}">${b.name}</option>`).join('');
+    if (vendorRow?.bank_code) sel.value = vendorRow.bank_code;
+  } catch (e) { sel.innerHTML = '<option value="">Could not load bank list</option>'; }
+}
+function obRenderBankStatus(status, accountName) {
+  const el = document.getElementById('obBankStatus');
+  if (status === 'verified') { el.className = 'obStatusCard ok'; el.textContent = `Account verified — ${accountName}`; }
+  else if (status === 'pending') { el.className = 'obStatusCard'; el.textContent = 'Saved — automated bank checks aren\'t enabled yet, so this will be checked manually.'; }
+  else { el.className = 'obStatusCard fail'; el.textContent = 'We couldn\'t verify this account. Please check your details.'; }
+}
+async function obVerifyBank() {
+  const bankSel = document.getElementById('obBank');
+  const bankCode = bankSel.value;
+  const bankName = bankSel.selectedOptions[0]?.dataset.name || bankSel.selectedOptions[0]?.textContent;
+  const accountNumber = document.getElementById('obAccountNumber').value.trim();
+  if (!bankCode || accountNumber.length < 10) { toast('Select a bank and enter a valid account number', true); return; }
+  document.getElementById('obVerifyBankBtn').disabled = true;
+  try {
+    const { data: { session: s } } = await sb.auth.getSession();
+    const res = await fetch('/api/verify-bank', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${s.access_token}` }, body: JSON.stringify({ accountNumber, bankCode, bankName }) });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Verification failed');
+    obRenderBankStatus(json.status, json.accountName);
+  } catch (e) {
+    obRenderBankStatus('failed');
+    toast(e.message, true);
+  } finally {
+    document.getElementById('obVerifyBankBtn').disabled = false;
+  }
+}
+
+/* ===== REVIEW ===== */
+function obRenderReview() {
+  const g = id => document.getElementById(id).value;
+  document.getElementById('obRevStore').innerHTML = `<b>${g('obStoreName') || '-'}</b><br>maccato.com/store/${g('obStoreSlug') || '-'}<br>${g('obStoreDesc') || ''}`;
+  document.getElementById('obRevPersonal').innerHTML = `${g('obTitle')} ${g('obFirstName')} ${g('obMiddleName')} ${g('obLastName')}<br>DOB: ${g('obDob') || '-'} · ${g('obGender') || '-'}`;
+  document.getElementById('obRevAddress').innerHTML = `${g('obAddress') || '-'}<br>${g('obCity') || ''}, ${g('obLga') || ''}, ${g('obState') || ''}<br>${g('obLandmark') || ''}`;
+  const idStatus = document.getElementById('obIdStatus').textContent ? 'Submitted' : 'Not started';
+  const bankStatus = document.getElementById('obBankStatus').textContent ? 'Submitted' : 'Not started';
+  document.getElementById('obRevVerify').innerHTML = `Email: verified via Google<br>Phone: ${document.getElementById('obPhoneVerifiedTag').style.display !== 'none' ? 'verified' : 'not verified'}<br>Identity: ${idStatus}<br>Bank: ${bankStatus}`;
+}
+
+/* ===== SAVE + ADVANCE ===== */
+async function obSaveStep(idx) {
+  const patch = {};
+  if (idx === 0) {
+    const name = document.getElementById('obStoreName').value.trim();
+    const slug = document.getElementById('obStoreSlug').value.trim();
+    if (!name) { document.getElementById('obErr').textContent = 'Store name is required'; return false; }
+    if (!slug) { document.getElementById('obErr').textContent = 'Store URL is required'; return false; }
+    patch.business_name = name;
+    patch.store_slug = slug;
+    patch.store_description = document.getElementById('obStoreDesc').value.trim() || null;
+    if (document.getElementById('obLogoFile').dataset.url) patch.logo_url = document.getElementById('obLogoFile').dataset.url;
+  } else if (idx === 1) {
+    patch.title = document.getElementById('obTitle').value || null;
+    patch.first_name = document.getElementById('obFirstName').value.trim();
+    patch.middle_name = document.getElementById('obMiddleName').value.trim() || null;
+    patch.last_name = document.getElementById('obLastName').value.trim();
+    patch.date_of_birth = document.getElementById('obDob').value || null;
+    patch.gender = document.getElementById('obGender').value || null;
+    if (!patch.first_name || !patch.last_name) { document.getElementById('obErr').textContent = 'First and last name are required'; return false; }
+  } else if (idx === 2) {
+    if (document.getElementById('obPhoneVerifiedTag').style.display === 'none') { document.getElementById('obErr').textContent = 'Please verify your phone number to continue'; return false; }
+    patch.phone = document.getElementById('obPhone').value.trim();
+    patch.address = document.getElementById('obAddress').value.trim();
+    patch.state = document.getElementById('obState').value || null;
+    patch.lga = document.getElementById('obLga').value.trim() || null;
+    patch.city = document.getElementById('obCity').value.trim() || null;
+    patch.landmark = document.getElementById('obLandmark').value.trim() || null;
+    patch.store_lat = obPendingLat; patch.store_lng = obPendingLng;
+    patch.email_verified_at = vendorRow?.email_verified_at || new Date().toISOString();
+    if (!patch.address || !patch.state) { document.getElementById('obErr').textContent = 'Address and state are required'; return false; }
+  } else if (idx === 3) {
+    if (document.getElementById('obIdStatus').textContent.trim() === '') { document.getElementById('obErr').textContent = 'Please verify your identity to continue'; return false; }
+  } else if (idx === 4) {
+    if (document.getElementById('obBankStatus').textContent.trim() === '') { document.getElementById('obErr').textContent = 'Please verify your payout account to continue'; return false; }
+  } else if (idx === 5) {
+    const checks = document.querySelectorAll('.obTermCheck');
+    const allChecked = [...checks].every(c => c.checked);
+    if (!allChecked) { document.getElementById('obErr').textContent = 'Please accept all policies to continue'; return false; }
+    patch.terms_version = 'v1';
+    patch.terms_accepted_at = new Date().toISOString();
+  }
+  patch.onboarding_step = Math.min(idx + 1, OB_STEPS.length - 1);
+  patch.application_status = 'pending_verification';
+
+  if (!vendorRow) {
+    const { data, error } = await sb.from('vendors').insert([{ id: session.user.id, email: session.user.email, status: 'pending', ...patch }]).select().single();
+    if (error) { document.getElementById('obErr').textContent = error.message; return false; }
+    vendorRow = data;
+  } else {
+    const { data, error } = await sb.from('vendors').update(patch).eq('id', session.user.id).select().single();
+    if (error) { document.getElementById('obErr').textContent = error.message; return false; }
+    vendorRow = data;
+  }
+  return true;
+}
+
+async function obNextStep() {
+  document.getElementById('obContinueBtn').disabled = true;
+  const ok = await obSaveStep(obStepIdx);
+  document.getElementById('obContinueBtn').disabled = false;
+  if (!ok) return;
+
+  if (obStepIdx === OB_STEPS.length - 1) {
+    showLoad('Submitting application...');
+    const { error } = await sb.from('vendors').update({ application_status: 'pending_review', submitted_at: new Date().toISOString() }).eq('id', session.user.id);
+    hideLoad();
+    if (error) { toast('Submit failed: ' + error.message, true); return; }
+    toast('Application submitted');
+    boot();
+    return;
+  }
+  obGoStep(obStepIdx + 1);
+}
 
 /* ===== TABS ===== */
 document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
@@ -390,9 +907,9 @@ document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
 });
 
 /* ===== IMAGE UPLOAD (same pattern as admin panel) ===== */
-async function uploadImage(file, folder, transparent) {
-  const prog = document.getElementById('pImgProg');
-  const bar = document.getElementById('pImgProgBar');
+async function uploadImage(file, folder, transparent, barId, progId) {
+  const prog = document.getElementById(progId || 'pImgProg');
+  const bar = document.getElementById(barId || 'pImgProgBar');
   prog.classList.add('on'); bar.style.width = '0%';
 
   const fmt = transparent ? 'image/png' : 'image/jpeg';

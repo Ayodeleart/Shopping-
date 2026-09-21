@@ -71,6 +71,25 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
   transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
 }
 #notifDrawer.open{transform:translateX(0)}
+#vendorDetailOver{position:fixed;inset:0;z-index:350;background:rgba(0,0,0,0);pointer-events:none;transition:background .28s}
+#vendorDetailOver.open{background:rgba(0,0,0,.5);pointer-events:all}
+#vendorDetailDrawer{
+  position:fixed;inset:0;z-index:360;background:var(--bg);
+  display:flex;flex-direction:column;overflow-y:auto;
+  transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
+}
+#vendorDetailDrawer.open{transform:translateX(0)}
+.vdSec{margin-bottom:18px}
+.vdSecTtl{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--txt3);margin-bottom:8px}
+.vdCard{background:var(--card,#fff);border:1px solid var(--border);border-radius:12px;padding:14px}
+.vdRow{display:flex;justify-content:space-between;gap:10px;padding:6px 0;font-size:13px;border-bottom:1px solid var(--bg2)}
+.vdRow:last-child{border-bottom:none}
+.vdLabel{color:var(--txt3);flex-shrink:0}
+.vdVal{color:var(--txt);font-weight:600;text-align:right}
+.vdBadge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase}
+.vdLogo{width:64px;height:64px;border-radius:14px;object-fit:cover;background:var(--bg2)}
+.vdActions{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.vdActions button{flex:1;min-width:120px;height:42px;border-radius:10px;font-size:13px;font-weight:700}
 .cTop{display:flex;align-items:center;gap:10px;height:52px;padding:0 14px;border-bottom:1px solid var(--border);flex-shrink:0}
 .cTop h3{flex:1;font-size:15px;font-weight:800}
 .notifItem{background:var(--card,#fff);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px}
@@ -474,6 +493,18 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
     <h3>Order Notifications</h3>
   </div>
   <div id="notifList" style="padding:8px 14px"></div>
+</div>
+
+<!-- VENDOR DETAIL PANEL -->
+<div id="vendorDetailOver" onclick="closeVendorDetail()"></div>
+<div id="vendorDetailDrawer">
+  <div class="cTop">
+    <button class="ahbtn" onclick="closeVendorDetail()" aria-label="Back">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    </button>
+    <h3 id="vdTitle">Seller Application</h3>
+  </div>
+  <div id="vdBody" style="padding:14px"></div>
 </div>
 
 <script src="../components/multi-image-picker.js"></script>
@@ -1105,11 +1136,13 @@ async function adminApiCall(body) {
   return json;
 }
 
+let adminVendorsCache = [];
 async function loadVendors() {
   const pendingEl = document.getElementById('vendorsPending');
   const allEl = document.getElementById('vendorsAll');
   try {
     const { vendors } = await adminApiCall(null);
+    adminVendorsCache = vendors;
     const pending = vendors.filter(v => v.status === 'pending');
     pendingEl.innerHTML = pending.length ? pending.map(vendorRowHtml).join('') : '<div class="no-items"><h3>No pending applications</h3></div>';
     allEl.innerHTML = vendors.length ? vendors.map(vendorRowHtml).join('') : '<div class="no-items"><h3>No vendors yet</h3></div>';
@@ -1123,25 +1156,107 @@ async function loadVendors() {
 function vendorRowHtml(v) {
   const badgeColor = v.status === 'approved' ? 'var(--green)' : v.status === 'suspended' ? 'var(--red)' : '#d97706';
   return `
-    <div class="bitem">
+    <div class="bitem" onclick="openVendorDetail('${v.id}')" style="cursor:pointer">
       <div class="bfoot" style="flex-wrap:wrap">
-        <span class="bfoot-name" style="flex:1"><b>${v.business_name}</b> · ${v.email || ''}<br><span style="color:${badgeColor};font-weight:700;text-transform:uppercase;font-size:11px">${v.status}</span></span>
-        ${v.status !== 'approved' ? `<button class="btn-e" onclick="setVendorStatus('${v.id}','approved')">Approve</button>` : ''}
-        ${v.status !== 'suspended' ? `<button class="btn-d" onclick="setVendorStatus('${v.id}','suspended')">Suspend</button>` : ''}
+        <span class="bfoot-name" style="flex:1"><b>${v.business_name || '(no store name yet)'}</b> · ${v.email || ''}<br><span style="color:${badgeColor};font-weight:700;text-transform:uppercase;font-size:11px">${v.application_status === 'rejected' ? 'changes needed' : v.status}</span></span>
+        ${v.status !== 'approved' ? `<button class="btn-e" onclick="event.stopPropagation();setVendorStatus('${v.id}','approved')">Approve</button>` : ''}
+        ${v.status !== 'suspended' ? `<button class="btn-d" onclick="event.stopPropagation();setVendorStatus('${v.id}','suspended')">Suspend</button>` : ''}
       </div>
     </div>`;
 }
 
-window.setVendorStatus = async (vendor_id, status) => {
-  showLoad(status === 'approved' ? 'Approving...' : 'Suspending...');
+window.setVendorStatus = async (vendor_id, status, reason) => {
+  showLoad(status === 'approved' ? 'Approving...' : status === 'rejected' ? 'Requesting changes...' : 'Suspending...');
   try {
-    await adminApiCall({ vendor_id, status });
-    toast(`Vendor ${status}`);
+    await adminApiCall({ vendor_id, status, reason });
+    toast(`Vendor ${status === 'rejected' ? 'sent back for changes' : status}`);
     await loadVendors();
+    if (document.getElementById('vendorDetailDrawer').classList.contains('open')) openVendorDetail(vendor_id);
   } catch (e) {
     toast('Failed: ' + e.message, true);
   } finally { hideLoad(); }
 };
+
+/* ===== VENDOR DETAIL (full seller application, everything from onboarding) ===== */
+function openVendorDetail(id) {
+  const v = adminVendorsCache.find(x => x.id === id);
+  if (!v) return;
+  document.getElementById('vdTitle').textContent = v.business_name || 'Seller Application';
+  const statusColor = v.status === 'approved' ? '#16a34a' : v.status === 'suspended' ? '#dc2626' : '#d97706';
+  const idColor = v.id_verification_status === 'verified' ? '#16a34a' : v.id_verification_status === 'failed' ? '#dc2626' : '#8a93a3';
+  const bankColor = v.bank_verification_status === 'verified' ? '#16a34a' : v.bank_verification_status === 'failed' ? '#dc2626' : '#8a93a3';
+  const row = (label, val) => val ? `<div class="vdRow"><span class="vdLabel">${label}</span><span class="vdVal">${val}</span></div>` : '';
+
+  document.getElementById('vdBody').innerHTML = `
+    <div class="vdSec" style="display:flex;align-items:center;gap:12px">
+      ${v.logo_url ? `<img class="vdLogo" src="${v.logo_url}">` : `<div class="vdLogo" style="display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--txt3)">${(v.business_name || '?')[0].toUpperCase()}</div>`}
+      <div>
+        <div style="font-weight:800;font-size:16px">${v.business_name || '(no store name yet)'}</div>
+        <span class="vdBadge" style="background:${statusColor}22;color:${statusColor}">${v.application_status === 'rejected' ? 'CHANGES NEEDED' : v.status}</span>
+      </div>
+    </div>
+
+    <div class="vdSec"><div class="vdSecTtl">Store</div><div class="vdCard">
+      ${row('Store URL', v.store_slug ? `maccato.com/store/${v.store_slug}` : '')}
+      ${row('Description', v.store_description)}
+    </div></div>
+
+    <div class="vdSec"><div class="vdSecTtl">Applicant</div><div class="vdCard">
+      ${row('Legal Name', [v.title, v.first_name, v.middle_name, v.last_name].filter(Boolean).join(' '))}
+      ${row('Date of Birth', v.date_of_birth)}
+      ${row('Gender', v.gender)}
+      ${row('Email', (v.email || '') + (v.email_verified_at ? ' (verified)' : ''))}
+      ${row('Phone', (v.phone || '') + (v.phone_verified_at ? ' (verified)' : ''))}
+    </div></div>
+
+    <div class="vdSec"><div class="vdSecTtl">Address</div><div class="vdCard">
+      ${row('Address', v.address)}
+      ${row('City / LGA / State', [v.city, v.lga, v.state].filter(Boolean).join(', '))}
+      ${row('Landmark', v.landmark)}
+      ${row('Map Pin', (v.store_lat && v.store_lng) ? `${v.store_lat.toFixed(5)}, ${v.store_lng.toFixed(5)}` : '')}
+    </div></div>
+
+    <div class="vdSec"><div class="vdSecTtl">Identity Verification</div><div class="vdCard">
+      <div class="vdRow"><span class="vdLabel">Status</span><span class="vdVal" style="color:${idColor}">${(v.id_verification_status || 'not_started').replace('_',' ')}</span></div>
+      ${row('Method', v.id_verification_method)}
+      ${row('Provider', v.id_verification_provider || 'not configured — manual review')}
+    </div></div>
+
+    <div class="vdSec"><div class="vdSecTtl">Bank / Payout</div><div class="vdCard">
+      <div class="vdRow"><span class="vdLabel">Status</span><span class="vdVal" style="color:${bankColor}">${(v.bank_verification_status || 'not_started').replace('_',' ')}</span></div>
+      ${row('Bank', v.bank_name)}
+      ${row('Account Number', v.bank_account_number ? '••••••' + String(v.bank_account_number).slice(-4) : '')}
+      ${row('Account Name', v.bank_account_name)}
+    </div></div>
+
+    <div class="vdSec"><div class="vdSecTtl">Application</div><div class="vdCard">
+      ${row('Terms Accepted', v.terms_accepted_at ? `v${v.terms_version} on ${new Date(v.terms_accepted_at).toLocaleDateString()}` : 'Not yet')}
+      ${row('Submitted', v.submitted_at ? new Date(v.submitted_at).toLocaleString() : 'Not yet')}
+      ${v.rejection_reason ? row('Last Feedback', v.rejection_reason) : ''}
+    </div></div>
+
+    <div class="vdActions">
+      ${v.status !== 'approved' ? `<button class="btn-e" onclick="setVendorStatus('${v.id}','approved')">Approve</button>` : ''}
+      <button class="btn-d" onclick="vdRequestChanges('${v.id}')">Request Changes</button>
+      ${v.status !== 'suspended' ? `<button class="btn-d" onclick="setVendorStatus('${v.id}','suspended')">Suspend</button>` : `<button class="btn-e" onclick="setVendorStatus('${v.id}','pending')">Reinstate</button>`}
+    </div>
+  `;
+  document.getElementById('vendorDetailOver').classList.add('open');
+  document.getElementById('vendorDetailDrawer').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeVendorDetail() {
+  document.getElementById('vendorDetailOver').classList.remove('open');
+  document.getElementById('vendorDetailDrawer').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.getElementById('vendorDetailOver').onclick = closeVendorDetail;
+
+function vdRequestChanges(id) {
+  const reason = prompt('What does this seller need to fix or re-submit?');
+  if (reason === null) return;
+  setVendorStatus(id, 'rejected', reason);
+}
 
 /* ===== ANNOUNCEMENTS (push broadcast) ===== */
 function switchAnnounceSub(which) {

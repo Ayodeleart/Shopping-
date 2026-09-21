@@ -43,12 +43,15 @@ module.exports = async (req, res) => {
 
     if (req.method === 'POST') {
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-      const { vendor_id, status } = body || {};
-      if (!vendor_id || !['approved', 'suspended', 'pending'].includes(status)) {
+      const { vendor_id, status, reason } = body || {};
+      if (!vendor_id || !['approved', 'suspended', 'pending', 'rejected'].includes(status)) {
         return res.status(400).json({ error: 'vendor_id and a valid status are required' });
       }
-      const patch = { status };
-      if (status === 'approved') patch.approved_at = new Date().toISOString();
+      const patch = { status: status === 'rejected' ? 'pending' : status };
+      if (status === 'approved') { patch.approved_at = new Date().toISOString(); patch.application_status = 'approved'; patch.rejection_reason = null; }
+      if (status === 'rejected') { patch.application_status = 'rejected'; patch.rejection_reason = reason || 'Please review and resubmit your application.'; }
+      if (status === 'suspended') { patch.application_status = 'suspended'; }
+      if (status === 'pending') { patch.application_status = 'pending_review'; patch.rejection_reason = null; }
       const { error } = await supabaseAdmin.from('vendors').update(patch).eq('id', vendor_id);
       if (error) throw error;
       return res.status(200).json({ ok: true });
