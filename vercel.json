@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/assistant.js": { "maxDuration": 30 },
+    "api/assistant-ticket.js": { "maxDuration": 15 },
+    "api/ai-product.js": { "maxDuration": 45 }
+  }
+}

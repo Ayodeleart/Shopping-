@@ -88,7 +88,7 @@
         brand: norm(brand), brandWords: words(brand),
         cat: norm(cats.join(' ')), catWords: words(cats.join(' ')),
         vendor: norm(c.vendor || ''),
-        desc: ' ' + norm(p.description).slice(0, 600)
+        desc: ' ' + norm((p.description || '') + ' ' + ((p.attributes && Array.isArray(p.attributes.tags)) ? p.attributes.tags.join(' ') : '')).slice(0, 700)
       };
     });
   }

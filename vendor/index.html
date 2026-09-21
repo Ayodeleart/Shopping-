@@ -187,6 +187,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 <link rel="stylesheet" href="../components/multi-image-picker.css">
 <link rel="stylesheet" href="../components/product-attributes.css">
 <link rel="stylesheet" href="../components/categories.css">
+<link rel="stylesheet" href="../components/ai-product.css">
 <link rel="stylesheet" href="../components/order-tracking.css">
 <link rel="stylesheet" href="../components/brand-picker.css">
 </head>
@@ -439,6 +440,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
       <label class="rmbgToggle"><input type="checkbox" id="pRmBg"> Remove background from new photos</label>
       <div class="progWrap" id="pImgProg"><div class="progBar" id="pImgProgBar"></div></div>
       <div class="fld"><label>Product Name</label><input id="pName" placeholder="e.g. Colorblock Zip-Up Jacket"></div>
+      <div id="pAI"></div>
       <div class="fld"><label>Brand (optional)</label><div id="pBrandBox"></div></div>
       <div class="frow2">
         <div class="fld"><label>Price (₦)</label><input id="pPrice" type="number" placeholder="0"></div>
@@ -491,6 +493,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 
 <script src="../components/multi-image-picker.js"></script>
 <script src="../components/product-attributes.js"></script>
+<script src="../components/ai-product.js"></script>
 <script src="../data/categories.js"></script>
 <script src="../data/tracking.js"></script>
 <script src="orders.js"></script>
@@ -970,6 +973,36 @@ const brandPicker = new Pcx.BrandPicker(document.getElementById('pBrandBox'), {
 });
 const catPicker = new Pcx.CategoryPicker(document.getElementById('pCat'), { onChange: () => pAttrs.setCategory(catPicker.names()) });
 
+/* AI listing assistant: writes a DRAFT into the normal form fields; the seller edits and presses Save (nothing is published automatically) */
+const aiProd = new Pcx.AIProduct(document.getElementById('pAI'), {
+  endpoint: '/api/ai-product',
+  getToken: async () => { const { data: { session: s } } = await sb.auth.getSession(); return s ? s.access_token : null; },
+  getPicker: () => pPicker,
+  getInput: () => {
+    const b = brandPicker.getValue();
+    return { name: document.getElementById('pName').value.trim(), brand: b ? b.name : '', price: document.getElementById('pPrice').value, category: catPicker.names()[0] || '', vendorAttributes: pAttrs.collect() };
+  },
+  apply: {
+    title: v => { document.getElementById('pName').value = v; },
+    shortDescription: v => { document.getElementById('pDesc').value = v; },
+    description: v => pBlocks.setText(v),
+    highlights: list => {
+      const t = Pcx.ProductAttributes.TEMPLATES[pAttrs.type] || Pcx.ProductAttributes.TEMPLATES.general;
+      const f = (t.fields || []).find(x => x.type === 'bullets');
+      if (f) { const a = pAttrs.collect(); a[f.key] = list; pAttrs.load(a, catPicker.names()); }
+      else pBlocks.setText((pBlocks.blocks.find(b => b.type === 'text') || { text: '' }).text + '\n\n' + list.map(x => '- ' + x).join('\n'));
+    },
+    categoryId: id => { catPicker.setValue(id); pAttrs.setCategory(catPicker.names()); },
+    attributes: obj => {
+      const a = pAttrs.collect(), extra = Array.isArray(a.extra) ? a.extra.slice() : [];
+      const have = new Set(extra.map(x => String(x.k).toLowerCase()));
+      Object.keys(obj).forEach(k => { const v = Array.isArray(obj[k]) ? obj[k].join(', ') : obj[k]; if (v && !have.has(k.toLowerCase())) extra.push({ k, v }); });
+      a.extra = extra; pAttrs.load(a, catPicker.names());
+    }
+  },
+  onApplied: () => toast('Draft applied. Review it, then press Save.')
+});
+
 /* ===== PRODUCTS (scoped to this vendor only) ===== */
 async function loadProducts() {
   const { data, error } = await sb.from('products').select('*').eq('vendor_id', session.user.id).order('created_at', { ascending: false });
@@ -1011,6 +1044,7 @@ window.editProduct = async (id) => {
   pPicker.setImages(Array.isArray(p.images) && p.images.length ? p.images : (p.image_url ? [p.image_url] : []));
   pAttrs.load(p.attributes, catPicker.names().length ? catPicker.names() : p.category);
   pBlocks.setBlocks(p.description_blocks);
+  aiProd.reset(); aiProd.setExisting(p.attributes);
   document.getElementById('pCancelBtn').style.display = 'block';
   document.getElementById('pSaveBtn').textContent = 'Update Product';
   document.getElementById('panel-products').scrollIntoView({ behavior: 'smooth' });
@@ -1040,6 +1074,7 @@ function resetProdForm() {
   pPicker.clear();
   pAttrs.clear();
   pBlocks.clear();
+  aiProd.reset();
   document.getElementById('pCancelBtn').style.display = 'none';
   document.getElementById('pSaveBtn').textContent = 'Add Product';
 }
@@ -1079,7 +1114,7 @@ document.getElementById('pSaveBtn').onclick = async () => {
 
     const prod = {
       name, price,
-      attributes: pAttrs.collect(),
+      attributes: Object.assign({}, pAttrs.collect(), aiProd.extras() || {}),
       description_blocks,
       brand: brandPick ? brandPick.name : null,
       brand_id: brandRow ? brandRow.id : null,

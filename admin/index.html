@@ -247,6 +247,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 <link rel="stylesheet" href="../components/categories.css">
 <link rel="stylesheet" href="../components/order-tracking.css">
 <link rel="stylesheet" href="../components/brand-picker.css">
+<link rel="stylesheet" href="../components/ai-product.css">
 <link rel="stylesheet" href="categories.css">
 </head>
 <body data-theme="light">
@@ -329,6 +330,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
     <div class="fcard" id="pFormCard">
       <h3 id="pFormTitle">Add New Product</h3>
       <div class="fg"><label>Name *</label><input type="text" id="pName" placeholder="Product name"></div>
+      <div id="pAI"></div>
       <div class="fg"><label>Brand (optional)</label><div id="pBrandBox"></div></div>
       <div class="row2">
         <div class="fg"><label>Price *</label><input type="number" id="pPrice" placeholder="0" min="0"></div>
@@ -508,6 +510,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 </div>
 
 <script src="../components/multi-image-picker.js"></script>
+<script src="../components/ai-product.js"></script>
 <script src="../data/categories.js"></script>
 <script src="../data/tracking.js"></script>
 <script src="../components/category-picker.js"></script>
@@ -654,6 +657,23 @@ const brandPicker = new Pcx.BrandPicker(document.getElementById('pBrandBox'), {
   upload: file => uploadImage(file, 'products', 'pImgProgBar', 'pImgProg', true)
 });
 const catPicker = new Pcx.CategoryPicker(document.getElementById('pCat'), {});
+
+/* AI listing assistant: fills a DRAFT into the form below; the admin edits it and presses Save (nothing is published automatically) */
+let editProdAttrs = null;
+const aiProd = new Pcx.AIProduct(document.getElementById('pAI'), {
+  endpoint: '/api/ai-product',
+  getToken: async () => { const { data: { session: s } } = await sb.auth.getSession(); return s ? s.access_token : null; },
+  getPicker: () => pPicker,
+  getInput: () => { const b = brandPicker.getValue(); return { name: document.getElementById('pName').value.trim(), brand: b ? b.name : '', price: document.getElementById('pPrice').value, category: catPicker.names()[0] || '' }; },
+  apply: {
+    title: v => { document.getElementById('pName').value = v; },
+    shortDescription: v => { document.getElementById('pDesc').value = v; },
+    description: v => { document.getElementById('pDesc').value = v; },
+    highlights: list => { const d = document.getElementById('pDesc'); d.value = (d.value.trim() + '\n\n' + list.map(x => '- ' + x).join('\n')).trim(); },
+    categoryId: id => catPicker.setValue(id)
+  },
+  onApplied: () => toast('Draft applied. Review it, then press Save.')
+});
 document.addEventListener('categories:loaded', e => {
   catTree = e.detail;
   catPicker.setTree(catTree);
@@ -716,6 +736,8 @@ async function saveProduct() {
       featured: document.getElementById('pFeatTgl').classList.contains('on'),
       flash_sale: document.getElementById('pFlashTgl').classList.contains('on')
     };
+    const aiExtras = aiProd.extras();            // tags / alt text from the reviewed AI draft, kept inside the existing attributes column
+    if (aiExtras) prod.attributes = Object.assign({}, editProdAttrs || {}, aiExtras);
 
     const write = p => editProdId
       ? sb.from('products').update(p).eq('id', editProdId)
@@ -753,6 +775,7 @@ function cancelProdEdit() {
   catPicker.clear();
   document.getElementById('pRmBg').checked = false;
   pPicker.clear();
+  aiProd.reset(); editProdAttrs = null;
   document.getElementById('pFeatTgl').classList.remove('on');
   document.getElementById('pFlashTgl').classList.remove('on');
   document.getElementById('pFormTitle').textContent = 'Add New Product';
@@ -778,6 +801,7 @@ async function editProduct(id) {
   document.getElementById('pMaxStock').value = p.max_stock || '';
   document.getElementById('pDesc').value = p.description || '';
   pPicker.setImages(Array.isArray(p.images) && p.images.length ? p.images : (p.image_url ? [p.image_url] : []));
+  aiProd.reset(); aiProd.setExisting(p.attributes); editProdAttrs = p.attributes || null;
   document.getElementById('pFeatTgl').classList.toggle('on', !!p.featured);
   document.getElementById('pFlashTgl').classList.toggle('on', !!p.flash_sale);
   document.getElementById('pFormTitle').textContent = 'Edit Product';

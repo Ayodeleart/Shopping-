@@ -1,0 +1,30 @@
+/* AI listing assistant panel for the vendor and admin product forms (uses each page's own tokens). */
+.aip{border:1px solid var(--border);border-radius:12px;padding:12px;margin:2px 0 14px;background:var(--bg2)}
+.aip-hd{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.aip-hd b{font-size:14px;font-weight:800;flex:1}
+.aip-hd svg{width:18px;height:18px;fill:var(--red)}
+.aip p.aip-sub{font-size:12px;color:var(--txt2);line-height:1.4;margin-bottom:8px}
+.aip textarea,.aip input[type=text]{width:100%;border:1.5px solid var(--border);border-radius:9px;padding:9px 11px;font:inherit;font-size:14px;background:var(--bg);color:var(--txt);resize:vertical}
+.aip textarea:focus,.aip input[type=text]:focus{outline:none;border-color:var(--red)}
+.aip-btn{height:38px;padding:0 14px;border-radius:19px;font-size:13px;font-weight:700;border:1.5px solid var(--border);background:var(--bg);color:var(--txt)}
+.aip-btn.pri{background:var(--red);border-color:var(--red);color:#fff}
+.aip-btn:disabled{opacity:.55}
+.aip-btn:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+.aip-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.aip-banner{background:#fff7e0;color:#6b4a00;border:1px solid #f0d58a;border-radius:9px;padding:8px 10px;font-size:12.5px;font-weight:700;margin:10px 0 4px}
+[data-theme=dark] .aip-banner{background:#2b2410;color:#f3d98b;border-color:#5b4a1a}
+.aip-fld{margin-top:10px}
+.aip-fld label{display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;color:var(--txt2);margin-bottom:4px}
+.aip-fld label button{font-size:11.5px;font-weight:700;color:var(--red);padding:2px 4px}
+.aip-li{display:flex;gap:6px;margin-bottom:6px}
+.aip-li input{flex:1}
+.aip-li button{width:32px;flex-shrink:0;color:var(--txt3);font-size:18px}
+.aip-chip{display:inline-block;padding:3px 9px;border-radius:12px;font-size:11.5px;font-weight:800;background:var(--bg3);color:var(--txt)}
+.aip-chip.high{background:#dcfce7;color:#166534}.aip-chip.medium{background:#fef3c7;color:#92400e}.aip-chip.low{background:#fee2e2;color:#991b1b}
+.aip-box{margin-top:10px;border-radius:9px;padding:8px 10px;font-size:12.5px;line-height:1.45}
+.aip-box h5{font-size:12px;font-weight:800;margin-bottom:3px}
+.aip-box ul{padding-left:18px}
+.aip-box.warn{background:#fee2e2;color:#7f1d1d}.aip-box.miss{background:var(--bg);border:1px solid var(--border)}
+[data-theme=dark] .aip-box.warn{background:#3a1515;color:#fecaca}
+.aip-err{color:var(--red);font-size:12.5px;margin-top:8px;font-weight:600}
+.aip-applied{font-size:12px;color:var(--txt2);margin-top:8px}
