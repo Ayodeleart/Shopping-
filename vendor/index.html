@@ -111,6 +111,11 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 .ordName{font-size:13px;font-weight:800}
 .ordDate{font-size:11px;color:var(--txt3)}
 .ordLine{display:flex;justify-content:space-between;font-size:12px;color:var(--txt2);margin-top:3px}
+.sbtn{height:36px;padding:0 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--txt);font-size:12.5px;font-weight:800}
+.sbtn.p{background:var(--red);border-color:var(--red);color:#fff}
+.sbtn.d{color:#dc2626;border-color:rgba(220,38,38,.4)}
+.sbtn:disabled{opacity:.5}
+.shipBtns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 .statusSel{margin-top:8px;height:34px;border-radius:8px;border:1px solid var(--border);background:var(--bg);font-size:12px;font-weight:700;padding:0 8px;width:100%}
 
 .empty{padding:40px 20px;text-align:center;color:var(--txt3);font-size:13px}
@@ -141,6 +146,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 <link rel="stylesheet" href="../components/multi-image-picker.css">
 <link rel="stylesheet" href="../components/product-attributes.css">
 <link rel="stylesheet" href="../components/categories.css">
+<link rel="stylesheet" href="../components/order-tracking.css">
 <link rel="stylesheet" href="../components/brand-picker.css">
 </head>
 <body>
@@ -281,6 +287,8 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 <script src="../components/multi-image-picker.js"></script>
 <script src="../components/product-attributes.js"></script>
 <script src="../data/categories.js"></script>
+<script src="../data/tracking.js"></script>
+<script src="orders.js"></script>
 <script src="../components/category-picker.js"></script>
 <script src="../components/brand-picker.js"></script>
 <script>
@@ -596,6 +604,10 @@ document.getElementById('pSaveBtn').onclick = async () => {
 
 /* ===== ORDERS (only this vendor's line items) ===== */
 async function loadOrders() {
+  const ok = await VendorOrders.load();          /* shipment cards with tracking (vendor/orders.js) */
+  if (!ok) await loadOrdersLegacy();             /* the tracking SQL has not been run yet: keep the old list working */
+}
+async function loadOrdersLegacy() {
   const { data, error } = await sb.from('order_items')
     .select('*, orders(customer_name, phone, address, created_at)')
     .eq('vendor_id', session.user.id)
@@ -624,7 +636,6 @@ window.updateOrderStatus = async (id, status) => {
   if (error) { toast('Failed to update: ' + error.message, true); return; }
   toast('Order updated');
   loadDash();
-  fetch('/api/notify-order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'status', orderItemId: id }) }).catch(() => {});
 };
 
 /* ===== DASHBOARD STATS ===== */

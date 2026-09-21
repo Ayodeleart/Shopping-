@@ -14,6 +14,10 @@
 
 const { createClient } = require('@supabase/supabase-js');
 const webpush = require('web-push');
+const { createPush } = require('./_lib/push');
+const { createEmail } = require('./_lib/email/send');
+const { dispatch } = require('./_lib/dispatch');
+const { siteUrlFrom } = require('./_lib/db');
 
 const supabaseAdmin = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
@@ -49,6 +53,16 @@ module.exports = async (req, res) => {
       const { data: order, error } = await supabaseAdmin.from('orders').select('*').eq('id', orderId).single();
       if (error || !order) return res.status(404).json({ error: 'Order not found' });
 
+      // Tell the customer (push + email queued by the database for this order). Sends only what already exists, so it is safe to repeat.
+      let buyer = null;
+      try { buyer = await dispatch({ db: supabaseAdmin, push: createPush(), email: createEmail(), siteUrl: siteUrlFrom(req), orderId: order.id }); }
+      catch (e) { console.error('buyer dispatch failed (the order itself is fine):', e.message); }
+
+      // The staff alert goes out once per order, however many times this endpoint is called.
+      const { data: claimed, error: claimErr } = await supabaseAdmin.from('orders')
+        .update({ staff_notified_at: new Date().toISOString() }).eq('id', order.id).is('staff_notified_at', null).select('id');
+      if (!claimErr && (!claimed || !claimed.length)) return res.status(200).json({ ok: true, staffAlreadyNotified: true, buyer });
+
       const { data: items } = await supabaseAdmin.from('order_items').select('vendor_id').eq('order_id', orderId);
       const vendorIds = [...new Set((items || []).map(i => i.vendor_id).filter(Boolean))];
 
@@ -60,23 +74,12 @@ module.exports = async (req, res) => {
         const { data: vendorSubs } = await supabaseAdmin.from('push_subscriptions').select('*').eq('role', 'vendor').in('user_id', vendorIds);
         await sendToSubscriptions(vendorSubs || [], { title: 'New order', body: 'You have a new order — tap to view.', url: '/vendor/' });
       }
-      return res.status(200).json({ ok: true });
+      return res.status(200).json({ ok: true, buyer });
     }
 
-    if (type === 'status') {
-      const { data: item, error } = await supabaseAdmin.from('order_items').select('*, orders(user_id)').eq('id', orderItemId).single();
-      if (error || !item) return res.status(404).json({ error: 'Order item not found' });
-      const buyerId = item.orders?.user_id;
-      if (!buyerId) return res.status(200).json({ ok: true, skipped: 'guest checkout, no account to notify' });
-
-      const { data: buyerSubs } = await supabaseAdmin.from('push_subscriptions').select('*').eq('role', 'buyer').eq('user_id', buyerId);
-      await sendToSubscriptions(buyerSubs || [], {
-        title: 'Order update',
-        body: `${item.name} is now "${item.status}".`,
-        url: '/'
-      });
-      return res.status(200).json({ ok: true });
-    }
+    // Customer updates now come from the tracking system (record_tracking_event + /api/notify-dispatch).
+    // Old clients that still send `status` are acknowledged and ignored, so nobody is notified twice.
+    if (type === 'status') return res.status(200).json({ ok: true, skipped: 'handled by order tracking' });
 
     return res.status(400).json({ error: 'Unknown type' });
   } catch (e) {

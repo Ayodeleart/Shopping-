@@ -1,6 +1,6 @@
-/* Admin: square GIF tiles (Banners > Tiles).
+/* Admin: GIF tiles (Banners > Tiles). Any shape is accepted; the storefront shows them uncropped.
  *
- * A tile is a square looping GIF (or image) with a caption, shown as a row under the hero banner, or inside the
+ * A tile is a looping GIF (or image, any shape) with a caption, shown as a row under the hero banner, or inside the
  * product feed after N rows. Each tile opens what the admin tagged it with (see dest-picker.js): a brand's
  * products, everything 30% off, hand picked products, an ad page or a link. Table: tiles (the tiles SQL).
  *
@@ -26,15 +26,6 @@
     return /row-level security|policy/i.test(m) ? 'Upload blocked by the storage policy. Run the ads and storage SQL in the Supabase SQL editor.' : m;
   }
 
-  async function checkSquare(file) {
-    var url = URL.createObjectURL(file);
-    try {
-      var img = await new Promise(function (res, rej) { var i = new Image(); i.onload = function () { res(i); }; i.onerror = function () { rej(new Error('That file could not be read as an image')); }; i.src = url; });
-      var w = img.naturalWidth, h = img.naturalHeight;
-      if (Math.abs(w / h - 1) > 0.05) throw new Error('The tile must be square. Yours is ' + w + ' x ' + h + '. Use something like 480 x 480.');
-    } finally { URL.revokeObjectURL(url); }
-  }
-
   async function load() {
     var r = await sb.from('tiles').select('*').order('sort_order', { ascending: true });
     tableMissing = !!r.error;
@@ -47,7 +38,7 @@
   function itemHTML(t) {
     var live = t.active !== false, hasPage = t.target && ['brand', 'collection', 'products'].indexOf(t.target.type) !== -1;
     return '<div class="aditem">' +
-      '<div class="aditem-img" style="width:64px;height:64px">' + (t.image_url ? '<img src="' + esc(t.image_url) + '" alt="">' : '') + '</div>' +
+      '<div class="aditem-img" style="width:64px;height:64px">' + (t.image_url ? '<img src="' + esc(t.image_url) + '" alt="" style="object-fit:contain">' : '') + '</div>' +
       '<div class="aditem-body"><div class="aditem-name">' + esc(t.caption || 'No caption') + '<span class="pill' + (live ? ' live' : '') + '">' + (live ? 'Live' : 'Paused') + '</span></div>' +
       '<div class="aditem-meta">' + esc(place(t)) + '</div><div class="aditem-meta">' + esc(DestPicker.describe(t.target)) + '</div></div>' +
       '<div class="aditem-acts">' +
@@ -62,17 +53,17 @@
     cur = null; dest = null;
     pane().innerHTML =
       '<div class="ph"><span class="pt">GIF Tiles</span><button class="abtn solid" data-a="new">+ New Tile</button></div>' +
-      '<div class="ad-hint" style="margin:-4px 0 12px">Square tiles that sit under the hero banner (or inside the product feed). Each one opens the brand or the products you tag it with.</div>' +
+      '<div class="ad-hint" style="margin:-4px 0 12px">Tiles (looping GIFs or images) that sit under the hero banner (or inside the product feed). Each one opens the brand or the products you tag it with.</div>' +
       (tableMissing ? '<div class="ad-empty">The tiles table is not set up yet. Run <b>the tiles SQL</b> in the Supabase SQL editor, then reopen this tab.</div>' : '') +
-      (tiles.length ? tiles.map(itemHTML).join('') : (tableMissing ? '' : '<div class="ad-empty">No tiles yet. Add a square GIF such as "30% off" and tag it to the products it should open.</div>'));
+      (tiles.length ? tiles.map(itemHTML).join('') : (tableMissing ? '' : '<div class="ad-empty">No tiles yet. Add a GIF such as "30% off" and tag it to the products it should open.</div>'));
   }
 
   function renderForm() {
     var c = cur;
     pane().innerHTML =
       '<div class="fcard" id="tileForm"><h3>' + (c.id ? 'Edit Tile' : 'New Tile') + '</h3>' +
-      '<div class="fg"><label>GIF or image (square)</label><div data-pk></div>' +
-        '<div class="ad-hint">Looping GIFs work best. It must be square (for example 480 x 480) and under 4 MB.</div></div>' +
+      '<div class="fg"><label>GIF or image</label><div data-pk></div>' +
+        '<div class="ad-hint">Looping GIFs work best, under 4 MB. Any shape is accepted and shown uncropped, so you can see how it looks before deciding whether it should be square.</div></div>' +
       '<div class="fg"><label>Caption</label><input type="text" data-f="caption" maxlength="40" placeholder="e.g. Buy More. Save More" value="' + esc(c.caption) + '"></div>' +
       '<div data-dest></div>' +
       '<div class="fg"><label>Where to show it</label><select data-f="place" data-re="1">' +
@@ -88,7 +79,6 @@
     var picker = new Pcx.MultiImagePicker(pane().querySelector('[data-pk]'), {
       max: 1, label: 'Add GIF',
       upload: async function (file) {
-        await checkSquare(file);
         uploading++;
         try { return await uploadImage(file, 'tiles', 'tileProgBar', 'tileProg'); } finally { uploading--; }
       },

@@ -1,5 +1,5 @@
 /* Pcx.TileRow
- * A row of square tiles (looping GIFs or still images) with a caption underneath, like the row under a
+ * A row of tiles (looping GIFs or still images, square by default, any shape allowed) with a caption underneath, like the row under a
  * store's hero banner. Each tile opens its target: a brand page, a product page (30% off, skincare...),
  * an ad page or a link. The admin manages them under Banners > Tiles; data/ads.js builds the tile list.
  *
@@ -55,6 +55,11 @@
       var box = h('span', 'tile__img');
       var img = new Image();
       img.alt = t.caption || ''; img.decoding = 'async'; img.draggable = false;
+      /* not square? show it whole in its own proportions (kept between 1:2 and 2:1 so one odd file cannot wreck the row) */
+      img.addEventListener('load', function () {
+        var r = img.naturalWidth / img.naturalHeight;
+        if (r && Math.abs(r - 1) > 0.05) box.style.aspectRatio = Math.min(2, Math.max(0.5, r)) + ' / 1';
+      }, { once: true });
       if (reduced) img.addEventListener('load', function () { still(img, t.caption); }, { once: true });
       img.src = t.image;
       box.appendChild(img);

@@ -1,3 +1,37 @@
+# Order tracking and customer notifications
+
+Built on the existing tables (`orders`, `order_items`, `vendors`, `push_subscriptions`); nothing was replaced. Needs the tracking SQL run once in the
+Supabase SQL editor (SQL is pasted in the chat when a change needs it, never stored in this repo). Until it is run, the storefront, vendor board and admin
+panel fall back to the old order lists.
+
+**How it fits together**
+
+- `shipments`: one row per seller per order (a seller sub-order). Holds the current status, carrier, tracking number, estimated delivery, shipped/delivered
+  times, and reserved columns for live delivery (`rider_id`, `current_lat`, `current_lng`, `last_location_at`, `eta_at`). Created by a trigger when order lines are inserted.
+- `tracking_events`: append-only history (order placed, payment confirmed, processing, preparing shipment, shipped, in transit, out for delivery, delivered,
+  cancelled, delivery failed, returned, refunded, plus `tracking_updated` for corrections). `shipment_id` null = applies to the whole order. Nothing can update or delete an event.
+  The order's overall status (partially shipped, in transit, delivered ...) is derived from its shipments and stored on `orders.fulfillment_status`.
+- All status changes go through `record_tracking_event()` (sellers, admin; a courier integration later), `record_order_event()` (payment, admin only) and
+  `cancel_order()` (admin only). The server checks who you are, that the shipment is yours, that the move is allowed (no going backwards, no shipping without
+  a carrier and tracking number), and ignores repeats (same status, or the same idempotency key). Row level security means customers see only their own orders and
+  sellers only their own shipments; nobody can write these tables directly.
+- Checkout calls `place_order()`: prices, names and sellers come from `products`, the buyer from the login, and the order, lines and shipments are created in one transaction.
+- Notifications: a trigger on `tracking_events` writes the in-app notification (`notifications`) and one delivery row per channel (`notification_deliveries`),
+  applying the customer's `notification_preferences`. It never raises, so a notification problem cannot fail an order update. `/api/notify-dispatch` then sends the
+  queued pushes and emails and records sent / failed / skipped (with the reason) on each delivery row; failures are retried with a growing delay.
+  Order, delivery and payment notices always exist in the app; the settings only decide whether they are also pushed or emailed, and the Promotions switch never affects them.
+- Emails: `api/_lib/email/layout.js` (logo, colours, footer, order table, tracking box, button) and `api/_lib/email/templates.js` (one row of data per event).
+  To change wording, edit the row. To add an event, add a row and a branch in `notification_copy()` in the database.
+- Couriers: `carriers` table (`provider` = manual / own / api) and `api/_lib/carriers.js`. Manual updates work today; `own` generates a tracking number (`MT` + shipment id);
+  no courier API is connected. A future integration implements `fetchUpdates()` and calls `applyCarrierUpdate()`, which uses the same server function.
+
+**Environment variables (Vercel)**: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_CONTACT_EMAIL` (push; already used),
+`RESEND_API_KEY` and `EMAIL_FROM` (email; nothing is emailed and nothing claims to be until both are set), `SITE_URL` (used for links and the logo in emails; defaults to the request host),
+`CRON_SECRET` (optional, lets a scheduler call `/api/notify-dispatch` to retry failures; retries also happen on every order update).
+
+**Where things are**: customer tracking page `components/order-tracking.js` (`#order=ID`), notification center and settings `components/notification-center.js` (`#notifications`),
+shared helpers `data/tracking.js`, vendor fulfilment `vendor/orders.js`, admin orders/shipments `admin/orders.js`, engine `api/_lib/dispatch.js`, endpoint `api/notify-dispatch.js`.
+
 # Store - PWA with Supabase
 
 ## Storefront v2: brands with logos, favorites, search, new product page
@@ -27,12 +61,12 @@ It creates `brands` (+ `products.brand_id`), `favorites`, the `product_ratings` 
   real rating and reviews only, delivery and returns text from Admin > Settings, more from this seller, similar items.
   Shared links look like `/?p=PRODUCT_ID`.
 
-## Square GIF tiles and pages that open from banners
+## GIF tiles and pages that open from banners
 
 Needs the tiles SQL run once in the Supabase SQL editor (SQL is pasted in the chat when a change needs it, never stored in this repo).
 
-- **Admin > Banners > Tiles**: add a square looping GIF (for example 480 x 480, under 4 MB) with a caption. Non-square files are
-  refused, and GIFs are uploaded untouched so they keep animating. Choose where it shows: in a row under the hero banner, or
+- **Admin > Banners > Tiles**: add a looping GIF (under 4 MB) with a caption. Any shape is accepted and shown whole, uncropped, in its
+  own proportions (square is only the default), so you can judge how it looks before deciding on a size. GIFs are uploaded untouched so they keep animating. Choose where it shows: in a row under the hero banner, or
   inside the product feed after N rows. Tiles in the same place share one row (four fit the screen, more slide sideways).
 - **Tag each tile (and each hero banner) to what it opens**: a brand's products (brand logo page), products matching filters
   (discount at least 30%, a category and its subcategories, a keyword, max price, flash sale or featured, sort order),

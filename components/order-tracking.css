@@ -1,0 +1,73 @@
+/* Order tracking: status pill + timeline (shared by the storefront, vendor board and admin panel) and the customer's tracking page. */
+.tk-pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11.5px;font-weight:800;letter-spacing:.2px;white-space:nowrap;background:var(--bg2);color:var(--txt2)}
+.tk-pill.go{background:rgba(37,99,235,.12);color:#2563eb}
+.tk-pill.good{background:rgba(22,163,74,.13);color:#16a34a}
+.tk-pill.warn{background:rgba(217,119,6,.15);color:#d97706}
+.tk-pill.bad{background:rgba(220,38,38,.12);color:#dc2626}
+
+.tl{list-style:none;margin:0;padding:0}
+.tl li{position:relative;display:flex;gap:12px;padding:0 0 16px 0;min-height:30px}
+.tl li:last-child{padding-bottom:0}
+.tl li::before{content:'';position:absolute;left:10px;top:22px;bottom:-2px;width:2px;background:var(--border)}
+.tl li:last-child::before{display:none}
+.tl li.done::before{background:#16a34a}
+.tl-dot{width:22px;height:22px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--bg);border:2px solid var(--border);color:#fff;font-size:12px;font-weight:800;z-index:1}
+.tl li.done .tl-dot{background:#16a34a;border-color:#16a34a}
+.tl li.current .tl-dot{border-color:var(--red);background:var(--bg);box-shadow:0 0 0 4px rgba(217,28,45,.14)}
+.tl li.current .tl-dot::after{content:'';width:8px;height:8px;border-radius:50%;background:var(--red)}
+.tl li.problem .tl-dot{background:#d97706;border-color:#d97706}
+.tl-body{flex:1;min-width:0;padding-top:1px}
+.tl-lbl{font-size:14px;font-weight:700;color:var(--txt)}
+.tl li.todo .tl-lbl{color:var(--txt3);font-weight:600}
+.tl-at{font-size:12px;color:var(--txt3);margin-top:1px}
+.tl-desc{font-size:12.5px;color:var(--txt2);margin-top:2px;line-height:1.4}
+
+/* history list (every event, newest first) */
+.tk-hist{margin-top:10px;border-top:1px solid var(--border);padding-top:8px}
+.tk-hist summary{font-size:12.5px;font-weight:700;color:var(--txt2);cursor:pointer;list-style:none}
+.tk-hist summary::-webkit-details-marker{display:none}
+.tk-hist-row{padding:8px 0;border-bottom:1px solid var(--border);font-size:12.5px;color:var(--txt2);line-height:1.45}
+.tk-hist-row:last-child{border-bottom:none}
+.tk-hist-row b{color:var(--txt);font-size:13px}
+.tk-hist-row .by{color:var(--txt3);font-size:11.5px}
+
+/* tracking details box */
+.tk-box{background:var(--bg2);border-radius:10px;padding:10px 12px;margin:10px 0}
+.tk-kv{display:flex;justify-content:space-between;gap:12px;padding:3px 0;font-size:13px}
+.tk-kv span:first-child{color:var(--txt3)}
+.tk-kv span:last-child{font-weight:700;color:var(--txt);text-align:right;word-break:break-all}
+.tk-link{color:var(--red);font-weight:700;font-size:13px;cursor:pointer;text-decoration:none}
+.tk-copy{margin-left:6px;font-size:11px;font-weight:800;color:var(--red);cursor:pointer}
+
+/* customer tracking page (#order=ID) */
+#orderPage{
+  position:fixed;inset:0;z-index:270;background:var(--bg);color:var(--txt);
+  overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+  transform:translateY(100%);visibility:hidden;
+  transition:transform .32s cubic-bezier(.4,0,.2,1),visibility 0s linear .32s;
+}
+#orderPage.open{transform:none;visibility:visible;transition-delay:0s}
+.ot-hdr{position:sticky;top:0;z-index:5;height:52px;display:flex;align-items:center;gap:10px;padding:0 12px;background:var(--bg);border-bottom:1px solid var(--border)}
+.ot-hdr button{width:36px;height:36px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--txt);font-size:12px;font-weight:800}
+.ot-title{flex:1;font-size:15px;font-weight:800;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.ot-body{padding:14px;max-width:640px;margin:0 auto}
+.ot-sum{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px}
+.ot-sum-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.ot-num{font-size:17px;font-weight:800}
+.ot-meta{font-size:12.5px;color:var(--txt2);line-height:1.6}
+.ot-ship{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px}
+.ot-ship-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.ot-logo{width:34px;height:34px;border-radius:8px;background:var(--bg2);object-fit:cover;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--txt2);overflow:hidden}
+.ot-logo img{width:100%;height:100%;object-fit:cover}
+.ot-seller{flex:1;min-width:0}
+.ot-seller b{display:block;font-size:14px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.ot-seller span{font-size:11.5px;color:var(--txt3)}
+.ot-items{margin-bottom:6px}
+.ot-item{display:flex;gap:10px;align-items:center;padding:6px 0}
+.ot-item img,.ot-item .ph{width:44px;height:44px;border-radius:8px;object-fit:cover;background:var(--bg2);flex-shrink:0}
+.ot-item div{flex:1;min-width:0;font-size:13px;line-height:1.3}
+.ot-item small{color:var(--txt3)}
+.ot-sec-h{font-size:12px;font-weight:800;color:var(--txt3);letter-spacing:.4px;text-transform:uppercase;margin:14px 0 8px}
+.ot-empty{padding:40px 18px;text-align:center;color:var(--txt3);font-size:13.5px;line-height:1.5}
+.ot-empty h3{font-size:16px;color:var(--txt);margin-bottom:6px}
+.ot-empty button{margin-top:14px;padding:11px 22px;border-radius:8px;background:var(--red);color:#fff;font-weight:800;font-size:14px}

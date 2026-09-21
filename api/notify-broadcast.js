@@ -38,8 +38,11 @@ module.exports = async (req, res) => {
     if (target === 'vendors') roles = ['vendor'];
     if (target === 'all') roles = ['buyer', 'vendor'];
 
-    const { data: subs, error } = await supabaseAdmin.from('push_subscriptions').select('*').in('role', roles);
+    let { data: subs, error } = await supabaseAdmin.from('push_subscriptions').select('*').in('role', roles);
     if (error) throw error;
+    // Promotional messages respect each customer's choice. (Order, delivery and payment updates never go through here.)
+    const { data: optedOut } = await supabaseAdmin.from('notification_preferences').select('user_id').eq('promotional', false);
+    if (optedOut && optedOut.length) { const off = new Set(optedOut.map(r => r.user_id)); subs = (subs || []).filter(s => !off.has(s.user_id)); }
 
     const payload = { title, body: message, url: url || '/' };
     let sent = 0, dead = 0;
