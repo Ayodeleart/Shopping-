@@ -1,0 +1,109 @@
+/* ── PRODUCT CARD (shared) ─────────────────────────────────────
+ * Extracted from index.html's inline <style> so any page (the
+ * storefront, /store/[slug], future surfaces) can render the
+ * exact same card produced by components/product-card.js's
+ * cardHTML(), instead of re-implementing the styling.
+ * Requires: components/theme-tokens.css to be loaded first.
+ * ──────────────────────────────────────────────────────────── */
+.fcard-wrap{padding:10px 6px 10px;flex-shrink:0;width:156px}
+.fcard-wrap:first-child{padding-left:12px}
+.fcard-wrap:last-child{padding-right:12px}
+
+.pcard{
+  background:var(--card);border-radius:4px;overflow:hidden;
+  cursor:pointer;border:1px solid var(--border);
+  transition:transform .15s;
+  -webkit-transform:translateZ(0);
+}
+.pcard:active{transform:scale(.97)}
+
+/* IMAGE AREA */
+.pcImg{
+  position:relative;padding-top:100%;
+  background:#fff;overflow:hidden;
+}
+.pcImg img{
+  position:absolute;inset:0;width:100%;height:100%;
+  object-fit:contain;padding:6px;
+}
+.noImgPh{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--txt3);background:var(--bg2)}
+
+/* DISCOUNT BADGE — circular, top right, like Jumia */
+.discBadge{
+  position:absolute;top:6px;right:6px;
+  background:var(--red);color:#fff;
+  font-size:11px;font-weight:800;
+  width:38px;height:38px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  text-align:center;line-height:1.1;
+  z-index:1;
+}
+
+/* BODY */
+.pcBody{padding:8px 9px 10px}
+.pcName{
+  font-size:13px;font-weight:400;color:var(--txt2);
+  line-height:1.3;margin-bottom:5px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+.pcPriceRow{display:flex;align-items:center;justify-content:space-between;gap:4px}
+.pcPrice{font-size:17px;font-weight:900;color:var(--txt);margin-bottom:1px}
+.favBtn{
+  width:32px;height:32px;margin:-4px -7px -4px 0;flex-shrink:0;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;color:var(--txt2);
+}
+.favBtn svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linejoin:round}
+.favBtn.on{color:var(--red)}
+.favBtn.on svg{fill:currentColor}
+.favBtn.pop svg{animation:favPop .34s ease-out}
+@keyframes favPop{0%{transform:scale(.7)}55%{transform:scale(1.3)}100%{transform:scale(1)}}
+.pcRate{display:flex;align-items:center;gap:4px;margin-bottom:6px;font-size:11px;color:var(--txt3)}
+.stars{position:relative;display:inline-flex;line-height:0;vertical-align:middle}
+.stars .st-bg,.stars .st-fg{display:inline-flex;gap:1px;flex-wrap:nowrap}
+.stars svg{flex:0 0 auto;fill:currentColor}
+.stars .st-bg{color:var(--bg3)}
+.stars .st-fg{position:absolute;left:0;top:0;overflow:hidden;color:var(--gold)}
+.pcWas{font-size:12px;color:var(--txt3);text-decoration:line-through;margin-bottom:5px}
+.pcStockRow{display:flex;align-items:center;gap:6px;margin-bottom:7px}
+.pcBar{flex:1;height:4px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.pcBarFill{height:100%;background:var(--red);border-radius:2px;transition:width .3s}
+.pcStockTxt{font-size:11px;color:var(--txt3);white-space:nowrap;flex-shrink:0}
+.pcAdd{
+  width:100%;height:36px;background:var(--red);color:#fff;
+  font-size:13px;font-weight:700;border-radius:8px;
+  transition:background .12s;
+}
+.pcAdd:active{background:var(--red2)}
+/* after adding: [ - ]  1  [ + ]  (square red buttons at both ends, quantity in the middle) */
+.pcStep{display:flex;align-items:center;justify-content:space-between;height:36px}
+.pcStepB{
+  width:36px;height:36px;border-radius:8px;background:var(--red);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 6px rgba(217,28,45,.35);transition:transform .1s,background .12s;
+}
+.pcStepB:active{background:var(--red2);transform:scale(.92)}
+.pcStepN{flex:1;text-align:center;font-size:16px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums}
+
+/* fly-to-cart */
+.flyImg{position:fixed;z-index:1200;pointer-events:none;object-fit:contain;background:#fff;border-radius:14px;box-shadow:0 10px 26px rgba(0,0,0,.32);will-change:transform,opacity}
+.flyDot{background:var(--red);border-radius:50%}
+.cart-bump{animation:cartBump .42s ease-out}
+@keyframes cartBump{0%{transform:scale(1)}35%{transform:scale(1.28)}65%{transform:scale(.92)}100%{transform:scale(1)}}
+
+/* GRID */
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);padding:0}
+.pgrid-wrap{background:var(--bg);padding-bottom:16px}
+.pgrid > div{background:var(--bg)}
+
+/* EMPTY */
+.empty{
+  padding:48px 20px;text-align:center;color:var(--txt3);
+  grid-column:1/-1;background:var(--bg);
+}
+.empty h3{font-size:15px;font-weight:700;color:var(--txt2);margin-bottom:6px}
+.empty p{font-size:13px}
+
+/* SCROLL ANIMATIONS */
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.au{opacity:0}.au.v{animation:fadeUp .3s ease-out forwards}
+.d0{animation-delay:0ms}.d1{animation-delay:40ms}.d2{animation-delay:80ms}.d3{animation-delay:120ms}
