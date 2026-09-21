@@ -415,7 +415,7 @@ async function uploadImage(file, folder, transparent) {
   const { error } = await sb.storage.from(BUCKET).upload(path, blob, { contentType: fmt, cacheControl: '31536000' });
   if (error) {
     prog.classList.remove('on');
-    if (/row-level security|policy/i.test(error.message)) throw new Error('Upload blocked by the storage policy. Ask the store admin to run the ads and storage SQL and migration_storefront_v2.sql.');
+    if (/row-level security|policy/i.test(error.message)) throw new Error('Upload blocked by the storage policy. Ask the store admin to run the ads and storage SQL and the brands + logo SQL.');
     throw error;
   }
   bar.style.width = '100%'; setTimeout(() => prog.classList.remove('on'), 600);
@@ -645,7 +645,7 @@ document.getElementById('sSaveBtn').onclick = async () => {
   if (!business_name) { toast('Business name required', true); return; }
   showLoad('Saving...');
   try {
-    /* logo goes to avatars/vendor-logos/<your id>/ (see migration_storefront_v2.sql) */
+    /* logo goes to avatars/vendor-logos/<your id>/ */
     const logos = await sLogoPicker.resolve(file => uploadImage(file, 'vendor-logos/' + session.user.id, true));
     const logo_url = logos[0] || null;
     const { error } = await sb.from('vendors').update({ business_name, phone, logo_url }).eq('id', session.user.id);

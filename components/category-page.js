@@ -26,13 +26,17 @@
     this.d = deps;
     this.isOpen = false;
     root.innerHTML =
-      '<div class="cpg-hdr"><button class="cpg-back" type="button" aria-label="Back">' + BACK + '</button><div class="cpg-title"></div></div>' +
+      '<div class="cpg-hdr"><button class="cpg-back" type="button" aria-label="Back">' + BACK + '</button>' +
+        (deps.onHome ? '<button class="cpg-home" type="button" aria-label="Home"><img src="store-logo.png" alt=""></button>' : '') +
+        '<div class="cpg-title"></div></div>' +
       '<div class="cpg-crumbs"></div>' +
       '<div class="cpg-subs"></div>' +
       '<div class="cpg-sec"><b class="cpg-sect">Products</b><span class="cpg-count"></span></div>' +
       '<div class="pgrid-wrap"><div class="pgrid cpg-grid"></div></div>';
     var self = this;
     root.querySelector('.cpg-back').addEventListener('click', function () { self.d.onBack(); });
+    var homeBtn = root.querySelector('.cpg-home');
+    if (homeBtn) homeBtn.addEventListener('click', function () { self.d.onHome(); });
     root.addEventListener('click', function (e) {
       var a = e.target.closest ? e.target.closest('[data-cat]') : null;
       if (a) { e.preventDefault(); self.d.go(a.getAttribute('data-cat')); }

@@ -10,7 +10,7 @@
  *   const { rows, error } = await Pcx.Categories.fetchAll(sb);      // active only; { includeInactive:true } for admin
  *   const tree = new Pcx.Categories.Tree(rows);
  *   tree.visibleRoots(), tree.visibleChildren(id), tree.path(id), tree.descendantIds(id) ...
- *   Pcx.Categories.thumb(tree, cat)                          // HTML for a thumbnail tile (image, else emoji on colour)
+ *   Pcx.Categories.thumb(tree, cat)                          // HTML for a thumbnail tile (image, else the first letter on colour)
  */
 (function (global) {
   'use strict';
@@ -32,14 +32,19 @@
     return String(name || '').toLowerCase().replace(/['\u2019]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   }
 
+  /* No emoji anywhere in the store UI: they are removed from names, and the `icon` column is not shown any more
+     (a tile with no picture shows the category's first letter). */
+  var EMOJI = /[\u{1F000}-\u{1FAFF}\u{2190}-\u{21FF}\u{2300}-\u{23FF}\u{2460}-\u{27BF}\u{2900}-\u{2BFF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}]/gu;
+  function stripEmoji(s) { return String(s == null ? '' : s).replace(EMOJI, '').replace(/\s{2,}/g, ' ').trim(); }
+
   function norm(r) {
     return {
       id: r.id,
       parentId: r.parent_id == null ? null : r.parent_id,
       slug: r.slug,
-      name: r.name,
+      name: stripEmoji(r.name) || r.name,
       description: r.description || '',
-      icon: r.icon || '',
+      icon: '',
       color: r.color || '',
       imageUrl: r.image_url || '',
       placeholderPath: r.placeholder_path || '',
@@ -145,7 +150,7 @@
      If the image 404s (placeholder not uploaded yet) it removes itself and the emoji tile shows. */
   function thumb(tree, cat, cls) {
     var url = imageUrl(cat);
-    var ph = tree.icon(cat) || String(cat.name || '?').charAt(0).toUpperCase();
+    var ph = String(cat.name || '?').charAt(0).toUpperCase();
     return '<div class="cat-thumb ' + (cls || '') + '" style="background:' + esc(tree.color(cat)) + '">' +
       '<span class="cat-thumb-ph">' + esc(ph) + '</span>' +
       (url ? '<img src="' + esc(url) + '" alt="" loading="lazy" onerror="this.remove()">' : '') +

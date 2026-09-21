@@ -23,6 +23,9 @@
 <link rel="stylesheet" href="components/categories.css">
 <script defer src="data/categories.js"></script>
 <script defer src="components/category-page.js"></script>
+<link rel="stylesheet" href="components/search-page.css">
+<script defer src="data/search.js"></script>
+<script defer src="components/search-page.js"></script>
 <link rel="stylesheet" href="components/product-page.css">
 <script defer src="components/product-gallery.js"></script>
 <script defer src="components/image-viewer.js"></script>
@@ -60,7 +63,13 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
   transition:background .2s,border-color .2s;
 }
 #menuBtn{width:36px;height:36px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--txt)}
-#storeLogo{flex:1;font-size:20px;font-weight:900;letter-spacing:-1px;color:var(--txt);line-height:1}
+#storeLogo,.js-store-name{font-size:20px;font-weight:900;letter-spacing:-1px;color:var(--txt);line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* logo + store name: a link home from anywhere (see goHome) */
+.hdrHome{display:flex;align-items:center;gap:8px;flex:1;min-width:0;color:inherit;text-decoration:none;-webkit-tap-highlight-color:transparent}
+.hdrHome img{height:30px;width:auto;flex-shrink:0;object-fit:contain}
+.hdrHome:active{opacity:.7}
+.hdrHome.logoOnly{flex:none;margin-left:auto}
+.hdrHome.logoOnly img{height:28px}
 .hdr-icon{width:36px;height:36px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--txt);position:relative}
 .hdr-icon:active{opacity:.6}
 #cartDot{position:absolute;top:4px;right:4px;width:16px;height:16px;background:var(--red);color:#fff;font-size:9px;font-weight:800;border-radius:8px;display:none;align-items:center;justify-content:center}
@@ -78,23 +87,9 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
   border:1.5px solid var(--border);
 }
 #searchBar svg{color:var(--txt3);flex-shrink:0}
-#searchInput{flex:1;border:none;background:transparent;font-size:14px;color:var(--txt);height:100%}
+#searchInput{flex:1;border:none;background:transparent;font-size:14px;color:var(--txt);height:100%;pointer-events:none}
 #searchInput::placeholder{color:var(--txt3)}
-#srchClearBtn{display:none;color:var(--txt3);flex-shrink:0}
-
-/* ── SEARCH RESULTS DROPDOWN ──────────────────────── */
-#srchDropdown{
-  position:fixed;top:calc(var(--hh) + 57px);left:0;right:0;bottom:0;
-  z-index:180;background:var(--bg);overflow-y:auto;
-  display:none;
-}
-#srchDropdown.open{display:block}
-.sri{display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--border);cursor:pointer}
-.sri:active{background:var(--bg2)}
-.sri-img{width:52px;height:52px;border-radius:8px;background:var(--bg2);flex-shrink:0;object-fit:cover}
-.sri-name{font-size:14px;font-weight:600;margin-bottom:2px}
-.sri-price{font-size:13px;color:var(--red);font-weight:700}
-#srchEmpty{padding:48px 20px;text-align:center;color:var(--txt3);font-size:14px}
+#searchBar{cursor:text}
 
 /* ── CALL TO ORDER ────────────────────────────────── */
 #callBar{
@@ -275,15 +270,20 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 .pcBarFill{height:100%;background:var(--red);border-radius:2px;transition:width .3s}
 .pcStockTxt{font-size:11px;color:var(--txt3);white-space:nowrap;flex-shrink:0}
 .pcAdd{
-  width:100%;height:34px;background:var(--red);color:#fff;
-  font-size:13px;font-weight:700;border-radius:4px;
+  width:100%;height:36px;background:var(--red);color:#fff;
+  font-size:13px;font-weight:700;border-radius:8px;
   transition:background .12s;
 }
 .pcAdd:active{background:var(--red2)}
-.pcStep{display:flex;align-items:center;justify-content:space-between;height:34px;background:var(--red);border-radius:4px;color:#fff}
-.pcStepB{width:44px;height:100%;display:flex;align-items:center;justify-content:center;color:#fff;border-radius:4px}
-.pcStepB:active{background:var(--red2)}
-.pcStepN{font-size:14px;font-weight:800;min-width:24px;text-align:center;font-variant-numeric:tabular-nums}
+/* after adding: [ - ]  1  [ + ]  (square red buttons at both ends, quantity in the middle) */
+.pcStep{display:flex;align-items:center;justify-content:space-between;height:36px}
+.pcStepB{
+  width:36px;height:36px;border-radius:8px;background:var(--red);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 6px rgba(217,28,45,.35);transition:transform .1s,background .12s;
+}
+.pcStepB:active{background:var(--red2);transform:scale(.92)}
+.pcStepN{flex:1;text-align:center;font-size:16px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums}
 
 /* fly-to-cart */
 .flyImg{position:fixed;z-index:1200;pointer-events:none;object-fit:contain;background:#fff;border-radius:14px;box-shadow:0 10px 26px rgba(0,0,0,.32);will-change:transform,opacity}
@@ -324,7 +324,6 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
   border-bottom:1px solid var(--border);
 }
 #pModalBack{width:36px;height:36px;display:flex;align-items:center;justify-content:center;color:var(--txt);flex-shrink:0}
-#pModalTitle{flex:1;font-size:15px;font-weight:700;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 #pCartDot{position:absolute;top:4px;right:4px;min-width:16px;height:16px;padding:0 4px;background:var(--red);color:#fff;font-size:9px;font-weight:800;border-radius:8px;display:none;align-items:center;justify-content:center}
 #pBody{padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))}
 
@@ -547,6 +546,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 .cTop h3{font-size:17px;font-weight:800}
 #cartCloseBtn{width:30px;height:30px;background:var(--bg2);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--txt2)}
 #cartList{flex:1;overflow-y:auto;padding:0 13px}
+#cartRecent{margin:14px -13px 18px}
 .cItem{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border)}
 .cItem:last-child{border-bottom:none}
 .cItemImg{width:56px;height:56px;border-radius:6px;object-fit:contain;background:#fff;border:1px solid var(--border);flex-shrink:0;padding:4px}
@@ -650,9 +650,11 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
   <button id="menuBtn" aria-label="Menu">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
   </button>
-  <img src="store-logo.png" alt="" style="height:30px;width:auto;flex-shrink:0;object-fit:contain">
-  <span id="storeLogo">Maccato</span>
-  <button class="hdr-icon" id="hdrSearchBtn" aria-label="Search" onclick="focusSearch()" style="display:none">
+  <a class="hdrHome" id="hdrHome" href="/" onclick="goHome(event)" aria-label="Home">
+    <img src="store-logo.png" alt="">
+    <span id="storeLogo" class="js-store-name">Maccato</span>
+  </a>
+  <button class="hdr-icon" id="hdrSearchBtn" aria-label="Search" onclick="openSearch()" style="display:none">
     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="20" height="20"><path d="M11 6C13.7614 6 16 8.23858 16 11M16.6588 16.6549L21 21M19 11C19 15.4183 15.4183 19 11 19C6.58172 19 3 15.4183 3 11C3 6.58172 6.58172 3 11 3C15.4183 3 19 6.58172 19 11Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </button>
   <button class="hdr-icon" id="profileBtn" aria-label="Account" onclick="openAccount()">
@@ -669,17 +671,14 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 
 <!-- SEARCH BAR (scrolls away with the page; the header search icon takes over) -->
 <div id="searchWrap">
-  <div id="searchBar">
+  <div id="searchBar" onclick="openSearch()" role="button" aria-label="Search">
     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="16" height="16"><path d="M11 6C13.7614 6 16 8.23858 16 11M16.6588 16.6549L21 21M19 11C19 15.4183 15.4183 19 11 19C6.58172 19 3 15.4183 3 11C3 6.58172 6.58172 3 11 3C15.4183 3 19 6.58172 19 11Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    <input type="search" id="searchInput" placeholder="Search products, brands and categories" autocomplete="off">
-    <button id="srchClearBtn" onclick="clearSearch()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
+    <input type="search" id="searchInput" placeholder="Search products, brands and categories" autocomplete="off" readonly tabindex="-1">
   </div>
 </div>
 
-<!-- SEARCH RESULTS -->
-<div id="srchDropdown"></div>
+<!-- SEARCH PAGE (opens full screen from the bar above / the header search icon) -->
+<div id="searchPage"></div>
 
 <!-- CALL TO ORDER -->
 <div id="callBar"></div>
@@ -869,7 +868,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
     <button id="pModalBack" onclick="closePModal()" aria-label="Back">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
     </button>
-    <span id="pModalTitle">Product</span>
+    <a class="hdrHome" href="/" onclick="goHome(event)" aria-label="Home"><img src="store-logo.png" alt=""><span class="js-store-name">Maccato</span></a>
     <button class="hdr-icon" id="pCartBtn" aria-label="Cart" onclick="openCart()">
       <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="22" height="22"><path d="M7.5 18C8.32843 18 9 18.6716 9 19.5C9 20.3284 8.32843 21 7.5 21C6.67157 21 6 20.3284 6 19.5C6 18.6716 6.67157 18 7.5 18Z" stroke="currentColor" stroke-width="1.5"/><path d="M16.5 18.0001C17.3284 18.0001 18 18.6716 18 19.5001C18 20.3285 17.3284 21.0001 16.5 21.0001C15.6716 21.0001 15 20.3285 15 19.5001C15 18.6716 15.6716 18.0001 16.5 18.0001Z" stroke="currentColor" stroke-width="1.5"/><path d="M2 3L2.26121 3.09184C3.5628 3.54945 4.2136 3.77826 4.58584 4.32298C4.95808 4.86771 4.95808 5.59126 4.95808 7.03836V9.76C4.95808 12.7016 5.02132 13.6723 5.88772 14.5862C6.75412 15.5 8.14857 15.5 10.9375 15.5H12M16.2404 15.5C17.8014 15.5 18.5819 15.5 19.1336 15.0504C19.6853 14.6008 19.8429 13.8364 20.158 12.3075L20.6578 9.88275C21.0049 8.14369 21.1784 7.27417 20.7345 6.69708C20.2906 6.12 18.7738 6.12 17.0888 6.12H11.0235M4.95808 6.12H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       <span id="pCartDot"></span>
@@ -943,6 +942,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 
     <section class="pRail" id="pMore" style="display:none"></section>
     <section class="pRail" id="pSimilar" style="display:none"></section>
+    <section class="pRail" id="pRecent" style="display:none"></section>
   </div>
 </div>
 
@@ -955,8 +955,9 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
     </button>
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7.5 18C8.32843 18 9 18.6716 9 19.5C9 20.3284 8.32843 21 7.5 21C6.67157 21 6 20.3284 6 19.5C6 18.6716 6.67157 18 7.5 18Z" stroke="currentColor" stroke-width="1.5"/><path d="M16.5 18.0001C17.3284 18.0001 18 18.6716 18 19.5001C18 20.3285 17.3284 21.0001 16.5 21.0001C15.6716 21.0001 15 20.3285 15 19.5001C15 18.6716 15.6716 18.0001 16.5 18.0001Z" stroke="currentColor" stroke-width="1.5"/><path d="M2 3L2.26121 3.09184C3.5628 3.54945 4.2136 3.77826 4.58584 4.32298C4.95808 4.86771 4.95808 5.59126 4.95808 7.03836V9.76C4.95808 12.7016 5.02132 13.6723 5.88772 14.5862C6.75412 15.5 8.14857 15.5 10.9375 15.5H12M16.2404 15.5C17.8014 15.5 18.5819 15.5 19.1336 15.0504C19.6853 14.6008 19.8429 13.8364 20.158 12.3075L20.6578 9.88275C21.0049 8.14369 21.1784 7.27417 20.7345 6.69708C20.2906 6.12 18.7738 6.12 17.0888 6.12H11.0235M4.95808 6.12H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
     <h3>My Cart</h3>
+    <a class="hdrHome logoOnly" href="/" onclick="goHome(event)" aria-label="Home"><img src="store-logo.png" alt=""></a>
   </div>
-  <div id="cartList"></div>
+  <div id="cartList"><div id="cartItems"></div><section class="pRail" id="cartRecent" style="display:none"></section></div>
   <div class="cFoot">
     <div class="cTotalRow"><span>Total</span><span id="cartTotal">-</span></div>
     <button id="checkoutBtn" onclick="openCheckout()">Proceed to Checkout</button>
@@ -970,7 +971,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
     <button class="acctBack" onclick="closeAccount()" aria-label="Back">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
     </button>
-    <div class="acctLogo"><img src="app-icon-192.png" alt=""></div>
+    <div class="acctLogo" onclick="goHome(event)" style="cursor:pointer"><img src="app-icon-192.png" alt="Home"></div>
     <div class="ctitle">Login</div>
     <div class="csub">Sign in to track orders, save items and leave reviews.</div>
     <button id="acctGoogleBtn">
@@ -985,6 +986,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
       </button>
       <h3>My Account</h3>
+      <a class="hdrHome logoOnly" href="/" onclick="goHome(event)" aria-label="Home"><img src="store-logo.png" alt=""></a>
     </div>
     <div class="acctPane">
     <div class="acctIcon">
@@ -1077,6 +1079,7 @@ function buildCarousel(banners) {
    scrolled away) is titles only. Items are the main categories from the `categories` table, or the old
    shortcut cards until that table exists. */
 let navItems = [];    /* { title, slug?, thumb?, image?, bg? } */
+let searchPage = null;
 
 function setNavItems(items) { navItems = items; buildMenuCats(); renderCatNav(); }
 
@@ -1240,7 +1243,7 @@ function closeCatPage() {
 }
 function initCategoryPage() {
   catPage = new Pcx.CategoryPage(document.getElementById('catPage'), {
-    tree: () => catTree, products: () => allProds, cardHTML, go: openCategory, onBack: closeCatPage
+    tree: () => catTree, products: () => allProds, cardHTML, go: openCategory, onBack: closeCatPage, onHome: goHome
   });
   catDeepLinked = !!catFromHash();
   window.addEventListener('hashchange', syncCatPage);
@@ -1338,7 +1341,7 @@ let currency = '₦';
 const fmt = n => currency + Number(n).toLocaleString('en-NG');
 
 /* ── FAVORITES ────────────────────────────────────── */
-/* Guests: saved on this device. Signed in: also synced to the `favorites` table (migration_storefront_v2.sql). */
+/* Guests: saved on this device. Signed in: also synced to the `favorites` table. */
 let favs = new Set(), favSyncedFor = null;
 try { favs = new Set((JSON.parse(localStorage.getItem('favs_v1')) || []).map(Number)); } catch { favs = new Set(); }
 const HEART_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>';
@@ -1400,9 +1403,9 @@ function ctlHTML(id) {
   if (!it) return `<button class="pcAdd" onclick="event.stopPropagation();addToCart(${id},this)">Add to Cart</button>`;
   return `
     <div class="pcStep" onclick="event.stopPropagation()">
-      <button class="pcStepB" onclick="event.stopPropagation();cardQty(${id},-1)" aria-label="Remove one"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+      <button class="pcStepB" onclick="event.stopPropagation();cardQty(${id},-1,this)" aria-label="Remove one"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
       <span class="pcStepN">${it.qty}</span>
-      <button class="pcStepB" onclick="event.stopPropagation();cardQty(${id},1)" aria-label="Add one"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+      <button class="pcStepB" onclick="event.stopPropagation();cardQty(${id},1,this)" aria-label="Add one"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
     </div>`;
 }
 
@@ -1416,9 +1419,10 @@ function syncCardCtls() {
   });
 }
 
-function cardQty(id, d) {
+function cardQty(id, d, src) {
   const it = cart.find(x => x.id === id);
   if (!it) return;
+  if (d > 0 && src) flyToCart(src);      /* before the cart updates: the card controls re-render and detach this button */
   it.qty += d;
   if (it.qty <= 0) cart = cart.filter(x => x !== it);
   saveCart(); updateCartBadge();
@@ -1458,6 +1462,25 @@ function cardHTML(p) {
     </div>`;
 }
 
+/* ── RECENTLY VIEWED (this device) ────────────────── */
+let recentViewed = [];
+try { recentViewed = (JSON.parse(localStorage.getItem('recent_viewed_v1')) || []).map(Number).filter(Boolean); } catch { recentViewed = []; }
+function pushRecentViewed(id) {
+  recentViewed = [id, ...recentViewed.filter(x => x !== id)].slice(0, 20);
+  try { localStorage.setItem('recent_viewed_v1', JSON.stringify(recentViewed)); } catch { /* private mode */ }
+}
+function recentProducts(excludeId) {
+  return recentViewed.map(id => allProds.find(p => p.id === id)).filter(p => p && p.id !== excludeId).slice(0, 12);
+}
+/* fills a .pRail section; hides it when there is nothing to show */
+function renderRecentRail(el, excludeId) {
+  const list = recentProducts(excludeId);
+  if (!list.length) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  el.style.display = '';
+  el.innerHTML = `<div class="pRailHd"><span>Recently Viewed</span></div>
+    <div class="catRowScroll">${list.map(x => `<div class="fcard-wrap">${cardHTML(x)}</div>`).join('')}</div>`;
+}
+
 /* ── FLY TO CART ──────────────────────────────────── */
 /* The product photo flies to whichever cart icon is on screen (product page, brand page or main header). */
 function cartTarget() {
@@ -1467,19 +1490,20 @@ function cartTarget() {
     const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
     if (cx < 0 || cy < 0 || cx > innerWidth || cy > innerHeight) continue;
     const top = document.elementFromPoint(cx, cy);
-    if (top && el.contains(top)) return el;
+    if (!top || el.contains(top)) return el;
   }
-  return $('cartBtn');
+  return null;
 }
 
 function flyToCart(src) {
   const target = cartTarget();
-  if (!target) return;
+  if (!target) return;                    /* a full-screen page covers every cart icon: just skip the flight */
   const bump = () => { target.classList.remove('cart-bump'); void target.offsetWidth; target.classList.add('cart-bump'); };
   const img = src && (src.tagName === 'IMG' ? src : (src.closest && src.closest('.pcard') && src.closest('.pcard').querySelector('.pcImg img')));
   const from = (img || src || target).getBoundingClientRect();
+  /* Reduce Motion (iPhone accessibility setting) used to skip the flight completely. It now plays a short straight one. */
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (reduce || !from.width || !document.body.animate) { bump(); return; }
+  if (!from.width || !document.body.animate) { bump(); return; }
 
   const size = 72;
   const el = img && (img.currentSrc || img.src) ? document.createElement('img') : document.createElement('div');
@@ -1491,11 +1515,14 @@ function flyToCart(src) {
   const t = target.getBoundingClientRect();
   const dx = (t.left + t.width / 2) - (from.left + from.width / 2);
   const dy = (t.top + t.height / 2) - (from.top + from.height / 2);
-  const anim = el.animate([
-    { transform: 'translate(0,0) scale(1)', opacity: 1 },
-    { transform: `translate(${dx * 0.55}px,${dy * 0.3 - 60}px) scale(.7)`, opacity: .95, offset: .45 },
-    { transform: `translate(${dx}px,${dy}px) scale(.14)`, opacity: .35 }
-  ], { duration: 720, easing: 'cubic-bezier(.45,.05,.55,.95)' });
+  const frames = reduce
+    ? [{ transform: 'translate(0,0) scale(1)', opacity: 1 }, { transform: `translate(${dx}px,${dy}px) scale(.14)`, opacity: .35 }]
+    : [
+        { transform: 'translate(0,0) scale(1)', opacity: 1 },
+        { transform: `translate(${dx * 0.55}px,${dy * 0.3 - 60}px) scale(.7)`, opacity: .95, offset: .45 },
+        { transform: `translate(${dx}px,${dy}px) scale(.14)`, opacity: .35 }
+      ];
+  const anim = el.animate(frames, { duration: reduce ? 320 : 720, easing: 'cubic-bezier(.45,.05,.55,.95)' });
   const done = () => { el.remove(); bump(); };
   anim.onfinish = done; anim.oncancel = done;
 }
@@ -1574,8 +1601,8 @@ function openProduct(id, isBack) {
   destroyProductMedia();
   pCur = p; pQty = 1;
   $('pQtyN').textContent = '1';
+  pushRecentViewed(p.id);
 
-  $('pModalTitle').textContent = p.name;
   $('pModalName').textContent = p.name;
 
   /* photos */
@@ -1767,6 +1794,8 @@ function buildRails(p, sellerName) {
     sim.innerHTML = `<div class="pRailHd tint"><span>Similar Items You May Like</span></div>
       <div class="catRowScroll">${similar.map(railCard).join('')}</div>`;
   } else { sim.style.display = 'none'; sim.innerHTML = ''; }
+
+  renderRecentRail($('pRecent'), p.id);        /* last, after seller + similar rows */
 }
 
 /* ── REVIEWS (real, signed-in buyers only) ────────── */
@@ -1858,8 +1887,8 @@ function cartAdd(p, qty) {
 function addToCart(id, src, qty, note) {
   const p = allProds.find(x => x.id===id);
   if (!p) return;
+  if (src) flyToCart(src);               /* first: cartAdd() re-renders the card and detaches the tapped button */
   cartAdd(p, qty || 1);
-  if (src) flyToCart(src);
   if (note || !src) toast('Added to cart');
 }
 function removeFromCart(id) { cart=cart.filter(x=>x.id!==id); saveCart(); updateCartBadge(); renderCartList(); }
@@ -1874,11 +1903,12 @@ function updateCartBadge() {
   const pdot = $('pCartDot');
   pdot.textContent = n; pdot.style.display = n>0 ? 'flex' : 'none';
   syncCardCtls();
+  if ($('cartDrawer').classList.contains('open')) renderCartList();
   document.getElementById('cartTotal').textContent = fmt(cart.reduce((s,x)=>s+x.price*x.qty,0));
   if (window.Pcx && Pcx.AdPage) Pcx.AdPage.refreshCartDot();
 }
 function renderCartList() {
-  const el = document.getElementById('cartList');
+  const el = document.getElementById('cartItems');
   if (!cart.length) {
     el.innerHTML=`<div class="cEmpty"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7.5 18C8.32843 18 9 18.6716 9 19.5C9 20.3284 8.32843 21 7.5 21C6.67157 21 6 20.3284 6 19.5C6 18.6716 6.67157 18 7.5 18Z" stroke="currentColor" stroke-width="1.5"/><path d="M16.5 18.0001C17.3284 18.0001 18 18.6716 18 19.5001C18 20.3285 17.3284 21.0001 16.5 21.0001C15.6716 21.0001 15 20.3285 15 19.5001C15 18.6716 15.6716 18.0001 16.5 18.0001Z" stroke="currentColor" stroke-width="1.5"/><path d="M2 3L2.26121 3.09184C3.5628 3.54945 4.2136 3.77826 4.58584 4.32298C4.95808 4.86771 4.95808 5.59126 4.95808 7.03836V9.76C4.95808 12.7016 5.02132 13.6723 5.88772 14.5862C6.75412 15.5 8.14857 15.5 10.9375 15.5H12M16.2404 15.5C17.8014 15.5 18.5819 15.5 19.1336 15.0504C19.6853 14.6008 19.8429 13.8364 20.158 12.3075L20.6578 9.88275C21.0049 8.14369 21.1784 7.27417 20.7345 6.69708C20.2906 6.12 18.7738 6.12 17.0888 6.12H11.0235M4.95808 6.12H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><p>Cart is empty</p></div>`;
     return;
@@ -1902,7 +1932,7 @@ function renderCartList() {
       </button>
     </div>`).join('');
 }
-function openCart()  { renderCartList(); document.getElementById('cartDrawer').classList.add('open'); document.getElementById('cartOver').classList.add('open'); document.body.style.overflow='hidden'; }
+function openCart()  { renderCartList(); renderRecentRail($('cartRecent'), 0); document.getElementById('cartDrawer').classList.add('open'); document.getElementById('cartOver').classList.add('open'); document.body.style.overflow='hidden'; }
 function closeCart() { document.getElementById('cartDrawer').classList.remove('open'); document.getElementById('cartOver').classList.remove('open'); document.body.style.overflow = $('pModal').classList.contains('open') ? 'hidden' : ''; }
 
 /* ── CHECKOUT ─────────────────────────────────────── */
@@ -1945,36 +1975,46 @@ document.getElementById('placeBtn').onclick = async () => {
 };
 
 /* ── SEARCH ───────────────────────────────────────── */
-document.getElementById('searchInput').addEventListener('input', e => {
-  const q = e.target.value.trim().toLowerCase();
-  const dd = document.getElementById('srchDropdown');
-  const clr = document.getElementById('srchClearBtn');
-  clr.style.display = q ? '' : 'none';
-  if (!q) { dd.classList.remove('open'); return; }
-  const res = allProds.filter(p =>
-    p.name.toLowerCase().includes(q) ||
-    (p.description||'').toLowerCase().includes(q) ||
-    (p.category||'').toLowerCase().includes(q) ||
-    (p.brand||'').toLowerCase().includes(q)
-  );
-  dd.style.top = Math.max(parseInt(getComputedStyle(document.documentElement).getPropertyValue('--hh'), 10) || 52, $('searchWrap').getBoundingClientRect().bottom) + 'px';
-  dd.classList.add('open');
-  if (!res.length) { dd.innerHTML='<div id="srchEmpty">No results found</div>'; return; }
-  dd.innerHTML = res.map(p => `
-    <div class="sri" onclick="closeSrch();openProduct(${p.id})">
-      ${p.image_url
-        ? `<img class="sri-img" src="${p.image_url}" alt="">`
-        : `<div class="sri-img" style="display:flex;align-items:center;justify-content:center;background:var(--bg2)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--txt3)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div>`}
-      <div><div class="sri-name">${esc(p.name)}</div><div class="sri-price">${fmt(p.price)}</div></div>
-    </div>`).join('');
-});
-function clearSearch() {
-  document.getElementById('searchInput').value='';
-  document.getElementById('srchClearBtn').style.display='none';
-  closeSrch();
+/* Recent searches, live suggestions, typo tolerance, sort + filters: see data/search.js and components/search-page.js */
+function searchCategories() {
+  if (catTree) return catTree.list.filter(c => catTree.isVisible(c.id)).map(c => ({ title: c.name, slug: c.slug, path: catTree.label(c.id) }));
+  return navItems.map(it => ({ title: it.title, slug: it.slug || '', path: it.title }));
 }
-function closeSrch() {
-  document.getElementById('srchDropdown').classList.remove('open');
+function productCatNames(p) {
+  if (catTree && p.category_id != null && catTree.byId[p.category_id]) return catTree.path(p.category_id).map(c => c.name);
+  return p.category ? [p.category] : [];
+}
+function initSearchPage() {
+  searchPage = new Pcx.SearchPage($('searchPage'), {
+    products: () => allProds,
+    brands: () => brandsList,
+    categories: searchCategories,
+    brandOf,
+    catNames: productCatNames,
+    vendorName: p => (p.vendor_id && vendorsMap[p.vendor_id] ? vendorsMap[p.vendor_id].business_name : storeName) || '',
+    cardHTML,
+    fmt,
+    onProduct: id => openProduct(id),
+    onBrand: id => filterByBrand(id),
+    onCategory: item => { if (item.slug) openCategory(item.slug); else catNavGo(item.title); }
+  });
+}
+function openSearch(q) { if (searchPage) searchPage.open(q); }
+
+/* ── HOME (logo / store name, from anywhere) ─────── */
+function goHome(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  closeMenu(); closeCart(); closeCheckout(); closeAccount(); closeLegal();
+  if (searchPage) searchPage.close();
+  closePModal(true);
+  /* ad / tile / banner / category pages are opened through the URL hash: clear it without adding history entries */
+  if (location.hash || location.search) history.replaceState(null, '', location.pathname);
+  adDeepLinked = false; catDeepLinked = false;
+  if (adPage) adPage.close();
+  if (catPage) catPage.close();
+  document.body.style.overflow = '';
+  filterCat('All');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 /* ── MENU ─────────────────────────────────────────── */
@@ -2102,10 +2142,6 @@ if (!localStorage.getItem('cookieConsent')) {
   setTimeout(() => document.getElementById('cookieBar').classList.add('show'), 1200);
 }
 
-function focusSearch() {
-  document.getElementById('searchWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  setTimeout(() => document.getElementById('searchInput').focus(), 350);
-}
 /* While the search bar is on screen the header shows no search icon and no category bar.
    Once it has scrolled up under the header, the icon appears and the category titles stick below the header. */
 const HDR_H = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--hh'), 10) || 52;
@@ -2251,7 +2287,7 @@ function initAds(rows, banners, tileRows) {
   mountTiles();
   adPage = new Pcx.AdPage(document.getElementById('adPage'), {
     products: () => allProds, cardHTML, openProduct, openCart,
-    phone: () => storePhone, onBack: closeAdPage
+    phone: () => storePhone, onBack: closeAdPage, onHome: goHome
   });
   adDeepLinked = !!adFromHash();
   window.addEventListener('hashchange', syncAdPage);
@@ -2303,7 +2339,7 @@ async function init() {
     (ratingRows || []).forEach(r => { ratingMap[r.product_id] = { avg: Number(r.avg_rating), n: Number(r.review_count) }; });
     (vendors || []).forEach(v => { vendorsMap[v.id] = v; });
 
-    document.getElementById('storeLogo').textContent = storeName;
+    document.querySelectorAll('.js-store-name').forEach(el => { el.textContent = storeName; });
     document.getElementById('mName').textContent     = storeName;
     document.getElementById('mTag').textContent      = tagline;
     document.title = storeName;
@@ -2339,6 +2375,7 @@ async function init() {
         : [...new Set(allProds.map(p=>p.category).filter(Boolean))];
     }
     buildCatFilter(catPills);
+    initSearchPage();
 
     const flashProds = allProds.filter(p => p.flash_sale);
     if (flashEnd && Date.now() < flashEnd && flashProds.length) {

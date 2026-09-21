@@ -117,7 +117,15 @@
     if (cartSvg) cart.appendChild(cartSvg.cloneNode(true));
     var dot = h('span'); dot.id = 'adCartDot'; cart.appendChild(dot);
     cart.addEventListener('click', function () { d.openCart(); });
-    hdr.appendChild(back); hdr.appendChild(ttl); hdr.appendChild(cart);
+    hdr.appendChild(back);
+    if (d.onHome) {                       /* store logo: back to the home page from here */
+      var home = h('button', 'adp-home'); home.type = 'button'; home.setAttribute('aria-label', 'Home');
+      var logo = document.createElement('img'); logo.src = 'store-logo.png'; logo.alt = '';
+      home.appendChild(logo);
+      home.addEventListener('click', function () { d.onHome(); });
+      hdr.appendChild(home);
+    }
+    hdr.appendChild(ttl); hdr.appendChild(cart);
     root.appendChild(hdr);
 
     /* sections (fall back to "everything from this brand" so a bare ad still works) */

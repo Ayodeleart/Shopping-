@@ -114,12 +114,11 @@
       '<div class="fg"><label>Slug (unique, used in links and thumbnail file names)</label><input id="cfSlug" type="text" maxlength="90" placeholder="auto from name" value="' + esc(e.slug || '') + '"></div>' +
       '<div class="fg"><label>Parent</label><div id="cfParent"></div><div class="ad-hint">Leave empty for a main category. To move this category, pick a different parent.</div></div>' +
       '<div class="row2">' +
-        '<div class="fg"><label>Icon (emoji, optional)</label><input id="cfIcon" type="text" maxlength="4" placeholder="\ud83d\udc55" value="' + esc(e.icon || '') + '"></div>' +
         '<div class="fg"><label>Tile colour</label><div class="cat-colorrow"><input id="cfColor" type="color" value="' + esc(e.color || '#f0efeb') + '"><button type="button" class="btn-e" data-act="colorclear">Auto</button></div></div>' +
       '</div>' +
       '<div class="fg"><label>Thumbnail</label><div class="cat-imgrow"><div id="cfPrev" style="width:64px;flex-shrink:0">' + C.thumb(tree, previewCat, 's56') + '</div>' +
         '<div class="cat-imgbtns"><input id="cfFile" type="file" accept="image/*"><button type="button" class="btn-e" data-act="rmimg">Remove image</button></div></div>' +
-        '<div class="ad-hint">No image? The icon on the tile colour is shown instead, so nothing looks broken.</div></div>' +
+        '<div class="ad-hint">No image? The first letter on the tile colour is shown instead, so nothing looks broken.</div></div>' +
       '<label class="cat-chk"><input id="cfActive" type="checkbox"' + (e.active === false ? '' : ' checked') + '> Visible in the store</label>' +
       '<div class="form-btns"><button type="button" class="btn-p" data-act="save">' + (c ? 'Save changes' : 'Add category') + '</button>' +
         '<button type="button" class="btn-s" data-act="cancel">Cancel</button>' +
@@ -145,7 +144,6 @@
       name: $('cfName').value.trim(),
       slug: C.slugify($('cfSlug').value || $('cfName').value),
       parentId: parentPicker.getValue(),
-      icon: $('cfIcon').value.trim() || null,
       color: editing.colorCleared ? null : ($('cfColor').value === '#f0efeb' && !editing.color ? null : $('cfColor').value),
       active: $('cfActive').checked
     };
@@ -164,7 +162,7 @@
       if (removeImage) image_url = null;
       if (pendingFile) image_url = await uploadThumb(pendingFile);
 
-      var row = { name: f.name, slug: f.slug, parent_id: f.parentId, icon: f.icon, color: f.color, image_url: image_url, is_active: f.active };
+      var row = { name: f.name, slug: f.slug, parent_id: f.parentId, color: f.color, image_url: image_url, is_active: f.active };
       var parentChanged = !c || (c.parentId == null ? null : c.parentId) !== (f.parentId == null ? null : f.parentId);
       if (parentChanged) {                                 // new, or moved: put it last among its new siblings
         var sibs = f.parentId == null ? tree.roots : tree.children(f.parentId);

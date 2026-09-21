@@ -1,27 +1,31 @@
 # Store - PWA with Supabase
 
-## Storefront v2: brands with logos, favorites, new product page (run `migration_storefront_v2.sql`)
+## Storefront v2: brands with logos, favorites, search, new product page
 
-Run `migration_storefront_v2.sql` once in the Supabase SQL editor (after the older migrations). It adds:
-`brands` (+ `products.brand_id`), `favorites`, the `product_ratings` view (real review averages only) and the
-storage policy that lets a vendor upload their logo to `avatars/vendor-logos/<their id>/`.
+The SQL for this (brands, favorites, real rating summaries, vendor logo uploads, category tidy-up) is pasted in the chat when it is needed, never stored in this repo.
+It creates `brands` (+ `products.brand_id`), `favorites`, the `product_ratings` view and the storage policy that lets a vendor upload their logo.
 
 - **Brand search when adding a product** (vendor and admin forms): the vendor types a brand, sees brands already
   saved plus results from logo.dev, and can add a brand nobody has listed yet with their own logo, so nobody is ever
   stuck. Chosen brands are saved to `brands` and shown as "Shop by Brand" logo tiles on the home page.
   Code: `components/brand-picker.js`, `api/brand-search.js`.
-- **Set these environment variables in Vercel** (never in the repo): `LOGO_DEV_SECRET_KEY` (sk_..., search) and
+- **Vercel environment variables** (never in the repo): `LOGO_DEV_SECRET_KEY` (sk_..., search) and
   `LOGO_DEV_PUBLISHABLE_KEY` (pk_..., logo images). `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and `ADMIN_EMAIL`
   are the ones `admin-vendors.js` already uses. Only approved vendors and admins can call the search endpoint.
   logo.dev's free plan needs the "Logos provided by Logo.dev" link, which is in the storefront footer.
 - **Vendor logo**: Vendor > Settings > Store Logo. Shown next to "Sold by" on product pages and in the vendor row.
-- **Home page**: the search bar stays visible; once it scrolls away the header search icon appears and the category
-  titles stick under the header. Category image tiles live in the side menu only.
-- **Product cards**: favorites (heart), fly-to-cart, and Add to Cart becomes a `- 1 +` stepper once in the cart.
+- **Home**: the store logo / name is a link to the home page from every page (header, product page, cart, account, category and ad pages).
+  The search bar stays visible; once it scrolls away the header search icon appears and the category titles stick under the header.
+- **Search** (`data/search.js`, `components/search-page.js`): tapping the bar opens a full-screen search. Empty: recent searches (kept on the
+  device) + categories + popular brands. Typing: brand, category and product suggestions with the typed words marked. Enter / "See all":
+  every match, with sort, category, brand, price range and "on sale" filters. Every word must match (name, brand, category, seller, description),
+  plurals are ignored and close misspellings still find the product.
+- **Recently viewed** (this device): shown on the cart page and at the bottom of the product page, after "More from this seller" and "Similar items".
+- **Product cards**: favorites (heart); Add to Cart flies the photo to the cart icon and becomes `[-] 1 [+]` (square buttons, quantity between them).
+- **Categories**: no emoji anywhere (names are cleaned on load, the icon column is ignored, tiles without a picture show the first letter).
 - **Product page**: auto-rotating photos, full-screen viewer (pinch/double-tap zoom), Sold by + View Store, brand,
   real rating and reviews only, delivery and returns text from Admin > Settings, more from this seller, similar items.
   Shared links look like `/?p=PRODUCT_ID`.
-
 
 ## Square GIF tiles and pages that open from banners
 

@@ -17,7 +17,7 @@
  * for anything new, and the last row always lets the vendor add the brand by hand, so nobody is ever stuck
  * waiting for a hardcoded list to catch up.
  *
- * Needs migration_storefront_v2.sql (the `brands` table). Text is inserted with textContent only.
+ * Needs the `brands` table (its SQL is run from the chat). Text is inserted with textContent only.
  */
 (function (global) {
   'use strict';

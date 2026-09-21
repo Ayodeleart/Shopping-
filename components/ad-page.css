@@ -11,6 +11,9 @@
 .adp-hdr{position:sticky;top:0;z-index:5;height:52px;display:flex;align-items:center;gap:10px;padding:0 12px;background:var(--bg);border-bottom:1px solid var(--border)}
 .adp-back,.adp-cart{position:relative;width:36px;height:36px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--txt)}
 .adp-back:active,.adp-cart:active{opacity:.6}
+.adp-home{width:36px;height:36px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.adp-home img{height:26px;width:auto;object-fit:contain}
+.adp-home:active{opacity:.6}
 .adp-title{flex:1;font-size:15px;font-weight:800;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 #adCartDot{position:absolute;top:4px;right:4px;min-width:16px;height:16px;padding:0 3px;background:var(--red);color:#fff;font-size:9px;font-weight:800;border-radius:8px;display:none;align-items:center;justify-content:center}
 

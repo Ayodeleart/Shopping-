@@ -1,0 +1,76 @@
+/* Pcx.SearchPage: full-screen search. Uses the storefront's theme tokens. */
+#searchPage{
+  position:fixed;inset:0;z-index:280;background:var(--bg);color:var(--txt);
+  display:none;flex-direction:column;
+}
+#searchPage.open{display:flex;animation:spIn .18s ease-out}
+@keyframes spIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){#searchPage.open{animation:none}}
+
+.sp-top{display:flex;align-items:center;gap:6px;padding:calc(env(safe-area-inset-top,0px) + 8px) 10px 8px 6px;border-bottom:1px solid var(--border);background:var(--bg);flex-shrink:0}
+.sp-back{width:40px;height:40px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--txt)}
+.sp-back:active{opacity:.6}
+.sp-form{flex:1;display:flex;align-items:center;gap:8px;height:42px;padding:0 8px 0 12px;border-radius:10px;background:var(--bg2);border:1.5px solid var(--border);color:var(--txt3)}
+.sp-form:focus-within{border-color:var(--red)}
+.sp-input{flex:1;min-width:0;height:100%;border:none;background:transparent;font-size:16px;color:var(--txt)}
+.sp-input::placeholder{color:var(--txt3)}
+.sp-input::-webkit-search-cancel-button{-webkit-appearance:none}
+.sp-clear{width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--bg3);color:var(--txt2)}
+.sp-clear[hidden]{display:none}
+
+.sp-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))}
+
+.sp-sec{padding:14px 14px 4px}
+.sp-sech{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.sp-sech b{font-size:13px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;color:var(--txt2)}
+.sp-sech button{font-size:13px;font-weight:700;color:var(--red)}
+.sp-hint{padding:56px 24px;text-align:center;color:var(--txt3);font-size:14px;line-height:1.5}
+
+.sp-recent{display:flex;align-items:center;border-bottom:1px solid var(--border)}
+.sp-recent-go{flex:1;min-width:0;display:flex;align-items:center;gap:12px;padding:12px 0;text-align:left;color:var(--txt);font-size:15px}
+.sp-recent-go svg{color:var(--txt3);flex-shrink:0}
+.sp-recent-go span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sp-recent-x{width:38px;height:38px;display:flex;align-items:center;justify-content:center;color:var(--txt3);flex-shrink:0}
+.sp-recent-x:active{color:var(--red)}
+
+.sp-chips{display:flex;flex-wrap:wrap;gap:8px;padding-bottom:6px}
+.sp-chip{display:inline-flex;align-items:center;gap:7px;min-height:36px;padding:0 14px;border-radius:18px;background:var(--bg2);border:1px solid var(--border);font-size:13.5px;font-weight:600;color:var(--txt)}
+.sp-chip:active{background:var(--bg3)}
+.sp-chip-brand{padding-left:6px}
+.sp-chip-brand img{width:24px;height:24px;border-radius:50%;background:#fff;object-fit:contain;padding:2px;border:1px solid var(--border)}
+.sp-chip-brand:not(:has(img)){padding-left:14px}
+
+.sp-item{width:100%;display:flex;align-items:center;gap:12px;padding:9px 0;text-align:left;border-bottom:1px solid var(--border)}
+.sp-item:active{background:var(--bg2)}
+.sp-item-img{width:56px;height:56px;border-radius:8px;flex-shrink:0;object-fit:cover;background:var(--bg2)}
+.sp-item-noimg{display:flex;align-items:center;justify-content:center;color:var(--txt3)}
+.sp-item-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.sp-item-name{font-size:14.5px;font-weight:600;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.sp-item-sub{font-size:12px;color:var(--txt3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sp-item-price{font-size:13.5px;font-weight:800;color:var(--red)}
+.sp-all{display:flex;align-items:center;justify-content:center;gap:6px;width:calc(100% - 28px);margin:12px 14px 0;height:46px;border-radius:10px;border:1.5px solid var(--red);color:var(--red);font-size:14.5px;font-weight:800}
+.sp-all:active{background:var(--bg2)}
+#searchPage mark{background:color-mix(in srgb,var(--red) 16%,transparent);color:inherit;border-radius:3px;padding:0 1px}
+
+.sp-none{padding:46px 24px 20px;text-align:center;display:flex;flex-direction:column;gap:6px}
+.sp-none b{font-size:16px}
+.sp-none span{font-size:13.5px;color:var(--txt3);line-height:1.5}
+
+/* results */
+.sp-filters{display:flex;align-items:center;gap:8px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding:10px 12px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:2;background:var(--bg)}
+.sp-filters::-webkit-scrollbar{display:none}
+.sp-sel,.sp-price,.sp-toggle{flex:0 0 auto;height:36px;border-radius:18px;border:1.5px solid var(--border);background:var(--bg2);display:inline-flex;align-items:center;font-size:13px;font-weight:600;color:var(--txt)}
+.sp-sel select{height:100%;border:none;background:transparent;color:inherit;font:inherit;padding:0 12px;max-width:190px;-webkit-appearance:none;appearance:none;padding-right:26px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+.sp-price{padding:0 10px;gap:4px}
+.sp-price input{width:62px;height:100%;border:none;background:transparent;font-size:13px;font-weight:600;color:var(--txt);text-align:center;-moz-appearance:textfield}
+.sp-price input::-webkit-outer-spin-button,.sp-price input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.sp-price i{color:var(--txt3);font-style:normal}
+.sp-toggle{padding:0 14px;gap:8px;cursor:pointer}
+.sp-toggle input{width:15px;height:15px;accent-color:var(--red)}
+.sp-sel.on,.sp-price.on,.sp-toggle.on{border-color:var(--red);color:var(--red);background:color-mix(in srgb,var(--red) 8%,var(--bg))}
+.sp-reset{flex:0 0 auto;height:36px;padding:0 12px;font-size:13px;font-weight:800;color:var(--red)}
+.sp-reset[hidden]{display:none}
+.sp-count{padding:12px 14px 6px;font-size:13.5px;color:var(--txt2)}
+.sp-count b{color:var(--txt)}
+.sp-note{margin:0 14px 8px;padding:9px 12px;border-radius:8px;background:var(--bg2);font-size:12.5px;color:var(--txt2);line-height:1.4}
+#searchPage .pgrid-wrap{padding-bottom:8px}
