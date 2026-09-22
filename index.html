@@ -436,6 +436,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 .revEmpty b{font-size:19px;font-weight:700;color:var(--txt2)}
 .revEmpty span{font-size:14px;color:var(--txt3)}
 .revSignInBtn{width:100%;height:44px;background:var(--bg2);color:var(--txt);border-radius:10px;font-size:13px;font-weight:700;margin-top:10px}
+.revEligCheck{padding:12px 14px;background:var(--bg2);border-radius:10px;font-size:12.5px;color:var(--txt3);margin-top:10px;line-height:1.5}
 .revForm{margin-top:14px;background:var(--bg2);border-radius:12px;padding:14px}
 .revForm-lbl{font-size:12px;font-weight:700;color:var(--txt2);margin-bottom:8px}
 .revPicker{display:flex;gap:6px;margin-bottom:12px}
@@ -1674,10 +1675,23 @@ async function loadReviews(productId) {
   renderReviewForm();
 }
 
-function renderReviewForm() {
+async function renderReviewForm() {
   const wrap = $('revFormWrap');
   if (!buyerSession) {
     wrap.innerHTML = `<button class="revSignInBtn" onclick="closePModal(true);openAccount()">Sign in to write a review</button>`;
+    return;
+  }
+  const forProductId = curProductId;
+  wrap.innerHTML = `<div class="revEligCheck">Checking your orders...</div>`;
+  const { data, error } = await sb.from('order_items')
+    .select('id, orders!inner(user_id)')
+    .eq('product_id', forProductId)
+    .eq('status', 'completed')
+    .eq('orders.user_id', buyerSession.user.id)
+    .limit(1);
+  if (curProductId !== forProductId) return;        /* another product was opened meanwhile */
+  if (error || !data || !data.length) {
+    wrap.innerHTML = `<div class="revEligCheck">You can review this product once your order for it has been delivered.</div>`;
     return;
   }
   wrap.innerHTML = `
