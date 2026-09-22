@@ -38,14 +38,14 @@
   function itemHTML(t) {
     var live = t.active !== false, hasPage = t.target && ['brand', 'collection', 'products'].indexOf(t.target.type) !== -1;
     return '<div class="aditem">' +
-      '<div class="aditem-img" style="width:64px;height:64px">' + (t.image_url ? '<img src="' + esc(t.image_url) + '" alt="" style="object-fit:contain">' : '') + '</div>' +
+      '<div class="aditem-img" style="width:64px;height:64px">' + (t.image_url ? '<img src="' + safeUrl(t.image_url) + '" alt="" style="object-fit:contain">' : '') + '</div>' +
       '<div class="aditem-body"><div class="aditem-name">' + esc(t.caption || 'No caption') + '<span class="pill' + (live ? ' live' : '') + '">' + (live ? 'Live' : 'Paused') + '</span></div>' +
       '<div class="aditem-meta">' + esc(place(t)) + '</div><div class="aditem-meta">' + esc(DestPicker.describe(t.target)) + '</div></div>' +
       '<div class="aditem-acts">' +
-        '<button class="abtn" data-a="edit" data-id="' + t.id + '">Edit</button>' +
-        (hasPage ? '<button class="abtn" data-a="preview" data-id="' + t.id + '">Preview</button>' : '') +
-        '<button class="abtn" data-a="toggle" data-id="' + t.id + '">' + (live ? 'Pause' : 'Resume') + '</button>' +
-        '<button class="abtn danger" data-a="delete" data-id="' + t.id + '">Delete</button>' +
+        '<button class="abtn" data-a="edit" data-id="' + esc(t.id) + '">Edit</button>' +
+        (hasPage ? '<button class="abtn" data-a="preview" data-id="' + esc(t.id) + '">Preview</button>' : '') +
+        '<button class="abtn" data-a="toggle" data-id="' + esc(t.id) + '">' + (live ? 'Pause' : 'Resume') + '</button>' +
+        '<button class="abtn danger" data-a="delete" data-id="' + esc(t.id) + '">Delete</button>' +
       '</div></div>';
   }
 

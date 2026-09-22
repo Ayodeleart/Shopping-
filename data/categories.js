@@ -151,9 +151,9 @@
   function thumb(tree, cat, cls) {
     var url = imageUrl(cat);
     var ph = String(cat.name || '?').charAt(0).toUpperCase();
-    return '<div class="cat-thumb ' + (cls || '') + '" style="background:' + esc(tree.color(cat)) + '">' +
+    return '<div class="cat-thumb ' + esc(cls || '') + '" style="background:' + (cssColor(tree.color(cat)) || FALLBACK_COLOR) + '">' +
       '<span class="cat-thumb-ph">' + esc(ph) + '</span>' +
-      (url ? '<img src="' + esc(url) + '" alt="" loading="lazy" onerror="this.remove()">' : '') +
+      (url ? '<img src="' + safeUrl(url) + '" alt="" loading="lazy" onerror="this.remove()">' : '') +
       '</div>';
   }
 

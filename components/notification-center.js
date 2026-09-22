@@ -85,7 +85,7 @@
     }).join('');
     var rows = this.items.filter(function (n) { return self.tab === 'all' || n.category === self.tab; });
     this.root.querySelector('.nc-list').innerHTML = rows.length ? rows.map(function (n) {
-      return '<div class="nc-item' + (n.is_read ? '' : ' unread') + '" data-n="' + n.id + '"><div class="nc-ico">' + (ICON[n.category] || '\uD83D\uDD14') + '</div>' +
+      return '<div class="nc-item' + (n.is_read ? '' : ' unread') + '" data-n="' + esc(n.id) + '"><div class="nc-ico">' + (ICON[n.category] || '\uD83D\uDD14') + '</div>' +
         '<div class="nc-main"><div class="nc-t">' + (n.is_read ? '' : '<i></i>') + esc(n.title) + '</div><div class="nc-m">' + esc(n.message) + '</div>' +
         '<div class="nc-when">' + esc(ago(n.created_at)) + '</div></div></div>';
     }).join('') : '<div class="nc-empty">' + (this.tab === 'all' ? 'No notifications yet. Order updates will show up here.' : 'Nothing here yet.') + '</div>';

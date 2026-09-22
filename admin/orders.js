@@ -82,20 +82,20 @@
     var its = items.filter(function (i) { return i.shipment_id === s.id; });
     var evs = evCache[o.id] || [];
     var carrier = s.carrier_name || (carriers.filter(function (c) { return c.code === s.carrier_code; })[0] || {}).name;
-    return '<div class="oship" data-ship="' + s.id + '" style="border:1px solid var(--border);border-radius:10px;padding:10px;margin-top:10px">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="font-size:13px">' + esc(sellerName(s)) + '</b><span class="tk-pill ' + T.tone(s.status) + '">' + esc(T.LABEL[s.status] || s.status) + '</span></div>' +
+    return '<div class="oship" data-ship="' + esc(s.id) + '" style="border:1px solid var(--border);border-radius:10px;padding:10px;margin-top:10px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="font-size:13px">' + esc(sellerName(s)) + '</b><span class="tk-pill ' + esc(T.tone(s.status)) + '">' + esc(T.LABEL[s.status] || s.status) + '</span></div>' +
       '<div class="oitems" style="margin-top:6px">' + its.map(function (i) { return esc(i.name) + ' &times; ' + esc(i.qty); }).join(', ') + '</div>' +
       (carrier || s.tracking_number ? '<div class="tk-box">' + (carrier ? '<div class="tk-kv"><span>Carrier</span><span>' + esc(carrier) + '</span></div>' : '') +
         (s.tracking_number ? '<div class="tk-kv"><span>Tracking number</span><span>' + esc(s.tracking_number) + '</span></div>' : '') +
         (s.estimated_delivery ? '<div class="tk-kv"><span>Estimated delivery</span><span>' + esc(T.fmtDay(s.estimated_delivery)) + '</span></div>' : '') + '</div>' : '') +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">' +
-        '<select data-f="status"><option value="">Set status...</option><option value="tracking_updated">Tracking details only</option>' + STATUS_CHOICES.map(function (x) { return '<option value="' + x + '"' + (x === s.status ? ' disabled' : '') + '>' + T.LABEL[x] + '</option>'; }).join('') + '</select>' +
+        '<select data-f="status"><option value="">Set status...</option><option value="tracking_updated">Tracking details only</option>' + STATUS_CHOICES.map(function (x) { return '<option value="' + x + '"' + (x === s.status ? ' disabled' : '') + '>' + esc(T.LABEL[x]) + '</option>'; }).join('') + '</select>' +
         '<select data-f="carrier">' + carrierOpts(s.carrier_code) + '</select>' +
         '<input type="text" data-f="track" placeholder="Tracking number" value="' + esc(s.tracking_number || '') + '">' +
         '<input type="date" data-f="eta" value="' + esc(s.estimated_delivery || '') + '">' +
         '<input type="text" data-f="loc" placeholder="Location (optional)">' +
         '<input type="text" data-f="note" placeholder="Note for the customer">' +
-      '</div><div style="margin-top:8px"><button type="button" class="abtn solid" data-a="apply" data-id="' + s.id + '">Apply change</button>' +
+      '</div><div style="margin-top:8px"><button type="button" class="abtn solid" data-a="apply" data-id="' + esc(s.id) + '">Apply change</button>' +
       ' <span style="font-size:11px;color:var(--txt3)">Recorded in the history as an admin change.</span></div>' +
       historyHTML(evs, s) + '</div>';
   }
@@ -103,18 +103,18 @@
   function orderHTML(o) {
     var isOpen = !!open[o.id], sh = shipsOf(o.id);
     var canCancel = sh.some(function (s) { return ['delivered', 'cancelled', 'returned', 'refunded'].indexOf(s.status) < 0; });
-    return '<div class="oitem" data-order="' + o.id + '">' +
-      '<div class="oitem-head" data-a="toggle" data-id="' + o.id + '" style="cursor:pointer"><span class="oid">#' + esc(o.order_number || o.id) + '</span><span>' +
-        '<span class="tk-pill ' + T.tone(o.payment_status) + '">' + esc(T.PAY_LABEL[o.payment_status] || o.payment_status) + '</span> ' +
-        '<span class="tk-pill ' + T.tone(o.fulfillment_status) + '">' + esc(T.ORDER_LABEL[o.fulfillment_status] || o.fulfillment_status) + '</span></span></div>' +
+    return '<div class="oitem" data-order="' + esc(o.id) + '">' +
+      '<div class="oitem-head" data-a="toggle" data-id="' + esc(o.id) + '" style="cursor:pointer"><span class="oid">#' + esc(o.order_number || o.id) + '</span><span>' +
+        '<span class="tk-pill ' + esc(T.tone(o.payment_status)) + '">' + esc(T.PAY_LABEL[o.payment_status] || o.payment_status) + '</span> ' +
+        '<span class="tk-pill ' + esc(T.tone(o.fulfillment_status)) + '">' + esc(T.ORDER_LABEL[o.fulfillment_status] || o.fulfillment_status) + '</span></span></div>' +
       '<div class="ocust">' + esc(o.customer_name) + '</div><div class="odet">' + esc(o.phone) + ' &middot; ' + esc(T.fmtTime(o.created_at)) + '</div>' +
       '<div class="oitems">' + esc(summary(o)) + '</div><div class="ototal">' + esc(fmt(o.total || 0)) + '</div>' +
       (isOpen ? '<div class="odet" style="margin-top:6px">' + esc(o.address) + '</div>' + sh.map(function (s) { return shipHTML(o, s); }).join('') +
         '<div class="oact" style="flex-wrap:wrap">' +
-        (o.payment_status === 'pending' ? '<button type="button" class="btn-e" data-a="pay" data-id="' + o.id + '">Confirm payment</button>' : '') +
-        (canCancel ? '<button type="button" class="btn-d" data-a="cancel" data-id="' + o.id + '">Cancel order</button>' : '') +
-        '<button type="button" class="btn-d" data-a="delete" data-id="' + o.id + '">Delete</button></div>'
-        : '<div class="oact"><button type="button" class="btn-e" data-a="toggle" data-id="' + o.id + '">Manage shipments</button></div>') + '</div>';
+        (o.payment_status === 'pending' ? '<button type="button" class="btn-e" data-a="pay" data-id="' + esc(o.id) + '">Confirm payment</button>' : '') +
+        (canCancel ? '<button type="button" class="btn-d" data-a="cancel" data-id="' + esc(o.id) + '">Cancel order</button>' : '') +
+        '<button type="button" class="btn-d" data-a="delete" data-id="' + esc(o.id) + '">Delete</button></div>'
+        : '<div class="oact"><button type="button" class="btn-e" data-a="toggle" data-id="' + esc(o.id) + '">Manage shipments</button></div>') + '</div>';
   }
 
   function shipmentsView() {
@@ -123,10 +123,10 @@
       var o = orders.filter(function (x) { return x.id === s.order_id; })[0]; var t = q.trim().toLowerCase();
       return !t || (o && ((o.order_number || '').toLowerCase().indexOf(t) >= 0 || (o.customer_name || '').toLowerCase().indexOf(t) >= 0)) || (s.tracking_number || '').toLowerCase().indexOf(t) >= 0 || sellerName(s).toLowerCase().indexOf(t) >= 0;
     }).sort(function (a, b) { return new Date(b.updated_at) - new Date(a.updated_at); });
-    return '<select data-f="shipstatus" style="width:100%;height:38px;margin-bottom:10px"><option value="">All statuses</option>' + Object.keys(T.LABEL).filter(function (k) { return k === 'order_placed' || STATUS_CHOICES.indexOf(k) >= 0; }).map(function (k) { return '<option value="' + k + '"' + (shipStatus === k ? ' selected' : '') + '>' + T.LABEL[k] + '</option>'; }).join('') + '</select>' +
+    return '<select data-f="shipstatus" style="width:100%;height:38px;margin-bottom:10px"><option value="">All statuses</option>' + Object.keys(T.LABEL).filter(function (k) { return k === 'order_placed' || STATUS_CHOICES.indexOf(k) >= 0; }).map(function (k) { return '<option value="' + k + '"' + (shipStatus === k ? ' selected' : '') + '>' + esc(T.LABEL[k]) + '</option>'; }).join('') + '</select>' +
       (list.length ? list.map(function (s) {
         var o = orders.filter(function (x) { return x.id === s.order_id; })[0] || {};
-        return '<div class="oitem"><div class="oitem-head"><span class="oid">#' + esc(o.order_number || s.order_id) + ' &middot; ' + esc(sellerName(s)) + '</span><span class="tk-pill ' + T.tone(s.status) + '">' + esc(T.LABEL[s.status]) + '</span></div>' +
+        return '<div class="oitem"><div class="oitem-head"><span class="oid">#' + esc(o.order_number || s.order_id) + ' &middot; ' + esc(sellerName(s)) + '</span><span class="tk-pill ' + esc(T.tone(s.status)) + '">' + esc(T.LABEL[s.status]) + '</span></div>' +
           '<div class="ocust">' + esc(o.customer_name || '') + '</div><div class="odet">' + esc(s.carrier_name || s.carrier_code || 'No carrier yet') + (s.tracking_number ? ' &middot; ' + esc(s.tracking_number) : '') + ' &middot; updated ' + esc(T.fmtTime(s.updated_at)) + '</div>' +
           '<div class="oact"><button type="button" class="btn-e" data-a="gotoorder" data-id="' + s.order_id + '">Manage</button></div></div>';
       }).join('') : '<div class="no-items"><h3>No shipments</h3></div>');

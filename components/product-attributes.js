@@ -276,6 +276,7 @@
       else if (k === 'text') e.textContent = v;
       else if (k === 'style') e.style.cssText = v;
       else if (k.slice(0, 2) === 'on') e.addEventListener(k.slice(2), v);
+      else if (k === 'src' || k === 'href') e.setAttribute(k, safeHref(v));       // a URL from the database is validated first
       else e.setAttribute(k, v === true ? '' : v);
     });
     (kids || []).forEach(function (c) {

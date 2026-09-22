@@ -70,7 +70,7 @@
     (o.items || []).forEach(function (i) { if (i && i.id != null) imgById[i.id] = i.image_url; });
 
     var html = '<div class="ot-sum"><div class="ot-sum-top"><span class="ot-num">#' + esc(o.order_number) + '</span>' +
-      '<span class="tk-pill ' + Tk.tone(o.fulfillment_status) + '">' + esc(Tk.ORDER_LABEL[o.fulfillment_status] || o.fulfillment_status) + '</span></div>' +
+      '<span class="tk-pill ' + esc(Tk.tone(o.fulfillment_status)) + '">' + esc(Tk.ORDER_LABEL[o.fulfillment_status] || o.fulfillment_status) + '</span></div>' +
       '<div class="ot-meta">Placed ' + esc(Tk.fmtTime(o.created_at)) + '<br>' + esc(Tk.PAY_LABEL[o.payment_status] || o.payment_status) + ' &middot; ' + esc(fmt(o.total || 0)) +
       (est ? '<br>Estimated delivery: <b>' + esc(Tk.fmtDay(est)) + '</b>' : '') +
       (data.shipments.length > 1 ? '<br>' + data.shipments.length + ' shipments, each tracked on its own below' : '') + '</div></div>';
@@ -92,13 +92,13 @@
     var tl = Tk.timeline(data.events, sh);
 
     var h = '<section class="ot-ship"><div class="ot-ship-top"><div class="ot-logo">' +
-      (seller && seller.logo_url ? '<img src="' + esc(seller.logo_url) + '" alt="">' : esc(name.charAt(0).toUpperCase())) + '</div>' +
+      (seller && seller.logo_url ? '<img src="' + safeUrl(seller.logo_url) + '" alt="">' : esc(name.charAt(0).toUpperCase())) + '</div>' +
       '<div class="ot-seller"><b>' + esc(name) + '</b><span>Sold and shipped by this seller</span></div>' +
-      '<span class="tk-pill ' + Tk.tone(sh.status) + '">' + esc(Tk.LABEL[sh.status] || sh.status) + '</span></div>';
+      '<span class="tk-pill ' + esc(Tk.tone(sh.status)) + '">' + esc(Tk.LABEL[sh.status] || sh.status) + '</span></div>';
 
     h += '<div class="ot-items">' + items.map(function (i) {
       var img = imgById[i.product_id];
-      return '<div class="ot-item">' + (img ? '<img src="' + esc(img) + '" alt="">' : '<span class="ph"></span>') +
+      return '<div class="ot-item">' + (img ? '<img src="' + safeUrl(img) + '" alt="">' : '<span class="ph"></span>') +
         '<div>' + esc(i.name) + '<br><small>Qty ' + esc(i.qty) + ' &middot; ' + esc(fmt(i.price * i.qty)) + '</small></div></div>';
     }).join('') + '</div>';
 
@@ -110,7 +110,7 @@
     if (sh.delivered_at) rows.push(['Delivered', esc(Tk.fmtTime(sh.delivered_at))]);
     if (rows.length) {
       h += '<div class="tk-box">' + rows.map(function (r) { return '<div class="tk-kv"><span>' + r[0] + '</span><span>' + r[1] + '</span></div>'; }).join('') +
-        (link ? '<div style="margin-top:6px"><a class="tk-link" href="' + esc(link) + '" target="_blank" rel="noopener noreferrer">Track with ' + esc(carrierName || 'the carrier') + ' &rarr;</a></div>' : '') + '</div>';
+        (link ? '<div style="margin-top:6px"><a class="tk-link" href="' + safeUrl(link) + '" target="_blank" rel="noopener noreferrer">Track with ' + esc(carrierName || 'the carrier') + ' &rarr;</a></div>' : '') + '</div>';
     } else {
       h += '<div class="tk-box"><div class="tk-kv"><span>Tracking number</span><span>Added when the seller ships</span></div></div>';
     }
@@ -118,7 +118,7 @@
     h += '<ul class="tl">' + tl.rows.map(function (r) {
       var mark = r.state === 'done' ? '&#10003;' : r.state === 'problem' ? '!' : '';
       var desc = r.event && r.event.description && ['order_placed', 'payment_confirmed'].indexOf(r.key) < 0 ? '<div class="tl-desc">' + esc(r.event.description) + '</div>' : '';
-      return '<li class="' + r.state + '"><span class="tl-dot">' + mark + '</span><div class="tl-body"><div class="tl-lbl">' + esc(r.label) + '</div>' +
+      return '<li class="' + esc(r.state) + '"><span class="tl-dot">' + mark + '</span><div class="tl-body"><div class="tl-lbl">' + esc(r.label) + '</div>' +
         (r.at ? '<div class="tl-at">' + esc(Tk.fmtTime(r.at)) + (r.event && r.event.location ? ' &middot; ' + esc(r.event.location) : '') + '</div>' : '') + desc + '</div></li>';
     }).join('') + '</ul>';
 

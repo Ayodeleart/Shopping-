@@ -11,6 +11,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="app-icon-32.png">
 <title>Maccato</title>
 <link rel="stylesheet" href="components/promotional-carousel.css">
+<script src="data/safe.js"></script>
 <script defer src="components/drag-gesture.js"></script>
 <script defer src="components/promotion-slide.js"></script>
 <script defer src="components/promotional-carousel.js"></script>
@@ -1002,7 +1003,7 @@ function buildMenuCats() {
     <button class="mCatMain" data-i="${i}">
       <span class="mCatThumb"${it.thumb ? '' : ` style="background:${esc(it.bg || '')}"`}>${it.thumb
         ? it.thumb
-        : it.image ? `<img src="${esc(it.image)}" alt="" loading="lazy">` : esc((it.title[0] || '?').toUpperCase())}</span>
+        : it.image ? `<img src="${safeUrl(it.image)}" alt="" loading="lazy">` : esc((it.title[0] || '?').toUpperCase())}</span>
       <span class="mCatName">${esc(it.title)}</span>
     </button>`).join('');
 }
@@ -1016,11 +1017,11 @@ function menuCatRow(c) {
         ${Pcx.Categories.thumb(catTree, c, 'mCatThumb')}
         <span class="mCatName">${esc(c.name)}</span>
       </button>
-      ${hasKids ? `<button class="mCatToggle" data-toggle="${c.id}" aria-label="Show ${esc(c.name)} subcategories">
+      ${hasKids ? `<button class="mCatToggle" data-toggle="${esc(c.id)}" aria-label="Show ${esc(c.name)} subcategories">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
       </button>` : ''}
     </div>
-    ${hasKids ? `<div class="mCatKids" data-kids="${c.id}">${kids.map(k => `<button class="mCatSub" data-slug="${esc(k.slug)}">${esc(k.name)}</button>`).join('')}</div>` : ''}`;
+    ${hasKids ? `<div class="mCatKids" data-kids="${esc(c.id)}">${kids.map(k => `<button class="mCatSub" data-slug="${esc(k.slug)}">${esc(k.name)}</button>`).join('')}</div>` : ''}`;
 }
 
 $('menuCats').addEventListener('click', e => {
@@ -1081,11 +1082,11 @@ function buildBrandRow() {
     const bg = prods.find(p => p.image_url);
     const letter = esc((b.name[0] || '?').toUpperCase());
     return `
-      <button class="bcard" onclick="filterByBrand(${b.id})">
+      <button class="bcard" onclick="filterByBrand(${num(b.id)})">
         <span class="bcard-tile">
-          ${bg ? `<img class="bcard-bg" src="${esc(bg.image_url)}" alt="" loading="lazy">` : ''}
+          ${bg ? `<img class="bcard-bg" src="${safeUrl(bg.image_url)}" alt="" loading="lazy">` : ''}
           <span class="bcard-logo${b.logo_url ? '' : ' nologo'}" data-l="${letter}">${b.logo_url
-            ? `<img src="${esc(b.logo_url)}" alt="${esc(b.name)}" loading="lazy" onerror="this.parentNode.classList.add('nologo');this.remove()">`
+            ? `<img src="${safeUrl(b.logo_url)}" alt="${esc(b.name)}" loading="lazy" onerror="this.parentNode.classList.add('nologo');this.remove()">`
             : ''}</span>
         </span>
         <span class="bcard-name">${esc(b.name)}</span>
@@ -1118,7 +1119,7 @@ function buildCategoryRowsTree(prods) {
       <div class="catRowSec">
         <div class="catRowHd">
           <span class="catRowBar" style="background:var(--red)"></span>
-          <span class="catRowName" style="color:var(--red)" onclick="openCategory('${esc(root.slug)}')">${esc(root.name)}</span>
+          <span class="catRowName" style="color:var(--red)" onclick="openCategory('${hs(root.slug)}')">${esc(root.name)}</span>
           <span class="catRowCount">${matches.length} item${matches.length!==1?'s':''}</span>
         </div>
         <div class="catRowScroll">
@@ -1163,8 +1164,8 @@ function buildVendorRow(vendors) {
   if (!vendors.length) { sec.style.display = 'none'; return; }
   sec.style.display = '';
   row.innerHTML = vendors.map(v => `
-    <div class="vcard" onclick="openStore('${esc(v.store_slug || v.id)}')">
-      <div class="vcard-img">${v.logo_url ? `<img src="${esc(v.logo_url)}" alt="">` : esc((v.business_name||'?')[0].toUpperCase())}</div>
+    <div class="vcard" onclick="openStore('${hs(v.store_slug || v.id)}')">
+      <div class="vcard-img">${v.logo_url ? `<img src="${safeUrl(v.logo_url)}" alt="">` : esc((v.business_name||'?')[0].toUpperCase())}</div>
       <span class="vcard-lbl">${esc(v.business_name||'')}</span>
     </div>`).join('');
 }
@@ -1245,7 +1246,7 @@ function startCountdown(endTs) {
 
 /* ── CURRENCY ─────────────────────────────────────── */
 let currency = '₦';
-const fmt = n => currency + Number(n).toLocaleString('en-NG');
+const fmt = n => esc(currency) + Number(n).toLocaleString('en-NG');   // currency is an admin-set store_settings value
 
 /* ── FAVORITES ────────────────────────────────────── */
 /* Guests: saved on this device. Signed in: also synced to the `favorites` table. */
@@ -1376,12 +1377,12 @@ function buildCategoryRows(shortcuts, prods) {
   const rows = (shortcuts || []).map(sc => {
     const matches = prods.filter(p => (p.category || '').trim().toLowerCase() === (sc.title || '').trim().toLowerCase());
     if (!matches.length) return '';
-    const color = sc.bg_color || '#D91C2D';
+    const color = cssColor(sc.bg_color) || '#D91C2D';
     return `
       <div class="catRowSec">
         <div class="catRowHd">
           <span class="catRowBar" style="background:${color}"></span>
-          <span class="catRowName" style="color:${color}">${sc.title}</span>
+          <span class="catRowName" style="color:${color}">${esc(sc.title)}</span>
           <span class="catRowCount">${matches.length} item${matches.length!==1?'s':''}</span>
         </div>
         <div class="catRowScroll">
@@ -1458,7 +1459,7 @@ function openProduct(id, isBack) {
   const letter = esc((sellerName[0] || '?').toUpperCase());
   $('pSold').innerHTML = `
     <div class="pSoldAv${logo ? ' hasLogo' : ''}" data-l="${letter}">${logo
-      ? `<img src="${esc(logo)}" alt="" onerror="this.parentNode.classList.remove('hasLogo');this.replaceWith(document.createTextNode(this.parentNode.dataset.l))">`
+      ? `<img src="${safeUrl(logo)}" alt="" onerror="this.parentNode.classList.remove('hasLogo');this.replaceWith(document.createTextNode(this.parentNode.dataset.l))">`
       : letter}</div>
     <div class="pSoldTxt"><div class="pSoldLbl">Sold by</div><div class="pSoldName">${esc(sellerName)}</div></div>
     <button class="pSoldBtn" onclick="viewSeller()">View Store</button>`;
@@ -1469,9 +1470,9 @@ function openProduct(id, isBack) {
   if (bName) {
     br.style.display = 'flex';
     br.innerHTML = (b ? `<span class="pBrandLogo" data-l="${esc((b.name[0] || '?').toUpperCase())}">${b.logo_url
-        ? `<img src="${esc(b.logo_url)}" alt="" onerror="this.replaceWith(document.createTextNode(this.parentNode.dataset.l))">`
+        ? `<img src="${safeUrl(b.logo_url)}" alt="" onerror="this.replaceWith(document.createTextNode(this.parentNode.dataset.l))">`
         : esc((b.name[0] || '?').toUpperCase())}</span>` : '') +
-      `<span>Brand:</span>` + (b ? `<button onclick="closePModal(true);filterByBrand(${b.id})">${esc(bName)}</button>` : `<b>${esc(bName)}</b>`);
+      `<span>Brand:</span>` + (b ? `<button onclick="closePModal(true);filterByBrand(${num(b.id)})">${esc(bName)}</button>` : `<b>${esc(bName)}</b>`);
   } else { br.style.display = 'none'; br.innerHTML = ''; }
 
   /* price */
@@ -1486,7 +1487,7 @@ function openProduct(id, isBack) {
 
   /* call vendor (falls back to the store number) */
   const phone = ((v && v.phone) || storePhone || '').trim();
-  const tel = phone ? 'tel:' + phone.replace(/[^0-9+]/g, '') : '';
+  const tel = phone ? 'tel:' + phone.replace(/[^0-9+]/g, '') : '';   /* digits and + only, fixed tel: scheme */
   $('pBulk').style.display = phone ? '' : 'none';
   $('pCallBtn').style.display = phone ? '' : 'none';
   if (phone) { $('pBulk').href = tel; $('pBulkNum').textContent = phone; $('pCallBtn').href = tel; }
@@ -1526,7 +1527,7 @@ function renderBlocks(blocks) {
   blockImgs = blocks.filter(b => b.type === 'image').map(b => b.url);
   let k = -1;
   $('pBlocks').innerHTML = blocks.map(b => {
-    if (b.type === 'image') { k++; return `<img class="pBlkImg" src="${esc(b.url)}" alt="" loading="lazy" onclick="openBlockImage(${k})">`; }
+    if (b.type === 'image') { k++; return `<img class="pBlkImg" src="${safeUrl(b.url)}" alt="" loading="lazy" onclick="openBlockImage(${k})">`; }
     if (b.type === 'heading') return `<h4 class="pBlkH">${esc(b.text)}</h4>`;
     return `<p class="pBlkP">${esc(b.text)}</p>`;
   }).join('');
@@ -1598,7 +1599,7 @@ async function shareProduct() {
 function renderPRating() {
   const el = $('pRating'), r = pCur && ratingMap[pCur.id];
   if (!r || !r.n) { el.innerHTML = ''; return; }
-  el.innerHTML = `<button onclick="document.getElementById('reviewsSec').scrollIntoView({behavior:'smooth'})">${starsHTML(r.avg, 17)}<span>${r.avg.toFixed(1)} (${r.n} review${r.n !== 1 ? 's' : ''})</span></button>`;
+  el.innerHTML = `<button onclick="document.getElementById('reviewsSec').scrollIntoView({behavior:'smooth'})">${starsHTML(r.avg, 17)}<span>${r.avg.toFixed(1)} (${esc(r.n)} review${r.n !== 1 ? 's' : ''})</span></button>`;
 }
 
 /* Delivery text comes from Admin > Settings. Nothing is promised that the store has not written. */
@@ -1607,7 +1608,7 @@ function renderDelivery() {
   if (policy.returns) rows.push([ICON_RETURN, 'Return Policy', policy.returns]);
   if (policy.warranty) rows.push([ICON_SHIELD, 'Warranty', policy.warranty]);
   $('pDelivBody').innerHTML = rows.map(([icon, title, text]) =>
-    `<div class="pInfoRow">${icon}<div><h4>${title}</h4><p>${esc(text)}</p></div></div>`).join('');
+    `<div class="pInfoRow">${icon}<div><h4>${esc(title)}</h4><p>${esc(text)}</p></div></div>`).join('');
 }
 
 function buildRails(p, sellerName) {
@@ -1932,7 +1933,7 @@ function populateFooter(storeName, tagline, phone, email, address, ig, fb, x) {
   };
   const socials = [['instagram', ig], ['facebook', fb], ['x', x]].filter(([, url]) => url);
   document.getElementById('ftSocial').innerHTML = socials.map(([type, url]) =>
-    `<a href="${url}" target="_blank" rel="noopener">${socialIcons[type]}</a>`
+    `<a href="${safeUrl(url)}" target="_blank" rel="noopener">${socialIcons[type]}</a>`
   ).join('');
   if (!socials.length) document.getElementById('ftSocial').style.display = 'none';
 }
@@ -2060,8 +2061,8 @@ async function showMyOrders() {
   if (error || !data?.length) { el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--txt3);font-size:13px">No orders yet.</div>'; return; }
   const T = Pcx.Tracking;
   el.innerHTML = data.map(o => o.order_number ? `
-    <div class="myOrd" onclick="openOrder(${o.id})" style="cursor:pointer">
-      <div class="myOrd-top"><span>#${esc(o.order_number)} &middot; ${new Date(o.created_at).toLocaleDateString()}</span><span class="tk-pill ${T.tone(o.fulfillment_status)}">${esc(T.ORDER_LABEL[o.fulfillment_status] || o.fulfillment_status)}</span></div>
+    <div class="myOrd" onclick="openOrder(${num(o.id)})" style="cursor:pointer">
+      <div class="myOrd-top"><span>#${esc(o.order_number)} &middot; ${new Date(o.created_at).toLocaleDateString()}</span><span class="tk-pill ${esc(T.tone(o.fulfillment_status))}">${esc(T.ORDER_LABEL[o.fulfillment_status] || o.fulfillment_status)}</span></div>
       <div class="myOrd-line">${(o.items||[]).length} item${(o.items||[]).length!==1?'s':''} &middot; ${fmt(o.total)} <span class="tk-link" style="float:right">Track order</span></div>
     </div>` : `
     <div class="myOrd">
@@ -2128,7 +2129,7 @@ function feedTileGroups() {
 }
 function feedSlots() {
   const tileSlots = Object.keys(feedTileGroups()).map(n => ({
-    afterRows: +n, order: -1, html: `<div class="tileslot au" data-rows="${n}" style="grid-column:1/-1"></div>`
+    afterRows: +n, order: -1, html: `<div class="tileslot au" data-rows="${esc(n)}" style="grid-column:1/-1"></div>`
   }));
   return adsList.concat(tileSlots);
 }

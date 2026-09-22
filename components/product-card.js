@@ -28,7 +28,7 @@ const HEART_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4
 /* ── STARS (real ratings only) ────────────────────── */
 function starsHTML(avg, px) {
   const pct = Math.max(0, Math.min(100, avg / 5 * 100));
-  const star = `<svg width="${px}" height="${px}" viewBox="0 0 24 24" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+  const star = `<svg width="${esc(px)}" height="${esc(px)}" viewBox="0 0 24 24" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
   const row = star.repeat(5);
   return `<span class="stars" role="img" aria-label="${avg.toFixed(1)} out of 5"><span class="st-bg">${row}</span><span class="st-fg" style="width:${pct}%">${row}</span></span>`;
 }
@@ -37,12 +37,12 @@ function starsHTML(avg, px) {
 /* Add to Cart turns into a - 1 + stepper once the product is in the cart (see ctlHTML / syncCardCtls). */
 function ctlHTML(id) {
   const it = cart.find(x => x.id === id);
-  if (!it) return `<button class="pcAdd" onclick="event.stopPropagation();addToCart(${id},this)">Add to Cart</button>`;
+  if (!it) return `<button class="pcAdd" onclick="event.stopPropagation();addToCart(${num(id)},this)">Add to Cart</button>`;
   return `
     <div class="pcStep" onclick="event.stopPropagation()">
-      <button class="pcStepB" onclick="event.stopPropagation();cardQty(${id},-1,this)" aria-label="Remove one"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
-      <span class="pcStepN">${it.qty}</span>
-      <button class="pcStepB" onclick="event.stopPropagation();cardQty(${id},1,this)" aria-label="Add one"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+      <button class="pcStepB" onclick="event.stopPropagation();cardQty(${num(id)},-1,this)" aria-label="Remove one"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+      <span class="pcStepN">${esc(it.qty)}</span>
+      <button class="pcStepB" onclick="event.stopPropagation();cardQty(${num(id)},1,this)" aria-label="Add one"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
     </div>`;
 }
 
@@ -75,28 +75,28 @@ function cardHTML(p) {
   const seller = (p.vendor_id && typeof vendorsMap !== 'undefined' && vendorsMap[p.vendor_id]) ? vendorsMap[p.vendor_id] : null;
 
   return `
-    <div class="pcard" onclick="openProduct(${p.id})">
+    <div class="pcard" onclick="openProduct(${num(p.id)})">
       <div class="pcImg">
         ${p.image_url
-          ? `<img src="${esc(p.image_url)}" alt="${esc(p.name)}" loading="lazy">`
+          ? `<img src="${safeUrl(p.image_url)}" alt="${esc(p.name)}" loading="lazy">`
           : `<div class="noImgPh"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>`}
         ${disc > 0 ? `<span class="discBadge">-${disc}%</span>` : ''}
       </div>
       <div class="pcBody">
-        ${seller ? `<div class="pcSeller"><span class="pcSellerAv">${seller.logo_url ? `<img src="${esc(seller.logo_url)}" alt="">` : esc((seller.business_name||'?')[0].toUpperCase())}</span>${esc(seller.business_name||'Seller')}</div>` : ''}
+        ${seller ? `<div class="pcSeller"><span class="pcSellerAv">${seller.logo_url ? `<img src="${safeUrl(seller.logo_url)}" alt="">` : esc((seller.business_name||'?')[0].toUpperCase())}</span>${esc(seller.business_name||'Seller')}</div>` : ''}
         <div class="pcName">${esc(p.name)}</div>
         <div class="pcPriceRow">
           <div class="pcPrice">${fmt(p.price)}</div>
-          <button class="favBtn${favs.has(p.id) ? ' on' : ''}" data-fav="${p.id}" aria-label="Save to favorites" onclick="event.stopPropagation();toggleFav(${p.id})">${HEART_SVG}</button>
+          <button class="favBtn${favs.has(p.id) ? ' on' : ''}" data-fav="${esc(p.id)}" aria-label="Save to favorites" onclick="event.stopPropagation();toggleFav(${num(p.id)})">${HEART_SVG}</button>
         </div>
         ${disc > 0 ? `<div class="pcWas">${fmt(p.original_price)}</div>` : ''}
-        ${r && r.n > 0 ? `<div class="pcRate">${starsHTML(r.avg, 12)}<span>(${r.n})</span></div>` : ''}
+        ${r && r.n > 0 ? `<div class="pcRate">${starsHTML(r.avg, 12)}<span>(${esc(r.n)})</span></div>` : ''}
         ${p.stock > 0 ? `
           <div class="pcStockRow">
             <div class="pcBar"><div class="pcBarFill" style="width:${pct}%"></div></div>
-            <span class="pcStockTxt">${p.stock} left</span>
+            <span class="pcStockTxt">${esc(p.stock)} left</span>
           </div>` : ''}
-        <div class="pcCtl" data-pid="${p.id}" data-q="${inCart ? inCart.qty : 0}">${ctlHTML(p.id)}</div>
+        <div class="pcCtl" data-pid="${esc(p.id)}" data-q="${esc(inCart ? inCart.qty : 0)}">${ctlHTML(p.id)}</div>
       </div>
     </div>`;
 }
