@@ -19,6 +19,11 @@
 <link rel="stylesheet" href="components/ad-page.css">
 <link rel="stylesheet" href="components/tile-row.css">
 <script defer src="components/tile-row.js"></script>
+<link rel="stylesheet" href="components/explore-marcato.css">
+<script defer src="data/worlds.js"></script>
+<script defer src="components/explore-marcato.js"></script>
+<link rel="stylesheet" href="components/world-page.css">
+<script defer src="components/world-page.js"></script>
 <script defer src="components/ad-page.js"></script>
 <script defer src="data/ads.js"></script>
 <link rel="stylesheet" href="components/categories.css">
@@ -609,15 +614,20 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
   <!-- SQUARE GIF TILES (admin: Banners > Tiles) -->
   <section id="tileSec" hidden><div id="tileRow" hidden></div></section>
 
+  <!-- EXPLORE MARCATO: specialized shopping worlds (Food, Fashion, Beauty, Home, Gifts). Not categories,
+       not brands, not vendors — separate concepts, see data/worlds.js and components/explore-marcato.js -->
+  <section id="exploreSec">
+    <div class="xmHd">
+      <span class="secTtl">Explore Marcato</span>
+      <span class="xmSub">Step into a world made just for you</span>
+    </div>
+    <div id="exploreRow" class="xmRow"></div>
+  </section>
+
   <!-- SHOP BY BRAND -->
   <section id="brandSec" style="display:none">
     <div class="secHd"><span class="secTtl">Shop by Brand</span></div>
     <div id="brandRow"></div>
-  </section>
-
-  <section id="vendorSec" style="display:none">
-    <div class="secHd"><span class="secTtl">Vendors</span></div>
-    <div id="vendorRow"></div>
   </section>
 
   <!-- FLASH SALE -->
@@ -659,6 +669,13 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
   </section>
 
   <div id="catRows"></div>
+
+  <!-- VENDORS: moved further down the homepage now that "Explore Marcato" occupies the early slot.
+       Functionality is unchanged; vendor discovery is also used inside the specialized worlds later. -->
+  <section id="vendorSec" style="display:none">
+    <div class="secHd"><span class="secTtl">Vendors</span></div>
+    <div id="vendorRow"></div>
+  </section>
 
 </main>
 
@@ -769,6 +786,9 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 
 <!-- CATEGORY PAGE (#cat=slug) -->
 <div id="catPage"></div>
+
+<!-- WORLD PAGE: Explore Marcato destination placeholder (#world=slug) -->
+<div id="worldPage"></div>
 
 <!-- ORDER TRACKING PAGE (#order=ID) and NOTIFICATION CENTER (#notifications) -->
 <div id="orderPage"></div>
@@ -1163,6 +1183,33 @@ function initCategoryPage() {
 
 /* Real seller storefronts live at /store/[slug] (see /store/). */
 function openStore(identifier) { if (identifier) location.href = '/store/' + identifier; }
+
+/* ── EXPLORE MARCATO WORLDS (#world=slug) ────────────
+   Placeholder destinations only — see data/worlds.js and components/world-page.js. Same
+   hash-routing idea as the category page (#cat=slug) so back/forward and deep links work. */
+let worldPage = null, worldDeepLinked = false;
+function worldFromHash() { const m = /^#world=([a-z0-9-]+)/.exec(location.hash); return m ? m[1] : null; }
+function openWorld(slug) { location.hash = 'world=' + slug; }
+function syncWorldPage() {
+  if (!worldPage) return;
+  const slug = worldFromHash();
+  if (!slug) { worldPage.close(); return; }
+  const w = Worlds.bySlug(slug);
+  if (w) worldPage.open(w); else closeWorldPage();
+}
+function closeWorldPage() {
+  if (worldDeepLinked) {
+    worldDeepLinked = false;
+    history.replaceState(null, '', location.pathname + location.search);
+    worldPage.close();
+  } else history.back();
+}
+function initWorldPage() {
+  worldPage = new Pcx.WorldPage(document.getElementById('worldPage'), { onBack: closeWorldPage, storeName: () => storeName });
+  worldDeepLinked = !!worldFromHash();
+  window.addEventListener('hashchange', syncWorldPage);
+  syncWorldPage();
+}
 
 /* ── VENDOR ROW ───────────────────────────────────── */
 function buildVendorRow(vendors) {
@@ -1872,9 +1919,10 @@ function goHome(e) {
   closePModal(true);
   /* ad / tile / banner / category pages are opened through the URL hash: clear it without adding history entries */
   if (location.hash || location.search) history.replaceState(null, '', location.pathname);
-  adDeepLinked = false; catDeepLinked = false;
+  adDeepLinked = false; catDeepLinked = false; worldDeepLinked = false;
   if (adPage) adPage.close();
   if (catPage) catPage.close();
+  if (worldPage) worldPage.close();
   document.body.style.overflow = '';
   filterCat('All');
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2294,6 +2342,8 @@ async function init() {
     buildCarousel(banners || []);
     buildVendorRow(vendors || []);
     buildBrandRow();
+    Pcx.ExploreMarcato.mount(document.getElementById('exploreRow'), Worlds.list(), openWorld);
+    initWorldPage();
 
     /* Categories come from the `categories` table. If it is empty or not created yet, fall back to the old shortcut cards. */
     Pcx.Categories.init(sb);
