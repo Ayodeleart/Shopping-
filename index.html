@@ -23,6 +23,8 @@
 <link rel="stylesheet" href="components/categories.css">
 <script defer src="data/categories.js"></script>
 <script defer src="components/category-page.js"></script>
+<link rel="stylesheet" href="components/store-page.css">
+<script defer src="components/store-page.js"></script>
 <link rel="stylesheet" href="components/search-page.css">
 <script defer src="data/search.js"></script>
 <script defer src="components/search-page.js"></script>
@@ -247,6 +249,9 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 
 /* BODY */
 .pcBody{padding:8px 9px 10px}
+.pcSeller{display:flex;align-items:center;gap:4px;font-size:10.5px;font-weight:600;color:var(--txt3);margin-bottom:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.pcSellerAv{width:13px;height:13px;border-radius:50%;overflow:hidden;flex-shrink:0;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800}
+.pcSellerAv img{width:100%;height:100%;object-fit:cover}
 .pcName{
   font-size:13px;font-weight:400;color:var(--txt2);
   line-height:1.3;margin-bottom:5px;
@@ -868,6 +873,9 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 <!-- CATEGORY PAGE (#cat=slug) -->
 <div id="catPage"></div>
 
+<!-- STORE PAGE (#store=slug) -->
+<div id="storePage"></div>
+
 <!-- ORDER TRACKING PAGE (#order=ID) and NOTIFICATION CENTER (#notifications) -->
 <div id="orderPage"></div>
 <div id="notifPage"></div>
@@ -1259,6 +1267,31 @@ function initCategoryPage() {
   window.addEventListener('hashchange', syncCatPage);
 }
 
+/* Store page: opened through #store=slug (or a vendor id, for pre-slug approved vendors). */
+let storePage = null, storeDeepLinked = false;
+function storeFromHash() { const m = /^#store=([a-z0-9-]+)/.exec(location.hash); return m ? m[1] : null; }
+function openStore(identifier) { if (identifier) location.hash = 'store=' + identifier; }
+function syncStorePage() {
+  if (!storePage) return;
+  const id = storeFromHash();
+  if (!id) { storePage.close(); return; }
+  storePage.open(id);
+}
+function closeStorePage() {
+  if (storeDeepLinked) {
+    storeDeepLinked = false;
+    history.replaceState(null, '', location.pathname + location.search);
+    storePage.close();
+  } else history.back();
+}
+function initStorePage() {
+  storePage = new Pcx.StorePage(document.getElementById('storePage'), {
+    vendors: () => vendorsMap, products: () => allProds, cardHTML, go: openStore, onBack: closeStorePage, onHome: goHome
+  });
+  storeDeepLinked = !!storeFromHash();
+  window.addEventListener('hashchange', syncStorePage);
+}
+
 /* ── VENDOR ROW ───────────────────────────────────── */
 function buildVendorRow(vendors) {
   const sec = document.getElementById('vendorSec');
@@ -1266,7 +1299,7 @@ function buildVendorRow(vendors) {
   if (!vendors.length) { sec.style.display = 'none'; return; }
   sec.style.display = '';
   row.innerHTML = vendors.map(v => `
-    <div class="vcard" onclick="filterByVendor('${esc(v.id)}')">
+    <div class="vcard" onclick="openStore('${esc(v.store_slug || v.id)}')">
       <div class="vcard-img">${v.logo_url ? `<img src="${esc(v.logo_url)}" alt="">` : esc((v.business_name||'?')[0].toUpperCase())}</div>
       <span class="vcard-lbl">${esc(v.business_name||'')}</span>
     </div>`).join('');
@@ -1445,6 +1478,7 @@ function cardHTML(p) {
   const pct = tot > 0 ? Math.min(100, Math.round(p.stock/tot*100)) : 0;
   const r = ratingMap[p.id];
   const inCart = cart.find(x => x.id === p.id);
+  const seller = p.vendor_id ? vendorsMap[p.vendor_id] : null;
 
   return `
     <div class="pcard" onclick="openProduct(${p.id})">
@@ -1455,6 +1489,7 @@ function cardHTML(p) {
         ${disc > 0 ? `<span class="discBadge">-${disc}%</span>` : ''}
       </div>
       <div class="pcBody">
+        ${seller ? `<div class="pcSeller"><span class="pcSellerAv">${seller.logo_url ? `<img src="${esc(seller.logo_url)}" alt="">` : esc((seller.business_name||'?')[0].toUpperCase())}</span>${esc(seller.business_name||'Seller')}</div>` : ''}
         <div class="pcName">${esc(p.name)}</div>
         <div class="pcPriceRow">
           <div class="pcPrice">${fmt(p.price)}</div>
@@ -1753,9 +1788,10 @@ function pBuyNow() {
 }
 
 function viewSeller() {
-  const vid = pCur ? pCur.vendor_id : null;
+  const v = pCur && pCur.vendor_id ? vendorsMap[pCur.vendor_id] : null;
+  if (!v) return;
   closePModal(true);
-  filterByVendor(vid || null);
+  openStore(v.store_slug || v.id);
 }
 
 async function shareProduct() {
@@ -2457,9 +2493,11 @@ async function init() {
       renderGrid(featured, 'featGrid');
     }
 
+    initStorePage();
     renderGrid(allProds, 'allGrid', true);
     syncAdPage();
     syncCatPage();
+    syncStorePage();
     syncTrackingPages();
     document.getElementById('pCount').textContent =
       `${allProds.length} item${allProds.length!==1?'s':''}`;
