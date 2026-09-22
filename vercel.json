@@ -1,0 +1,11 @@
+{
+  "functions": {
+    "api/assistant.js": { "maxDuration": 30 },
+    "api/assistant-ticket.js": { "maxDuration": 15 },
+    "api/ai-product.js": { "maxDuration": 45 }
+  },
+  "rewrites": [
+    { "source": "/store/:slug", "destination": "/store/index.html" },
+    { "source": "/store/:slug/", "destination": "/store/index.html" }
+  ]
+}

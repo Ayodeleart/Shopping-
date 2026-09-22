@@ -30,6 +30,20 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 .csub{font-size:13px;color:#8a93a3;line-height:1.5;margin-bottom:28px}
 .gBtn{width:100%;height:52px;background:#fff;border:none;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:10px;font-size:15px;font-weight:700;color:#111;transition:transform .15s,opacity .15s}
 .gBtn:active{transform:scale(.98);opacity:.9}
+.authTabs{display:flex;background:#161a20;border:1px solid #262b33;border-radius:12px;padding:4px;margin-bottom:18px}
+.authTabs button{flex:1;height:38px;border-radius:9px;font-size:13px;font-weight:700;color:#8a93a3}
+.authTabs button.on{background:#262b33;color:#fff}
+.passWrap{position:relative}
+.passWrap input{padding-right:66px!important}
+.passToggle{position:absolute;right:6px;top:6px;height:36px;padding:0 10px;font-size:12px;font-weight:700;color:#8a93a3}
+.authBtn{width:100%;height:52px;margin-top:6px;background:var(--red);color:#fff;border-radius:14px;font-size:15px;font-weight:800;transition:transform .15s,opacity .15s}
+.authBtn:active{transform:scale(.98);opacity:.9}
+.authBtn:disabled{opacity:.55}
+.authBtn.ghost{background:transparent;border:1.5px solid #262b33;color:#fff}
+.authLink{display:block;width:100%;margin-top:14px;font-size:13px;font-weight:700;color:#8a93a3}
+.okMsg{color:#4ade80;font-size:13px;margin-top:10px;min-height:0;line-height:1.5}
+.okMsg:empty{display:none}
+.authNote{margin-top:22px;font-size:12px;color:#6b7280;line-height:1.6}
 .badge-pending{display:inline-flex;align-items:center;gap:6px;background:rgba(217,119,6,.15);color:#fbbf24;font-size:12px;font-weight:800;padding:6px 12px;border-radius:20px;margin-bottom:14px}
 .badge-suspended{display:inline-flex;align-items:center;gap:6px;background:rgba(248,113,113,.15);color:#f87171;font-size:12px;font-weight:800;padding:6px 12px;border-radius:20px;margin-bottom:14px}
 .centerWrap .fld{margin-bottom:12px;text-align:left}
@@ -187,25 +201,67 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 <link rel="stylesheet" href="../components/multi-image-picker.css">
 <link rel="stylesheet" href="../components/product-attributes.css">
 <link rel="stylesheet" href="../components/categories.css">
+<link rel="stylesheet" href="../components/ai-product.css">
 <link rel="stylesheet" href="../components/order-tracking.css">
 <link rel="stylesheet" href="../components/brand-picker.css">
+<script src="../components/sw-register.js"></script>
 </head>
 <body>
 
 <div id="loadOverlay"><div class="spinBox"><div class="spin"></div><span id="loadMsg" style="font-size:12px;color:var(--txt3)">Loading...</span></div></div>
 <div id="vtoast"></div>
 
-<!-- 1. SIGN IN -->
-<div id="authWrap" class="centerWrap">
+<!-- 1. SIGN UP / SIGN IN -->
+<div id="authWrap" class="centerWrap" style="display:none">
   <div class="cbox">
     <div class="clogo"><img src="app-icon-maskable-192.png" alt=""></div>
-    <div class="ctitle">Vendor Login</div>
-    <div class="csub">Sign in to list products and manage your orders on the marketplace.</div>
-    <button class="gBtn" id="googleBtn">
-      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.9 32.7 29.4 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.6 18.9 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 16.3 4 9.6 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.5 0 10.4-1.9 14.2-5.1l-6.5-5.5C29.6 35.3 27 36 24 36c-5.4 0-9.9-3.3-11.4-7.9l-6.6 5.1C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.7l6.5 5.5C41.5 36.4 44 30.7 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>
-      Continue with Google
-    </button>
-    <div class="errMsg" id="authErr"></div>
+
+    <!-- create account / sign in -->
+    <div id="authFormView">
+      <div class="ctitle" id="authTitle">Sell on Maccato</div>
+      <div class="csub" id="authSub">Create your seller account, then tell us about your store.</div>
+      <div class="authTabs" role="tablist">
+        <button type="button" id="tabSignUp" class="on" role="tab">Create account</button>
+        <button type="button" id="tabSignIn" role="tab">Sign in</button>
+      </div>
+      <form id="authForm" novalidate>
+        <div class="fld"><label for="authEmail">Email</label>
+          <input id="authEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="you@example.com"></div>
+        <div class="fld"><label for="authPass">Password</label>
+          <div class="passWrap"><input id="authPass" type="password" autocomplete="new-password" placeholder="At least 8 characters"><button type="button" class="passToggle" data-for="authPass">Show</button></div></div>
+        <div class="fld" id="authPass2Fld"><label for="authPass2">Confirm password</label>
+          <div class="passWrap"><input id="authPass2" type="password" autocomplete="new-password" placeholder="Type it again"></div></div>
+        <button type="submit" class="authBtn" id="authSubmit">Create account</button>
+        <button type="button" class="authLink" id="authForgot" style="display:none">Forgot password?</button>
+      </form>
+      <div class="errMsg" id="authErr"></div>
+      <div class="okMsg" id="authInfo"></div>
+      <div class="authNote" id="authNote">Already selling with us? Tap <b>Sign in</b>. If you joined with Google before, use <b>Forgot password</b> once to set a password.</div>
+    </div>
+
+    <!-- check your inbox -->
+    <div id="authConfirmView" style="display:none">
+      <div class="ctitle">Check your email</div>
+      <div class="csub">We sent a confirmation link to<br><b id="authConfirmEmail" style="color:#fff"></b><br>Open it on this phone and you will land straight in your seller application.</div>
+      <button type="button" class="authBtn ghost" id="authResend">Resend email</button>
+      <button type="button" class="authLink" id="authConfirmBack">Use a different email</button>
+      <div class="errMsg" id="authConfirmErr"></div>
+      <div class="okMsg" id="authConfirmInfo"></div>
+    </div>
+
+    <!-- new password (after the reset link) -->
+    <div id="authResetView" style="display:none">
+      <div class="ctitle">Set a new password</div>
+      <div class="csub">Choose a password with at least 8 characters.</div>
+      <form id="authResetForm" novalidate>
+        <div class="fld"><label for="authNewPass">New password</label>
+          <div class="passWrap"><input id="authNewPass" type="password" autocomplete="new-password" placeholder="At least 8 characters"><button type="button" class="passToggle" data-for="authNewPass">Show</button></div></div>
+        <div class="fld"><label for="authNewPass2">Confirm password</label>
+          <div class="passWrap"><input id="authNewPass2" type="password" autocomplete="new-password" placeholder="Type it again"></div></div>
+        <button type="submit" class="authBtn" id="authResetSubmit">Save password</button>
+      </form>
+      <div class="errMsg" id="authResetErr"></div>
+    </div>
   </div>
 </div>
 
@@ -266,7 +322,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
     <div class="obStep" data-step="2" style="display:none">
       <div class="fld">
         <label>Email</label>
-        <div class="obVerifiedField"><input id="obEmail" disabled><span class="obVerifiedTag">Verified via Google</span></div>
+        <div class="obVerifiedField"><input id="obEmail" disabled><span class="obVerifiedTag" id="obEmailTag">Verified</span></div>
       </div>
       <div class="fld">
         <label>Phone Number</label>
@@ -439,6 +495,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
       <label class="rmbgToggle"><input type="checkbox" id="pRmBg"> Remove background from new photos</label>
       <div class="progWrap" id="pImgProg"><div class="progBar" id="pImgProgBar"></div></div>
       <div class="fld"><label>Product Name</label><input id="pName" placeholder="e.g. Colorblock Zip-Up Jacket"></div>
+      <div id="pAI"></div>
       <div class="fld"><label>Brand (optional)</label><div id="pBrandBox"></div></div>
       <div class="frow2">
         <div class="fld"><label>Price (₦)</label><input id="pPrice" type="number" placeholder="0"></div>
@@ -491,6 +548,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 
 <script src="../components/multi-image-picker.js"></script>
 <script src="../components/product-attributes.js"></script>
+<script src="../components/ai-product.js"></script>
 <script src="../data/categories.js"></script>
 <script src="../data/tracking.js"></script>
 <script src="orders.js"></script>
@@ -503,6 +561,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 const SB_URL = 'https://qmwlphribvncdtgzbixt.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtd2xwaHJpYnZuY2R0Z3piaXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMDkwMjcsImV4cCI6MjA5NTg4NTAyN30.kmXKSrnQxG6n8RdK6ppNvn05vi7Xl68LKUNW5f7CQCU';
 const BUCKET = 'avatars';
+let RECOVERY = /[#&]type=recovery/.test(location.hash);      /* opened from a "reset password" email link */
 const sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
 
 let session = null;
@@ -532,11 +591,129 @@ function showScreen(id) {
   });
 }
 
-/* ===== AUTH ===== */
-document.getElementById('googleBtn').onclick = async () => {
-  const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
-  if (error) document.getElementById('authErr').textContent = error.message;
+/* ===== AUTH: create a seller account (email + password) or sign in ===== */
+const $a = id => document.getElementById(id);
+let authMode = 'signup';
+const AUTH_REDIRECT = location.origin + '/vendor/';
+
+function authView(v) {
+  $a('authFormView').style.display = v === 'form' ? '' : 'none';
+  $a('authConfirmView').style.display = v === 'confirm' ? '' : 'none';
+  $a('authResetView').style.display = v === 'reset' ? '' : 'none';
+}
+function authMsg(err, info) { $a('authErr').textContent = err || ''; $a('authInfo').textContent = info || ''; }
+
+function setAuthMode(mode) {
+  authMode = mode;
+  const up = mode === 'signup';
+  $a('tabSignUp').classList.toggle('on', up);
+  $a('tabSignIn').classList.toggle('on', !up);
+  $a('authTitle').textContent = up ? 'Sell on Maccato' : 'Welcome back';
+  $a('authSub').textContent = up ? 'Create your seller account, then tell us about your store.' : 'Sign in to manage your store, products and orders.';
+  $a('authPass2Fld').style.display = up ? '' : 'none';
+  $a('authSubmit').textContent = up ? 'Create account' : 'Sign in';
+  $a('authForgot').style.display = up ? 'none' : '';
+  $a('authNote').style.display = up ? '' : 'none';
+  $a('authPass').autocomplete = up ? 'new-password' : 'current-password';
+  $a('authPass').placeholder = up ? 'At least 8 characters' : 'Your password';
+  authMsg('', '');
+}
+$a('tabSignUp').onclick = () => setAuthMode('signup');
+$a('tabSignIn').onclick = () => setAuthMode('signin');
+
+document.querySelectorAll('.passToggle').forEach(btn => {
+  btn.onclick = () => {
+    const inp = $a(btn.dataset.for), show = inp.type === 'password';
+    inp.type = show ? 'text' : 'password';
+    btn.textContent = show ? 'Hide' : 'Show';
+    if (btn.dataset.for === 'authPass' && authMode === 'signup') $a('authPass2').type = inp.type;
+  };
+});
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+function friendlyAuthError(e) {
+  const m = String((e && e.message) || e || '');
+  if (/invalid login credentials/i.test(m)) return 'Wrong email or password.';
+  if (/already registered|already exists/i.test(m)) return 'An account with this email already exists. Tap Sign in instead.';
+  if (/email not confirmed/i.test(m)) return 'Please confirm your email first. Check your inbox for the link we sent.';
+  if (/rate limit|too many|seconds/i.test(m)) return 'Too many attempts. Please wait a minute and try again.';
+  if (/password.*(weak|short|least)/i.test(m)) return 'Choose a stronger password (at least 8 characters).';
+  if (/failed to fetch|network/i.test(m)) return 'No internet connection. Please try again.';
+  return m || 'Something went wrong. Please try again.';
+}
+
+$a('authForm').onsubmit = async ev => {
+  ev.preventDefault();
+  const email = $a('authEmail').value.trim().toLowerCase();
+  const pass = $a('authPass').value;
+  authMsg('', '');
+  if (!EMAIL_RE.test(email)) { authMsg('Enter a valid email address.'); return; }
+  if (pass.length < 8) { authMsg('Your password needs at least 8 characters.'); return; }
+  if (authMode === 'signup' && pass !== $a('authPass2').value) { authMsg('The two passwords do not match.'); return; }
+
+  const btn = $a('authSubmit');
+  btn.disabled = true;
+  try {
+    if (authMode === 'signup') {
+      const { data, error } = await sb.auth.signUp({ email, password: pass, options: { emailRedirectTo: AUTH_REDIRECT } });
+      if (error) throw error;
+      // an existing email comes back as a user with no identities (Supabase hides which emails exist)
+      if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+        setAuthMode('signin'); $a('authEmail').value = email;
+        authMsg('An account with this email already exists. Sign in below.');
+        return;
+      }
+      if (data.session) { await boot(); return; }              // email confirmation is off: straight in
+      $a('authConfirmEmail').textContent = email;                // confirmation on: wait for the link
+      authView('confirm');
+    } else {
+      const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+      if (error) {
+        if (/email not confirmed/i.test(error.message)) { $a('authConfirmEmail').textContent = email; authView('confirm'); return; }
+        throw error;
+      }
+      await boot();
+    }
+  } catch (e) {
+    authMsg(friendlyAuthError(e));
+  } finally {
+    btn.disabled = false;
+  }
 };
+
+$a('authForgot').onclick = async () => {
+  const email = $a('authEmail').value.trim().toLowerCase();
+  if (!EMAIL_RE.test(email)) { authMsg('Type your email above first, then tap Forgot password.'); return; }
+  authMsg('', '');
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: AUTH_REDIRECT });
+  if (error) authMsg(friendlyAuthError(error));
+  else authMsg('', 'If an account exists for ' + email + ', a reset link is on its way. Check your inbox and spam folder.');
+};
+
+$a('authResend').onclick = async () => {
+  const email = $a('authConfirmEmail').textContent;
+  $a('authConfirmErr').textContent = ''; $a('authConfirmInfo').textContent = '';
+  const { error } = await sb.auth.resend({ type: 'signup', email, options: { emailRedirectTo: AUTH_REDIRECT } });
+  if (error) $a('authConfirmErr').textContent = friendlyAuthError(error);
+  else $a('authConfirmInfo').textContent = 'Sent again. Check your inbox and spam folder.';
+};
+$a('authConfirmBack').onclick = () => { authView('form'); setAuthMode('signup'); };
+
+$a('authResetForm').onsubmit = async ev => {
+  ev.preventDefault();
+  const p1 = $a('authNewPass').value, p2 = $a('authNewPass2').value;
+  $a('authResetErr').textContent = '';
+  if (p1.length < 8) { $a('authResetErr').textContent = 'Your password needs at least 8 characters.'; return; }
+  if (p1 !== p2) { $a('authResetErr').textContent = 'The two passwords do not match.'; return; }
+  const btn = $a('authResetSubmit'); btn.disabled = true;
+  const { error } = await sb.auth.updateUser({ password: p1 });
+  btn.disabled = false;
+  if (error) { $a('authResetErr').textContent = friendlyAuthError(error); return; }
+  history.replaceState(null, '', location.pathname);
+  RECOVERY = false;
+  await boot();
+};
+
 document.getElementById('pendingSignOut').onclick = () => sb.auth.signOut().then(() => location.reload());
 document.getElementById('rejectedSignOut').onclick = () => sb.auth.signOut().then(() => location.reload());
 document.getElementById('suspendedSignOut').onclick = () => sb.auth.signOut().then(() => location.reload());
@@ -546,7 +723,8 @@ async function boot() {
   showLoad('Checking session...');
   const { data: { session: s } } = await sb.auth.getSession();
   session = s;
-  if (!session) { hideLoad(); showScreen('authWrap'); return; }
+  if (RECOVERY && session) { hideLoad(); showScreen('authWrap'); authView('reset'); return; }
+  if (!session) { hideLoad(); showScreen('authWrap'); authView('form'); setAuthMode(authMode); return; }
 
   const { data: v } = await sb.from('vendors').select('*').eq('id', session.user.id).maybeSingle();
   vendorRow = v;
@@ -619,6 +797,10 @@ const NG_STATES = ['Abia','Adamawa','Akwa Ibom','Anambra','Bauchi','Bayelsa','Be
 
 function obInit() {
   document.getElementById('obEmail').value = session.user.email;
+  const emailOk = !!session.user.email_confirmed_at;
+  const tag = document.getElementById('obEmailTag');
+  tag.textContent = emailOk ? 'Verified' : 'Not verified';
+  if (!emailOk) { tag.style.color = '#d97706'; tag.style.background = 'rgba(217,119,6,.12)'; }
   document.getElementById('obState').innerHTML = '<option value="">Select</option>' + NG_STATES.map(s => `<option>${s}</option>`).join('');
 
   if (vendorRow) {
@@ -820,7 +1002,7 @@ function obRenderReview() {
   document.getElementById('obRevAddress').innerHTML = `${g('obAddress') || '-'}<br>${g('obCity') || ''}, ${g('obLga') || ''}, ${g('obState') || ''}<br>${g('obLandmark') || ''}`;
   const idStatus = document.getElementById('obIdStatus').textContent ? 'Submitted' : 'Not started';
   const bankStatus = document.getElementById('obBankStatus').textContent ? 'Submitted' : 'Not started';
-  document.getElementById('obRevVerify').innerHTML = `Email: verified via Google<br>Phone: ${document.getElementById('obPhoneVerifiedTag').style.display !== 'none' ? 'verified' : 'not verified'}<br>Identity: ${idStatus}<br>Bank: ${bankStatus}`;
+  document.getElementById('obRevVerify').innerHTML = `Email: ${session.user.email_confirmed_at ? 'verified' : 'not verified'}<br>Phone: ${document.getElementById('obPhoneVerifiedTag').style.display !== 'none' ? 'verified' : 'not verified'}<br>Identity: ${idStatus}<br>Bank: ${bankStatus}`;
 }
 
 /* ===== SAVE + ADVANCE ===== */
@@ -852,7 +1034,7 @@ async function obSaveStep(idx) {
     patch.city = document.getElementById('obCity').value.trim() || null;
     patch.landmark = document.getElementById('obLandmark').value.trim() || null;
     patch.store_lat = obPendingLat; patch.store_lng = obPendingLng;
-    patch.email_verified_at = vendorRow?.email_verified_at || new Date().toISOString();
+    patch.email_verified_at = vendorRow?.email_verified_at || session.user.email_confirmed_at || null;
     if (!patch.address || !patch.state) { document.getElementById('obErr').textContent = 'Address and state are required'; return false; }
   } else if (idx === 3) {
     if (document.getElementById('obIdStatus').textContent.trim() === '') { document.getElementById('obErr').textContent = 'Please verify your identity to continue'; return false; }
@@ -970,6 +1152,36 @@ const brandPicker = new Pcx.BrandPicker(document.getElementById('pBrandBox'), {
 });
 const catPicker = new Pcx.CategoryPicker(document.getElementById('pCat'), { onChange: () => pAttrs.setCategory(catPicker.names()) });
 
+/* AI listing assistant: writes a DRAFT into the normal form fields; the seller edits and presses Save (nothing is published automatically) */
+const aiProd = new Pcx.AIProduct(document.getElementById('pAI'), {
+  endpoint: '/api/ai-product',
+  getToken: async () => { const { data: { session: s } } = await sb.auth.getSession(); return s ? s.access_token : null; },
+  getPicker: () => pPicker,
+  getInput: () => {
+    const b = brandPicker.getValue();
+    return { name: document.getElementById('pName').value.trim(), brand: b ? b.name : '', price: document.getElementById('pPrice').value, category: catPicker.names()[0] || '', vendorAttributes: pAttrs.collect() };
+  },
+  apply: {
+    title: v => { document.getElementById('pName').value = v; },
+    shortDescription: v => { document.getElementById('pDesc').value = v; },
+    description: v => pBlocks.setText(v),
+    highlights: list => {
+      const t = Pcx.ProductAttributes.TEMPLATES[pAttrs.type] || Pcx.ProductAttributes.TEMPLATES.general;
+      const f = (t.fields || []).find(x => x.type === 'bullets');
+      if (f) { const a = pAttrs.collect(); a[f.key] = list; pAttrs.load(a, catPicker.names()); }
+      else pBlocks.setText((pBlocks.blocks.find(b => b.type === 'text') || { text: '' }).text + '\n\n' + list.map(x => '- ' + x).join('\n'));
+    },
+    categoryId: id => { catPicker.setValue(id); pAttrs.setCategory(catPicker.names()); },
+    attributes: obj => {
+      const a = pAttrs.collect(), extra = Array.isArray(a.extra) ? a.extra.slice() : [];
+      const have = new Set(extra.map(x => String(x.k).toLowerCase()));
+      Object.keys(obj).forEach(k => { const v = Array.isArray(obj[k]) ? obj[k].join(', ') : obj[k]; if (v && !have.has(k.toLowerCase())) extra.push({ k, v }); });
+      a.extra = extra; pAttrs.load(a, catPicker.names());
+    }
+  },
+  onApplied: () => toast('Draft applied. Review it, then press Save.')
+});
+
 /* ===== PRODUCTS (scoped to this vendor only) ===== */
 async function loadProducts() {
   const { data, error } = await sb.from('products').select('*').eq('vendor_id', session.user.id).order('created_at', { ascending: false });
@@ -1011,6 +1223,7 @@ window.editProduct = async (id) => {
   pPicker.setImages(Array.isArray(p.images) && p.images.length ? p.images : (p.image_url ? [p.image_url] : []));
   pAttrs.load(p.attributes, catPicker.names().length ? catPicker.names() : p.category);
   pBlocks.setBlocks(p.description_blocks);
+  aiProd.reset(); aiProd.setExisting(p.attributes);
   document.getElementById('pCancelBtn').style.display = 'block';
   document.getElementById('pSaveBtn').textContent = 'Update Product';
   document.getElementById('panel-products').scrollIntoView({ behavior: 'smooth' });
@@ -1040,6 +1253,7 @@ function resetProdForm() {
   pPicker.clear();
   pAttrs.clear();
   pBlocks.clear();
+  aiProd.reset();
   document.getElementById('pCancelBtn').style.display = 'none';
   document.getElementById('pSaveBtn').textContent = 'Add Product';
 }
@@ -1079,7 +1293,7 @@ document.getElementById('pSaveBtn').onclick = async () => {
 
     const prod = {
       name, price,
-      attributes: pAttrs.collect(),
+      attributes: Object.assign({}, pAttrs.collect(), aiProd.extras() || {}),
       description_blocks,
       brand: brandPick ? brandPick.name : null,
       brand_id: brandRow ? brandRow.id : null,
@@ -1242,7 +1456,7 @@ async function checkUnreadNotifs() {
 }
 
 /* ===== PWA INSTALL ===== */
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { scope: '/vendor/' }).catch(() => {});
+if (window.registerSW) registerSW('sw.js', { scope: '/vendor/' }); else if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { scope: '/vendor/' }).catch(() => {});
 
 boot();
 </script>

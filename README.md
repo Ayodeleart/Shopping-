@@ -1,3 +1,18 @@
+# AI features (Groq): listing assistant + shopping assistant
+
+**Environment variables (Vercel)**: `GROQ_API_KEY` (server only), `GROQ_TEXT_MODEL` (default `openai/gpt-oss-120b`, chat + tool calling), `GROQ_VISION_MODEL` (default `qwen/qwen3.6-27b`, product photos).
+Optional: `GROQ_REASONING_EFFORT`, `AI_SIGNING_SECRET`. Groq retires models regularly, so check https://console.groq.com/docs/deprecations and change the two model variables, not the code.
+The support-ticket button needs the `support_tickets` table (SQL is pasted in the chat, never stored here). Without it the chat still works and the ticket step says support is not available online.
+
+- **Listing assistant** (vendor and admin product forms, `components/ai-product.js`, `/api/ai-product`): name and/or photos in, an editable DRAFT out (title, short + full description, highlights,
+  category, tags, attributes, text read from the photos, alt text, missing information, warnings). Only supplied or visible facts are used; numbers/claims that were not entered are flagged for confirmation.
+  "Apply to form" fills the normal fields; the existing Save button is the only thing that publishes. Tags and alt text are kept inside `products.attributes` (no new column).
+- **Shopping assistant** (`components/ai-assistant.js`, `/api/assistant`, route `#assistant`): floating button on the home page, full-page chat, five languages (English, Pidgin, Yoruba, Igbo, Hausa).
+  The model only sees what its server-side tools return (`api/_lib/ai/tools.js`): search, details, compare, categories, policies, the signed-in customer's own orders, product cards, add-to-cart offer, support-ticket draft.
+  Cart changes and support tickets need a tap on a button; the server signs the ticket summary (`/api/assistant-ticket`), so the model cannot submit one.
+- **Tests**: `npm install && npm test` (mocked Groq and database; no key needed).
+- Rate limits are per serverless instance (in memory). For a hard global cap, back `api/_lib/ai/guard.js` with a database or Redis counter.
+
 # Order tracking and customer notifications
 
 Built on the existing tables (`orders`, `order_items`, `vendors`, `push_subscriptions`); nothing was replaced. Needs the tracking SQL run once in the
@@ -33,6 +48,15 @@ panel fall back to the old order lists.
 shared helpers `data/tracking.js`, vendor fulfilment `vendor/orders.js`, admin orders/shipments `admin/orders.js`, engine `api/_lib/dispatch.js`, endpoint `api/notify-dispatch.js`.
 
 # Store - PWA with Supabase
+
+## Always fresh (service workers) and seller sign-up
+
+- **Updates show on the first open.** The service workers are network-first for pages, scripts and styles (the cache only answers offline or
+  when the network takes over 4 s), never touch Supabase, `/api/` or other origins, and serve images cache-first. A new version reloads the app
+  once by itself (`components/sw-register.js`: right away if just opened, otherwise when the app goes to the background).
+- **Admin**: a splash shows while the session is checked, so a signed-in admin never sees the login page flash by.
+- **Sell on Maccato** (`/vendor/`): opens on **Create account** (email + password), with a Sign in tab, Forgot password and a confirm-email screen. No Google button.
+  Turn on *Confirm email* in Supabase (Authentication > Providers > Email) and add `https://YOUR-DOMAIN/vendor/` to Authentication > URL Configuration > Redirect URLs.
 
 ## Storefront v2: brands with logos, favorites, search, new product page
 

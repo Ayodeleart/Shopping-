@@ -19,7 +19,8 @@ button{cursor:pointer;border:none;background:none;font-family:inherit;color:inhe
 input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 
 /* LOGIN (dark, matches reference design) */
-#loginWrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;background:radial-gradient(ellipse at 50% 0%, #132030 0%, #0a0e14 55%, #05070a 100%)}
+/* shown only once we know nobody is signed in (see authSplash) */
+#loginWrap{display:none;align-items:center;justify-content:center;min-height:100vh;padding:24px;background:radial-gradient(ellipse at 50% 0%, #132030 0%, #0a0e14 55%, #05070a 100%)}
 .lbox{width:100%;max-width:340px;text-align:center}
 .llogo{width:88px;height:88px;border-radius:50%;overflow:hidden;margin:0 auto 22px;box-shadow:0 0 0 1px rgba(255,255,255,.1)}
 .llogo img{width:100%;height:100%;display:block;object-fit:cover}
@@ -29,6 +30,12 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 #loginBtn{width:100%;height:52px;background:#fff;border:none;color:#111;font-size:15px;font-weight:700;border-radius:14px;transition:transform .15s,opacity .15s}
 #loginBtn:active{transform:scale(.98);opacity:.9}
 #loginErr{color:#f87171;font-size:13px;text-align:center;margin-top:14px;min-height:18px}
+
+#authSplash{position:fixed;inset:0;z-index:700;background:var(--bg);display:flex;align-items:center;justify-content:center}
+#authSplash.off{display:none}
+#authSplash img{width:84px;height:84px;border-radius:50%;animation:splashPulse 1.2s ease-in-out infinite}
+@keyframes splashPulse{0%,100%{opacity:.55;transform:scale(.96)}50%{opacity:1;transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){#authSplash img{animation:none}}
 
 /* APP */
 #app{display:none;min-height:100vh;flex-direction:column}
@@ -247,6 +254,8 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 <link rel="stylesheet" href="../components/categories.css">
 <link rel="stylesheet" href="../components/order-tracking.css">
 <link rel="stylesheet" href="../components/brand-picker.css">
+<link rel="stylesheet" href="../components/ai-product.css">
+<script src="../components/sw-register.js"></script>
 <link rel="stylesheet" href="categories.css">
 </head>
 <body data-theme="light">
@@ -264,6 +273,9 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
     <div class="cfm-btns"><button id="cfmNo">Cancel</button><button id="cfmYes">Delete</button></div>
   </div>
 </div>
+
+<!-- shown while the session is checked, so a signed-in admin never sees the login page flash by -->
+<div id="authSplash"><img src="app-icon-maskable-192.png" alt=""></div>
 
 <!-- LOGIN -->
 <div id="loginWrap">
@@ -329,6 +341,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
     <div class="fcard" id="pFormCard">
       <h3 id="pFormTitle">Add New Product</h3>
       <div class="fg"><label>Name *</label><input type="text" id="pName" placeholder="Product name"></div>
+      <div id="pAI"></div>
       <div class="fg"><label>Brand (optional)</label><div id="pBrandBox"></div></div>
       <div class="row2">
         <div class="fg"><label>Price *</label><input type="number" id="pPrice" placeholder="0" min="0"></div>
@@ -508,6 +521,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 </div>
 
 <script src="../components/multi-image-picker.js"></script>
+<script src="../components/ai-product.js"></script>
 <script src="../data/categories.js"></script>
 <script src="../data/tracking.js"></script>
 <script src="../components/category-picker.js"></script>
@@ -654,6 +668,23 @@ const brandPicker = new Pcx.BrandPicker(document.getElementById('pBrandBox'), {
   upload: file => uploadImage(file, 'products', 'pImgProgBar', 'pImgProg', true)
 });
 const catPicker = new Pcx.CategoryPicker(document.getElementById('pCat'), {});
+
+/* AI listing assistant: fills a DRAFT into the form below; the admin edits it and presses Save (nothing is published automatically) */
+let editProdAttrs = null;
+const aiProd = new Pcx.AIProduct(document.getElementById('pAI'), {
+  endpoint: '/api/ai-product',
+  getToken: async () => { const { data: { session: s } } = await sb.auth.getSession(); return s ? s.access_token : null; },
+  getPicker: () => pPicker,
+  getInput: () => { const b = brandPicker.getValue(); return { name: document.getElementById('pName').value.trim(), brand: b ? b.name : '', price: document.getElementById('pPrice').value, category: catPicker.names()[0] || '' }; },
+  apply: {
+    title: v => { document.getElementById('pName').value = v; },
+    shortDescription: v => { document.getElementById('pDesc').value = v; },
+    description: v => { document.getElementById('pDesc').value = v; },
+    highlights: list => { const d = document.getElementById('pDesc'); d.value = (d.value.trim() + '\n\n' + list.map(x => '- ' + x).join('\n')).trim(); },
+    categoryId: id => catPicker.setValue(id)
+  },
+  onApplied: () => toast('Draft applied. Review it, then press Save.')
+});
 document.addEventListener('categories:loaded', e => {
   catTree = e.detail;
   catPicker.setTree(catTree);
@@ -716,6 +747,8 @@ async function saveProduct() {
       featured: document.getElementById('pFeatTgl').classList.contains('on'),
       flash_sale: document.getElementById('pFlashTgl').classList.contains('on')
     };
+    const aiExtras = aiProd.extras();            // tags / alt text from the reviewed AI draft, kept inside the existing attributes column
+    if (aiExtras) prod.attributes = Object.assign({}, editProdAttrs || {}, aiExtras);
 
     const write = p => editProdId
       ? sb.from('products').update(p).eq('id', editProdId)
@@ -753,6 +786,7 @@ function cancelProdEdit() {
   catPicker.clear();
   document.getElementById('pRmBg').checked = false;
   pPicker.clear();
+  aiProd.reset(); editProdAttrs = null;
   document.getElementById('pFeatTgl').classList.remove('on');
   document.getElementById('pFlashTgl').classList.remove('on');
   document.getElementById('pFormTitle').textContent = 'Add New Product';
@@ -778,6 +812,7 @@ async function editProduct(id) {
   document.getElementById('pMaxStock').value = p.max_stock || '';
   document.getElementById('pDesc').value = p.description || '';
   pPicker.setImages(Array.isArray(p.images) && p.images.length ? p.images : (p.image_url ? [p.image_url] : []));
+  aiProd.reset(); aiProd.setExisting(p.attributes); editProdAttrs = p.attributes || null;
   document.getElementById('pFeatTgl').classList.toggle('on', !!p.featured);
   document.getElementById('pFlashTgl').classList.toggle('on', !!p.flash_sale);
   document.getElementById('pFormTitle').textContent = 'Edit Product';
@@ -1364,10 +1399,13 @@ async function loadAll() {
 }
 
 /* ===== INIT ===== */
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { scope: '/admin/' }).catch(() => {});
+if (window.registerSW) registerSW('sw.js', { scope: '/admin/' }); else if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { scope: '/admin/' }).catch(() => {});
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const ok = await checkAdminSession();
+  let ok = false;
+  try { ok = await checkAdminSession(); }
+  catch (e) { document.getElementById('loginWrap').style.display = 'flex'; }
+  finally { document.getElementById('authSplash').classList.add('off'); }
   if (ok) loadAll();
 });
 </script>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#D91C2D">
+<!-- Generic fallback metadata: this file is shared by every seller's URL, so the
+     vendor-specific title/description/og:image below are filled in by store.js
+     once the vendor loads. A crawler that doesn't execute JS sees this fallback
+     only — true per-seller server-rendered metadata would need a server-side
+     route, which this static-hosting setup doesn't have (see README). -->
+<title>Store · Maccato</title>
+<meta name="description" content="Shop this seller's products on Maccato.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Store · Maccato">
+<meta property="og:description" content="Shop this seller's products on Maccato.">
+<meta property="og:image" content="/store-logo.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/app-icon-32.png">
+<link rel="stylesheet" href="/components/theme-tokens.css">
+<link rel="stylesheet" href="/components/product-card.css">
+<link rel="stylesheet" href="/components/seller-brand.css">
+<link rel="stylesheet" href="/store/store.css">
+<script src="/components/product-card.js"></script>
+<script src="/components/seller-brand.js"></script>
+</head>
+<body data-theme="light">
+
+<div id="loader"><div class="spin"></div></div>
+
+<div id="storeRoot" style="display:none">
+  <div id="topBar">
+    <a id="topBack" href="/" aria-label="Back to Maccato">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </a>
+    <div id="topStoreName">Store</div>
+    <a id="topCart" href="/" aria-label="View cart">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
+      <span id="topCartDot">0</span>
+    </a>
+  </div>
+
+  <div id="hero">
+    <div class="heroTop">
+      <div id="heroLogo"></div>
+      <div class="heroInfo">
+        <div id="heroName"></div>
+        <div id="heroBadge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+          Approved Seller
+        </div>
+        <div id="heroMeta"></div>
+      </div>
+    </div>
+    <div id="heroDesc" style="display:none"></div>
+    <div id="heroRating"></div>
+  </div>
+
+  <div id="filterBar">
+    <div id="searchWrap">
+      <input id="searchInput" type="search" placeholder="Search this store" autocomplete="off">
+    </div>
+    <div id="catPills"></div>
+    <div id="sortRow">
+      <span id="resultCount"></span>
+      <select id="sortSelect">
+        <option value="featured">Featured</option>
+        <option value="newest">Newest</option>
+        <option value="price_asc">Price: Low to High</option>
+        <option value="price_desc">Price: High to Low</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="gridWrap">
+    <div id="grid"></div>
+    <div id="loadMoreWrap" style="display:none"><button id="loadMoreBtn">Load more</button></div>
+  </div>
+
+  <footer class="storeFooter">Sold on <a href="/">Maccato</a></footer>
+</div>
+
+<div id="stateScreen">
+  <svg id="stateIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+  <div id="stateTitle">This store isn&rsquo;t available</div>
+  <div id="stateMsg">It may have moved, or the seller isn&rsquo;t accepting visitors right now.</div>
+  <a id="stateHome" href="/">Go to Maccato</a>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/store/store.js"></script>
+</body>
+</html>

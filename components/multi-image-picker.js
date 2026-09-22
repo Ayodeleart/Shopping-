@@ -43,6 +43,11 @@
     return this.items.filter(function (i) { return i.url; }).map(function (i) { return i.url; });
   };
 
+  /* every photo as { file } (chosen, not uploaded yet) or { url } (already stored): used by the AI listing assistant */
+  P.getSources = function () {
+    return this.items.map(function (i) { return i.file && !i.url ? { file: i.file } : { url: i.url }; }).filter(function (i) { return i.file || i.url; });
+  };
+
   P.hasPending = function () {
     return this.items.some(function (i) { return i.file && !i.url; });
   };
