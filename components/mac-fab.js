@@ -704,6 +704,6 @@
   Pcx.MacFab = MacFab;
 
   /* mount by itself once the page is ready (skip with window.MAC_FAB_MANUAL = true) */
-  function auto() { if (!global.MAC_FAB_MANUAL && !Pcx.mac) Pcx.mac = new MacFab(); }
+  function auto() { if (!global.MAC_FAB_MANUAL && !Pcx.mac && !document.querySelector('.macFab')) Pcx.mac = new MacFab(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', auto); else auto();
 })(window);

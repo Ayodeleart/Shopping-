@@ -390,6 +390,6 @@
 
   Pcx.MacChat = MacChat;
 
-  function auto() { if (!global.MAC_CHAT_MANUAL && !Pcx.macChat) Pcx.macChat = new MacChat(); }
+  function auto() { if (!global.MAC_CHAT_MANUAL && !Pcx.macChat && !document.querySelector('.macChat')) Pcx.macChat = new MacChat(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', auto); else auto();
 })(window);

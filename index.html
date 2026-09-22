@@ -33,6 +33,7 @@
 <script defer src="data/tracking.js"></script>
 <script defer src="components/order-tracking.js"></script>
 <script defer src="components/notification-center.js"></script>
+<script>window.MAC_FAB_MANUAL = true; window.MAC_CHAT_MANUAL = true;</script>
 <link rel="stylesheet" href="components/mac-fab.css">
 <link rel="stylesheet" href="components/mac-chat.css">
 <script defer src="components/mac-fab.js"></script>
@@ -2209,6 +2210,7 @@ function initAds(rows, banners, tileRows) {
 let macChat = null;
 function initAssistant() {
   if (macChat || !window.Pcx || !Pcx.MacFab || !Pcx.MacChat) return;
+  if (document.querySelector('.macFab') || document.querySelector('.macChat')) return;   // already mounted (e.g. by the component's own auto-init) — never stack a second one
   Pcx.mac = new Pcx.MacFab({});
   macChat = new Pcx.MacChat({
     mac: Pcx.mac,
