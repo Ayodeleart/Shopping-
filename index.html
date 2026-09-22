@@ -40,13 +40,16 @@
 <script defer src="components/image-viewer.js"></script>
 <link rel="stylesheet" href="components/theme-tokens.css">
 <link rel="stylesheet" href="components/product-card.css">
+<link rel="stylesheet" href="components/seller-brand.css">
 <script src="components/product-card.js"></script>
+<script src="components/seller-brand.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 /* Theme tokens now live in components/theme-tokens.css (shared with /store). */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{scroll-behavior:smooth}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--txt);overflow-x:hidden;padding-top:var(--hh)}
+html{overscroll-behavior:none}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--txt);overflow-x:hidden;padding-top:var(--hh);overscroll-behavior:none;touch-action:manipulation}
 button{cursor:pointer;border:none;background:none;font-family:inherit;color:inherit}
 img{display:block;object-fit:cover}
 a{text-decoration:none;color:inherit}

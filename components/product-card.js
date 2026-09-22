@@ -83,7 +83,7 @@ function cardHTML(p) {
         ${disc > 0 ? `<span class="discBadge">-${disc}%</span>` : ''}
       </div>
       <div class="pcBody">
-        ${seller ? `<div class="pcSeller"><span class="pcSellerAv">${seller.logo_url ? `<img src="${safeUrl(seller.logo_url)}" alt="">` : esc((seller.business_name||'?')[0].toUpperCase())}</span>${esc(seller.business_name||'Seller')}</div>` : ''}
+        ${seller ? `<div class="pcSeller">${Pcx.SellerBrand.chip(seller, { size: 14 })}</div>` : ''}
         <div class="pcName">${esc(p.name)}</div>
         <div class="pcPriceRow">
           <div class="pcPrice">${fmt(p.price)}</div>
