@@ -2,10 +2,14 @@
   "functions": {
     "api/assistant.js": { "maxDuration": 30 },
     "api/assistant-ticket.js": { "maxDuration": 15 },
-    "api/ai-product.js": { "maxDuration": 45 }
+    "api/ai-product.js": { "maxDuration": 45 },
+    "api/delivery-confirmation-check.js": { "maxDuration": 30 }
   },
   "rewrites": [
     { "source": "/store/:slug", "destination": "/store/index.html" },
     { "source": "/store/:slug/", "destination": "/store/index.html" }
+  ],
+  "crons": [
+    { "path": "/api/delivery-confirmation-check", "schedule": "*/15 * * * *" }
   ]
 }
