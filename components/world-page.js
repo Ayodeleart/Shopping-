@@ -67,6 +67,12 @@
     root.appendChild(hdr);
 
     var hero = h('div', 'wp-hero');
+    if (world.image_url) {
+      var himg = h('img', 'wp-hero-img');
+      himg.src = world.image_url; himg.alt = '';
+      hero.appendChild(himg);
+      hero.classList.add('has-img');
+    }
     var icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     icon.setAttribute('viewBox', '0 0 24 24'); icon.setAttribute('class', 'wp-hero-icon'); icon.setAttribute('aria-hidden', 'true');
     icon.innerHTML = world.icon;

@@ -381,6 +381,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
     <div id="bannerSubnav" style="display:flex;border-bottom:2px solid var(--border);margin-bottom:14px">
       <button class="bsub-tab on" data-sub="banners" onclick="switchBannerSub('banners')">Banners</button>
       <button class="bsub-tab" data-sub="tiles" onclick="switchBannerSub('tiles')">Tiles</button>
+      <button class="bsub-tab" data-sub="worlds" onclick="switchBannerSub('worlds')">Explore Marcato</button>
       <button class="bsub-tab" data-sub="ads" onclick="switchBannerSub('ads')">Ads</button>
       <button class="bsub-tab" data-sub="announce" onclick="switchBannerSub('announce')">Announcements</button>
     </div>
@@ -419,6 +420,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
     <div id="bList"></div>
     </div>
     <div id="tilesPane" style="display:none"></div>
+    <div id="worldsPane" style="display:none"></div>
     <div id="adsPane" style="display:none"></div>
     <div id="announcePane" style="display:none">
       <div id="announceSubnav" style="display:flex;border-bottom:2px solid var(--border);margin-bottom:14px">
@@ -1416,6 +1418,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 <script src="ads-sections.js"></script>
 <script src="ads.js"></script>
 <script src="tiles.js"></script>
+<script src="../data/worlds.js"></script>
+<script src="worlds.js"></script>
 <script src="categories.js"></script>
 <script src="orders.js"></script>
 </body>

@@ -7,6 +7,11 @@
  * Each world opens at #world=slug (see components/world-page.js), which for now shows a lightweight
  * "coming soon" placeholder. The slug is the future route for the dedicated world page.
  *
+ * The image/GIF shown on each card is admin-managed (Admin > Banners > Explore Marcato) and lives in
+ * the `worlds` table (see migration_worlds.sql), keyed by slug — NOT in this file. index.html fetches
+ * it and merges `image_url` onto these objects before mounting the cards. Until an image is uploaded,
+ * a card just shows its gradient + icon below.
+ *
  *   Worlds.list()          -> [{ slug, name, tagline, gradient, icon }, ...]
  *   Worlds.bySlug(slug)    -> single world or null
  */
@@ -37,7 +42,7 @@
     },
     {
       slug: 'home',
-      name: 'Home',
+      name: 'Home & Decor',
       tagline: 'Everything for your home',
       gradient: 'linear-gradient(155deg,#2FB8A3 0%,#0E4F4B 100%)',
       icon: '<path d="M4 11.5L12 4l8 7.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M6 10v9h12v-9" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" fill="none"/><path d="M10 19v-5h4v5" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" fill="none"/>'

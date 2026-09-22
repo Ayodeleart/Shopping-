@@ -13,12 +13,18 @@
 .wp-hdr-ttl{font-size:15px;font-weight:800}
 
 .wp-hero{
+  position:relative;overflow:hidden;
   padding:44px 24px 40px;text-align:center;color:#fff;
   background:var(--wp-grad);
 }
-.wp-hero-icon{width:44px;height:44px;color:#fff;margin:0 auto 14px}
-.wp-hero-name{font-size:28px;font-weight:900;letter-spacing:-.4px}
-.wp-hero-tag{margin-top:8px;font-size:14px;color:rgba(255,255,255,.88);font-weight:500}
+.wp-hero-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+.wp-hero.has-img::after{
+  content:'';position:absolute;inset:0;z-index:1;
+  background:linear-gradient(180deg,rgba(0,0,0,.35) 0%,rgba(0,0,0,.55) 100%);
+}
+.wp-hero-icon{position:relative;z-index:2;width:44px;height:44px;color:#fff;margin:0 auto 14px}
+.wp-hero-name{position:relative;z-index:2;font-size:28px;font-weight:900;letter-spacing:-.4px}
+.wp-hero-tag{position:relative;z-index:2;margin-top:8px;font-size:14px;color:rgba(255,255,255,.88);font-weight:500}
 
 .wp-body{padding:28px 24px;text-align:center;display:flex;flex-direction:column;align-items:center}
 .wp-badge{display:inline-block;padding:5px 12px;border-radius:20px;background:var(--bg2);color:var(--txt2);font-size:12px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;margin-bottom:14px}
