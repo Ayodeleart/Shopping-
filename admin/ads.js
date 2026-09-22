@@ -308,9 +308,11 @@
     document.querySelectorAll('.bsub-tab').forEach(function (t) { t.classList.toggle('on', t.dataset.sub === which); });
     document.getElementById('bannersPane').style.display = which === 'banners' ? '' : 'none';
     document.getElementById('tilesPane').style.display = which === 'tiles' ? '' : 'none';
+    document.getElementById('worldsPane').style.display = which === 'worlds' ? '' : 'none';
     document.getElementById('adsPane').style.display = which === 'ads' ? '' : 'none';
     document.getElementById('announcePane').style.display = which === 'announce' ? '' : 'none';
     if (which === 'ads') window.AdsAdmin.open();
     if (which === 'tiles') window.TilesAdmin.open();
+    if (which === 'worlds') window.WorldsAdmin.open();
   };
 })();
