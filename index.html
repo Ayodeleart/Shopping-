@@ -17,6 +17,12 @@
 <script defer src="data/promotions.js"></script>
 <link rel="stylesheet" href="components/ad-page.css">
 <link rel="stylesheet" href="components/tile-row.css">
+<link rel="stylesheet" href="components/checkout-page.css">
+<link rel="stylesheet" href="components/profile-page.css">
+<script defer src="data/buyer.js"></script>
+<script defer src="components/address-search.js"></script>
+<script defer src="components/checkout-page.js"></script>
+<script defer src="components/profile-page.js"></script>
 <script defer src="components/tile-row.js"></script>
 <script defer src="components/ad-page.js"></script>
 <script defer src="data/ads.js"></script>
@@ -464,16 +470,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 .cEmpty{padding:36px;text-align:center;color:var(--txt3)}
 .cEmpty svg{margin:0 auto 10px;opacity:.28}
 
-/* ── CHECKOUT SHEET ───────────────────────────────── */
-#chkOver{position:fixed;inset:0;z-index:350;background:rgba(0,0,0,.55);display:none;align-items:flex-end}
-#chkOver.open{display:flex}
-#chkSheet{
-  background:var(--bg);border-radius:20px 20px 0 0;width:100%;
-  padding:22px 16px calc(22px + env(safe-area-inset-bottom));
-  animation:su .28s ease-out;
-}
-@keyframes su{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
-#chkSheet h3{font-size:17px;font-weight:800;margin-bottom:16px}
+/* checkout page and profile page: components/checkout-page.css, components/profile-page.css */
 .fg{margin-bottom:12px}
 .fg label{display:block;font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
 .fg input,.fg textarea{
@@ -483,9 +480,6 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 }
 .fg input:focus,.fg textarea:focus{border-color:var(--red)}
 .fg textarea{height:72px;padding:10px 12px;resize:none}
-#placeBtn{width:100%;height:50px;background:var(--red);color:#fff;font-size:16px;font-weight:800;border-radius:6px;margin-top:4px}
-#placeBtn:active{background:var(--red2)}
-#cancelChkBtn{width:100%;height:40px;font-size:13px;color:var(--txt2);margin-top:6px}
 
 /* ── SIDE MENU ────────────────────────────────────── */
 #menuOver{position:fixed;inset:0;z-index:250;background:rgba(0,0,0,0);pointer-events:none;transition:background .28s}
@@ -920,17 +914,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
   </div>
 </div>
 
-<!-- CHECKOUT -->
-<div id="chkOver">
-  <div id="chkSheet">
-    <h3>Complete Your Order</h3>
-    <div class="fg"><label>Full Name</label><input type="text" id="oName" placeholder="Enter your full name"></div>
-    <div class="fg"><label>Phone Number</label><input type="tel" id="oPhone" placeholder="Enter phone number"></div>
-    <div class="fg"><label>Delivery Address</label><textarea id="oAddr" placeholder="Enter delivery address"></textarea></div>
-    <button id="placeBtn">Place Order</button>
-    <button id="cancelChkBtn" onclick="closeCheckout()">Cancel</button>
-  </div>
-</div>
+<!-- CHECKOUT PAGE (#chkPage) and PROFILE PAGE (#profPage) are built by components/checkout-page.js and profile-page.js -->
 
 <script>
 'use strict';
@@ -1768,49 +1752,11 @@ function renderCartList() {
 function openCart()  { renderCartList(); renderRecentRail($('cartRecent'), 0); document.getElementById('cartDrawer').classList.add('open'); document.getElementById('cartOver').classList.add('open'); document.body.style.overflow='hidden'; }
 function closeCart() { document.getElementById('cartDrawer').classList.remove('open'); document.getElementById('cartOver').classList.remove('open'); document.body.style.overflow = $('pModal').classList.contains('open') ? 'hidden' : ''; }
 
-/* ── CHECKOUT ─────────────────────────────────────── */
-function openCheckout()  { if (!cart.length) { toast('Cart is empty'); return; } closeCart(); document.getElementById('chkOver').classList.add('open'); }
-function closeCheckout() { document.getElementById('chkOver').classList.remove('open'); }
-async function legacyPlaceOrder(name, phone, addr) {
-  const {data:orderRow, error} = await sb.from('orders').insert([{
-    customer_name:name, phone, address:addr,
-    items:cart, total:cart.reduce((s,x)=>s+x.price*x.qty,0), status:'pending',
-    user_id: buyerSession ? buyerSession.user.id : null
-  }]).select().single();
-  if (error) throw error;
-  const lineItems = cart.map(x => ({ order_id: orderRow.id, product_id: x.id, vendor_id: x.vendor_id || null, name: x.name, price: x.price, qty: x.qty, status: 'pending' }));
-  const { error: itemsErr } = await sb.from('order_items').insert(lineItems);
-  if (itemsErr) console.error('order_items insert failed:', itemsErr);
-  return { id: orderRow.id, order_number: null };
-}
-document.getElementById('placeBtn').onclick = async () => {
-  const name  = document.getElementById('oName').value.trim();
-  const phone = document.getElementById('oPhone').value.trim();
-  const addr  = document.getElementById('oAddr').value.trim();
-  if (!name||!phone||!addr) { toast('Fill all fields'); return; }
-  document.getElementById('placeBtn').textContent='Placing...';
-  document.getElementById('placeBtn').disabled=true;
-  try {
-    /* One server-side step: prices, sellers and the buyer come from the database, and the order, its lines and the
-       seller shipments are created together. If that function is not installed yet, fall back to the old inserts. */
-    let placed = null;
-    const rpc = await sb.rpc('place_order', { p_name: name, p_phone: phone, p_address: addr, p_items: cart.map(x => ({ id: x.id, qty: x.qty })) });
-    if (!rpc.error) placed = rpc.data;
-    else if (rpc.error.code === 'PGRST202' || /place_order/.test(rpc.error.message || '')) placed = await legacyPlaceOrder(name, phone, addr);
-    else throw rpc.error;
-
-    fetch('/api/notify-order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'placed', orderId: placed.id }) }).catch(() => {});
-
-    cart=[]; saveCart(); updateCartBadge(); closeCheckout();
-    ['oName','oPhone','oAddr'].forEach(id=>document.getElementById(id).value='');
-    toast(placed.order_number ? `Order #${placed.order_number} placed!` + (buyerSession ? ' Track it under My Orders.' : ' Sign in next time to track it.') : 'Order placed! We will contact you soon.');
-  } catch(e) {
-    toast(/no longer available/.test(e.message || '') ? 'An item in your cart is no longer available. Please remove it and try again.' : 'Order failed. Try again.'); console.error(e);
-  } finally {
-    document.getElementById('placeBtn').textContent='Place Order';
-    document.getElementById('placeBtn').disabled=false;
-  }
-};
+/* -- CHECKOUT -------------------------------------- */
+/* The full-screen checkout page lives in components/checkout-page.js. It never sets prices or marks anything paid:
+   /api/checkout builds the order from product ids, and only a verified payment confirmation changes an order's payment status. */
+function openCheckout() { if (!cart.length) { toast('Cart is empty'); return; } closeCart(); Pcx.Checkout.open(); }
+function closeCheckout() { Pcx.Checkout.close(); }
 
 /* ── SEARCH ───────────────────────────────────────── */
 /* Recent searches, live suggestions, typo tolerance, sort + filters: see data/search.js and components/search-page.js */
@@ -1901,7 +1847,7 @@ function dismissInstall() {
 
 /* ── INIT ─────────────────────────────────────────── */
 /* ── BUYER ACCOUNT ────────────────────────────────── */
-function openAccount() { document.getElementById('acctOver').classList.add('open'); document.getElementById('acctDrawer').classList.add('open'); document.body.style.overflow='hidden'; }
+function openAccount() { if (buyerSession && window.Pcx && Pcx.Profile) { Pcx.Profile.open(); return; } document.getElementById('acctOver').classList.add('open'); document.getElementById('acctDrawer').classList.add('open'); document.body.style.overflow='hidden'; }
 /* ── COOKIE CONSENT ───────────────────────────────── */
 /* ── FOOTER + LEGAL ───────────────────────────────── */
 function populateFooter(storeName, tagline, phone, email, address, ig, fb, x) {
@@ -2101,6 +2047,17 @@ function initTrackingPages() {
   if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', e => { if (e.data && e.data.type === 'notification') notifCenter.refreshUnread(); });
 }
 
+/* ── CHECKOUT + PROFILE WIRING ───────────────────── */
+function initBuyerUI() {
+  const common = { sb, session: () => buyerSession, fmt, toast };
+  Pcx.Checkout.init({ ...common, cart: () => cart,
+    sellerName: id => (vendorsMap[id] && vendorsMap[id].business_name) || 'Seller',
+    onPaid: () => { cart = []; saveCart(); updateCartBadge(); },
+    onExit: () => openCart(), openCart: () => openCart(), openOrders: () => Pcx.Profile.openOrders('all') });
+  Pcx.Profile.init({ ...common, signOut: buyerSignOut, openNotifCenter, openLegal,
+    openWishlist: () => showFavorites(), openHistory: () => showList('Recently viewed', recentProducts(), 'Nothing viewed yet'), openSupport: openWhatsAppHelp });
+}
+
 /* ── ADS + BANNER PAGES ───────────────────────────── */
 /* Feed cards: data/ads.js decides where they go; each card is the PromotionalCarousel in single-card mode.
    Pages: components/ad-page.js, opened through #ad=ID (an ad) or #promo=ID (a hero banner that opens a filtered
@@ -2210,10 +2167,12 @@ function initAssistant() {
 }
 
 async function init() {
+  initBuyerUI();
   await checkBuyerSession();
   initTrackingPages();
   initAssistant();
   notifCenter.refreshUnread();
+  Pcx.Checkout.handleReturn();   // finishes a payment when the customer comes back from the payment page
   sb.auth.onAuthStateChange((_event, session) => {
     buyerSession = session;
     if (!session) favSyncedFor = null;

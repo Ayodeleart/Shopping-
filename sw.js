@@ -4,6 +4,7 @@ const PRECACHE = ['/components/sw-register.js', '/', '/index.html', '/manifest.j
   '/components/promotional-carousel.css', '/components/promotional-carousel.js',
   '/components/promotion-slide.js', '/components/drag-gesture.js', '/data/promotions.js',
   '/components/ad-page.css', '/components/ad-page.js', '/data/ads.js', '/components/tile-row.css', '/components/tile-row.js',
+  '/components/checkout-page.css', '/components/checkout-page.js', '/components/profile-page.css', '/components/profile-page.js', '/components/address-search.js', '/data/buyer.js',
   '/components/categories.css', '/components/category-page.js', '/data/categories.js',
   '/components/product-page.css', '/components/product-gallery.js', '/components/image-viewer.js',
   '/data/search.js', '/components/search-page.js', '/components/search-page.css',
