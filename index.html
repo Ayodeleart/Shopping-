@@ -33,8 +33,10 @@
 <script defer src="data/tracking.js"></script>
 <script defer src="components/order-tracking.js"></script>
 <script defer src="components/notification-center.js"></script>
-<link rel="stylesheet" href="components/ai-assistant.css">
-<script defer src="components/ai-assistant.js"></script>
+<link rel="stylesheet" href="components/mac-fab.css">
+<link rel="stylesheet" href="components/mac-chat.css">
+<script defer src="components/mac-fab.js"></script>
+<script defer src="components/mac-chat.js"></script>
 <link rel="stylesheet" href="components/product-page.css">
 <script defer src="components/product-gallery.js"></script>
 <script defer src="components/image-viewer.js"></script>
@@ -2199,36 +2201,26 @@ function initAds(rows, banners, tileRows) {
   window.addEventListener('hashchange', syncAdPage);
 }
 
-/* ── AI SHOPPING ASSISTANT ────────────────────────── */
-/* Floating button on the home page + full-page chat at #assistant (back button closes it, like the other pages).
-   Component: components/ai-assistant.js. Server: /api/assistant (Groq key stays on the server). */
-let aiAssistant = null, aiDeepLinked = false;
-function syncAssistant() {
-  if (!aiAssistant) return;
-  if (location.hash === '#assistant') aiAssistant.open(); else aiAssistant.close();
-}
-function closeAssistantPage() {
-  if (aiDeepLinked) { aiDeepLinked = false; history.replaceState(null, '', location.pathname + location.search); aiAssistant.close(); } else history.back();
-}
+/* ── MAC, THE SHOPPING ASSISTANT ────────────────────────── */
+/* MAC is the floating mascot on the home page (components/mac-fab.js); tapping it opens the chat sheet
+   (components/mac-chat.js). Same server as before, untouched: /api/assistant + /api/assistant-ticket (Groq key
+   stays on the server). MAC hides itself automatically whenever a full-page view or drawer is open, its own
+   chat included, since they all lock body scroll to do it. */
+let macChat = null;
 function initAssistant() {
-  if (aiAssistant || !window.Pcx || !Pcx.Assistant) return;
-  aiAssistant = new Pcx.Assistant({
+  if (macChat || !window.Pcx || !Pcx.MacFab || !Pcx.MacChat) return;
+  Pcx.mac = new Pcx.MacFab({});
+  macChat = new Pcx.MacChat({
+    mac: Pcx.mac,
     getSession: () => buyerSession,
     getStoreName: () => storeName,
     fmt, currency,
-    onOpen: () => { location.hash = 'assistant'; },
-    onBack: closeAssistantPage,
-    /* leave the chat (without adding a history entry), then run the action */
-    onNavigate: fn => { aiDeepLinked = false; history.replaceState(null, '', location.pathname + location.search); aiAssistant.close(); fn(); },
+    onNavigate: fn => { macChat.close(); fn(); },
     openProduct: id => openProduct(Number(id)),
     openOrder: id => openOrder(id),
     openSignIn: () => openAccount(),
     addToCart: (id, qty) => addToCart(Number(id), null, qty || 1, true)
   });
-  aiAssistant.mountFab();
-  aiDeepLinked = location.hash === '#assistant';
-  window.addEventListener('hashchange', syncAssistant);
-  syncAssistant();
 }
 
 async function init() {

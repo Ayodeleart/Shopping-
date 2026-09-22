@@ -1,0 +1,135 @@
+/* Pcx.MacChat: chat panel opened by MAC. Reads the store's own tokens (theme-tokens.css: --bg,--bg2,--bg3,--card,
+ * --txt,--txt2,--txt3,--red,--red2,--gold,--border), switched by [data-theme=dark] on <html>/<body> — nothing here
+ * is a hardcoded light/dark guess, so it always matches whatever theme the shopper is on.
+ * z-index 290: above the header and MAC's own fab, above the store's full pages/drawers; below nothing. */
+.macChat { position: fixed; inset: 0; z-index: 290; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+.macChat[hidden] { display: none; }
+.macChat-scrim { position: absolute; inset: 0; background: rgba(0, 0, 0, .45); opacity: 0; transition: opacity .25s; }
+.macChat.on .macChat-scrim { opacity: 1; }
+
+.macChat-panel {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  height: min(88vh, 640px); max-height: 94vh;
+  display: flex; flex-direction: column;
+  background: var(--bg); color: var(--txt);
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, .25);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  transform: translateY(100%); transition: transform .28s cubic-bezier(.2, .9, .3, 1);
+  overflow: hidden;
+}
+.macChat.on .macChat-panel { transform: none; }
+
+.macChat-head { display: flex; align-items: center; gap: 9px; padding: 10px 6px 10px 12px; border-bottom: 1px solid var(--border); flex: none; }
+.macChat-avatar { width: 38px; height: 38px; flex: none; cursor: pointer; border-radius: 50%; border: none; background: none; padding: 0; }
+.macChat-avatar svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.macChat-avatar:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; border-radius: 50%; }
+.macChat-avatar .mcInk { fill: var(--txt); }
+.macChat-avatar .mcPaper { fill: var(--bg); }
+.macChat-avatar .mcGlint { stroke: var(--bg); stroke-width: 1.4; stroke-linecap: round; fill: none; opacity: .7; }
+.macChat-avatar .mcFace, .macChat-avatar .mcGlasses { transform-box: view-box; transform-origin: 20px 20px; }
+.macChat-avatar .mcGlasses { opacity: 0; }
+/* one 6 s loop: look left, look right, centre, double-nod (glasses drop on), hold, quick shake (glasses lift off) */
+.macChat-avatar svg.play .mcFace { animation: mcFace 6s ease-in-out infinite; }
+.macChat-avatar svg.play .mcGlasses { animation: mcGlasses 6s ease-out infinite; }
+@keyframes mcFace {
+  0%, 4% { transform: translate(0, 0) rotate(0) scaleX(1); }
+  9%, 15% { transform: translate(-5px, 0) scaleX(.82); }
+  24%, 34% { transform: translate(5px, 0) scaleX(.82); }
+  42% { transform: translate(0, 0) scaleX(1); }
+  46% { transform: translate(0, 3.5px); } 50% { transform: translate(0, .5px); } 54% { transform: translate(0, 3.5px); }
+  60%, 80% { transform: translate(0, 0); }
+  84% { transform: rotate(-9deg); } 87% { transform: rotate(7deg); } 90% { transform: rotate(-5deg); } 93%, 100% { transform: rotate(0); }
+}
+@keyframes mcGlasses {
+  0%, 50% { opacity: 0; transform: translateY(-16px); }
+  57% { opacity: 1; transform: translateY(1.5px); }
+  60%, 82% { opacity: 1; transform: translateY(0); }
+  90%, 100% { opacity: 0; transform: translateY(-16px); }
+}
+
+.macChat-title { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
+.macChat-title b { font-size: 14.5px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.macChat-title small { font-size: 11px; color: var(--txt3); }
+.macChat-lang { height: 32px; max-width: 108px; border: 1px solid var(--border); border-radius: 16px; background: var(--bg2); color: var(--txt); font-size: 12.5px; font-weight: 600; padding: 0 8px; font-family: inherit; flex: none; }
+.macChat-lang:focus-visible { outline: 2px solid var(--red); }
+.macChat-ib { width: 38px; height: 38px; flex: none; border: 0; background: none; color: var(--txt); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.macChat-ib:hover { background: var(--bg2); }
+.macChat-ib.warn { color: var(--red); }
+.macChat button:focus-visible, .macChat-ib:focus-visible { outline: 2px solid var(--red); outline-offset: 1px; }
+.macChat textarea:focus-visible { outline: none; }
+
+.macChat-log { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding: 14px 12px 8px; display: flex; flex-direction: column; gap: 10px; }
+.macChat-turn { display: flex; flex-direction: column; max-width: 90%; gap: 6px; flex: none; }
+.macChat-turn.me { align-self: flex-end; align-items: flex-end; }
+.macChat-turn.bot { align-self: flex-start; align-items: flex-start; }
+.macChat-msg { padding: 9px 13px; border-radius: 16px; font-size: 14.5px; line-height: 1.45; word-wrap: break-word; overflow-wrap: anywhere; }
+.macChat-msg p { margin: 0; } .macChat-msg p + p, .macChat-msg p + ul, .macChat-msg ul + p { margin-top: 6px; } .macChat-msg ul { margin: 0; padding-left: 18px; }
+.macChat-turn.me .macChat-msg { background: var(--red); color: #fff; border-bottom-right-radius: 4px; white-space: pre-wrap; }
+.macChat-turn.bot .macChat-msg { background: var(--bg2); color: var(--txt); border-bottom-left-radius: 4px; }
+.macChat-msg.err { background: transparent; border: 1px solid var(--red); color: var(--txt); }
+.macChat-retry { border: 0; background: var(--red); color: #fff; font: inherit; font-size: 13px; font-weight: 700; height: 34px; padding: 0 14px; border-radius: 17px; cursor: pointer; }
+
+.macChat-typing { display: inline-flex; gap: 4px; padding: 12px 14px; align-self: flex-start; }
+.macChat-typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--txt3); opacity: .35; animation: mcDot 1.1s infinite ease-in-out; }
+.macChat-typing span:nth-child(2) { animation-delay: .15s; } .macChat-typing span:nth-child(3) { animation-delay: .3s; }
+@keyframes mcDot { 0%, 60%, 100% { opacity: .3; transform: none; } 30% { opacity: 1; transform: translateY(-3px); } }
+
+.macChat-empty { margin: auto 0; padding: 10px 6px 4px; text-align: center; flex: none; }
+.macChat-empty h2 { font-size: 17px; font-weight: 800; margin-bottom: 6px; }
+.macChat-empty p { font-size: 13.5px; color: var(--txt2); max-width: 300px; margin: 0 auto 14px; line-height: 1.45; }
+.macChat-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.macChat-chip { padding: 8px 13px; border-radius: 18px; border: 1px solid var(--border); background: var(--bg); color: var(--txt); font: inherit; font-size: 13px; font-weight: 600; text-align: left; cursor: pointer; }
+.macChat-chip:hover { border-color: var(--txt); }
+
+.macChat-extras { display: flex; flex-direction: column; gap: 8px; width: min(320px, 84vw); }
+.mcPc { display: flex; gap: 10px; padding: 8px; border: 1px solid var(--border); border-radius: 12px; background: var(--card); }
+.mcPc img, .mcPh { width: 68px; height: 68px; border-radius: 9px; object-fit: cover; background: var(--bg2); flex: none; display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--txt3); font-size: 19px; }
+.mcPi { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.mcPn { font-size: 13.5px; font-weight: 700; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.mcPp { font-size: 14px; font-weight: 800; color: var(--red); }
+.mcPp s { font-size: 11.5px; font-weight: 500; color: var(--txt3); margin-left: 5px; }
+.mcPa { font-size: 11.5px; font-weight: 700; }
+.mcPa.in_stock { color: #0a8a3a; } .mcPa.low_stock { color: #b26a00; } .mcPa.out_of_stock { color: var(--txt3); }
+.mcPr { font-size: 12px; color: var(--txt2); line-height: 1.35; }
+.mcBtns { display: flex; gap: 6px; margin-top: 5px; flex-wrap: wrap; }
+.mcBtn { height: 32px; padding: 0 12px; border-radius: 16px; font: inherit; font-size: 12.5px; font-weight: 700; border: 1px solid var(--border); background: var(--bg); color: var(--txt); cursor: pointer; }
+.mcBtn.pri { background: var(--red); border-color: var(--red); color: #fff; }
+.mcBtn:disabled { opacity: .55; }
+.mcBtn:focus-visible { outline: 2px solid var(--red); outline-offset: 1px; }
+.mcBox { border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; background: var(--card); font-size: 13px; line-height: 1.45; }
+.mcBox h4 { font-size: 13px; font-weight: 800; margin-bottom: 5px; }
+.mcBox dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; }
+.mcBox dt { color: var(--txt3); } .mcBox dd { word-break: break-word; }
+.mcCmp { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--border); border-radius: 12px; width: min(90vw, 460px); }
+.mcCmp table { border-collapse: collapse; font-size: 12.5px; min-width: 100%; }
+.mcCmp th, .mcCmp td { padding: 7px 9px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; min-width: 108px; }
+.mcCmp th:first-child, .mcCmp td:first-child { min-width: 74px; color: var(--txt3); font-weight: 600; position: sticky; left: 0; background: var(--bg); }
+.mcCmp th { font-weight: 700; }
+.mcOrd { display: flex; justify-content: space-between; gap: 10px; align-items: center; padding: 9px 11px; border: 1px solid var(--border); border-radius: 12px; background: var(--card); font: inherit; font-size: 13px; width: 100%; text-align: left; cursor: pointer; color: inherit; }
+.mcOrd b { font-weight: 800; } .mcOrd small { display: block; color: var(--txt3); font-size: 11.5px; }
+
+.macChat-form { display: flex; align-items: flex-end; gap: 8px; padding: 10px 12px 6px; flex: none; }
+.macChat-input { flex: 1; resize: none; border: 1px solid var(--border); background: var(--bg2); color: var(--txt); font: inherit; font-size: 16px; line-height: 1.35; padding: 11px 14px; border-radius: 21px; max-height: 120px; min-height: 42px; }
+.macChat-input:focus { border-color: var(--red); background: var(--bg); }
+.macChat-send { width: 42px; height: 42px; flex: none; border: 0; border-radius: 50%; background: var(--red); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.macChat-send:disabled { opacity: .4; }
+.macChat-note { flex: none; margin: 0; padding: 0 16px 10px; font-size: 11px; color: var(--txt3); text-align: center; }
+
+@media (min-width: 720px) {
+  .macChat-scrim { background: transparent; pointer-events: none; }
+  .macChat-panel {
+    left: auto; right: 24px; bottom: 24px; width: 400px; height: min(640px, calc(100vh - 48px));
+    border-radius: 20px; border: 1px solid var(--border);
+    box-shadow: 0 18px 60px rgba(0, 0, 0, .28);
+    transform: translateY(24px) scale(.97); opacity: 0; transform-origin: 90% 100%;
+    transition: transform .22s, opacity .2s;
+  }
+  .macChat.isLeft .macChat-panel { right: auto; left: 24px; transform-origin: 10% 100%; }
+  .macChat.on .macChat-panel { transform: none; opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .macChat-panel, .macChat-scrim { transition-duration: .01s; }
+  .macChat-typing span { animation: none; opacity: .6; }
+  .macChat-avatar svg.play .mcFace, .macChat-avatar svg.play .mcGlasses { animation-duration: 9s; }
+}
