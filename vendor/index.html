@@ -9,6 +9,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" sizes="32x32" href="app-icon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script src="../data/safe.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -16,7 +17,8 @@
 :root{--bg:#fff;--bg2:#f5f5f5;--bg3:#ebebeb;--card:#fff;--txt:#111;--txt2:#555;--txt3:#999;--red:#D91C2D;--red2:#a81422;--green:#16a34a;--amber:#d97706;--border:#e0e0e0;--shadow:0 2px 12px rgba(0,0,0,.06);--r:12px}
 [data-theme=dark]{--bg:#0d0d0d;--bg2:#1a1a1a;--bg3:#242424;--card:#1a1a1a;--txt:#f5f5f5;--txt2:#aaa;--txt3:#666;--red:#e8192c;--red2:#c01525;--green:#22c55e;--amber:#f59e0b;--border:#2a2a2a;--shadow:0 2px 12px rgba(0,0,0,.4)}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh}
+html{overscroll-behavior:none}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;overscroll-behavior:none;touch-action:manipulation}
 button{cursor:pointer;border:none;background:none;font-family:inherit;color:inherit}
 input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 
@@ -761,7 +763,7 @@ async function boot() {
 function obChecklistHtml(v) {
   const row = (ok, label) => `<div style="display:flex;align-items:center;gap:8px;padding:5px 0">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${ok ? '#16a34a' : 'var(--txt3)'}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-    <span style="color:${ok ? 'var(--txt)' : 'var(--txt3)'}">${label}</span></div>`;
+    <span style="color:${ok ? 'var(--txt)' : 'var(--txt3)'}">${esc(label)}</span></div>`;
   return [
     row(!!v.store_name || !!v.store_slug, 'Store information'),
     row(!!v.email_verified_at, 'Email verified'),
@@ -807,7 +809,7 @@ function obInit() {
     document.getElementById('obStoreName').value = vendorRow.business_name || '';
     document.getElementById('obStoreSlug').value = vendorRow.store_slug || '';
     document.getElementById('obStoreDesc').value = vendorRow.store_description || '';
-    if (vendorRow.logo_url) { document.getElementById('obLogoPreview').src = vendorRow.logo_url; document.getElementById('obLogoPreview').style.display = 'block'; document.getElementById('obLogoPickTxt').style.display = 'none'; }
+    if (vendorRow.logo_url) { document.getElementById('obLogoPreview').src = safeHref(vendorRow.logo_url); document.getElementById('obLogoPreview').style.display = 'block'; document.getElementById('obLogoPickTxt').style.display = 'none'; }
     document.getElementById('obTitle').value = vendorRow.title || '';
     document.getElementById('obFirstName').value = vendorRow.first_name || '';
     document.getElementById('obMiddleName').value = vendorRow.middle_name || '';
@@ -960,10 +962,10 @@ async function obVerifyIdentity() {
 async function obLoadBanks() {
   const sel = document.getElementById('obBank');
   try {
-    const res = await fetch('/api/paystack-banks');
+    const res = await fetch('/api/verify-bank');
     const json = await res.json();
     if (!json.configured || !json.banks.length) { sel.innerHTML = '<option value="">Enter bank name manually below</option>'; return; }
-    sel.innerHTML = '<option value="">Select your bank</option>' + json.banks.map(b => `<option value="${b.code}" data-name="${b.name.replace(/"/g, '')}">${b.name}</option>`).join('');
+    sel.innerHTML = '<option value="">Select your bank</option>' + json.banks.map(b => `<option value="${esc(b.code)}" data-name="${esc(b.name.replace(/"/g, ''))}">${esc(b.name)}</option>`).join('');
     if (vendorRow?.bank_code) sel.value = vendorRow.bank_code;
   } catch (e) { sel.innerHTML = '<option value="">Could not load bank list</option>'; }
 }
@@ -997,9 +999,9 @@ async function obVerifyBank() {
 /* ===== REVIEW ===== */
 function obRenderReview() {
   const g = id => document.getElementById(id).value;
-  document.getElementById('obRevStore').innerHTML = `<b>${g('obStoreName') || '-'}</b><br>maccato.com/store/${g('obStoreSlug') || '-'}<br>${g('obStoreDesc') || ''}`;
-  document.getElementById('obRevPersonal').innerHTML = `${g('obTitle')} ${g('obFirstName')} ${g('obMiddleName')} ${g('obLastName')}<br>DOB: ${g('obDob') || '-'} · ${g('obGender') || '-'}`;
-  document.getElementById('obRevAddress').innerHTML = `${g('obAddress') || '-'}<br>${g('obCity') || ''}, ${g('obLga') || ''}, ${g('obState') || ''}<br>${g('obLandmark') || ''}`;
+  document.getElementById('obRevStore').innerHTML = `<b>${esc(g('obStoreName') || '-')}</b><br>maccato.com/store/${esc(g('obStoreSlug') || '-')}<br>${esc(g('obStoreDesc') || '')}`;
+  document.getElementById('obRevPersonal').innerHTML = `${esc(g('obTitle'))} ${esc(g('obFirstName'))} ${esc(g('obMiddleName'))} ${esc(g('obLastName'))}<br>DOB: ${esc(g('obDob') || '-')} · ${esc(g('obGender') || '-')}`;
+  document.getElementById('obRevAddress').innerHTML = `${esc(g('obAddress') || '-')}<br>${esc(g('obCity') || '')}, ${esc(g('obLga') || '')}, ${esc(g('obState') || '')}<br>${esc(g('obLandmark') || '')}`;
   const idStatus = document.getElementById('obIdStatus').textContent ? 'Submitted' : 'Not started';
   const bankStatus = document.getElementById('obBankStatus').textContent ? 'Submitted' : 'Not started';
   document.getElementById('obRevVerify').innerHTML = `Email: ${session.user.email_confirmed_at ? 'verified' : 'not verified'}<br>Phone: ${document.getElementById('obPhoneVerifiedTag').style.display !== 'none' ? 'verified' : 'not verified'}<br>Identity: ${idStatus}<br>Bank: ${bankStatus}`;
@@ -1190,14 +1192,14 @@ async function loadProducts() {
   if (!data || !data.length) { list.innerHTML = '<div class="empty">No products yet. Add your first one above.</div>'; return; }
   list.innerHTML = data.map(p => `
     <div class="pitem">
-      <img src="${p.image_url || ''}" onerror="this.style.opacity=0">
+      <img src="${safeUrl(p.image_url || '')}" onerror="this.style.opacity=0">
       <div class="pinfo">
-        <div class="pname">${p.name}</div>
-        <div class="pmeta">₦${Number(p.price).toLocaleString()} · Stock ${p.stock ?? 0} · ${p.category || 'Uncategorized'}</div>
+        <div class="pname">${esc(p.name)}</div>
+        <div class="pmeta">₦${Number(p.price).toLocaleString()} · Stock ${esc(p.stock ?? 0)} · ${esc(p.category || 'Uncategorized')}</div>
       </div>
       <div class="pacts">
-        <button class="iconBtn" onclick="editProduct(${p.id})" aria-label="Edit"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg></button>
-        <button class="iconBtn" onclick="deleteProduct(${p.id})" aria-label="Delete"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
+        <button class="iconBtn" onclick="editProduct(${num(p.id)})" aria-label="Edit"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg></button>
+        <button class="iconBtn" onclick="deleteProduct(${num(p.id)})" aria-label="Delete"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
       </div>
     </div>
   `).join('');
@@ -1344,19 +1346,19 @@ async function loadOrdersLegacy() {
     .eq('vendor_id', session.user.id)
     .order('created_at', { ascending: false });
   const list = document.getElementById('ordList');
-  if (error) { list.innerHTML = `<div class="empty">Failed to load orders: ${error.message}</div>`; return; }
+  if (error) { list.innerHTML = `<div class="empty">Failed to load orders: ${esc(error.message)}</div>`; return; }
   if (!data || !data.length) { list.innerHTML = '<div class="empty">No orders yet.</div>'; return; }
 
   list.innerHTML = data.map(oi => `
     <div class="ordCard">
       <div class="ordTop">
-        <div class="ordName">${oi.orders?.customer_name || 'Customer'}</div>
+        <div class="ordName">${esc(oi.orders?.customer_name || 'Customer')}</div>
         <div class="ordDate">${new Date(oi.created_at).toLocaleDateString()}</div>
       </div>
-      <div class="ordLine"><span>${oi.name} × ${oi.qty}</span><span>₦${Number(oi.price * oi.qty).toLocaleString()}</span></div>
-      <div style="font-size:11px;color:var(--txt3);margin-top:4px">${oi.orders?.phone || ''} · ${oi.orders?.address || ''}</div>
-      <select class="statusSel" onchange="updateOrderStatus(${oi.id}, this.value)">
-        ${['pending','processing','shipped','completed','cancelled'].map(s => `<option value="${s}" ${oi.status === s ? 'selected' : ''}>${s[0].toUpperCase() + s.slice(1)}</option>`).join('')}
+      <div class="ordLine"><span>${esc(oi.name)} × ${esc(oi.qty)}</span><span>₦${Number(oi.price * oi.qty).toLocaleString()}</span></div>
+      <div style="font-size:11px;color:var(--txt3);margin-top:4px">${esc(oi.orders?.phone || '')} · ${esc(oi.orders?.address || '')}</div>
+      <select class="statusSel" onchange="updateOrderStatus(${num(oi.id)}, this.value)">
+        ${['pending','processing','shipped','completed','cancelled'].map(s => `<option value="${s}" ${oi.status === s ? 'selected' : ''}>${esc(s[0].toUpperCase() + s.slice(1))}</option>`).join('')}
       </select>
     </div>
   `).join('');
@@ -1442,7 +1444,7 @@ async function loadNotifications() {
   list.innerHTML = data.map(oi => `
     <div class="notifItem">
       <div class="notifItem-top"><span>New order</span><span>${new Date(oi.created_at).toLocaleString()}</span></div>
-      <div class="notifItem-msg">${oi.name} × ${oi.qty}</div>
+      <div class="notifItem-msg">${esc(oi.name)} × ${esc(oi.qty)}</div>
     </div>`).join('');
   localStorage.setItem('lastSeenNotif_' + session.user.id, data[0]?.created_at || '');
   document.getElementById('vBellDot').style.display = 'none';

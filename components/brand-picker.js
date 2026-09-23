@@ -45,7 +45,7 @@
       img.alt = '';
       img.decoding = 'async';
       img.addEventListener('error', function () { img.remove(); fallback(); }, { once: true });
-      img.src = url;
+      img.src = safeHref(url);
       box.appendChild(img);
     } else fallback();
     return box;

@@ -69,7 +69,7 @@
       img.decoding = 'async';
       img.draggable = false;
       if (i === 0) img.fetchPriority = 'high'; else img.loading = 'lazy';
-      img.src = u;
+      img.src = safeHref(u);
       s.appendChild(img);
       s.addEventListener('click', function () { if (self.o.onOpen) self.o.onOpen(i); });
       track.appendChild(s);

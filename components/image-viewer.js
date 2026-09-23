@@ -80,7 +80,7 @@
       img.alt = (self.o.alt || 'Photo') + ' ' + (i + 1) + ' of ' + n;
       img.draggable = false;
       img.decoding = 'async';
-      img.src = u;
+      img.src = safeHref(u);
       slide.appendChild(img);
       track.appendChild(slide);
       return img;
@@ -112,7 +112,7 @@
         var b = h('button', 'iv__thumb');
         b.type = 'button';
         b.setAttribute('aria-label', 'Show photo ' + (i + 1));
-        var t = h('img'); t.alt = ''; t.src = u; t.draggable = false;
+        var t = h('img'); t.alt = ''; t.src = safeHref(u); t.draggable = false;
         b.appendChild(t);
         b.addEventListener('click', function () { self._go(i, true); });
         thumbs.appendChild(b);

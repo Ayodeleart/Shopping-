@@ -3,7 +3,8 @@
  * components/product-card.css and components/seller-brand.css. */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{scroll-behavior:smooth}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--txt);overflow-x:hidden}
+html{overscroll-behavior:none}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--txt);overflow-x:hidden;overscroll-behavior:none;touch-action:manipulation}
 button{cursor:pointer;border:none;background:none;font-family:inherit;color:inherit}
 img{display:block;object-fit:cover}
 a{text-decoration:none;color:inherit}

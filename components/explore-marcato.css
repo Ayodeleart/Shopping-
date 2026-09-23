@@ -1,0 +1,76 @@
+/* ── EXPLORE MARCATO ──────────────────────────────────────────────
+ * Portrait, swipeable destination cards for the specialized Marcato worlds.
+ * 3 cards fit the screen on mobile; the rest slide into view on swipe — same sizing idea as
+ * the tile row's `calc((100% - gaps) / N)` columns (see components/tile-row.css). */
+#exploreSec{background:var(--bg)}
+.xmHd{padding:14px 13px 2px}
+.xmHd .secTtl{font-size:18px;font-weight:900;letter-spacing:-.3px}
+.xmSub{display:block;font-size:12.5px;color:var(--txt3);font-weight:500;margin-top:2px}
+
+.xmRow{
+  display:grid;grid-auto-flow:column;grid-auto-columns:calc((100% - 20px) / 3);gap:10px;
+  overflow-x:auto;padding:12px 13px 16px;
+  scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;scrollbar-width:none;
+}
+.xmRow::-webkit-scrollbar{display:none}
+
+.xmCard{
+  position:relative;min-width:0;aspect-ratio:3/4;
+  scroll-snap-align:start;
+  border-radius:14px;overflow:hidden;isolation:isolate;
+  background:var(--xm-grad);
+  box-shadow:0 3px 10px rgba(0,0,0,.14);
+  display:flex;flex-direction:column;justify-content:flex-end;
+  text-align:left;color:#fff;
+  transition:transform .18s ease;
+}
+.xmCard:active{transform:scale(.97)}
+
+.xmCard::after{
+  content:'';position:absolute;inset:0;z-index:1;
+  background:linear-gradient(0deg,rgba(0,0,0,.66) 0%,rgba(0,0,0,.08) 50%,rgba(0,0,0,0) 66%);
+}
+
+.xmCard-img{position:absolute;inset:0;z-index:0;width:100%;height:100%;object-fit:cover}
+
+.xmCard-art{
+  position:absolute;top:8px;right:8px;z-index:2;
+  width:28px;height:28px;border-radius:50%;
+  background:rgba(255,255,255,.18);
+  display:flex;align-items:center;justify-content:center;
+  backdrop-filter:blur(2px);
+}
+.xmCard-icon{width:15px;height:15px;color:#fff}
+
+.xmCard-body{position:relative;z-index:2;padding:0 8px 8px;padding-right:30px;display:flex;flex-direction:column;gap:1px}
+.xmCard-name{
+  font-size:12.5px;font-weight:800;letter-spacing:-.1px;line-height:1.2;text-shadow:0 1px 4px rgba(0,0,0,.25);
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+.xmCard-tag{
+  font-size:9.5px;font-weight:600;color:rgba(255,255,255,.86);line-height:1.25;margin-top:1px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+
+.xmCard-go{
+  position:absolute;z-index:2;bottom:8px;right:8px;
+  width:18px;height:18px;border-radius:50%;flex-shrink:0;
+  background:rgba(255,255,255,.92);color:#111;
+  display:flex;align-items:center;justify-content:center;
+}
+.xmCard-go svg{width:10px;height:10px}
+
+@media (min-width:720px){
+  .xmRow{padding:12px 24px 20px;gap:16px;max-width:1200px;margin:0 auto;grid-auto-columns:150px;justify-content:start}
+  .xmHd{max-width:1200px;margin:0 auto;padding-left:24px;padding-right:24px}
+  .xmCard{border-radius:18px}
+  .xmCard-art{top:12px;right:12px;width:38px;height:38px}
+  .xmCard-icon{width:19px;height:19px}
+  .xmCard-body{padding:0 12px 12px;padding-right:36px}
+  .xmCard-name{font-size:15px}
+  .xmCard-tag{font-size:11px}
+  .xmCard-go{width:24px;height:24px;bottom:12px;right:12px}
+  .xmCard-go svg{width:13px;height:13px}
+}
+@media (prefers-reduced-motion:reduce){.xmCard{transition:none}}
+

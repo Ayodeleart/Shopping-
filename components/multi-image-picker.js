@@ -113,7 +113,7 @@
       var img = document.createElement('img');
       img.alt = '';
       img.draggable = false;
-      img.src = it.url || it.preview;
+      img.src = safeHref(it.url || it.preview);
       cell.appendChild(img);
       if (idx === 0 && o.max > 1) {
         var tag = document.createElement('span'); tag.className = 'mip__tag'; tag.textContent = 'Main'; cell.appendChild(tag);

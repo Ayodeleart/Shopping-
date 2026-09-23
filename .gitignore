@@ -4,3 +4,4 @@ node_modules/
 !.env.example
 .vercel/
 _t/
+migration_wallet_delivery.sql

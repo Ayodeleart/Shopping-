@@ -30,7 +30,7 @@
 
   /* ── GLOBAL STATE product-card.js expects to find ─────────────── */
   window.currency = '₦';
-  window.fmt = n => window.currency + Number(n).toLocaleString('en-NG');
+  window.fmt = n => (window.esc ? window.esc(window.currency) : window.currency) + Number(n).toLocaleString('en-NG');
   window.ratingMap = {};
   try { window.cart = JSON.parse(localStorage.getItem('cart_v3')) || []; } catch (e) { window.cart = []; }
   try { window.favs = new Set((JSON.parse(localStorage.getItem('favs_v1')) || []).map(Number)); } catch (e) { window.favs = new Set(); }
@@ -213,7 +213,7 @@
     const rating = storeRatingSummary();
     if (rating) {
       $('heroRating').style.display = 'flex';
-      $('heroRating').innerHTML = `${starsHTML(rating.avg, 14)}<span>${rating.avg.toFixed(1)} · ${rating.n} review${rating.n !== 1 ? 's' : ''} across their products</span>`;
+      $('heroRating').innerHTML = `${starsHTML(rating.avg, 14)}<span>${rating.avg.toFixed(1)} · ${esc(rating.n)} review${rating.n !== 1 ? 's' : ''} across their products</span>`;
     }
   }
 
@@ -227,7 +227,7 @@
     el.textContent = '';
     if (!url) { el.textContent = letter; return; }
     const img = document.createElement('img');
-    img.src = url;
+    img.src = safeHref(url);
     img.alt = '';
     img.onerror = () => { el.textContent = letter; };
     el.appendChild(img);
