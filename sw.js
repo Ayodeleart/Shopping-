@@ -1,4 +1,4 @@
-const CACHE = 'store-v13';
+const CACHE = 'store-v14';
 const SCOPE_HOME = '/';
 const PRECACHE = ['/components/sw-register.js', '/data/safe.js', '/', '/index.html', '/manifest.json', '/icon.svg',
   '/components/promotional-carousel.css', '/components/promotional-carousel.js',
