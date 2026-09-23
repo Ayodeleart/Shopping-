@@ -962,7 +962,7 @@ async function obVerifyIdentity() {
 async function obLoadBanks() {
   const sel = document.getElementById('obBank');
   try {
-    const res = await fetch('/api/paystack-banks');
+    const res = await fetch('/api/verify-bank');
     const json = await res.json();
     if (!json.configured || !json.banks.length) { sel.innerHTML = '<option value="">Enter bank name manually below</option>'; return; }
     sel.innerHTML = '<option value="">Select your bank</option>' + json.banks.map(b => `<option value="${esc(b.code)}" data-name="${esc(b.name.replace(/"/g, ''))}">${esc(b.name)}</option>`).join('');

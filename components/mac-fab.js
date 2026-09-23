@@ -31,7 +31,15 @@
   var TAU = Math.PI * 2, PI = Math.PI;
   var PERIOD = 0.85;                 // seconds per hop
   var JUMP = 120;                    // hop height, in drawing units
-  var VB_W = 244, VB_H = 456;
+  var REF_W = 244, REF_H = 456;                    // the original design canvas: every drawing coordinate (head at 200,180, etc.) is relative to this
+  /* MAC's motion genuinely paints outside that canvas — up to ~140 units above it at the peak of a bounce, ~55
+     units either side during a turn (measured directly by sweeping every animation state and reading back each
+     part's real rendered position). Relying on CSS overflow:visible for that is what caused the clipping: it
+     isn't honored the same way everywhere, and a moving robot is the wrong place to find that out. So the actual
+     <svg> viewBox below is padded well past the measured worst case, and the container is scaled up to match —
+     REF_W/REF_H stay the reference for that scaling, so `size` still means the same on-screen size as before. */
+  var PAD_L = 70, PAD_R = 75, PAD_T = 170, PAD_B = 15;
+  var VB_X = 78 - PAD_L, VB_Y = 22 - PAD_T, VB_W = REF_W + PAD_L + PAD_R, VB_H = REF_H + PAD_T + PAD_B;
   var R = 106, RY = 92, K = RY / R;  // head: sphere of radius R, squashed vertically to RY
   var FX = 1.06;                     // face features are drawn a touch wider than the flat design
   var EAR_PHI = (180 - 183) / RY;
@@ -73,7 +81,7 @@
 
   function buildSVG(u) {
     return [
-      '<svg viewBox="78 22 ' + VB_W + ' ' + VB_H + '" aria-hidden="true" focusable="false">',
+      '<svg viewBox="' + VB_X + ' ' + VB_Y + ' ' + VB_W + ' ' + VB_H + '" aria-hidden="true" focusable="false">',
       '<defs>',
         '<radialGradient id="' + u + 'h" cx=".32" cy=".24" r=".62"><stop offset="0" stop-color="#fff" stop-opacity=".36"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>',
         '<radialGradient id="' + u + 's" cx=".38" cy=".3" r=".85"><stop offset=".5" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".45"/></radialGradient>',
@@ -179,7 +187,7 @@
     el.setAttribute('role', 'button');
     el.setAttribute('tabindex', '0');
     el.setAttribute('aria-label', 'MAC, your shopping helper');
-    el.style.width = o.size + 'px';
+    el.style.width = (o.size * VB_W / REF_W) + 'px';   // container is padded; scaled up so the character itself still renders at `size`
     el.innerHTML = buildSVG('mac' + (++uid)) + '<div class="macFab-bubble" role="status" aria-live="polite"></div>';
     this.bubble = el.querySelector('.macFab-bubble');
     var parts = this.p = {}, nodes = el.querySelectorAll('[data-p]');
@@ -276,7 +284,7 @@
 
   /* ---------- position ---------- */
   P._bounds = function () {
-    var w = this.el.offsetWidth || this.o.size, h = this.el.offsetHeight || Math.round(this.o.size * VB_H / VB_W);
+    var w = this.el.offsetWidth || (this.o.size * VB_W / REF_W), h = this.el.offsetHeight || Math.round(w * VB_H / VB_W);
     var cs = getComputedStyle(this._probe);
     var ins = { t: parseFloat(cs.paddingTop) || 0, r: parseFloat(cs.paddingRight) || 0, b: parseFloat(cs.paddingBottom) || 0, l: parseFloat(cs.paddingLeft) || 0 };
     var hh = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hh')) || 0;

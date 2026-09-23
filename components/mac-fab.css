@@ -6,7 +6,7 @@
 .macFab {
   --mac-ink: var(--txt, #111);
   --mac-paper: var(--bg, #fff);
-  --mac-accent: var(--red, #D91C2D);
+  --mac-accent: var(--mac-accent-user, var(--red, #D91C2D));
   position: fixed; left: 0; top: 0; z-index: 180;
   width: 60px;
   touch-action: none;
@@ -32,8 +32,8 @@
 .macFab .mline { stroke: var(--mac-ink); }
 .macFab .mpline { stroke: var(--mac-paper); }
 .macFab .macSh { fill: #000; }
-.macFab .macBall { transition: fill .2s; }
-.macFab.isJoy .macBall { fill: var(--mac-accent); }
+.macFab .macBall { transition: fill .2s; fill: var(--mac-accent); }
+html.mac-pride .macFab .macBall { fill: url(#mac-pride-grad); }
 .macFab .macTxt {
   font: 800 30px ui-rounded, "SF Pro Rounded", -apple-system, "Segoe UI", Roboto, sans-serif;
   letter-spacing: 1px;

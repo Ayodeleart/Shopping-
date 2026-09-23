@@ -1,4 +1,4 @@
-const CACHE = 'store-v12';
+const CACHE = 'store-v14';
 const SCOPE_HOME = '/';
 const PRECACHE = ['/components/sw-register.js', '/data/safe.js', '/', '/index.html', '/manifest.json', '/icon.svg',
   '/components/promotional-carousel.css', '/components/promotional-carousel.js',
@@ -9,7 +9,7 @@ const PRECACHE = ['/components/sw-register.js', '/data/safe.js', '/', '/index.ht
   '/data/search.js', '/components/search-page.js', '/components/search-page.css',
   '/data/tracking.js', '/components/order-tracking.css', '/components/order-tracking.js',
   '/components/notification-center.css', '/components/notification-center.js',
-  '/components/mac-fab.css', '/components/mac-fab.js', '/components/mac-chat.css', '/components/mac-chat.js'];
+  '/components/mac-fab.css', '/components/mac-fab.js', '/components/mac-chat.css', '/components/mac-chat.js', '/components/mac-theme.js'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(PRECACHE).catch(() => {})));
