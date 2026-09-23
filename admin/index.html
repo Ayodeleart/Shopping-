@@ -358,6 +358,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
         <div id="pPicker"></div>
         <div class="uprog" id="pImgProg"><div class="uprog-bar" id="pImgProgBar" style="width:0%"></div></div>
         <label class="rmbgToggle"><input type="checkbox" id="pRmBg"> Remove background from new photos</label>
+        <div class="ad-hint" id="pRmBgHint" style="margin-top:4px">Turned on automatically when the category is under <b>Beauty</b> — the main photo is cut out with the secure server pipeline (original photo is kept). Other categories use in-browser removal.</div>
       </div>
       <div style="background:var(--bg2);border-radius:10px;padding:2px 10px;margin-bottom:12px">
         <div class="tgl-row"><label>Featured</label><div class="tgl" id="pFeatTgl" onclick="this.classList.toggle('on')"><div class="tgl-k"></div></div></div>
@@ -382,6 +383,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
       <button class="bsub-tab on" data-sub="banners" onclick="switchBannerSub('banners')">Banners</button>
       <button class="bsub-tab" data-sub="tiles" onclick="switchBannerSub('tiles')">Tiles</button>
       <button class="bsub-tab" data-sub="worlds" onclick="switchBannerSub('worlds')">Explore Marcato</button>
+      <button class="bsub-tab" data-sub="beauty" onclick="switchBannerSub('beauty')">Beauty</button>
       <button class="bsub-tab" data-sub="ads" onclick="switchBannerSub('ads')">Ads</button>
       <button class="bsub-tab" data-sub="announce" onclick="switchBannerSub('announce')">Announcements</button>
     </div>
@@ -456,6 +458,9 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
         <div id="deviceList"></div>
       </div>
     </div>
+
+    <!-- BEAUTY WORLD (background, hero slides, category tiles; module: admin/beauty.js) -->
+    <div id="beautyPane" style="display:none"></div>
   </div>
 
 
@@ -761,6 +766,42 @@ function selectColor(el, c) { document.querySelectorAll('.csw').forEach(s => s.c
 
 /* ===== PRODUCTS ===== */
 let editProdId = null;
+let editProdImgUrl = null;   // main photo before this edit (to detect a changed Beauty main photo)
+let pRmBgTouched = false;    // admin manually changed the checkbox, so stop auto-managing it
+
+/* True when the selected category is Beauty or sits under the Beauty main category. */
+function isBeautyCategory() {
+  const id = catPicker.getValue();
+  if (id == null || !catTree) return false;
+  const root = catTree.bySlug && catTree.bySlug['beauty'];
+  if (!root || root.active === false) return false;
+  const ids = (catTree.descendantIds && catTree.descendantIds(root.id)) || [];
+  return Number(id) === root.id || ids.includes(Number(id));
+}
+
+/* Secure server-side background removal (remove.bg via Vercel env vars — the key
+   never reaches this page). Returns the transparent PNG URL, or null on any
+   failure so the caller keeps the original photo. The server caches per image,
+   so the same photo is never processed twice. */
+async function removeBgServer(url) {
+  try {
+    const res = await fetch('/api/remove-bg', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data && data.url ? data.url : null;
+  } catch (e) { return null; }
+}
+
+/* Keep the checkbox in sync with the selected category until the admin touches it. */
+function syncRmBgAutoCheck() {
+  if (!pRmBgTouched) document.getElementById('pRmBg').checked = isBeautyCategory();
+}
+document.getElementById('pRmBg').addEventListener('change', () => { pRmBgTouched = true; });
+document.getElementById('pCat').addEventListener('change', syncRmBgAutoCheck);
 
 async function saveProduct() {
   const name = document.getElementById('pName').value.trim();
@@ -771,9 +812,14 @@ async function saveProduct() {
   showLoad('Saving product...');
   try {
     const removeBg = document.getElementById('pRmBg').checked;
+    const beautyCat = isBeautyCategory();
+    let beautyCutout = null;
     const urls = await pPicker.resolve(async (file) => {
       let f = file, transparent = false;
-      if (removeBg) {
+      /* Beauty products use the secure server pipeline on the MAIN photo after
+         upload (remove.bg via /api/remove-bg.js, cached in Storage) so the API
+         key never reaches the browser. Other categories keep the in-browser removal. */
+      if (removeBg && !beautyCat) {
         showLoad('Removing background...');
         try { f = await removeImageBackground(file); transparent = true; }
         catch (e) { toast('Background removal failed -- using original photo', true); }
@@ -781,6 +827,13 @@ async function saveProduct() {
       }
       return uploadImage(f, 'products', 'pImgProgBar', 'pImgProg', transparent);
     });
+
+    if (removeBg && beautyCat && urls.length) {
+      showLoad('Removing background...');
+      beautyCutout = await removeBgServer(urls[0]);
+      if (!beautyCutout) toast('Background removal unavailable — using the original photo', true);
+      showLoad('Saving product...');
+    }
 
     /* make sure the chosen brand is in the brands table (saved with its logo) */
     let brandRow = null;
@@ -805,6 +858,12 @@ async function saveProduct() {
       featured: document.getElementById('pFeatTgl').classList.contains('on'),
       flash_sale: document.getElementById('pFlashTgl').classList.contains('on')
     };
+    /* Beauty: transparent main photo (server-side cutout). The original photo in
+       image_url is always kept; Beauty surfaces show beauty_image_url when present. */
+    if (beautyCat) {
+      if (beautyCutout) prod.beauty_image_url = beautyCutout;
+      else if (editProdId && urls[0] && urls[0] !== editProdImgUrl) prod.beauty_image_url = null; /* main photo changed, no fresh cutout */
+    }
     const aiExtras = aiProd.extras();            // tags / alt text from the reviewed AI draft, kept inside the existing attributes column
     if (aiExtras) prod.attributes = Object.assign({}, editProdAttrs || {}, aiExtras);
 
@@ -817,8 +876,8 @@ async function saveProduct() {
       const { brand_id, ...noBrandId } = prod;
       ({ error } = await write(noBrandId));
     }
-    if (error && /images|brand|category_id/i.test(error.message)) {   // columns not added yet: save the main photo anyway
-      const { images, brand, brand_id, category_id, ...rest } = prod;
+    if (error && /images|brand|category_id|beauty_image_url/i.test(error.message)) {   // columns not added yet: save the main photo anyway
+      const { images, brand, brand_id, category_id, beauty_image_url, ...rest } = prod;
       ({ error } = await write(rest));
       legacy = !error;
     }
@@ -843,6 +902,8 @@ function cancelProdEdit() {
   document.getElementById('pPrice').value = '';
   catPicker.clear();
   document.getElementById('pRmBg').checked = false;
+  pRmBgTouched = false;
+  editProdImgUrl = null;
   pPicker.clear();
   aiProd.reset(); editProdAttrs = null;
   document.getElementById('pFeatTgl').classList.remove('on');
@@ -856,6 +917,8 @@ async function editProduct(id) {
   const { data: p, error } = await sb.from('products').select('*').eq('id', id).single();
   if (error || !p) { toast('Load failed', true); return; }
   editProdId = id;
+  editProdImgUrl = p.image_url || null;
+  pRmBgTouched = false;
   document.getElementById('pName').value = p.name;
   brandPicker.setByProduct(p.brand_id, p.brand);
   document.getElementById('pPrice').value = p.price;
@@ -866,6 +929,7 @@ async function editProduct(id) {
     if (m.length === 1) catId = m[0].id;
   }
   catPicker.setValue(catId);
+  syncRmBgAutoCheck();
   document.getElementById('pStock').value = p.stock || '';
   document.getElementById('pMaxStock').value = p.max_stock || '';
   document.getElementById('pDesc').value = p.description || '';
@@ -1478,6 +1542,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 <script src="../data/worlds.js"></script>
 <script src="worlds.js"></script>
 <script src="categories.js"></script>
+<script src="../data/beauty.js"></script>
+<script src="beauty.js"></script>
 <script src="orders.js"></script>
 </body>
 </html>

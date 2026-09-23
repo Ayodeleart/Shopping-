@@ -111,6 +111,37 @@ Needs the ads and storage SQL run once in the Supabase SQL editor. It also fixes
 - **Products**: admin and vendors can add several photos; the first is the main photo. The product page shows a swipe gallery.
 - Code: `components/ad-page.js`, `components/multi-image-picker.js`, `data/ads.js`, `admin/ads.js`, `admin/ads-sections.js`.
 
+## Beauty world (Explore Marcato > Beauty)
+
+Needs `migration_beauty.sql` run once in the Supabase SQL editor. The Beauty world is NOT a separate
+system — it is a liquid-glass view over the existing store data:
+
+- **Where**: the Explore Marcato row (a world card), opens at `#world=beauty`. Products belong to Beauty
+  when they are filed under the **Beauty** main category (the migration seeds it; add subcategories like
+  Makeup/Skincare in Admin > Categories). If a category click / search / filter has no real products, it
+  shows a clean empty state — nothing is faked.
+- **Page** (top to bottom): Beauty search bar (the existing search engine over Beauty products), an
+  auto-sliding hero (admin-managed slides, GIFs animate), round glass category tiles, a "New In" row,
+  and all products with real filters (All / Newest / Popular / Man / Woman / Kids — the last three only
+  exist when a matching real category exists). A sticky glass header with the filter chips + the existing
+  search / favorites / cart / profile actions appears once the search bar scrolls away. There is no bottom
+  navigation anywhere.
+- **Product page**: opening a Beauty product themes the EXISTING product page (same blurred background,
+  gold accent, glass surfaces), shows the transparent cutout as the main photo when one exists, and adds a
+  thumbnail strip when the product has multiple photos. Real reviews only; "Sold by" opens the seller's
+  existing `/store/...` page.
+- **Background removal (server-side)**: for Beauty products the "Remove background" toggle is turned on
+  automatically and the main photo is cut out by `/api/remove-bg.js` (remove.bg, key in the Vercel env var
+  `REMOVE_BG_API_KEY`, never in the browser). The transparent PNG is cached in Storage
+  (`avatars/beauty-cutouts/<hash>.png`) so the same photo is never processed twice; on any failure the
+  original photo is used and the page never breaks. The original photo is always kept (`image_url`).
+- **Admin > Banners > Beauty**: set the Beauty background (upload/replace/remove/enable), manage the hero
+  slides (add, image/GIF, title, subtitle, CTA, destination, reorder, pause, delete) and the category tiles
+  (add, rename, link to a real existing category or keyword-match, image/GIF, reorder, hide, delete).
+  Tables: `beauty_heroes`, `beauty_categories`, `beauty_settings` (public read; signed-in admin write).
+- Code: `data/beauty.js`, `components/beauty-world.js/.css`, `components/world-page.js` (delegation),
+  `api/remove-bg.js`, `admin/beauty.js`, `migration_beauty.sql`.
+
 ## ⚡ Multi-vendor upgrade (read this first)
 
 This repo now has three separate installable PWAs:
