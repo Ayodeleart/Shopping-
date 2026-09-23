@@ -508,6 +508,10 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
       <div id="pAttrs"></div>
       <div class="fld"><label>Short description</label><textarea id="pDesc" rows="3" placeholder="One or two lines about the product"></textarea></div>
       <div class="fld"><label>Full description (optional)</label><div id="pBlocks"></div></div>
+      <div class="fld" id="pPairWrap" style="display:none">
+        <label>Pairs well with <span style="font-weight:400;color:var(--txt3,#888)">(shown as &ldquo;Complete your meal&rdquo; on the product page)</span></label>
+        <div id="pPairList" style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;border:1px solid var(--border,#e8e8e8);border-radius:8px;padding:8px"></div>
+      </div>
       <div class="btnRow">
         <button class="btnCancel" id="pCancelBtn" style="display:none">Cancel</button>
         <button class="btnSave" id="pSaveBtn">Add Product</button>
@@ -552,6 +556,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 <script src="../components/product-attributes.js"></script>
 <script src="../components/ai-product.js"></script>
 <script src="../data/categories.js"></script>
+<script src="../data/food-pairings.js"></script>
 <script src="../data/tracking.js"></script>
 <script src="orders.js"></script>
 <script src="../components/category-picker.js"></script>
@@ -1185,9 +1190,11 @@ const aiProd = new Pcx.AIProduct(document.getElementById('pAI'), {
 });
 
 /* ===== PRODUCTS (scoped to this vendor only) ===== */
+let myProductsCache = [];
 async function loadProducts() {
   const { data, error } = await sb.from('products').select('*').eq('vendor_id', session.user.id).order('created_at', { ascending: false });
   if (error) { toast('Failed to load products: ' + error.message, true); return; }
+  myProductsCache = data || [];
   const list = document.getElementById('pList');
   if (!data || !data.length) { list.innerHTML = '<div class="empty">No products yet. Add your first one above.</div>'; return; }
   list.innerHTML = data.map(p => `
@@ -1203,6 +1210,48 @@ async function loadProducts() {
       </div>
     </div>
   `).join('');
+}
+
+/* "Pairs well with" — only shown for a food product being edited (pairings need a saved
+   product id on both sides, so this doesn't apply to a brand-new, unsaved product).
+   Each checkbox writes straight to product_pairings; RLS only lets a vendor link two of
+   their own products, so this can never pair with another restaurant's food. */
+async function loadPairPicker(p) {
+  const wrap = document.getElementById('pPairWrap'), list = document.getElementById('pPairList');
+  const isFood = catTree && window.Pcx && Pcx.FoodPairings && Pcx.FoodPairings.isFoodProduct(p, catTree);
+  const others = myProductsCache.filter(x => x.id !== p.id);
+  if (!isFood || !others.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+  list.innerHTML = '<div style="font-size:12px;color:var(--txt3,#888)">Loading…</div>';
+  let existing = [];
+  try {
+    const { data, error } = await sb.from('product_pairings').select('pair_product_id').eq('product_id', p.id);
+    if (error) throw error;
+    existing = (data || []).map(r => r.pair_product_id);
+  } catch (e) { /* product_pairings not migrated on this deployment yet — picker still renders, just unchecked */ }
+  const existSet = new Set(existing);
+  list.innerHTML = others.map(o => `
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+      <input type="checkbox" data-pair-id="${num(o.id)}" ${existSet.has(o.id) ? 'checked' : ''}>
+      <span>${esc(o.name)}</span>
+    </label>`).join('');
+  list.querySelectorAll('[data-pair-id]').forEach(cb => {
+    cb.addEventListener('change', async () => {
+      const pairId = Number(cb.dataset.pairId);
+      try {
+        if (cb.checked) {
+          const { error } = await sb.from('product_pairings').insert([{ product_id: p.id, pair_product_id: pairId }]);
+          if (error) throw error;
+        } else {
+          const { error } = await sb.from('product_pairings').delete().eq('product_id', p.id).eq('pair_product_id', pairId);
+          if (error) throw error;
+        }
+      } catch (e) {
+        cb.checked = !cb.checked;
+        toast(/product_pairings/i.test(e.message || '') ? 'Run the food pairings SQL in Supabase first.' : 'Could not save pairing: ' + e.message, true);
+      }
+    });
+  });
 }
 
 window.editProduct = async (id) => {
@@ -1226,6 +1275,7 @@ window.editProduct = async (id) => {
   pAttrs.load(p.attributes, catPicker.names().length ? catPicker.names() : p.category);
   pBlocks.setBlocks(p.description_blocks);
   aiProd.reset(); aiProd.setExisting(p.attributes);
+  loadPairPicker(p);
   document.getElementById('pCancelBtn').style.display = 'block';
   document.getElementById('pSaveBtn').textContent = 'Update Product';
   document.getElementById('panel-products').scrollIntoView({ behavior: 'smooth' });
@@ -1256,6 +1306,8 @@ function resetProdForm() {
   pAttrs.clear();
   pBlocks.clear();
   aiProd.reset();
+  document.getElementById('pPairWrap').style.display = 'none';
+  document.getElementById('pPairList').innerHTML = '';
   document.getElementById('pCancelBtn').style.display = 'none';
   document.getElementById('pSaveBtn').textContent = 'Add Product';
 }

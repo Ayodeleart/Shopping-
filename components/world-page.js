@@ -59,6 +59,11 @@
     root.textContent = '';
     root.style.setProperty('--wp-grad', world.gradient);
 
+    if (world.slug === 'food' && global.Pcx && global.Pcx.FoodWorld) {
+      global.Pcx.FoodWorld.mount(root, world, { onBack: d.onBack });
+      return;
+    }
+
     var hdr = h('header', 'wp-hdr');
     var back = h('button', 'wp-back'); back.type = 'button'; back.setAttribute('aria-label', 'Back'); back.innerHTML = BACK;
     back.addEventListener('click', function () { d.onBack(); });

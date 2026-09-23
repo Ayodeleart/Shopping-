@@ -24,6 +24,8 @@
 <script defer src="components/explore-marcato.js"></script>
 <link rel="stylesheet" href="components/world-page.css">
 <script defer src="components/world-page.js"></script>
+<link rel="stylesheet" href="components/food-world.css">
+<script defer src="components/food-world.js"></script>
 <script defer src="components/ad-page.js"></script>
 <script defer src="data/ads.js"></script>
 <link rel="stylesheet" href="components/categories.css">
@@ -45,8 +47,11 @@
 <script defer src="components/mac-fab.js"></script>
 <script defer src="components/mac-chat.js"></script>
 <link rel="stylesheet" href="components/product-page.css">
+<link rel="stylesheet" href="components/food-pairing-ui.css">
 <script defer src="components/product-gallery.js"></script>
 <script defer src="components/image-viewer.js"></script>
+<script src="data/food-pairings.js"></script>
+<script src="components/food-pairing-ui.js"></script>
 <link rel="stylesheet" href="components/theme-tokens.css">
 <link rel="stylesheet" href="components/product-card.css">
 <link rel="stylesheet" href="components/seller-brand.css">
@@ -869,6 +874,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
         </div>
       </div>
       <a class="pBulk" id="pBulk" href="#" style="display:none">Call us for Bulk Purchases<b id="pBulkNum"></b></a>
+      <div id="pPairing" class="pPairing" style="display:none"></div>
       <div class="pActions">
         <a class="pCallBtn" id="pCallBtn" href="#" aria-label="Call" style="display:none">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
@@ -1516,6 +1522,30 @@ function renderGrid(prods, id, withAds, emptyMsg) {
 /* Photos: components/product-gallery.js (auto-rotating) + components/image-viewer.js (full screen).
    Everything shown here comes from real data: no placeholder ratings, reviews or counts. */
 let pGal = null, pViewer = null, pCur = null, pQty = 1, pHist = [];
+let foodPairingUI = null, pairingRowsPromise = null;
+function ensureFoodPairingUI() {
+  if (!foodPairingUI) foodPairingUI = new Pcx.FoodPairingUI($('pPairing'), { fmt, esc });
+  return foodPairingUI;
+}
+/* product_pairings is small (vendor-curated links only) and read once per session, like ratingMap. */
+function ensurePairingRows() {
+  if (!pairingRowsPromise) {
+    pairingRowsPromise = sb.from('product_pairings').select('product_id,pair_product_id,sort_order')
+      .then(({ data, error }) => { if (error) throw error; return data || []; })
+      .catch(() => []);   // table may not exist yet on older deployments — pairings simply don't show
+  }
+  return pairingRowsPromise;
+}
+function renderPairings(p) {
+  const ui = ensureFoodPairingUI();
+  if (!catTree || !Pcx.FoodPairings.isFoodProduct(p, catTree)) { ui.reset(); return; }
+  ensurePairingRows().then(rows => {
+    if (pCur !== p) return;   // the customer already moved to another product
+    const sugg = Pcx.FoodPairings.suggestionsFor(p, { catTree, allProds, explicitRows: rows });
+    ui.render(sugg, p);
+    ui.onChange(() => {});
+  });
+}
 
 const ICON_TRUCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="14" height="11" rx="1"/><path d="M15 9h4l3 3v5h-7"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>';
 const ICON_RETURN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>';
@@ -1606,6 +1636,7 @@ function openProduct(id, isBack) {
   $('pDescMore').firstChild.textContent = 'See more ';
   renderBlocks(blocks);
   renderSpecs(p);
+  renderPairings(p);
 
   renderDelivery();
   buildRails(p, sellerName);
@@ -1673,13 +1704,25 @@ function toggleDesc() {
 
 function pQtyChange(d) { pQty = Math.max(1, Math.min(99, pQty + d)); $('pQtyN').textContent = String(pQty); }
 
-function pAddToCart() { if (pCur) addToCart(pCur.id, pGal && pGal.currentImage(), pQty, true); }
+function pAddToCart() {
+  if (!pCur) return;
+  addToCart(pCur.id, pGal && pGal.currentImage(), pQty, true);
+  addPairingsToCart();
+}
 
 function pBuyNow() {
   if (!pCur) return;
   const ex = cart.find(x => x.id === pCur.id);
   if (ex) { ex.qty = pQty; saveCart(); updateCartBadge(); } else cartAdd(pCur, pQty);
+  addPairingsToCart();
   openCheckout();
+}
+
+/* Pairings are never added on their own — only alongside the main product, and only the
+   quantities the customer actually chose with the [+] control (0 = not added). */
+function addPairingsToCart() {
+  if (!foodPairingUI) return;
+  foodPairingUI.getSelections().forEach(sel => cartAdd(sel.product, sel.qty));
 }
 
 function viewSeller() {

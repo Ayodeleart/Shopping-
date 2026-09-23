@@ -1,0 +1,18 @@
+/* components/food-pairing-ui.css — "Complete your meal" on the product page.
+ * Loaded only when a product actually has pairing suggestions (see index.html renderPairings). */
+.pPairing{margin:16px 0;padding-top:16px;border-top:1px solid var(--border)}
+.pPairingHd{font-size:16px;font-weight:800;color:var(--txt);margin-bottom:2px}
+.pPairingSub{font-size:12.5px;color:var(--txt3);margin-bottom:12px}
+.pPairRow{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.pPairRow:last-child{border-bottom:none}
+.pPairImg{width:52px;height:52px;border-radius:10px;flex-shrink:0;overflow:hidden;background:var(--bg2);display:flex;align-items:center;justify-content:center}
+.pPairImg img{width:100%;height:100%;object-fit:cover}
+.pPairInfo{flex:1;min-width:0}
+.pPairName{font-size:13.5px;font-weight:600;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pPairPrice{font-size:13px;color:var(--txt2);margin-top:1px}
+.pPairQty{display:flex;align-items:center;border:1.5px solid var(--border);border-radius:8px;overflow:hidden;height:34px;flex-shrink:0}
+.pPairQty button{width:34px;height:100%;display:flex;align-items:center;justify-content:center;color:var(--txt);font-size:16px}
+.pPairQty button:active{background:var(--bg2)}
+.pPairQty b{min-width:26px;text-align:center;font-size:13.5px;font-weight:700;font-variant-numeric:tabular-nums}
+.pPairTotalRow{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:10px;border-top:1px dashed var(--border);font-size:14px;font-weight:700;color:var(--txt)}
+.pPairTotalRow span{color:var(--txt2);font-weight:600}
