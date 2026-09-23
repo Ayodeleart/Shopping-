@@ -2031,7 +2031,7 @@ function populateFooter(storeName, tagline, phone, email, address, ig, fb, x) {
   document.getElementById('ftCopyright').textContent = `© ${new Date().getFullYear()} ${storeName}. All rights reserved.`;
 
   document.getElementById('ftWorlds').innerHTML = Worlds.list().map(w =>
-    `<a href="#world=${w.slug}" onclick="openWorld('${w.slug}');return false">${w.name}</a>`
+    `<a href="#world=${esc(w.slug)}" onclick="openWorld('${hs(w.slug)}');return false">${esc(w.name)}</a>`
   ).join('');
 
   const phoneEl = document.getElementById('ftPhone');
@@ -2139,7 +2139,7 @@ async function loadWallet() {
   const LABEL = { deposit: 'Deposit', purchase: 'Purchase', refund: 'Refund', reversal: 'Reversal', adjustment: 'Adjustment' };
   const SIGN = { deposit: '+', purchase: '-', refund: '+', reversal: '', adjustment: '' };
   list.innerHTML = txs.map(t => `<div style="display:flex;justify-content:space-between;padding:4px 0">
-    <span>${LABEL[t.transaction_type] || t.transaction_type}${t.status !== 'completed' ? ' (' + t.status + ')' : ''}</span>
+    <span>${esc(LABEL[t.transaction_type] || t.transaction_type)}${t.status !== 'completed' ? ' (' + esc(t.status) + ')' : ''}</span>
     <span>${SIGN[t.transaction_type] || ''}₦${Number(t.amount).toLocaleString()}</span>
   </div>`).join('');
 }
@@ -2155,7 +2155,7 @@ async function openWalletDeposit() {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Could not start payment');
-    window.location.href = data.authorization_url;   // customer pays on Paystack's own page; wallet is credited by the webhook, never by this redirect
+    window.location.href = safeHref(data.authorization_url);   // customer pays on Paystack's own page; wallet is credited by the webhook, never by this redirect
   } catch (e) { toast(e.message || 'Could not start payment', true); }
 }
 
