@@ -64,6 +64,11 @@
       return;
     }
 
+    if (world.slug === 'beauty' && global.Pcx && global.Pcx.BeautyWorld) {
+      global.Pcx.BeautyWorld.mount(root, world, { onBack: d.onBack, beauty: d.beauty && d.beauty() });
+      return;
+    }
+
     var hdr = h('header', 'wp-hdr');
     var back = h('button', 'wp-back'); back.type = 'button'; back.setAttribute('aria-label', 'Back'); back.innerHTML = BACK;
     back.addEventListener('click', function () { d.onBack(); });

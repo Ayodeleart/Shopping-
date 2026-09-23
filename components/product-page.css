@@ -86,3 +86,21 @@
   .iv__nav--next{right:16px}
 }
 @media (prefers-reduced-motion:reduce){.iv,.iv__track.is-anim,.iv__img.is-anim{transition:none}}
+
+/* thumbnail strip (opt-in via Pcx.ProductGallery { thumbnails: true } — Beauty product pages) */
+.pgal__thumbs{
+  position:absolute;left:0;right:0;bottom:0;z-index:2;
+  display:flex;gap:7px;overflow-x:auto;padding:9px 10px calc(9px + env(safe-area-inset-bottom));
+  background:linear-gradient(180deg, transparent, rgba(0,0,0,.34));
+  scrollbar-width:none;-webkit-overflow-scrolling:touch;
+}
+.pgal__thumbs::-webkit-scrollbar{display:none}
+.pgal__thumb{
+  position:relative;width:42px;height:42px;flex-shrink:0;border-radius:10px;overflow:hidden;
+  border:1.5px solid rgba(255,255,255,.65);background:#fff;cursor:pointer;padding:0;
+  box-shadow:0 2px 8px rgba(0,0,0,.18);opacity:.82;
+  transition:opacity .15s,border-color .15s,transform .12s;
+}
+.pgal__thumb:active{transform:scale(.94)}
+.pgal__thumb img{width:100%;height:100%;object-fit:contain;display:block}
+.pgal__thumb.is-active{opacity:1;border-color:var(--gold,#F5B301);box-shadow:0 0 0 2px rgba(245,179,1,.35)}
