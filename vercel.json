@@ -3,6 +3,7 @@
     "api/assistant.js": { "maxDuration": 30 },
     "api/assistant-ticket.js": { "maxDuration": 15 },
     "api/ai-product.js": { "maxDuration": 45 },
+    "api/remove-bg.js": { "maxDuration": 60 },
     "api/wallet-delivery.js": { "maxDuration": 30 }
   },
   "rewrites": [

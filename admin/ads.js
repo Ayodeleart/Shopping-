@@ -303,16 +303,19 @@
     reload: async function () { loaded = false; if (pane().offsetParent) await this.open(); }
   };
 
-  /* Banners | Ads | Announcements switch */
+  /* Banners | Tiles | Explore Marcato | Beauty | Ads | Announcements switch */
   window.switchBannerSub = function (which) {
     document.querySelectorAll('.bsub-tab').forEach(function (t) { t.classList.toggle('on', t.dataset.sub === which); });
     document.getElementById('bannersPane').style.display = which === 'banners' ? '' : 'none';
     document.getElementById('tilesPane').style.display = which === 'tiles' ? '' : 'none';
     document.getElementById('worldsPane').style.display = which === 'worlds' ? '' : 'none';
+    var bp = document.getElementById('beautyPane');
+    if (bp) bp.style.display = which === 'beauty' ? '' : 'none';
     document.getElementById('adsPane').style.display = which === 'ads' ? '' : 'none';
     document.getElementById('announcePane').style.display = which === 'announce' ? '' : 'none';
     if (which === 'ads') window.AdsAdmin.open();
     if (which === 'tiles') window.TilesAdmin.open();
     if (which === 'worlds') window.WorldsAdmin.open();
+    if (which === 'beauty' && window.BeautyAdmin) window.BeautyAdmin.open();
   };
 })();

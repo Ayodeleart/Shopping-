@@ -117,12 +117,39 @@
       this._on(global, 'resize', function () { self.go(self.idx, true); });
 
       this.play();
+
+      /* optional thumbnail strip (Beauty product pages): tap a thumb to jump to that photo.
+         Only rendered when requested AND there is more than one photo, so a single-photo
+         product never shows an empty/meaningless strip. */
+      if (this.o.thumbnails) {
+        var thumbs = h('div', 'pgal__thumbs');
+        thumbs.setAttribute('role', 'tablist');
+        thumbs.setAttribute('aria-label', 'Photo thumbnails');
+        this.thumbBtns = imgs.map(function (u, i) {
+          var b = h('button', 'pgal__thumb');
+          b.type = 'button';
+          b.setAttribute('role', 'tab');
+          b.setAttribute('aria-label', 'Show photo ' + (i + 1));
+          var im = h('img');
+          im.src = safeHref(u);
+          im.alt = '';
+          im.loading = 'lazy';
+          im.draggable = false;
+          b.appendChild(im);
+          b.addEventListener('click', function () { self.go(i); self._nudge(); });
+          thumbs.appendChild(b);
+          return b;
+        });
+        root.appendChild(thumbs);
+        this._paintDots();
+      }
     }
   };
 
   P._paintDots = function () {
     var i = this.idx;
     this.dots.forEach(function (d, k) { d.classList.toggle('is-active', k === i); });
+    (this.thumbBtns || []).forEach(function (t, k) { t.classList.toggle('is-active', k === i); });
   };
 
   P.go = function (i, instant) {
