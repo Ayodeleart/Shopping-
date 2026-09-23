@@ -50,25 +50,39 @@ test('mac-theme: an unknown id falls back to default rather than applying garbag
 });
 
 /* ---------------- header layout ---------------- */
-test('settings icon sits between the reload (new chat) icon and the close (X) icon', () => {
+test('header shows exactly reload, settings, close \u2014 in that order \u2014 and nothing else', () => {
   const w = boot(); const chat = mk(w); chat.open();
-  const order = [...w.document.querySelectorAll('.macChat-headChat .macChat-ib')].map(b => b.getAttribute('data-act'));
+  const order = [...w.document.querySelectorAll('.macChat-head .macChat-ib')].map(b => b.getAttribute('data-act'));
   assert.deepEqual(order, ['new', 'settings', 'close']);
 });
 
 /* ---------------- settings screen open/close ---------------- */
-test('opening settings swaps the header and body; back returns to the chat', () => {
+test('opening settings adds one overlay class and marks the chat underneath inert; back removes both', () => {
   const w = boot(); const chat = mk(w); chat.open();
   w.document.querySelector('[data-act="settings"]').click();
-  assert.equal(w.document.querySelector('.macChat-headChat').hidden, true);
-  assert.equal(w.document.querySelector('.macChat-headSettings').hidden, false);
-  assert.equal(w.document.querySelector('.macChat-settings').hidden, false);
-  assert.equal(w.document.querySelector('.macChat-log').hidden, true);
-  assert.equal(w.document.querySelector('.macChat-form').hidden, true);
+  assert.equal(chat.panel.classList.contains('settingsOpen'), true);
+  assert.equal(chat.head.hasAttribute('inert'), true);
+  assert.equal(chat.log.hasAttribute('inert'), true);
+  assert.equal(chat.form.hasAttribute('inert'), true);
+  // exactly one settings overlay, with its own header \u2014 not a second copy of the chat header
+  assert.equal(w.document.querySelectorAll('.macChat-settings').length, 1);
+  assert.equal(w.document.querySelectorAll('.macChat-head').length, 1);
+  assert.equal(w.document.querySelector('.macChat-settings-head b').textContent, 'Settings');
   w.document.querySelector('[data-act="back"]').click();
-  assert.equal(w.document.querySelector('.macChat-headChat').hidden, false);
-  assert.equal(w.document.querySelector('.macChat-settings').hidden, true);
-  assert.equal(w.document.querySelector('.macChat-log').hidden, false);
+  assert.equal(chat.panel.classList.contains('settingsOpen'), false);
+  assert.equal(chat.head.hasAttribute('inert'), false);
+});
+test('close (X) works from inside settings too, and there is only ever one close button visible in the DOM tree it lives in', () => {
+  const w = boot(); const chat = mk(w); chat.open();
+  w.document.querySelector('[data-act="settings"]').click();
+  const closes = [...w.document.querySelectorAll('[data-act="close"]')];
+  assert.equal(closes.length, 3);          // the scrim, the (now-inert) chat header, and the settings overlay
+  const btnCloses = closes.filter(n => n.tagName === 'BUTTON');
+  assert.equal(btnCloses.length, 2);
+  assert.equal(chat.head.contains(btnCloses[0]), true);
+  assert.equal(chat.settingsPanel.contains(btnCloses[1]), true);
+  btnCloses[1].click();
+  assert.equal(chat.isOpen, false);
 });
 test('settings lists all five languages and the colour swatches, including Pride', () => {
   const w = boot(); const chat = mk(w); chat.open();
@@ -159,4 +173,18 @@ test('reset needs a second tap and re-renders in the current language; close wor
   w.document.querySelector('[data-act="settings"]').click();
   w.document.querySelector('[data-act="close"]').click();
   assert.equal(chat.isOpen, false);
+});
+
+/* ---------------- CSS regression guards ---------------- */
+test('regression: no rule sets display on .macChat-head* siblings without scoping to a state class (the exact bug that showed two headers at once)', () => {
+  const css = fs.readFileSync(path.join(__dirname, '../components/mac-chat.css'), 'utf8');
+  const bad = /\.macChat-headChat[\s,]|\.macChat-headSettings[\s,{.]/;
+  assert.equal(bad.test(css), false, 'the old dual-header classes should be gone entirely, not just relabelled');
+  assert.match(css, /\.macChat-settings\s*\{[^}]*display:\s*none/);
+  assert.match(css, /\.macChat-panel\.settingsOpen \.macChat-settings\s*\{[^}]*display:\s*flex/);
+});
+test('regression: MAC\u2019s accent colour is applied to the FAB unconditionally, not only during the .isJoy bounce', () => {
+  const css = fs.readFileSync(path.join(__dirname, '../components/mac-fab.css'), 'utf8');
+  assert.match(css, /\.macFab \.macBall\s*\{[^}]*fill:\s*var\(--mac-accent\)/);
+  assert.doesNotMatch(css, /\.macFab\.isJoy \.macBall\s*\{[^}]*fill:\s*var\(--mac-accent\)/);
 });

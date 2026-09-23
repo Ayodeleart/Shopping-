@@ -395,19 +395,33 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 #cookieDecline{background:var(--bg2);color:var(--txt)}
 
 /* ── FOOTER ───────────────────────────────────────── */
-#siteFooter{background:var(--bg2);padding:32px 16px calc(24px + 66px);margin-top:20px}
+/* Its own palette regardless of site theme: solid black in light mode, brand red in dark mode.
+   Both are dark backgrounds, so text stays light either way. */
+#siteFooter{
+  --ft-bg:#0d0d0d;--ft-txt:#fff;--ft-txt2:rgba(255,255,255,.82);--ft-txt3:rgba(255,255,255,.56);
+  --ft-border:rgba(255,255,255,.14);--ft-chip:rgba(255,255,255,.1);
+  background:var(--ft-bg);padding:32px 16px calc(24px + 66px);margin-top:20px;
+}
+[data-theme=dark] #siteFooter{--ft-bg:var(--red);--ft-border:rgba(255,255,255,.24);--ft-chip:rgba(255,255,255,.16)}
 .ftTop{display:grid;grid-template-columns:1fr 1fr;gap:24px 16px;margin-bottom:24px}
 .ftCol{display:flex;flex-direction:column;gap:9px}
+.ftCol#ftWorlds,#ftWorlds{display:flex;flex-direction:column;gap:9px}
 .ftLogo{display:flex;align-items:center;gap:8px;margin-bottom:2px}
 .ftLogo img{height:26px;width:auto}
-.ftLogo span{font-size:17px;font-weight:900;color:var(--txt)}
-.ftTag{font-size:12.5px;color:var(--txt3);line-height:1.5}
-.ftHead{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--txt3);margin-bottom:2px}
-.ftCol a,.ftCol span{font-size:13.5px;color:var(--txt2);text-decoration:none}
+.ftLogo span{font-size:17px;font-weight:900;color:var(--ft-txt)}
+.ftTag{font-size:12.5px;color:var(--ft-txt3);line-height:1.5}
+.ftHead{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--ft-txt3);margin-bottom:2px}
+.ftCol a,.ftCol span,#ftWorlds a{font-size:13.5px;color:var(--ft-txt2);text-decoration:none}
+.ftCol a:active,#ftWorlds a:active{opacity:.7}
 .ftSocial{display:flex;gap:10px;margin-top:4px}
-.ftSocial a{width:32px;height:32px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;color:var(--txt2)}
-.ftBottom{border-top:1px solid var(--border);padding-top:16px;display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--txt3)}
-.ftBottom a{color:var(--txt3);text-decoration:underline}
+.ftSocial a{width:32px;height:32px;border-radius:50%;background:var(--ft-chip);display:flex;align-items:center;justify-content:center;color:var(--ft-txt2)}
+.ftBottom{border-top:1px solid var(--ft-border);padding-top:16px;display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--ft-txt3)}
+.ftBottom a{color:var(--ft-txt3);text-decoration:underline}
+@media (min-width:720px){
+  .ftTop{grid-template-columns:1.4fr 1fr 1fr 1fr 1fr;gap:24px;max-width:1200px;margin:0 auto 28px}
+  .ftBottom{max-width:1200px;margin:0 auto}
+}
+
 
 /* ── PER-CATEGORY ROWS (admin-chosen accent color) ───*/
 .catRowSec{margin-bottom:4px}
@@ -699,16 +713,24 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
       <a href="#allSec">All Products</a>
       <a href="#cat=all">All Categories</a>
       <a href="#flashSec">Flash Sales</a>
-      <a href="/vendor/" target="_blank">Sell on Maccato</a>
+      <a href="#vendorSec">Vendors</a>
+    </div>
+    <div class="ftCol">
+      <div class="ftHead">Explore Marcato</div>
+      <div id="ftWorlds"></div>
     </div>
     <div class="ftCol">
       <div class="ftHead">Account</div>
       <a href="#" onclick="openAccount();return false">My Account</a>
       <a href="#" onclick="openAccount();setTimeout(showMyOrders,150);return false">My Orders</a>
+      <a href="#" onclick="openNotifCenter();return false">Notifications</a>
+      <a href="#" onclick="showFavorites();return false">Saved Items</a>
       <a href="#" onclick="openCart();return false">My Cart</a>
     </div>
     <div class="ftCol" id="ftContactCol">
-      <div class="ftHead">Contact</div>
+      <div class="ftHead">Support</div>
+      <a href="#" onclick="openWhatsAppHelp();return false">Need Help?</a>
+      <a href="/vendor/" target="_blank">Sell on Maccato</a>
       <a href="#" id="ftPhone" style="display:none"></a>
       <a href="#" id="ftEmail" style="display:none"></a>
       <span id="ftAddress" style="display:none"></span>
@@ -932,6 +954,18 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
       <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="34" height="34"><path opacity="0.4" d="M12.1207 12.78C12.0507 12.77 11.9607 12.77 11.8807 12.78C10.1207 12.72 8.7207 11.28 8.7207 9.50998C8.7207 7.69998 10.1807 6.22998 12.0007 6.22998C13.8107 6.22998 15.2807 7.69998 15.2807 9.50998C15.2707 11.28 13.8807 12.72 12.1207 12.78Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path opacity="0.34" d="M18.7398 19.3801C16.9598 21.0101 14.5998 22.0001 11.9998 22.0001C9.39977 22.0001 7.03977 21.0101 5.25977 19.3801C5.35977 18.4401 5.95977 17.5201 7.02977 16.8001C9.76977 14.9801 14.2498 14.9801 16.9698 16.8001C18.0398 17.5201 18.6398 18.4401 18.7398 19.3801Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </div>
     <p class="acctMsg" id="acctEmail"></p>
+
+    <div id="walletCard" style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin:0 0 14px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:12px;color:var(--txt3);font-weight:700">Marcato Wallet</div>
+          <div style="font-size:20px;font-weight:800" id="walletBalance">₦0</div>
+        </div>
+        <button id="walletAddBtn" onclick="openWalletDeposit()" style="background:var(--red);color:#fff;font-weight:800;font-size:12px;padding:8px 14px;border-radius:20px">+ Add Money</button>
+      </div>
+      <div id="walletTxList" style="margin-top:10px;font-size:12px;color:var(--txt3)"></div>
+    </div>
+
     <div class="acctLinks">
       <a href="#" onclick="showMyOrders();return false;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
@@ -1996,6 +2030,10 @@ function populateFooter(storeName, tagline, phone, email, address, ig, fb, x) {
   document.getElementById('ftTagline').textContent = tagline || '';
   document.getElementById('ftCopyright').textContent = `© ${new Date().getFullYear()} ${storeName}. All rights reserved.`;
 
+  document.getElementById('ftWorlds').innerHTML = Worlds.list().map(w =>
+    `<a href="#world=${w.slug}" onclick="openWorld('${w.slug}');return false">${w.name}</a>`
+  ).join('');
+
   const phoneEl = document.getElementById('ftPhone');
   if (phone) { phoneEl.textContent = phone; phoneEl.href = `tel:${phone.replace(/[^0-9+]/g,'')}`; phoneEl.style.display = ''; }
 
@@ -2004,10 +2042,6 @@ function populateFooter(storeName, tagline, phone, email, address, ig, fb, x) {
 
   const addrEl = document.getElementById('ftAddress');
   if (address) { addrEl.textContent = address; addrEl.style.display = ''; }
-
-  if (!phone && !email && !address) {
-    document.getElementById('ftContactCol').style.display = 'none';
-  }
 
   const socialIcons = {
     instagram: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><line x1="17.5" y1="6.5" x2="17.5" y2="6.5"/></svg>',
@@ -2090,7 +2124,63 @@ async function checkBuyerSession() {
   document.getElementById('acctSignedOut').style.display = session ? 'none' : '';
   document.getElementById('acctSignedIn').style.display = session ? '' : 'none';
   document.getElementById('menuLogoutLink').style.display = session ? '' : 'none';
-  if (session) document.getElementById('acctEmail').textContent = session.user.email;
+  if (session) { document.getElementById('acctEmail').textContent = session.user.email; loadWallet(); }
+}
+
+/* ── WALLET ───────────────────────────────────────── */
+async function loadWallet() {
+  if (!buyerSession) return;
+  const { data: wallet } = await sb.from('customer_wallets').select('available_balance').eq('user_id', buyerSession.user.id).maybeSingle();
+  document.getElementById('walletBalance').textContent = '₦' + Number((wallet && wallet.available_balance) || 0).toLocaleString();
+  const { data: txs } = await sb.from('customer_wallet_transactions').select('transaction_type,amount,status,created_at')
+    .eq('user_id', buyerSession.user.id).order('created_at', { ascending: false }).limit(5);
+  const list = document.getElementById('walletTxList');
+  if (!txs || !txs.length) { list.textContent = 'No transactions yet.'; return; }
+  const LABEL = { deposit: 'Deposit', purchase: 'Purchase', refund: 'Refund', reversal: 'Reversal', adjustment: 'Adjustment' };
+  const SIGN = { deposit: '+', purchase: '-', refund: '+', reversal: '', adjustment: '' };
+  list.innerHTML = txs.map(t => `<div style="display:flex;justify-content:space-between;padding:4px 0">
+    <span>${LABEL[t.transaction_type] || t.transaction_type}${t.status !== 'completed' ? ' (' + t.status + ')' : ''}</span>
+    <span>${SIGN[t.transaction_type] || ''}₦${Number(t.amount).toLocaleString()}</span>
+  </div>`).join('');
+}
+
+async function openWalletDeposit() {
+  if (!buyerSession) { toast('Sign in first'); return; }
+  const amount = Number(prompt('How much would you like to add to your wallet? (₦)'));
+  if (!amount || amount < 100) { if (amount) toast('Minimum deposit is ₦100'); return; }
+  try {
+    const res = await fetch('/api/wallet-delivery?action=deposit-init', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${buyerSession.access_token}` },
+      body: JSON.stringify({ amount })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not start payment');
+    window.location.href = data.authorization_url;   // customer pays on Paystack's own page; wallet is credited by the webhook, never by this redirect
+  } catch (e) { toast(e.message || 'Could not start payment', true); }
+}
+
+/* ── DELIVERY CONFIRMATION (deep link from push notification) ─────────── */
+async function maybePromptDeliveryConfirmation() {
+  const params = new URLSearchParams(window.location.search);
+  const shipmentId = params.get('confirm_delivery');
+  if (!shipmentId) return;
+  if (!buyerSession) { await checkBuyerSession(); }
+  if (!buyerSession) { toast('Sign in to confirm your delivery'); openAccount(); return; }
+  const yes = confirm('Did your Marcato order arrive?\n\nTap OK for "Yes, I received it", or Cancel for "Not yet".');
+  try {
+    const res = await fetch('/api/wallet-delivery?action=confirm', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${buyerSession.access_token}` },
+      body: JSON.stringify({ shipmentId: Number(shipmentId), response: yes ? 'yes' : 'not_yet' })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not record your response');
+    toast(yes ? 'Thanks — marked as delivered!' : "Thanks — we'll check back later.");
+  } catch (e) { toast(e.message || 'Could not record your response', true); }
+  finally {
+    params.delete('confirm_delivery');
+    const rest = params.toString();
+    history.replaceState(null, '', window.location.pathname + (rest ? '?' + rest : ''));
+  }
 }
 
 document.getElementById('acctGoogleBtn').onclick = async () => {
@@ -2293,6 +2383,7 @@ async function init() {
   initTrackingPages();
   initAssistant();
   notifCenter.refreshUnread();
+  maybePromptDeliveryConfirmation();
   sb.auth.onAuthStateChange((_event, session) => {
     buyerSession = session;
     if (!session) favSyncedFor = null;

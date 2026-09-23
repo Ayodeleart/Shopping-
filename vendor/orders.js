@@ -63,7 +63,16 @@
       '<div class="fld" data-w="cname" style="display:' + (s.carrier_code === 'other' ? '' : 'none') + '"><label>Courier name</label><input type="text" data-f="cname" maxlength="60" value="' + esc(s.carrier_name || '') + '"></div>' +
       '<div class="fld" data-w="track" style="display:' + (own ? 'none' : '') + '"><label>Tracking number</label><input type="text" data-f="track" maxlength="60" placeholder="From the carrier" value="' + esc(s.tracking_number || '') + '"></div>' +
       '<div class="ad-hint" data-w="owninfo" style="font-size:12px;color:var(--txt3);margin:-4px 0 10px;display:' + (own ? '' : 'none') + '">Marketplace delivery: a tracking number is created for you when you ship.</div>' +
-      '<div class="fld"><label>Estimated delivery</label><input type="date" data-f="eta" value="' + esc(s.estimated_delivery || '') + '"></div>' +
+      '<div class="fld"><label>Estimated delivery</label><select data-f="etaOption">' +
+        '<option value="">Choose an estimate</option>' +
+        '<option value="within_1h">Within 1 hour</option>' +
+        '<option value="1_2h">1&ndash;2 hours</option>' +
+        '<option value="2_4h">2&ndash;4 hours</option>' +
+        '<option value="same_day">Same day</option>' +
+        '<option value="tomorrow">Tomorrow</option>' +
+        '<option value="custom">Custom date/time</option>' +
+      '</select></div>' +
+      '<div class="fld" data-w="etaCustom" style="display:none"><label>Custom delivery date/time</label><input type="datetime-local" data-f="etaCustom"></div>' +
       '<div class="fld"><label>Note for the customer (optional)</label><input type="text" data-f="note" maxlength="200"></div>' +
       '<div class="shipBtns"><button type="button" class="sbtn p" data-a="' + (edit ? 'saveedit' : 'ship') + '" data-id="' + esc(s.id) + '">' + (edit ? 'Save tracking' : 'Mark as shipped') + '</button>' +
       '<button type="button" class="sbtn" data-a="closeform" data-id="' + esc(s.id) + '">Cancel</button></div></div>';
@@ -104,6 +113,18 @@
 
   function fv(card, f) { var e = card.querySelector('[data-f="' + f + '"]'); return e ? e.value.trim() : ''; }
 
+  var ETA_HOURS = { within_1h: 1, '1_2h': 2, '2_4h': 4, same_day: 8, tomorrow: 24 };
+  /* Converts the vendor's relative pick into an absolute timestamp NOW, client-side, purely so the
+     form can show/send something concrete — the server independently re-derives eligibility off this
+     same estimated_delivery value later, it never trusts the vendor's clock for anything else. */
+  function etaFromForm(card) {
+    var opt = fv(card, 'etaOption');
+    if (!opt) return null;
+    if (opt === 'custom') { var v = fv(card, 'etaCustom'); return v ? new Date(v).toISOString() : null; }
+    var hrs = ETA_HOURS[opt];
+    return hrs ? new Date(Date.now() + hrs * 3600000).toISOString() : null;
+  }
+
   async function run(id, status, opts) {
     if (busy) return;
     busy = true;
@@ -128,8 +149,9 @@
     if (a === 'editform') { openForm[id] = 'edit'; render(); return; }
     if (a === 'closeform') { delete openForm[id]; render(); return; }
     if (a === 'ship' || a === 'saveedit') {
-      var opts = { carrier: fv(card, 'carrier'), carrierName: fv(card, 'cname'), trackingNumber: fv(card, 'track'), eta: fv(card, 'eta') || null, note: fv(card, 'note') };
+      var opts = { carrier: fv(card, 'carrier'), carrierName: fv(card, 'cname'), trackingNumber: fv(card, 'track'), eta: etaFromForm(card), note: fv(card, 'note') };
       if (!opts.carrier) { toast('Choose the carrier', true); return; }
+      if (fv(card, 'etaOption') === 'custom' && !opts.eta) { toast('Choose the custom delivery date/time', true); return; }
       run(id, a === 'ship' ? 'shipped' : 'tracking_updated', opts);
       return;
     }
@@ -139,11 +161,17 @@
 
   document.addEventListener('change', function (ev) {
     var sel = ev.target;
-    if (!sel.matches || !sel.matches('#ordList select[data-f="carrier"]')) return;
-    var card = sel.closest('.shipForm'), opt = sel.options[sel.selectedIndex], own = opt && opt.getAttribute('data-provider') === 'own';
-    card.querySelector('[data-w="cname"]').style.display = sel.value === 'other' ? '' : 'none';
-    card.querySelector('[data-w="track"]').style.display = own ? 'none' : '';
-    card.querySelector('[data-w="owninfo"]').style.display = own ? '' : 'none';
+    if (sel.matches && sel.matches('#ordList select[data-f="carrier"]')) {
+      var card = sel.closest('.shipForm'), opt = sel.options[sel.selectedIndex], own = opt && opt.getAttribute('data-provider') === 'own';
+      card.querySelector('[data-w="cname"]').style.display = sel.value === 'other' ? '' : 'none';
+      card.querySelector('[data-w="track"]').style.display = own ? 'none' : '';
+      card.querySelector('[data-w="owninfo"]').style.display = own ? '' : 'none';
+      return;
+    }
+    if (sel.matches && sel.matches('#ordList select[data-f="etaOption"]')) {
+      var card2 = sel.closest('.shipForm');
+      card2.querySelector('[data-w="etaCustom"]').style.display = sel.value === 'custom' ? '' : 'none';
+    }
   });
 
   window.VendorOrders = { load: load };
