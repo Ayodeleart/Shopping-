@@ -41,11 +41,12 @@
   backdrop-filter:blur(2px);
 }
 .xmCard-icon{width:15px;height:15px;color:#fff}
+.xmCard-icon path,.xmCard-icon g{fill:currentColor}
 
 .xmCard-body{position:relative;z-index:2;padding:0 8px 8px;padding-right:30px;display:flex;flex-direction:column;gap:1px}
 .xmCard-name{
-  font-size:12.5px;font-weight:800;letter-spacing:-.1px;line-height:1.2;text-shadow:0 1px 4px rgba(0,0,0,.25);
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  font-size:11.5px;font-weight:800;letter-spacing:-.1px;line-height:1.2;text-shadow:0 1px 4px rgba(0,0,0,.25);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-right:-30px;padding-right:4px;
 }
 .xmCard-tag{
   font-size:9.5px;font-weight:600;color:rgba(255,255,255,.86);line-height:1.25;margin-top:1px;
@@ -67,7 +68,7 @@
   .xmCard-art{top:12px;right:12px;width:38px;height:38px}
   .xmCard-icon{width:19px;height:19px}
   .xmCard-body{padding:0 12px 12px;padding-right:36px}
-  .xmCard-name{font-size:15px}
+  .xmCard-name{font-size:15px;margin-right:-36px;padding-right:4px}
   .xmCard-tag{font-size:11px}
   .xmCard-go{width:24px;height:24px;bottom:12px;right:12px}
   .xmCard-go svg{width:13px;height:13px}

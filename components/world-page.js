@@ -74,7 +74,7 @@
       hero.classList.add('has-img');
     }
     var icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    icon.setAttribute('viewBox', '0 0 24 24'); icon.setAttribute('class', 'wp-hero-icon'); icon.setAttribute('aria-hidden', 'true');
+    icon.setAttribute('viewBox', world.viewBox || '0 0 24 24'); icon.setAttribute('class', 'wp-hero-icon'); icon.setAttribute('aria-hidden', 'true');
     icon.innerHTML = world.icon;
     hero.appendChild(icon);
     var name = h('h2', 'wp-hero-name', world.name);

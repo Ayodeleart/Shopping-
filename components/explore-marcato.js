@@ -35,7 +35,7 @@
 
       var art = h('span', 'xmCard-art');
       var icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      icon.setAttribute('viewBox', '0 0 24 24');
+      icon.setAttribute('viewBox', w.viewBox || '0 0 24 24');
       icon.setAttribute('class', 'xmCard-icon');
       icon.setAttribute('aria-hidden', 'true');
       icon.innerHTML = w.icon;

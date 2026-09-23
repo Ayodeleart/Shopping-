@@ -389,19 +389,33 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 #cookieDecline{background:var(--bg2);color:var(--txt)}
 
 /* ── FOOTER ───────────────────────────────────────── */
-#siteFooter{background:var(--bg2);padding:32px 16px calc(24px + 66px);margin-top:20px}
+/* Its own palette regardless of site theme: solid black in light mode, brand red in dark mode.
+   Both are dark backgrounds, so text stays light either way. */
+#siteFooter{
+  --ft-bg:#0d0d0d;--ft-txt:#fff;--ft-txt2:rgba(255,255,255,.82);--ft-txt3:rgba(255,255,255,.56);
+  --ft-border:rgba(255,255,255,.14);--ft-chip:rgba(255,255,255,.1);
+  background:var(--ft-bg);padding:32px 16px calc(24px + 66px);margin-top:20px;
+}
+[data-theme=dark] #siteFooter{--ft-bg:var(--red);--ft-border:rgba(255,255,255,.24);--ft-chip:rgba(255,255,255,.16)}
 .ftTop{display:grid;grid-template-columns:1fr 1fr;gap:24px 16px;margin-bottom:24px}
 .ftCol{display:flex;flex-direction:column;gap:9px}
+.ftCol#ftWorlds,#ftWorlds{display:flex;flex-direction:column;gap:9px}
 .ftLogo{display:flex;align-items:center;gap:8px;margin-bottom:2px}
 .ftLogo img{height:26px;width:auto}
-.ftLogo span{font-size:17px;font-weight:900;color:var(--txt)}
-.ftTag{font-size:12.5px;color:var(--txt3);line-height:1.5}
-.ftHead{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--txt3);margin-bottom:2px}
-.ftCol a,.ftCol span{font-size:13.5px;color:var(--txt2);text-decoration:none}
+.ftLogo span{font-size:17px;font-weight:900;color:var(--ft-txt)}
+.ftTag{font-size:12.5px;color:var(--ft-txt3);line-height:1.5}
+.ftHead{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--ft-txt3);margin-bottom:2px}
+.ftCol a,.ftCol span,#ftWorlds a{font-size:13.5px;color:var(--ft-txt2);text-decoration:none}
+.ftCol a:active,#ftWorlds a:active{opacity:.7}
 .ftSocial{display:flex;gap:10px;margin-top:4px}
-.ftSocial a{width:32px;height:32px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;color:var(--txt2)}
-.ftBottom{border-top:1px solid var(--border);padding-top:16px;display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--txt3)}
-.ftBottom a{color:var(--txt3);text-decoration:underline}
+.ftSocial a{width:32px;height:32px;border-radius:50%;background:var(--ft-chip);display:flex;align-items:center;justify-content:center;color:var(--ft-txt2)}
+.ftBottom{border-top:1px solid var(--ft-border);padding-top:16px;display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--ft-txt3)}
+.ftBottom a{color:var(--ft-txt3);text-decoration:underline}
+@media (min-width:720px){
+  .ftTop{grid-template-columns:1.4fr 1fr 1fr 1fr 1fr;gap:24px;max-width:1200px;margin:0 auto 28px}
+  .ftBottom{max-width:1200px;margin:0 auto}
+}
+
 
 /* ── PER-CATEGORY ROWS (admin-chosen accent color) ───*/
 .catRowSec{margin-bottom:4px}
@@ -692,16 +706,24 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
       <a href="#allSec">All Products</a>
       <a href="#cat=all">All Categories</a>
       <a href="#flashSec">Flash Sales</a>
-      <a href="/vendor/" target="_blank">Sell on Maccato</a>
+      <a href="#vendorSec">Vendors</a>
+    </div>
+    <div class="ftCol">
+      <div class="ftHead">Explore Marcato</div>
+      <div id="ftWorlds"></div>
     </div>
     <div class="ftCol">
       <div class="ftHead">Account</div>
       <a href="#" onclick="openAccount();return false">My Account</a>
       <a href="#" onclick="openAccount();setTimeout(showMyOrders,150);return false">My Orders</a>
+      <a href="#" onclick="openNotifCenter();return false">Notifications</a>
+      <a href="#" onclick="showFavorites();return false">Saved Items</a>
       <a href="#" onclick="openCart();return false">My Cart</a>
     </div>
     <div class="ftCol" id="ftContactCol">
-      <div class="ftHead">Contact</div>
+      <div class="ftHead">Support</div>
+      <a href="#" onclick="openWhatsAppHelp();return false">Need Help?</a>
+      <a href="/vendor/" target="_blank">Sell on Maccato</a>
       <a href="#" id="ftPhone" style="display:none"></a>
       <a href="#" id="ftEmail" style="display:none"></a>
       <span id="ftAddress" style="display:none"></span>
@@ -1989,6 +2011,10 @@ function populateFooter(storeName, tagline, phone, email, address, ig, fb, x) {
   document.getElementById('ftTagline').textContent = tagline || '';
   document.getElementById('ftCopyright').textContent = `© ${new Date().getFullYear()} ${storeName}. All rights reserved.`;
 
+  document.getElementById('ftWorlds').innerHTML = Worlds.list().map(w =>
+    `<a href="#world=${w.slug}" onclick="openWorld('${w.slug}');return false">${w.name}</a>`
+  ).join('');
+
   const phoneEl = document.getElementById('ftPhone');
   if (phone) { phoneEl.textContent = phone; phoneEl.href = `tel:${phone.replace(/[^0-9+]/g,'')}`; phoneEl.style.display = ''; }
 
@@ -1997,10 +2023,6 @@ function populateFooter(storeName, tagline, phone, email, address, ig, fb, x) {
 
   const addrEl = document.getElementById('ftAddress');
   if (address) { addrEl.textContent = address; addrEl.style.display = ''; }
-
-  if (!phone && !email && !address) {
-    document.getElementById('ftContactCol').style.display = 'none';
-  }
 
   const socialIcons = {
     instagram: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><line x1="17.5" y1="6.5" x2="17.5" y2="6.5"/></svg>',
