@@ -223,26 +223,31 @@
     this.form = el('form', { class: 'macChat-form', autocomplete: 'off' }, [this.input, this.sendBtn]);
     this.note = el('p', { class: 'macChat-note' });
 
+    /* the one and only header: MAC's face, the store name, then reload / settings / close — in that order, and nothing else */
     this.avatarBtn = el('span', { class: 'macChat-avatar', role: 'button', tabindex: '0', html: AVATAR });
     this.titleB = el('b', {}, [this.o.getStoreName() + ' \u00b7 MAC']);
     this.titleSmall = el('small', {});
     this.newBtn = el('button', { class: 'macChat-ib', type: 'button', 'data-act': 'new', html: ICON_NEW });
     this.settingsBtn = el('button', { class: 'macChat-ib', type: 'button', 'data-act': 'settings', html: ICON_SETTINGS });
-    this.closeBtn1 = el('button', { class: 'macChat-ib', type: 'button', 'data-act': 'close', html: ICON_X });
-    this.headChat = el('div', { class: 'macChat-headChat' }, [
-      this.avatarBtn, el('span', { class: 'macChat-title' }, [this.titleB, this.titleSmall]), this.newBtn, this.settingsBtn, this.closeBtn1
+    this.closeBtn = el('button', { class: 'macChat-ib', type: 'button', 'data-act': 'close', html: ICON_X });
+    this.head = el('header', { class: 'macChat-head' }, [
+      this.avatarBtn, el('span', { class: 'macChat-title' }, [this.titleB, this.titleSmall]), this.newBtn, this.settingsBtn, this.closeBtn
     ]);
 
+    /* Settings is a separate, self-contained overlay — its own header (back / title / close) and body — that
+       covers the chat header, log and composer entirely while open. See the .macChat-settings CSS for why this
+       is one absolutely-positioned block rather than several [hidden] toggles on the chat's own pieces. */
     this.backBtn = el('button', { class: 'macChat-ib', type: 'button', 'data-act': 'back', html: ICON_BACK });
     this.settingsTitleEl = el('b', {});
-    this.closeBtn2 = el('button', { class: 'macChat-ib', type: 'button', 'data-act': 'close', html: ICON_X });
-    this.headSettings = el('div', { class: 'macChat-headSettings', hidden: '' }, [this.backBtn, this.settingsTitleEl, el('span', { style: 'flex:1' }), this.closeBtn2]);
-
-    this.settingsPanel = el('div', { class: 'macChat-settings', hidden: '' });
+    this.settingsCloseBtn = el('button', { class: 'macChat-ib', type: 'button', 'data-act': 'close', html: ICON_X });
+    this.settingsBody = el('div', { class: 'macChat-settings-body' });
+    this.settingsPanel = el('div', { class: 'macChat-settings' }, [
+      el('div', { class: 'macChat-settings-head' }, [this.backBtn, this.settingsTitleEl, this.settingsCloseBtn]),
+      this.settingsBody
+    ]);
 
     this.panel = el('section', { class: 'macChat-panel', role: 'dialog', 'aria-modal': 'true' }, [
-      el('header', { class: 'macChat-head' }, [this.headChat, this.headSettings]),
-      this.log, this.form, this.note, this.settingsPanel
+      this.head, this.log, this.form, this.note, this.settingsPanel
     ]);
     root.appendChild(this.panel);
     this.o.parent.appendChild(root);
@@ -251,7 +256,6 @@
 
   /* labels/placeholders/aria text for the current language — called on build and whenever the language changes */
   P._applyStrings = function () {
-    var self = this;
     this.panel.setAttribute('aria-label', this._t('dialogLabel'));
     this.titleSmall.textContent = this._t('subtitle');
     this.input.placeholder = this._t('placeholder');
@@ -260,8 +264,8 @@
     this.avatarBtn.setAttribute('aria-label', this._t('replay'));
     this.newBtn.setAttribute('aria-label', this._t('newChat'));
     this.settingsBtn.setAttribute('aria-label', this._t('settingsBtn'));
-    this.closeBtn1.setAttribute('aria-label', this._t('closeChat'));
-    this.closeBtn2.setAttribute('aria-label', this._t('closeChat'));
+    this.closeBtn.setAttribute('aria-label', this._t('closeChat'));
+    this.settingsCloseBtn.setAttribute('aria-label', this._t('closeChat'));
     this.backBtn.setAttribute('aria-label', this._t('backBtn'));
     this.settingsTitleEl.textContent = this._t('settingsTitle');
     this.note.textContent = this._t('disclaimer');
@@ -328,20 +332,20 @@
 
   P._replayAvatar = function () { var sv = this.root.querySelector('.macChat-avatar svg'); sv.classList.remove('play'); void sv.getBoundingClientRect(); sv.classList.add('play'); };
 
-  /* ---------- settings screen ---------- */
+  /* ---------- settings screen ----------
+     A single class flip (.settingsOpen on .macChat-panel) shows the overlay; the underlying header/log/form/note
+     are also marked inert so a screen reader or Tab key can't reach content that's visually covered. */
   P._openSettings = function () {
     this.settingsOpen = true;
-    this.headChat.hidden = true; this.headSettings.hidden = false;
-    this.log.hidden = true; this.form.hidden = true; this.note.hidden = true;
-    this.settingsPanel.hidden = false;
+    this.panel.classList.add('settingsOpen');
+    this.head.setAttribute('inert', ''); this.log.setAttribute('inert', ''); this.form.setAttribute('inert', ''); this.note.setAttribute('inert', '');
     this._renderSettings();
     this.backBtn.focus();
   };
   P._closeSettings = function () {
     this.settingsOpen = false;
-    this.headChat.hidden = false; this.headSettings.hidden = true;
-    this.log.hidden = false; this.form.hidden = false; this.note.hidden = false;
-    this.settingsPanel.hidden = true;
+    this.panel.classList.remove('settingsOpen');
+    this.head.removeAttribute('inert'); this.log.removeAttribute('inert'); this.form.removeAttribute('inert'); this.note.removeAttribute('inert');
     this.settingsBtn.focus();
   };
   P._chooseLanguage = function (code) {
@@ -356,7 +360,7 @@
     this._renderSettings();
   };
   P._renderSettings = function () {
-    var self = this, box = this.settingsPanel;
+    var self = this, box = this.settingsBody;
     box.textContent = '';
 
     var langSec = el('div', { class: 'macSet-section' }, [el('h3', { class: 'macSet-h' }, [this._t('langLabel')])]);

@@ -32,9 +32,8 @@
 .macFab .mline { stroke: var(--mac-ink); }
 .macFab .mpline { stroke: var(--mac-paper); }
 .macFab .macSh { fill: #000; }
-.macFab .macBall { transition: fill .2s; }
-.macFab.isJoy .macBall { fill: var(--mac-accent); }
-html.mac-pride .macFab.isJoy .macBall { fill: url(#mac-pride-grad); }
+.macFab .macBall { transition: fill .2s; fill: var(--mac-accent); }
+html.mac-pride .macFab .macBall { fill: url(#mac-pride-grad); }
 .macFab .macTxt {
   font: 800 30px ui-rounded, "SF Pro Rounded", -apple-system, "Segoe UI", Roboto, sans-serif;
   letter-spacing: 1px;

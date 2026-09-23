@@ -57,8 +57,6 @@
 .macChat-ib.warn { color: var(--mac-accent); }
 .macChat button:focus-visible, .macChat-ib:focus-visible, .macChat select:focus-visible { outline: 2px solid var(--mac-accent); outline-offset: 1px; }
 .macChat textarea:focus-visible { outline: none; }
-.macChat-headChat, .macChat-headSettings { display: flex; align-items: center; gap: 9px; flex: 1; min-width: 0; }
-.macChat-headSettings b { font-size: 14.5px; font-weight: 800; }
 
 .macChat-log { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding: 14px 12px 8px; display: flex; flex-direction: column; gap: 10px; }
 .macChat-turn { display: flex; flex-direction: column; max-width: 90%; gap: 6px; flex: none; }
@@ -121,8 +119,17 @@ html.mac-pride .macChat-send { background: var(--mac-pride); }
 .macChat-send:disabled { opacity: .4; }
 .macChat-note { flex: none; margin: 0; padding: 0 16px 10px; font-size: 11px; color: var(--txt3); text-align: center; }
 
-/* ---------- settings screen (swaps in for the log + composer, same panel) ---------- */
-.macChat-settings { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 4px 16px 20px; }
+/* ---------- settings screen ----------
+   A true overlay: position:absolute + inset:0 inside .macChat-panel (which is itself positioned), with its own
+   opaque background and its own header, so it visually covers the chat header, log and composer completely
+   rather than trying to swap pieces of them in place. Shown by adding .settingsOpen to .macChat-panel — a single
+   class flip, not a pile of [hidden] toggles that other CSS could quietly override. */
+.macChat-settings { display: none; position: absolute; inset: 0; z-index: 5; flex-direction: column; background: var(--bg); }
+.macChat-panel.settingsOpen .macChat-settings { display: flex; }
+/* the chat underneath the overlay is fully covered visually; hiding it from focus/AT too (inert, set in JS) needs no extra CSS here */
+.macChat-settings-head { display: flex; align-items: center; gap: 9px; padding: 10px 6px 10px 6px; border-bottom: 1px solid var(--border); flex: none; }
+.macChat-settings-head b { flex: 1; min-width: 0; font-size: 14.5px; font-weight: 800; }
+.macChat-settings-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 4px 16px 20px; }
 .macSet-section + .macSet-section { margin-top: 22px; }
 .macSet-h { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--txt3); margin: 0 0 10px; }
 .macSet-langs { display: flex; flex-direction: column; gap: 6px; }
