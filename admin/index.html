@@ -578,7 +578,7 @@ async function uploadImage(file, folder, progressBarId, progressId, transparent)
   if (prog) { prog.classList.add('on'); bar.style.width = '0%'; }
 
   if (file.type === 'image/gif') {   // animated GIFs go up untouched: drawing them on a canvas would keep only the first frame
-    if (file.size > 4 * 1024 * 1024) { if (prog) prog.classList.remove('on'); throw new Error('This GIF is over 4 MB. Compress it (about 480 x 480) and try again.'); }
+    if (file.size > 10 * 1024 * 1024) { if (prog) prog.classList.remove('on'); throw new Error('This GIF is over 10 MB. Compress it (about 480 x 480) and try again.'); }
     if (prog) bar.style.width = '60%';
     const gifPath = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2)}.gif`;
     const up = await sb.storage.from(BUCKET).upload(gifPath, file, { contentType: 'image/gif', cacheControl: '31536000' });
