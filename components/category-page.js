@@ -58,7 +58,7 @@
     });
     q('.cpg-crumbs').innerHTML = all ? '' : crumbs.join('<span>\u203a</span>');
 
-    var subs = all ? t.visibleRoots() : t.visibleChildren(cat.id);
+    var subs = all ? t.visibleRootsIn(this.d.world || null) : t.visibleChildren(cat.id);
     q('.cpg-subs').innerHTML = subs.map(function (c) {
       return '<a class="cpg-tile" data-cat="' + esc(c.slug) + '">' + Pcx.Categories.thumb(t, c) + '<span class="cpg-name">' + esc(c.name) + '</span></a>';
     }).join('');

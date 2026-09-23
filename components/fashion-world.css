@@ -1,0 +1,208 @@
+/* Pcx.FashionWorld + Pcx.FashionCatsPage — the Fashion world (#world=fashion).
+ * Fashion-first visual direction: strong imagery, clean white space, compact
+ * controls, real seller branding. Tuned for 375 / 390 / 412 px first.
+ * Requires: theme tokens (light + dark), product-card.css, seller-brand.css.
+ */
+
+/* Layering: main header 200 < fashionPage 235 < fashionCatsPage 238 < category/ad pages 240
+   (tapping a Fashion category slides the existing category page over the Fashion world). */
+#fashionPage{
+  position:fixed;inset:0;z-index:235;background:var(--bg);color:var(--txt);
+  overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+  transform:translateY(100%);visibility:hidden;
+  transition:transform .32s cubic-bezier(.4,0,.2,1),visibility 0s linear .32s;
+}
+#fashionPage.open{transform:none;visibility:visible;transition-delay:0s}
+#fashionCatsPage{
+  position:fixed;inset:0;z-index:238;background:var(--bg);color:var(--txt);
+  overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+  transform:translateY(100%);visibility:hidden;
+  transition:transform .32s cubic-bezier(.4,0,.2,1),visibility 0s linear .32s;
+}
+#fashionCatsPage.open{transform:none;visibility:visible;transition-delay:0s}
+@media (prefers-reduced-motion:reduce){
+  #fashionPage,#fashionCatsPage{transition:none}
+}
+
+/* ── header ─────────────────────────────────────────── */
+.fw-hdr{
+  position:sticky;top:0;z-index:6;height:52px;
+  display:flex;align-items:center;gap:4px;padding:0 8px;
+  background:var(--bg);border-bottom:1px solid var(--border);
+}
+.fw-back{width:38px;height:38px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--txt)}
+.fw-back:active{opacity:.6}
+.fw-word{
+  flex:1;min-width:0;font-size:21px;font-weight:900;letter-spacing:.14em;
+  text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.fw-hdr .hdr-icon{width:40px;height:40px;flex-shrink:0;position:relative}
+.fw-hdr .hdr-icon svg{width:21px;height:21px}
+.fw-hdr .hdr-icon:active{opacity:.6}
+#fwCartDot{
+  position:absolute;top:4px;right:2px;min-width:16px;height:16px;padding:0 4px;
+  border-radius:9px;background:var(--red);color:#fff;font-size:10px;font-weight:800;
+  display:none;align-items:center;justify-content:center;z-index:1;
+}
+
+/* ── search bar ─────────────────────────────────────── */
+.fw-searchWrap{padding:10px 13px 4px;background:var(--bg)}
+.fw-search{
+  display:flex;align-items:center;gap:8px;height:40px;padding:0 14px;
+  border-radius:20px;background:var(--bg2);color:var(--txt3);
+  border:1px solid var(--border);cursor:text;
+}
+.fw-search svg{width:15px;height:15px;flex-shrink:0}
+.fw-search span{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ── gender selector ────────────────────────────────── */
+.fw-gwrap{padding:12px 0 2px}
+.fw-genderRow{
+  display:flex;gap:10px;overflow-x:auto;padding:2px 13px 8px;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;
+}
+.fw-genderRow::-webkit-scrollbar{display:none}
+.fw-g{
+  position:relative;flex-shrink:0;width:92px;height:118px;border-radius:14px;
+  background:#fff;border:1.5px solid var(--border);overflow:hidden;
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+  scroll-snap-align:start;transition:border-color .18s,box-shadow .18s,transform .18s;
+  -webkit-transform:translateZ(0);
+}
+[data-theme=dark] .fw-g{background:var(--bg2)}
+.fw-g:active{transform:scale(.97)}
+.fw-g-name{
+  position:relative;z-index:2;width:100%;padding:6px 4px 8px;text-align:center;
+  font-size:12px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--txt2);
+}
+.fw-g-media{position:absolute;inset:0;z-index:1;display:flex;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .2s}
+.fw-g-media img{max-width:100%;max-height:100%;object-fit:contain;object-position:center bottom;pointer-events:none}
+/* artwork stays whole: contained, never cropped or stretched; the card may be
+   shorter than the file — it simply scales down inside the card */
+.fw-g.on{border-color:var(--fw-accent,#111);box-shadow:0 6px 18px -6px var(--fw-accent-shadow,rgba(0,0,0,.45))}
+.fw-g.on .fw-g-media{opacity:1}
+.fw-g.on .fw-g-name{color:var(--fw-accent,#111)}
+.fw-g.on::after{
+  content:'';position:absolute;left:0;right:0;bottom:0;height:4px;z-index:3;
+  background:var(--fw-accent,#111);
+}
+/* a card without media still reads clearly: soft tinted wash + a quiet icon on the active card */
+.fw-g.on:not(.has-media){background:color-mix(in srgb,var(--fw-accent,#111) 8%,var(--card,#fff))}
+.fw-g-ph-icon{width:44px;height:44px;color:var(--txt3);opacity:.9}
+
+/* ── hero ads (PromotionalCarousel) ─────────────────── */
+.fw-heroWrap{padding:10px 13px 0}
+.fw-heroWrap .pcx{border-radius:16px;overflow:hidden}
+.fw-heroWrap .pcx__slide{border-radius:16px}
+.fw-heroWrap .pcx__img{object-fit:cover}
+
+/* ── sections ───────────────────────────────────────── */
+.fw-secHd{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:20px 13px 10px}
+.fw-secTtl{font-size:16.5px;font-weight:900;letter-spacing:-.2px}
+.fw-secSub{display:block;font-size:11.5px;font-weight:600;color:var(--txt3);margin-top:2px;letter-spacing:.2px}
+.fw-seeAll{
+  flex-shrink:0;font-size:12.5px;font-weight:800;color:var(--txt2);
+  display:inline-flex;align-items:center;gap:2px;padding:4px 0;
+}
+.fw-seeAll:active{color:var(--red)}
+.fw-seeAll svg{width:12px;height:12px}
+
+/* ── circular categories ────────────────────────────── */
+.fw-cats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px 8px;padding:2px 13px 8px}
+.fw-cat{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.fw-cat-circle{
+  position:relative;width:100%;aspect-ratio:1/1;border-radius:50%;overflow:hidden;
+  background:var(--fw-cat-bg,#f4f2ee);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .15s;
+  -webkit-transform:translateZ(0);
+}
+.fw-cat:active .fw-cat-circle{transform:scale(.94)}
+.fw-cat-circle img{
+  position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:9%;
+  pointer-events:none;
+}
+.fw-cat-ph{font-size:17px;font-weight:800;color:rgba(0,0,0,.45)}
+[data-theme=dark] .fw-cat-ph{color:rgba(255,255,255,.55)}
+.fw-cat-name{
+  font-size:11px;font-weight:700;line-height:1.2;text-align:center;color:var(--txt2);
+  max-width:100%;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+}
+@media (min-width:520px){
+  .fw-cats{grid-template-columns:repeat(8,1fr);gap:16px 10px}
+}
+
+/* ── rails (discovery sections) ─────────────────────── */
+.fw-railHd{display:flex;align-items:center;gap:9px;padding:18px 13px 8px}
+.fw-railBar{width:5px;height:19px;border-radius:3px;background:var(--red);flex-shrink:0}
+.fw-railName{font-size:15.5px;font-weight:800;letter-spacing:-.2px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fw-railCount{margin-left:auto;flex-shrink:0;font-size:11.5px;color:var(--txt3);font-weight:600}
+.fw-railMore{flex-shrink:0;display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:800;color:var(--txt2);padding:4px 0 4px 8px}
+.fw-railMore:active{color:var(--red)}
+.fw-railMore svg{width:11px;height:11px}
+.fw-vendorHead{display:flex;align-items:center;gap:9px;padding:18px 13px 8px}
+.fw-vendorHead .fw-railName{font-size:15.5px}
+.fw-rail{
+  display:flex;gap:10px;overflow-x:auto;padding:0 13px 6px;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;
+}
+.fw-rail::-webkit-scrollbar{display:none}
+.fw-rail .fcard-wrap{width:150px;scroll-snap-align:start}
+
+/* ── all products: controls ─────────────────────────── */
+.fw-shopHd{display:flex;align-items:center;gap:8px;padding:22px 13px 4px}
+.fw-shopHd .fw-secTtl{flex:1;min-width:0}
+.fw-layTgl{display:flex;border:1.5px solid var(--border);border-radius:10px;overflow:hidden;flex-shrink:0}
+.fw-layTgl button{width:34px;height:30px;display:flex;align-items:center;justify-content:center;color:var(--txt3);background:var(--bg)}
+.fw-layTgl button.on{background:var(--txt);color:var(--bg)}
+.fw-layTgl svg{width:15px;height:15px}
+.fw-chipRow{
+  display:flex;gap:7px;overflow-x:auto;padding:8px 13px 4px;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch;
+}
+.fw-chipRow::-webkit-scrollbar{display:none}
+.fw-chip{
+  flex-shrink:0;height:31px;padding:0 13px;border-radius:16px;
+  font-size:12px;font-weight:700;white-space:nowrap;
+  background:var(--bg2);color:var(--txt2);border:1.5px solid var(--border);
+  transition:all .15s;
+}
+.fw-chip.on{background:var(--txt);color:var(--bg);border-color:var(--txt)}
+.fw-chip:active{transform:scale(.96)}
+
+/* ── all products: grid / list ──────────────────────── */
+.fwGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border-top:1px solid var(--border);margin-top:10px}
+.fwGrid .fcard-wrap{width:auto;padding:0;background:var(--bg)}
+.fwGrid.list{grid-template-columns:1fr;gap:0;background:var(--bg);border-top:none}
+/* list mode keeps the ONE product card — it is laid out horizontally, scoped to this grid only */
+.fwGrid.list .fcard-wrap{padding:0 13px;border-bottom:1px solid var(--border)}
+.fwGrid.list .pcard{display:flex;gap:11px;padding:11px 0;border:none;border-radius:0}
+.fwGrid.list .pcImg{width:118px;height:118px;padding-top:0;flex-shrink:0;border-radius:10px;border:1px solid var(--border)}
+.fwGrid.list .pcBody{flex:1;min-width:0;display:flex;flex-direction:column;padding:2px 0}
+.fwGrid.list .pcName{-webkit-line-clamp:2}
+.fwGrid.list .pcPrice{font-size:16px}
+.fwGrid.list .pcStockRow{max-width:200px}
+.fwGrid.list .pcCtl{margin-top:auto;align-self:flex-start}
+@media (min-width:760px){
+  .fwGrid{grid-template-columns:repeat(4,1fr)}
+  .fwGrid.list{grid-template-columns:1fr 1fr;gap:0 24px}
+}
+
+/* ── empty / setup states ───────────────────────────── */
+.fw-empty{padding:44px 26px;text-align:center;color:var(--txt3)}
+.fw-empty h3{font-size:16px;font-weight:800;color:var(--txt);margin-bottom:6px}
+.fw-empty p{font-size:13px;line-height:1.55;max-width:300px;margin:0 auto}
+.fw-skel{padding:0 13px}
+.fw-note{
+  margin:14px 13px 0;padding:10px 13px;border-radius:12px;background:var(--bg2);
+  border:1px dashed var(--border);font-size:12px;color:var(--txt3);line-height:1.5;
+}
+
+/* ── dedicated categories page (#fcats) ─────────────── */
+.fcpg-hdr{position:sticky;top:0;z-index:5;height:52px;display:flex;align-items:center;gap:8px;padding:0 10px;background:var(--bg);border-bottom:1px solid var(--border)}
+.fcpg-hdr .fw-word{font-size:15px;letter-spacing:.1em}
+.fcpg-sub{padding:14px 16px 2px;font-size:12.5px;color:var(--txt3);line-height:1.5}
+.fcpg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:18px 12px;padding:16px}
+@media (min-width:640px){.fcpg-grid{grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:24px 16px}}
+.fcpg-grid .fw-cat-circle img{padding:14%}
+.fcpg-grid .fw-cat-name{font-size:12.5px}
