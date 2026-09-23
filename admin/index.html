@@ -1106,7 +1106,7 @@ async function loadSettings() {
   document.getElementById('sFB').value = get('socialFacebook') || '';
   document.getElementById('sX').value = get('socialX') || '';
   const hpImg = get('headerPromoImage');
-  if (hpImg) { document.getElementById('hpImgPrev').src = hpImg; document.getElementById('hpImgPrev').classList.add('on'); document.getElementById('hpImgTxt').textContent = 'Current banner (tap to replace)'; }
+  if (hpImg) { document.getElementById('hpImgPrev').src = safeHref(hpImg); document.getElementById('hpImgPrev').classList.add('on'); document.getElementById('hpImgTxt').textContent = 'Current banner (tap to replace)'; }
   document.getElementById('hpLink').value = get('headerPromoLink') || '';
   document.getElementById('sDelivery').value = get('deliveryInfo') || '';
   document.getElementById('sReturns').value = get('returnPolicy') || '';

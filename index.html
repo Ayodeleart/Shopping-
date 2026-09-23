@@ -2354,10 +2354,10 @@ async function init() {
 
     const promoImg = get('headerPromoImage');
     if (promoImg) {
-      document.getElementById('headerPromoImg').src = promoImg;
+      document.getElementById('headerPromoImg').src = safeHref(promoImg);
       const promoLink = get('headerPromoLink');
       const promoBar = document.getElementById('headerPromoBar');
-      if (promoLink) { promoBar.href = promoLink; promoBar.style.cursor = 'pointer'; }
+      if (promoLink) { promoBar.href = safeHref(promoLink); promoBar.style.cursor = 'pointer'; }
       else { promoBar.removeAttribute('href'); promoBar.style.cursor = 'default'; promoBar.onclick = e => e.preventDefault(); }
       promoBar.classList.add('show');
     }
