@@ -1,0 +1,22 @@
+name: Delivery confirmation check
+
+# Runs the delivery-confirmation sweep on a schedule instead of Vercel Cron, since Vercel's
+# Hobby plan only allows daily cron jobs. Requires two repo secrets (Settings -> Secrets and
+# variables -> Actions):
+#   SITE_URL     e.g. https://your-marcato-domain.vercel.app  (no trailing slash)
+#   CRON_SECRET  the same value set as the CRON_SECRET env var in the Vercel project
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch: {}   # lets you trigger it manually from the Actions tab too
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call delivery-confirmation-check
+        run: |
+          curl -sS -f -X POST \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.SITE_URL }}/api/wallet-delivery?action=confirmation-check"

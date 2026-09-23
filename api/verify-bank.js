@@ -1,5 +1,12 @@
 // /api/verify-bank.js
 //
+// Also serves what used to be /api/paystack-banks.js (GET: bank list) — merged into this
+// file to stay within the Vercel Hobby plan's 12-serverless-function cap. See git log for
+// why (adding the wallet/delivery-confirmation endpoints needed the extra slot).
+//
+// GET  -> list of Nigerian banks + Paystack codes (public reference data, no auth)
+// POST -> resolve/verify a seller's own bank account number (auth required)
+//
 // Real bank account verification using Paystack's "Resolve Account Number"
 // endpoint (https://paystack.com/docs/api/verification/#resolve-account) —
 // this is a genuine, publicly documented API, not a placeholder. It returns
@@ -16,6 +23,23 @@ const { createClient } = require('@supabase/supabase-js');
 const supabaseAdmin = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 module.exports = async (req, res) => {
+  if (req.method === 'GET') {
+    if (!process.env.PAYSTACK_SECRET_KEY) return res.status(200).json({ configured: false, banks: [] });
+    try {
+      const psRes = await fetch('https://api.paystack.co/bank?country=nigeria&currency=NGN', {
+        headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}` }
+      });
+      const psJson = await psRes.json();
+      if (!psRes.ok) throw new Error(psJson.message || 'Failed to load bank list');
+      const banks = (psJson.data || []).map(b => ({ name: b.name, code: b.code })).sort((a, b) => a.name.localeCompare(b.name));
+      res.setHeader('Cache-Control', 's-maxage=86400, stale-while-revalidate');
+      return res.status(200).json({ configured: true, banks });
+    } catch (e) {
+      console.error(e);
+      return res.status(500).json({ error: e.message || 'Server error' });
+    }
+  }
+
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   try {
     const authHeader = req.headers.authorization || '';

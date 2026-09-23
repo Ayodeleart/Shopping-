@@ -2121,7 +2121,7 @@ async function openWalletDeposit() {
   const amount = Number(prompt('How much would you like to add to your wallet? (₦)'));
   if (!amount || amount < 100) { if (amount) toast('Minimum deposit is ₦100'); return; }
   try {
-    const res = await fetch('/api/wallet-deposit-init', {
+    const res = await fetch('/api/wallet-delivery?action=deposit-init', {
       method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${buyerSession.access_token}` },
       body: JSON.stringify({ amount })
     });
@@ -2140,7 +2140,7 @@ async function maybePromptDeliveryConfirmation() {
   if (!buyerSession) { toast('Sign in to confirm your delivery'); openAccount(); return; }
   const yes = confirm('Did your Marcato order arrive?\n\nTap OK for "Yes, I received it", or Cancel for "Not yet".');
   try {
-    const res = await fetch('/api/delivery-confirm', {
+    const res = await fetch('/api/wallet-delivery?action=confirm', {
       method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${buyerSession.access_token}` },
       body: JSON.stringify({ shipmentId: Number(shipmentId), response: yes ? 'yes' : 'not_yet' })
     });
