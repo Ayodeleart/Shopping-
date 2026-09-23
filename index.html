@@ -41,6 +41,7 @@
 <script>window.MAC_FAB_MANUAL = true; window.MAC_CHAT_MANUAL = true;</script>
 <link rel="stylesheet" href="components/mac-fab.css">
 <link rel="stylesheet" href="components/mac-chat.css">
+<script defer src="components/mac-theme.js"></script>
 <script defer src="components/mac-fab.js"></script>
 <script defer src="components/mac-chat.js"></script>
 <link rel="stylesheet" href="components/product-page.css">
@@ -108,6 +109,11 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
   display:none;
 }
 #callBar.show{display:block}
+
+/* ── HEADER PROMO STRIP (tiny, admin-set, GIF-friendly) ── */
+#headerPromoBar{display:none;width:100%;height:30px;overflow:hidden;background:var(--bg2)}
+#headerPromoBar.show{display:block}
+#headerPromoBar img{width:100%;height:100%;object-fit:cover;display:block}
 
 /* ── MAIN ─────────────────────────────────────────── */
 #main{padding-top:0}
@@ -578,6 +584,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
     <span id="cartDot"></span>
   </button>
 </header>
+<a id="headerPromoBar" target="_blank" rel="noopener"><img id="headerPromoImg" alt=""></a>
 
 <!-- CATEGORY TITLES: fixed under the header, shown only after the search bar has scrolled away -->
 <nav id="catNav" aria-label="Categories"><div id="catNavRow"></div></nav>
@@ -2343,6 +2350,16 @@ async function init() {
       const bar = document.getElementById('callBar');
       bar.textContent = `CALL TO ORDER: ${phone}`;
       bar.classList.add('show');
+    }
+
+    const promoImg = get('headerPromoImage');
+    if (promoImg) {
+      document.getElementById('headerPromoImg').src = promoImg;
+      const promoLink = get('headerPromoLink');
+      const promoBar = document.getElementById('headerPromoBar');
+      if (promoLink) { promoBar.href = promoLink; promoBar.style.cursor = 'pointer'; }
+      else { promoBar.removeAttribute('href'); promoBar.style.cursor = 'default'; promoBar.onclick = e => e.preventDefault(); }
+      promoBar.classList.add('show');
     }
 
     populateFooter(storeName, tagline, phone, get('contactEmail'), get('contactAddress'), get('socialInstagram'), get('socialFacebook'), get('socialX'));
