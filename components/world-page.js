@@ -69,7 +69,7 @@
     var hero = h('div', 'wp-hero');
     if (world.image_url) {
       var himg = h('img', 'wp-hero-img');
-      himg.src = world.image_url; himg.alt = '';
+      himg.src = safeHref(world.image_url); himg.alt = '';
       hero.appendChild(himg);
       hero.classList.add('has-img');
     }

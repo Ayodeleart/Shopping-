@@ -43,7 +43,7 @@
 
       if (w.image_url) {
         var img = h('img', 'xmCard-img');
-        img.src = w.image_url;
+        img.src = safeHref(w.image_url);
         img.alt = '';
         img.loading = 'lazy';
         card.appendChild(img);
