@@ -23,6 +23,7 @@
   background:linear-gradient(180deg,rgba(0,0,0,.35) 0%,rgba(0,0,0,.55) 100%);
 }
 .wp-hero-icon{position:relative;z-index:2;width:44px;height:44px;color:#fff;margin:0 auto 14px}
+.wp-hero-icon path,.wp-hero-icon g{fill:currentColor}
 .wp-hero-name{position:relative;z-index:2;font-size:28px;font-weight:900;letter-spacing:-.4px}
 .wp-hero-tag{position:relative;z-index:2;margin-top:8px;font-size:14px;color:rgba(255,255,255,.88);font-weight:500}
 

@@ -59,6 +59,16 @@
     root.textContent = '';
     root.style.setProperty('--wp-grad', world.gradient);
 
+    if (world.slug === 'food' && global.Pcx && global.Pcx.FoodWorld) {
+      global.Pcx.FoodWorld.mount(root, world, { onBack: d.onBack });
+      return;
+    }
+
+    if (world.slug === 'beauty' && global.Pcx && global.Pcx.BeautyWorld) {
+      global.Pcx.BeautyWorld.mount(root, world, { onBack: d.onBack, beauty: d.beauty && d.beauty() });
+      return;
+    }
+
     var hdr = h('header', 'wp-hdr');
     var back = h('button', 'wp-back'); back.type = 'button'; back.setAttribute('aria-label', 'Back'); back.innerHTML = BACK;
     back.addEventListener('click', function () { d.onBack(); });
@@ -74,7 +84,7 @@
       hero.classList.add('has-img');
     }
     var icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    icon.setAttribute('viewBox', '0 0 24 24'); icon.setAttribute('class', 'wp-hero-icon'); icon.setAttribute('aria-hidden', 'true');
+    icon.setAttribute('viewBox', world.viewBox || '0 0 24 24'); icon.setAttribute('class', 'wp-hero-icon'); icon.setAttribute('aria-hidden', 'true');
     icon.innerHTML = world.icon;
     hero.appendChild(icon);
     var name = h('h2', 'wp-hero-name', world.name);
