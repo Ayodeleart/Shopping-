@@ -1,9 +1,13 @@
 /* Pcx.ExploreMarcato
  * The "Explore Marcato" destination strip: portrait cards for the specialized Marcato worlds
- * (Food, Fashion, Beauty, Home, Gifts). Distinct from categories, brands and vendors — these are
- * whole shopping experiences, not product filters. Data comes from data/worlds.js (static for now).
+ * (Food, Fashion, Beauty, Home & Decor, Gifts). Distinct from categories, brands and vendors —
+ * these are whole shopping experiences, not product filters.
  *
- *   Pcx.ExploreMarcato.mount(document.getElementById('exploreRow'), Worlds.list(), goToWorld);
+ * Each world's name/tagline/gradient/icon come from data/worlds.js (fixed). `image_url` is
+ * optional and admin-managed (Admin > Banners > Explore Marcato, see migration_worlds.sql) —
+ * when set it's shown as the card's photo/GIF; otherwise the card falls back to its gradient + icon.
+ *
+ *   Pcx.ExploreMarcato.mount(document.getElementById('exploreRow'), worlds, goToWorld);
  *
  * Requires: components/explore-marcato.css
  */
@@ -36,6 +40,14 @@
       icon.setAttribute('aria-hidden', 'true');
       icon.innerHTML = w.icon;
       art.appendChild(icon);
+
+      if (w.image_url) {
+        var img = h('img', 'xmCard-img');
+        img.src = w.image_url;
+        img.alt = '';
+        img.loading = 'lazy';
+        card.appendChild(img);
+      }
       card.appendChild(art);
 
       var body = h('span', 'xmCard-body');

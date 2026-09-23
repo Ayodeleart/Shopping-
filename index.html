@@ -41,6 +41,7 @@
 <script>window.MAC_FAB_MANUAL = true; window.MAC_CHAT_MANUAL = true;</script>
 <link rel="stylesheet" href="components/mac-fab.css">
 <link rel="stylesheet" href="components/mac-chat.css">
+<script defer src="components/mac-theme.js"></script>
 <script defer src="components/mac-fab.js"></script>
 <script defer src="components/mac-chat.js"></script>
 <link rel="stylesheet" href="components/product-page.css">
@@ -1193,14 +1194,22 @@ function openStore(identifier) { if (identifier) location.href = '/store/' + ide
 /* ── EXPLORE MARCATO WORLDS (#world=slug) ────────────
    Placeholder destinations only — see data/worlds.js and components/world-page.js. Same
    hash-routing idea as the category page (#cat=slug) so back/forward and deep links work. */
-let worldPage = null, worldDeepLinked = false;
+let worldPage = null, worldDeepLinked = false, worldsList = [];
 function worldFromHash() { const m = /^#world=([a-z0-9-]+)/.exec(location.hash); return m ? m[1] : null; }
 function openWorld(slug) { location.hash = 'world=' + slug; }
+function worldBySlug(slug) { return worldsList.find(w => w.slug === slug) || Worlds.bySlug(slug); }
+/* Merges the admin-uploaded image (worlds table, `worlds` missing/empty is fine — see
+   migration_worlds.sql) onto the fixed name/tagline/gradient/icon list from data/worlds.js. */
+function worldsForCards(worldRows) {
+  const imgBySlug = {};
+  (worldRows || []).forEach(r => { if (r.image_url) imgBySlug[r.slug] = r.image_url; });
+  return Worlds.list().map(w => imgBySlug[w.slug] ? Object.assign({}, w, { image_url: imgBySlug[w.slug] }) : w);
+}
 function syncWorldPage() {
   if (!worldPage) return;
   const slug = worldFromHash();
   if (!slug) { worldPage.close(); return; }
-  const w = Worlds.bySlug(slug);
+  const w = worldBySlug(slug);
   if (w) worldPage.open(w); else closeWorldPage();
 }
 function closeWorldPage() {
@@ -2302,7 +2311,8 @@ async function init() {
       {data:tileRows},
       {data:catRows},
       {data:brandRows},
-      {data:ratingRows}
+      {data:ratingRows},
+      {data:worldRows}
     ] = await Promise.all([
       sb.from('products').select('*').order('created_at',{ascending:false}),
       sb.from('banners').select('*').order('sort_order',{ascending:true}),
@@ -2313,7 +2323,8 @@ async function init() {
       sb.from('tiles').select('*').eq('active',true).order('sort_order',{ascending:true}),
       Pcx.Categories.fetchAll(sb).then(r => ({ data: r.rows })),
       sb.from('brands').select('*').order('name',{ascending:true}),
-      sb.from('product_ratings').select('*')
+      sb.from('product_ratings').select('*'),
+      sb.from('worlds').select('slug,image_url')
     ]);
 
     const get = k => settings?.find(s=>s.key===k)?.value;
@@ -2358,7 +2369,8 @@ async function init() {
     buildCarousel(banners || []);
     buildVendorRow(vendors || []);
     buildBrandRow();
-    Pcx.ExploreMarcato.mount(document.getElementById('exploreRow'), Worlds.list(), openWorld);
+    worldsList = worldsForCards(worldRows);
+    Pcx.ExploreMarcato.mount(document.getElementById('exploreRow'), worldsList, openWorld);
     initWorldPage();
 
     /* Categories come from the `categories` table. If it is empty or not created yet, fall back to the old shortcut cards. */
