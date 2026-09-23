@@ -932,6 +932,18 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
       <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="34" height="34"><path opacity="0.4" d="M12.1207 12.78C12.0507 12.77 11.9607 12.77 11.8807 12.78C10.1207 12.72 8.7207 11.28 8.7207 9.50998C8.7207 7.69998 10.1807 6.22998 12.0007 6.22998C13.8107 6.22998 15.2807 7.69998 15.2807 9.50998C15.2707 11.28 13.8807 12.72 12.1207 12.78Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path opacity="0.34" d="M18.7398 19.3801C16.9598 21.0101 14.5998 22.0001 11.9998 22.0001C9.39977 22.0001 7.03977 21.0101 5.25977 19.3801C5.35977 18.4401 5.95977 17.5201 7.02977 16.8001C9.76977 14.9801 14.2498 14.9801 16.9698 16.8001C18.0398 17.5201 18.6398 18.4401 18.7398 19.3801Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </div>
     <p class="acctMsg" id="acctEmail"></p>
+
+    <div id="walletCard" style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin:0 0 14px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:12px;color:var(--txt3);font-weight:700">Marcato Wallet</div>
+          <div style="font-size:20px;font-weight:800" id="walletBalance">₦0</div>
+        </div>
+        <button id="walletAddBtn" onclick="openWalletDeposit()" style="background:var(--red);color:#fff;font-weight:800;font-size:12px;padding:8px 14px;border-radius:20px">+ Add Money</button>
+      </div>
+      <div id="walletTxList" style="margin-top:10px;font-size:12px;color:var(--txt3)"></div>
+    </div>
+
     <div class="acctLinks">
       <a href="#" onclick="showMyOrders();return false;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
@@ -2090,7 +2102,63 @@ async function checkBuyerSession() {
   document.getElementById('acctSignedOut').style.display = session ? 'none' : '';
   document.getElementById('acctSignedIn').style.display = session ? '' : 'none';
   document.getElementById('menuLogoutLink').style.display = session ? '' : 'none';
-  if (session) document.getElementById('acctEmail').textContent = session.user.email;
+  if (session) { document.getElementById('acctEmail').textContent = session.user.email; loadWallet(); }
+}
+
+/* ── WALLET ───────────────────────────────────────── */
+async function loadWallet() {
+  if (!buyerSession) return;
+  const { data: wallet } = await sb.from('customer_wallets').select('available_balance').eq('user_id', buyerSession.user.id).maybeSingle();
+  document.getElementById('walletBalance').textContent = '₦' + Number((wallet && wallet.available_balance) || 0).toLocaleString();
+  const { data: txs } = await sb.from('customer_wallet_transactions').select('transaction_type,amount,status,created_at')
+    .eq('user_id', buyerSession.user.id).order('created_at', { ascending: false }).limit(5);
+  const list = document.getElementById('walletTxList');
+  if (!txs || !txs.length) { list.textContent = 'No transactions yet.'; return; }
+  const LABEL = { deposit: 'Deposit', purchase: 'Purchase', refund: 'Refund', reversal: 'Reversal', adjustment: 'Adjustment' };
+  const SIGN = { deposit: '+', purchase: '-', refund: '+', reversal: '', adjustment: '' };
+  list.innerHTML = txs.map(t => `<div style="display:flex;justify-content:space-between;padding:4px 0">
+    <span>${LABEL[t.transaction_type] || t.transaction_type}${t.status !== 'completed' ? ' (' + t.status + ')' : ''}</span>
+    <span>${SIGN[t.transaction_type] || ''}₦${Number(t.amount).toLocaleString()}</span>
+  </div>`).join('');
+}
+
+async function openWalletDeposit() {
+  if (!buyerSession) { toast('Sign in first'); return; }
+  const amount = Number(prompt('How much would you like to add to your wallet? (₦)'));
+  if (!amount || amount < 100) { if (amount) toast('Minimum deposit is ₦100'); return; }
+  try {
+    const res = await fetch('/api/wallet-delivery?action=deposit-init', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${buyerSession.access_token}` },
+      body: JSON.stringify({ amount })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not start payment');
+    window.location.href = data.authorization_url;   // customer pays on Paystack's own page; wallet is credited by the webhook, never by this redirect
+  } catch (e) { toast(e.message || 'Could not start payment', true); }
+}
+
+/* ── DELIVERY CONFIRMATION (deep link from push notification) ─────────── */
+async function maybePromptDeliveryConfirmation() {
+  const params = new URLSearchParams(window.location.search);
+  const shipmentId = params.get('confirm_delivery');
+  if (!shipmentId) return;
+  if (!buyerSession) { await checkBuyerSession(); }
+  if (!buyerSession) { toast('Sign in to confirm your delivery'); openAccount(); return; }
+  const yes = confirm('Did your Marcato order arrive?\n\nTap OK for "Yes, I received it", or Cancel for "Not yet".');
+  try {
+    const res = await fetch('/api/wallet-delivery?action=confirm', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${buyerSession.access_token}` },
+      body: JSON.stringify({ shipmentId: Number(shipmentId), response: yes ? 'yes' : 'not_yet' })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not record your response');
+    toast(yes ? 'Thanks — marked as delivered!' : "Thanks — we'll check back later.");
+  } catch (e) { toast(e.message || 'Could not record your response', true); }
+  finally {
+    params.delete('confirm_delivery');
+    const rest = params.toString();
+    history.replaceState(null, '', window.location.pathname + (rest ? '?' + rest : ''));
+  }
 }
 
 document.getElementById('acctGoogleBtn').onclick = async () => {
@@ -2293,6 +2361,7 @@ async function init() {
   initTrackingPages();
   initAssistant();
   notifCenter.refreshUnread();
+  maybePromptDeliveryConfirmation();
   sb.auth.onAuthStateChange((_event, session) => {
     buyerSession = session;
     if (!session) favSyncedFor = null;
