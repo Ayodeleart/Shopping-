@@ -29,7 +29,6 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 .lsub{font-size:13px;color:#8a93a3;margin-bottom:30px;line-height:1.5}
 #loginBtn{width:100%;height:52px;background:#fff;border:none;color:#111;font-size:15px;font-weight:700;border-radius:14px;transition:transform .15s,opacity .15s}
 #loginBtn:active{transform:scale(.98);opacity:.9}
-#loginErr{color:#f87171;font-size:13px;text-align:center;margin-top:14px;min-height:18px}
 
 #authSplash{position:fixed;inset:0;z-index:700;background:var(--bg);display:flex;align-items:center;justify-content:center}
 #authSplash.off{display:none}
@@ -254,6 +253,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 <link rel="stylesheet" href="../components/categories.css">
 <link rel="stylesheet" href="../components/order-tracking.css">
 <link rel="stylesheet" href="../components/brand-picker.css">
+<link rel="stylesheet" href="../components/auth-screen.css">
 <script src="../components/sw-register.js"></script>
 <link rel="stylesheet" href="categories.css">
 </head>
@@ -276,17 +276,20 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 <!-- shown while the session is checked, so a signed-in admin never sees the login page flash by -->
 <div id="authSplash"><img src="app-icon-maskable-192.png" alt=""></div>
 
-<!-- LOGIN -->
+<!-- LOGIN (Google only; this account also has to be in the ADMIN_EMAILS allow-list below) -->
 <div id="loginWrap">
-  <div class="lbox">
-    <div class="llogo"><img src="app-icon-maskable-192.png" alt=""></div>
-    <div class="ltitle">Admin Login</div>
-    <div class="lsub">Sign in with an authorized admin<br>Google account</div>
-    <button id="loginBtn" style="display:flex;align-items:center;justify-content:center;gap:10px">
-      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.9 32.7 29.4 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.6 18.9 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 16.3 4 9.6 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.5 0 10.4-1.9 14.2-5.1l-6.5-5.5C29.6 35.3 27 36 24 36c-5.4 0-9.9-3.3-11.4-7.9l-6.6 5.1C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.7l6.5 5.5C41.5 36.4 44 30.7 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>
-      Continue with Google
-    </button>
-    <div id="loginErr"></div>
+  <div class="lbox authScreen">
+    <div class="as-brand"><img src="app-icon-maskable-192.png" alt=""><span>Maccato</span></div>
+    <div class="as-title">Admin Login<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.8 5.3L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.7L12 2z"/><path d="M19 14.5l.9 2.6L22.5 18l-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9.9-2.6z"/></svg></div>
+    <div class="as-sub">Sign in with an authorized admin Google account.</div>
+
+    <div class="as-social">
+      <button type="button" class="as-social-btn" id="loginBtn" style="grid-column:1/-1"><svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.9 32.7 29.4 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.6 18.9 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 16.3 4 9.6 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.5 0 10.4-1.9 14.2-5.1l-6.5-5.5C29.6 35.3 27 36 24 36c-5.4 0-9.9-3.3-11.4-7.9l-6.6 5.1C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.7l6.5 5.5C41.5 36.4 44 30.7 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>Continue with Google</button>
+    </div>
+    <div class="as-social" style="margin-top:-8px">
+      <button type="button" class="as-social-btn soon" id="loginFbBtn" style="grid-column:1/-1"><svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><circle cx="24" cy="24" r="20" fill="#1877F2"/><path fill="#fff" d="M27 24.5h3.5l.6-4H27v-2.3c0-1.4.4-2.4 2.4-2.4H31V12c-.4-.1-1.7-.2-3.2-.2-3.2 0-5.4 2-5.4 5.6V20.5H19v4h3.4V35h4.6z"/></svg>Facebook<span class="as-soon-badge">Soon</span></button>
+    </div>
+    <div class="as-err" id="loginErr"></div>
   </div>
 </div>
 
@@ -1110,6 +1113,7 @@ document.getElementById('loginBtn').onclick = async () => {
   const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
   if (error) document.getElementById('loginErr').textContent = error.message;
 };
+document.getElementById('loginFbBtn').onclick = () => toast('Facebook sign-in is coming soon. Please use Google for now.');
 
 document.getElementById('logoutBtn').onclick = () => {
   sb.auth.signOut().then(() => {

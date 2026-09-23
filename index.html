@@ -24,6 +24,7 @@
 <script defer src="data/categories.js"></script>
 <script defer src="components/category-page.js"></script>
 <script src="components/sw-register.js"></script>
+<link rel="stylesheet" href="components/auth-screen.css">
 <link rel="stylesheet" href="components/search-page.css">
 <script defer src="data/search.js"></script>
 <script defer src="components/search-page.js"></script>
@@ -340,15 +341,12 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
   padding:24px;position:relative;
 }
 #acctSignedOut .acctBack{position:absolute;top:calc(env(safe-area-inset-top,0) + 16px);left:16px;color:#fff}
-#acctSignedOut .acctLogo{width:88px;height:88px;border-radius:50%;overflow:hidden;margin:0 auto 22px;box-shadow:0 0 0 1px rgba(255,255,255,.1)}
-#acctSignedOut .acctLogo img{width:100%;height:100%;object-fit:cover;display:block}
-#acctSignedOut .ctitle{font-size:26px;font-weight:800;color:#fff;margin-bottom:6px}
-#acctSignedOut .csub{font-size:13px;color:#8a93a3;line-height:1.5;margin-bottom:28px;max-width:300px}
-#acctSignedOut #acctGoogleBtn{width:100%;max-width:320px;height:52px;background:#fff;border:none;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:10px;font-size:15px;font-weight:700;color:#111}
+#acctSignedOut .as-content{width:100%;max-width:340px}
+#acctSignedOut .ctitle{font-size:22px;font-weight:800;color:#fff;margin-bottom:6px}
+#acctSignedOut .csub{font-size:13px;color:#8a93a3;line-height:1.5;margin-bottom:24px;max-width:300px;margin-left:auto;margin-right:auto}
 .acctIcon{width:60px;height:60px;border-radius:50%;background:var(--bg2);color:var(--txt3);display:flex;align-items:center;justify-content:center;margin:4px auto 14px}
 .acctMsg{font-size:14px;color:var(--txt2);margin-bottom:18px;line-height:1.5}
 #acctEmail{font-weight:700;color:var(--txt)}
-#acctGoogleBtn{width:100%;height:50px;background:#fff;border:1.5px solid var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;gap:10px;font-size:15px;font-weight:700;color:#111}
 .acctLinks{display:flex;flex-direction:column;gap:2px;text-align:left;margin-top:6px}
 .acctLinks a{display:flex;align-items:center;gap:12px;padding:13px 4px;color:var(--txt);text-decoration:none;font-size:14px;font-weight:600;border-bottom:1px solid var(--bg2)}
 .acctLinks a svg{color:var(--txt3);flex-shrink:0}
@@ -400,10 +398,10 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 .catRowScroll .fcard-wrap{flex-shrink:0}
 
 /* ── LEGAL MODAL ──────────────────────────────────── */
-#legalOver{position:fixed;inset:0;z-index:250;background:rgba(0,0,0,0);pointer-events:none;transition:background .28s}
+#legalOver{position:fixed;inset:0;z-index:270;background:rgba(0,0,0,0);pointer-events:none;transition:background .28s}
 #legalOver.open{background:rgba(0,0,0,.5);pointer-events:all}
 #legalDrawer{
-  position:fixed;inset:0;z-index:260;background:var(--bg);
+  position:fixed;inset:0;z-index:271;background:var(--bg);
   display:flex;flex-direction:column;overflow-y:auto;
   transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
 }
@@ -869,17 +867,84 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 <!-- ACCOUNT DRAWER -->
 <div id="acctOver" onclick="closeAccount()"></div>
 <div id="acctDrawer">
-  <div id="acctSignedOut" class="acctPane">
+  <div id="acctSignedOut" class="acctPane authScreen">
     <button class="acctBack" onclick="closeAccount()" aria-label="Back">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
     </button>
-    <div class="acctLogo" onclick="goHome(event)" style="cursor:pointer"><img src="app-icon-192.png" alt="Home"></div>
-    <div class="ctitle">Login</div>
-    <div class="csub">Sign in to track orders, save items and leave reviews.</div>
-    <button id="acctGoogleBtn">
-      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.9 32.7 29.4 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.6 18.9 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 16.3 4 9.6 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.5 0 10.4-1.9 14.2-5.1l-6.5-5.5C29.6 35.3 27 36 24 36c-5.4 0-9.9-3.3-11.4-7.9l-6.6 5.1C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.7l6.5 5.5C41.5 36.4 44 30.7 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>
-      Continue with Google
-    </button>
+
+    <!-- SIGN IN -->
+    <div id="authFormView" class="as-content">
+      <div class="as-brand"><img src="app-icon-192.png" alt=""><span>Maccato</span></div>
+      <div class="as-title">Log in to your account<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.8 5.3L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.7L12 2z"/><path d="M19 14.5l.9 2.6L22.5 18l-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9.9-2.6z"/></svg></div>
+      <div class="as-sub">Welcome back! Please enter your details.</div>
+
+      <div class="as-social">
+        <button type="button" class="as-social-btn" id="authGoogleBtn"><svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.9 32.7 29.4 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.6 18.9 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 16.3 4 9.6 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.5 0 10.4-1.9 14.2-5.1l-6.5-5.5C29.6 35.3 27 36 24 36c-5.4 0-9.9-3.3-11.4-7.9l-6.6 5.1C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.7l6.5 5.5C41.5 36.4 44 30.7 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>Google</button>
+        <button type="button" class="as-social-btn soon" id="authFacebookBtn"><svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><circle cx="24" cy="24" r="20" fill="#1877F2"/><path fill="#fff" d="M27 24.5h3.5l.6-4H27v-2.3c0-1.4.4-2.4 2.4-2.4H31V12c-.4-.1-1.7-.2-3.2-.2-3.2 0-5.4 2-5.4 5.6V20.5H19v4h3.4V35h4.6z"/></svg>Facebook<span class="as-soon-badge">Soon</span></button>
+      </div>
+      <div class="as-divider"><span>Or continue with email</span></div>
+
+      <form id="authForm" novalidate>
+        <div class="as-field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 6 10-6"/></svg><input id="authEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="Email address"></div>
+        <div class="as-field pass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg><input id="authPass" type="password" autocomplete="current-password" placeholder="Password"><button type="button" class="as-eye" data-for="authPass">Show</button></div>
+        <div class="as-row">
+          <label class="as-remember"><input type="checkbox" id="authRemember">Remember me</label>
+          <button type="button" class="as-link" id="authForgot">Forgot password?</button>
+        </div>
+        <button type="submit" class="as-cta" id="authSubmit">Log In</button>
+      </form>
+      <div class="as-err" id="authErr"></div>
+      <div class="as-info" id="authInfo"></div>
+      <div class="as-switch">Don't have an account? <button type="button" id="authGoSignUp">Sign Up</button></div>
+    </div>
+
+    <!-- SIGN UP -->
+    <div id="authSignUpView" class="as-content" style="display:none">
+      <div class="as-brand"><img src="app-icon-192.png" alt=""><span>Maccato</span></div>
+      <div class="as-title">Create your account<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.8 5.3L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.7L12 2z"/><path d="M19 14.5l.9 2.6L22.5 18l-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9.9-2.6z"/></svg></div>
+      <div class="as-sub">Join Maccato to track orders, save items and leave reviews.</div>
+
+      <div class="as-social">
+        <button type="button" class="as-social-btn" id="authGoogleBtn2"><svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.9 32.7 29.4 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.6 18.9 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 16.3 4 9.6 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.5 0 10.4-1.9 14.2-5.1l-6.5-5.5C29.6 35.3 27 36 24 36c-5.4 0-9.9-3.3-11.4-7.9l-6.6 5.1C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.7l6.5 5.5C41.5 36.4 44 30.7 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>Google</button>
+        <button type="button" class="as-social-btn soon" id="authFacebookBtn2"><svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><circle cx="24" cy="24" r="20" fill="#1877F2"/><path fill="#fff" d="M27 24.5h3.5l.6-4H27v-2.3c0-1.4.4-2.4 2.4-2.4H31V12c-.4-.1-1.7-.2-3.2-.2-3.2 0-5.4 2-5.4 5.6V20.5H19v4h3.4V35h4.6z"/></svg>Facebook<span class="as-soon-badge">Soon</span></button>
+      </div>
+      <div class="as-divider"><span>Or continue with email</span></div>
+
+      <form id="authSignUpForm" novalidate>
+        <div class="as-field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 6 10-6"/></svg><input id="authSuEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="Email address"></div>
+        <div class="as-field pass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg><input id="authSuPass" type="password" autocomplete="new-password" placeholder="Password (at least 8 characters)"><button type="button" class="as-eye" data-for="authSuPass">Show</button></div>
+        <div class="as-field pass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg><input id="authSuPass2" type="password" autocomplete="new-password" placeholder="Confirm password"></div>
+        <label class="as-terms"><input type="checkbox" id="authTerms">I agree to Maccato's <a href="#" class="as-link" onclick="openLegal('terms');return false">Terms of Service</a> and <a href="#" class="as-link" onclick="openLegal('privacy');return false">Privacy Policy</a></label>
+        <button type="submit" class="as-cta" id="authSuSubmit">Sign Up</button>
+      </form>
+      <div class="as-err" id="authSuErr"></div>
+      <div class="as-info" id="authSuInfo"></div>
+      <div class="as-switch">Already have an account? <button type="button" id="authGoSignIn">Log in</button></div>
+    </div>
+
+    <!-- CHECK YOUR EMAIL (only shown if the store requires confirming a new sign-up) -->
+    <div id="authConfirmView" class="as-content" style="display:none">
+      <div class="as-brand"><img src="app-icon-192.png" alt=""><span>Maccato</span></div>
+      <div class="ctitle">Check your email</div>
+      <div class="csub">We sent a confirmation link to<br><b id="authConfirmEmail" style="color:#fff"></b><br>Open it on this phone and you'll be signed in.</div>
+      <button type="button" class="as-cta" id="authResend" style="background:transparent;border:1.5px solid rgba(255,255,255,.22);box-shadow:none">Resend email</button>
+      <div class="as-switch"><button type="button" id="authConfirmBack">Use a different email</button></div>
+      <div class="as-err" id="authConfirmErr"></div>
+      <div class="as-info" id="authConfirmInfo"></div>
+    </div>
+
+    <!-- SET NEW PASSWORD (after the reset-password email link) -->
+    <div id="authResetView" class="as-content" style="display:none">
+      <div class="as-brand"><img src="app-icon-192.png" alt=""><span>Maccato</span></div>
+      <div class="ctitle">Set a new password</div>
+      <div class="csub">Choose a password with at least 8 characters.</div>
+      <form id="authResetForm" novalidate>
+        <div class="as-field pass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg><input id="authNewPass" type="password" autocomplete="new-password" placeholder="New password"><button type="button" class="as-eye" data-for="authNewPass">Show</button></div>
+        <div class="as-field pass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg><input id="authNewPass2" type="password" autocomplete="new-password" placeholder="Confirm new password"></div>
+        <button type="submit" class="as-cta" id="authResetSubmit">Save password</button>
+      </form>
+      <div class="as-err" id="authResetErr"></div>
+    </div>
   </div>
 
   <div id="acctSignedIn" style="display:none">
@@ -936,8 +1001,22 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 /* ── SUPABASE ─────────────────────────────────────── */
 const SB_URL = 'https://qmwlphribvncdtgzbixt.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtd2xwaHJpYnZuY2R0Z3piaXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMDkwMjcsImV4cCI6MjA5NTg4NTAyN30.kmXKSrnQxG6n8RdK6ppNvn05vi7Xl68LKUNW5f7CQCU';
-const sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
+
+/* "Remember me": when it's off, the session lives in sessionStorage (gone once the browser fully closes)
+   instead of localStorage. Set BEFORE signing in — see authForm / the Google buttons below. */
+const rememberAwareStorage = {
+  getItem: k => { try { return localStorage.getItem(k) ?? sessionStorage.getItem(k); } catch (e) { return null; } },
+  setItem: (k, v) => {
+    try {
+      if (localStorage.getItem('maccato_remember') === '0') { sessionStorage.setItem(k, v); localStorage.removeItem(k); }
+      else { localStorage.setItem(k, v); sessionStorage.removeItem(k); }
+    } catch (e) { /* private mode */ }
+  },
+  removeItem: k => { try { localStorage.removeItem(k); sessionStorage.removeItem(k); } catch (e) {} }
+};
+const sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, storage: rememberAwareStorage } });
 let buyerSession = null;
+let RECOVERY = /[#&]type=recovery/.test(location.hash);      /* opened from a "reset password" email link */
 let storePhone = '';
 let storeName = 'Maccato';
 let brandsList = [], brandById = {}, brandBySlug = {}, vendorsMap = {}, ratingMap = {};
@@ -1899,7 +1978,12 @@ function dismissInstall() {
 
 /* ── INIT ─────────────────────────────────────────── */
 /* ── BUYER ACCOUNT ────────────────────────────────── */
-function openAccount() { document.getElementById('acctOver').classList.add('open'); document.getElementById('acctDrawer').classList.add('open'); document.body.style.overflow='hidden'; }
+function openAccount() {
+  document.getElementById('acctOver').classList.add('open');
+  document.getElementById('acctDrawer').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  if (!buyerSession && !RECOVERY) authView('signin');   // always start at the login screen, not wherever it was left last time
+}
 /* ── COOKIE CONSENT ───────────────────────────────── */
 /* ── FOOTER + LEGAL ───────────────────────────────── */
 function populateFooter(storeName, tagline, phone, email, address, ig, fb, x) {
@@ -1997,14 +2081,146 @@ document.getElementById('acctOver').onclick = closeAccount;
 async function checkBuyerSession() {
   const { data: { session } } = await sb.auth.getSession();
   buyerSession = session;
+  if (RECOVERY && session) { openAccount(); authView('reset'); return; }
   document.getElementById('acctSignedOut').style.display = session ? 'none' : '';
   document.getElementById('acctSignedIn').style.display = session ? '' : 'none';
   document.getElementById('menuLogoutLink').style.display = session ? '' : 'none';
   if (session) document.getElementById('acctEmail').textContent = session.user.email;
+  if (!session) authView('signin');
 }
 
-document.getElementById('acctGoogleBtn').onclick = async () => {
-  await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
+/* ── AUTH: sign up / sign in with Google (works now), Facebook (coming soon) or email + password ── */
+const $a = id => document.getElementById(id);
+const AUTH_REDIRECT = window.location.origin + window.location.pathname;
+
+function authView(v) {
+  $a('authFormView').style.display = v === 'signin' ? '' : 'none';
+  $a('authSignUpView').style.display = v === 'signup' ? '' : 'none';
+  $a('authConfirmView').style.display = v === 'confirm' ? '' : 'none';
+  $a('authResetView').style.display = v === 'reset' ? '' : 'none';
+}
+function authMsg(err, info) { $a('authErr').textContent = err || ''; $a('authInfo').textContent = info || ''; }
+function authSuMsg(err, info) { $a('authSuErr').textContent = err || ''; $a('authSuInfo').textContent = info || ''; }
+
+$a('authGoSignUp').onclick = () => { authMsg('', ''); authView('signup'); };
+$a('authGoSignIn').onclick = () => { authSuMsg('', ''); authView('signin'); };
+
+document.querySelectorAll('.as-eye').forEach(btn => {
+  btn.onclick = () => {
+    const inp = $a(btn.dataset.for), show = inp.type === 'password';
+    inp.type = show ? 'text' : 'password';
+    btn.textContent = show ? 'Hide' : 'Show';
+  };
+});
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+function friendlyAuthError(e) {
+  const m = String((e && e.message) || e || '');
+  if (/invalid login credentials/i.test(m)) return 'Wrong email or password.';
+  if (/already registered|already exists/i.test(m)) return 'An account with this email already exists. Tap Log in instead.';
+  if (/email not confirmed/i.test(m)) return 'Please confirm your email first. Check your inbox for the link we sent.';
+  if (/rate limit|too many|seconds/i.test(m)) return 'Too many attempts. Please wait a minute and try again.';
+  if (/password.*(weak|short|least)/i.test(m)) return 'Choose a stronger password (at least 8 characters).';
+  if (/failed to fetch|network/i.test(m)) return 'No internet connection. Please try again.';
+  return m || 'Something went wrong. Please try again.';
+}
+
+function setRemember(on) { try { localStorage.setItem('maccato_remember', on ? '1' : '0'); } catch (e) {} }
+
+async function authGoogle() {
+  setRemember(true);
+  await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: AUTH_REDIRECT } });
+}
+function authFacebookSoon() { toast('Facebook sign-in is coming soon. Please use Google or email for now.'); }
+$a('authGoogleBtn').onclick = authGoogle;
+$a('authGoogleBtn2').onclick = authGoogle;
+$a('authFacebookBtn').onclick = authFacebookSoon;
+$a('authFacebookBtn2').onclick = authFacebookSoon;
+
+$a('authForm').onsubmit = async ev => {
+  ev.preventDefault();
+  const email = $a('authEmail').value.trim().toLowerCase();
+  const pass = $a('authPass').value;
+  authMsg('', '');
+  if (!EMAIL_RE.test(email)) { authMsg('Enter a valid email address.'); return; }
+  if (!pass) { authMsg('Enter your password.'); return; }
+  const btn = $a('authSubmit');
+  btn.disabled = true;
+  try {
+    setRemember($a('authRemember').checked);
+    const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+    if (error) throw error;
+    await checkBuyerSession();
+    await syncFavsFromServer();
+  } catch (e) {
+    authMsg(friendlyAuthError(e));
+  } finally {
+    btn.disabled = false;
+  }
+};
+
+$a('authForgot').onclick = async () => {
+  const email = $a('authEmail').value.trim().toLowerCase();
+  if (!EMAIL_RE.test(email)) { authMsg('Type your email above first, then tap Forgot password.'); return; }
+  authMsg('', '');
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: AUTH_REDIRECT });
+  if (error) authMsg(friendlyAuthError(error));
+  else authMsg('', 'If an account exists for ' + email + ', a reset link is on its way. Check your inbox and spam folder.');
+};
+
+$a('authSignUpForm').onsubmit = async ev => {
+  ev.preventDefault();
+  const email = $a('authSuEmail').value.trim().toLowerCase();
+  const pass = $a('authSuPass').value;
+  authSuMsg('', '');
+  if (!EMAIL_RE.test(email)) { authSuMsg('Enter a valid email address.'); return; }
+  if (pass.length < 8) { authSuMsg('Your password needs at least 8 characters.'); return; }
+  if (pass !== $a('authSuPass2').value) { authSuMsg('The two passwords do not match.'); return; }
+  if (!$a('authTerms').checked) { authSuMsg('Please accept the Terms of Service and Privacy Policy to continue.'); return; }
+
+  const btn = $a('authSuSubmit');
+  btn.disabled = true;
+  try {
+    setRemember(true);
+    const { data, error } = await sb.auth.signUp({ email, password: pass, options: { emailRedirectTo: AUTH_REDIRECT } });
+    if (error) throw error;
+    if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      authView('signin'); $a('authEmail').value = email;
+      authMsg('An account with this email already exists. Log in below.');
+      return;
+    }
+    if (data.session) { await checkBuyerSession(); await syncFavsFromServer(); return; }   // no confirmation required: straight in
+    $a('authConfirmEmail').textContent = email;
+    authView('confirm');
+  } catch (e) {
+    authSuMsg(friendlyAuthError(e));
+  } finally {
+    btn.disabled = false;
+  }
+};
+
+$a('authResend').onclick = async () => {
+  const email = $a('authConfirmEmail').textContent;
+  $a('authConfirmErr').textContent = ''; $a('authConfirmInfo').textContent = '';
+  const { error } = await sb.auth.resend({ type: 'signup', email, options: { emailRedirectTo: AUTH_REDIRECT } });
+  if (error) $a('authConfirmErr').textContent = friendlyAuthError(error);
+  else $a('authConfirmInfo').textContent = 'Sent again. Check your inbox and spam folder.';
+};
+$a('authConfirmBack').onclick = () => authView('signup');
+
+$a('authResetForm').onsubmit = async ev => {
+  ev.preventDefault();
+  const p1 = $a('authNewPass').value, p2 = $a('authNewPass2').value;
+  $a('authResetErr').textContent = '';
+  if (p1.length < 8) { $a('authResetErr').textContent = 'Your password needs at least 8 characters.'; return; }
+  if (p1 !== p2) { $a('authResetErr').textContent = 'The two passwords do not match.'; return; }
+  const btn = $a('authResetSubmit'); btn.disabled = true;
+  const { error } = await sb.auth.updateUser({ password: p1 });
+  btn.disabled = false;
+  if (error) { $a('authResetErr').textContent = friendlyAuthError(error); return; }
+  history.replaceState(null, '', location.pathname);
+  RECOVERY = false;
+  await checkBuyerSession();
 };
 
 const VAPID_PUBLIC_KEY = 'BC73tPCUnIe2lzYWl_cpB3hp2R4CN5F3PM9Z6_kRIX7gC91pxowUlxdijQCM7X1mTxo7qrA9h32Rw3XgwBFWvjc';

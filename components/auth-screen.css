@@ -1,0 +1,73 @@
+/* Shared "auth screen" pieces (liquid glass) used inside each page's own full-screen dark gradient
+ * wrapper (.centerWrap on vendor/admin, #acctSignedOut on the storefront). This file styles the
+ * content only — the fixed positioning and gradient background stay page-specific. */
+
+.as-toptitle{position:absolute;top:calc(env(safe-area-inset-top,0) + 16px);left:0;right:0;text-align:center;font-size:15px;font-weight:700;color:#fff;pointer-events:none}
+
+.as-brand{display:flex;flex-direction:column;align-items:center;margin-bottom:18px}
+.as-brand img{width:56px;height:56px;border-radius:16px;box-shadow:0 0 0 1px rgba(255,255,255,.12)}
+.as-brand span{margin-top:8px;font-size:19px;font-weight:900;letter-spacing:-.3px;color:#fff}
+
+.as-title{display:flex;align-items:center;justify-content:center;gap:8px;font-size:24px;font-weight:800;color:#fff;margin-bottom:6px}
+.as-title svg{flex-shrink:0;color:#8fd3ff}
+.as-sub{font-size:13px;color:#8a93a3;line-height:1.5;margin-bottom:24px}
+
+.as-social{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+.as-social-btn{
+  position:relative;height:50px;border-radius:25px;display:flex;align-items:center;justify-content:center;gap:8px;
+  font-size:14px;font-weight:700;color:#fff;
+  background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,.06));
+  border:1px solid rgba(255,255,255,.22);
+  backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 4px 14px rgba(0,0,0,.25);
+  transition:transform .15s,opacity .15s;
+}
+.as-social-btn:active{transform:scale(.97);opacity:.9}
+.as-social-btn svg{width:18px;height:18px;flex-shrink:0}
+.as-social-btn.soon{opacity:.55}
+.as-soon-badge{position:absolute;top:-7px;right:-6px;background:#d97706;color:#fff;font-size:9px;font-weight:800;letter-spacing:.3px;padding:2px 7px;border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,.35)}
+
+.as-divider{display:flex;align-items:center;gap:12px;margin:2px 0 18px;color:#6b7280;font-size:12px}
+.as-divider::before,.as-divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.14)}
+
+.as-field{position:relative;margin-bottom:12px;text-align:left}
+.as-field svg{position:absolute;left:17px;top:50%;transform:translateY(-50%);color:#6b7280;width:18px;height:18px;pointer-events:none}
+.as-field input{
+  width:100%;height:52px;border-radius:26px;padding:0 16px 0 46px;font-size:15px;color:#fff;outline:none;
+  background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.03));
+  border:1px solid rgba(255,255,255,.16);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  transition:border-color .15s;
+}
+.as-field input::placeholder{color:#6b7280}
+.as-field input:focus{border-color:#6fb6ff}
+.as-field.pass input{padding-right:64px}
+.as-field .as-eye{position:absolute;right:6px;top:6px;height:40px;padding:0 12px;font-size:12px;font-weight:700;color:#9aa4b2}
+
+.as-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:18px;font-size:13px;color:#9aa4b2}
+.as-remember{display:flex;align-items:center;gap:8px;cursor:pointer}
+.as-remember input{width:16px;height:16px;accent-color:#6fb6ff;flex-shrink:0}
+.as-link{color:#8fd3ff;font-weight:700}
+.as-link:active{opacity:.7}
+
+.as-terms{display:flex;align-items:flex-start;gap:10px;margin-bottom:18px;font-size:12.5px;color:#9aa4b2;line-height:1.5;text-align:left;cursor:pointer}
+.as-terms input{width:17px;height:17px;margin-top:1px;accent-color:#6fb6ff;flex-shrink:0}
+.as-terms .as-link{display:inline}
+
+.as-cta{
+  width:100%;height:54px;border-radius:27px;font-size:16px;font-weight:800;color:#fff;
+  background:linear-gradient(120deg,#1c4d8c 0%,#3d82c9 55%,#7fc4ff 100%);
+  box-shadow:0 10px 24px rgba(61,130,201,.45),inset 0 1px 0 rgba(255,255,255,.35);
+  transition:transform .15s,opacity .15s;
+}
+.as-cta:active{transform:scale(.98);opacity:.92}
+.as-cta:disabled{opacity:.5}
+
+.as-switch{margin-top:22px;font-size:13px;color:#9aa4b2}
+.as-switch button{color:#8fd3ff;font-weight:800;text-decoration:underline;text-underline-offset:2px}
+
+.as-err{color:#f87171;font-size:13px;margin-top:10px;line-height:1.4;min-height:0}
+.as-err:empty{display:none}
+.as-info{color:#4ade80;font-size:13px;margin-top:10px;line-height:1.4;min-height:0}
+.as-info:empty{display:none}
+.as-note{margin-top:22px;font-size:12px;color:#6b7280;line-height:1.6}
