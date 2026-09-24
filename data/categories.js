@@ -49,7 +49,10 @@
       imageUrl: r.image_url || '',
       placeholderPath: r.placeholder_path || '',
       sortOrder: r.sort_order || 0,
-      active: r.is_active !== false
+      active: r.is_active !== false,
+      /* which surface the category belongs to: null = main store, 'fashion' = Fashion world
+         only, 'both' = main store and Fashion world (see migration_fashion.sql) */
+      world: r.world || null
     };
   }
 
@@ -96,7 +99,20 @@
     return this.path(id).every(function (c) { return c.active; }) && !!this.byId[id];
   };
 
+  /* Which surface(s) a category shows on: world 'fashion' matches only the Fashion world,
+     'both' matches everywhere, null matches the main store. */
+  T.inWorld = function (c, world) {
+    var w = c.world || null;
+    return world ? (w === world || w === 'both') : (w === null || w === 'both');
+  };
+
   T.visibleRoots = function () { return this.roots.filter(function (c) { return c.active; }); };
+  /* active roots of one surface: visibleRootsIn('fashion') for the Fashion world,
+     visibleRootsIn(null) for the main store (excludes Fashion-only categories) */
+  T.visibleRootsIn = function (world) {
+    var self = this;
+    return this.visibleRoots().filter(function (c) { return self.inWorld(c, world); });
+  };
   T.visibleChildren = function (id) { return this.children(id).filter(function (c) { return c.active; }); };
 
   T.rootOf = function (id) { var p = this.path(id); return p.length ? p[0] : null; };
