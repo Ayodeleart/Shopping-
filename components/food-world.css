@@ -1,0 +1,45 @@
+/* components/food-world.css — the real Food World experience for #world=food.
+ * Sits inside components/world-page.css's full-screen overlay (.wp-hdr etc. are reused
+ * for the back button); everything below is specific to the food layout. */
+.fw-root{min-height:100%;background:var(--bg);padding-bottom:32px}
+
+.fw-search{padding:10px 14px 4px}
+.fw-search input{
+  width:100%;height:42px;padding:0 14px;border-radius:10px;background:var(--bg2);
+  border:1px solid var(--border);font-size:14px;color:var(--txt);font-family:inherit;
+}
+.fw-search input::placeholder{color:var(--txt3)}
+
+/* restaurant logo strip */
+.fw-vrow{display:flex;gap:10px;overflow-x:auto;padding:12px 14px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.fw-vrow::-webkit-scrollbar{display:none}
+.fw-vcard{flex-shrink:0;width:72px;display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center}
+.fw-vlogo{width:58px;height:58px;border-radius:16px;overflow:hidden;background:var(--bg2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:var(--txt2)}
+.fw-vlogo img{width:100%;height:100%;object-fit:cover}
+.fw-vname{font-size:11px;font-weight:600;color:var(--txt2);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%}
+
+/* section shell used by every horizontal section (restaurant + themed) */
+.fw-sec{margin-top:18px}
+.fw-sech{display:flex;align-items:center;gap:10px;padding:0 14px 10px}
+.fw-sech-logo{width:30px;height:30px;border-radius:9px;overflow:hidden;flex-shrink:0;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff}
+.fw-sech-logo img{width:100%;height:100%;object-fit:cover}
+.fw-sech-ttl{flex:1;min-width:0;font-size:14.5px;font-weight:800;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fw-sech-more{flex-shrink:0;font-size:12px;font-weight:700;color:var(--red)}
+.fw-hrow{display:flex;gap:1px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;-webkit-overflow-scrolling:touch;background:var(--border)}
+.fw-hrow::-webkit-scrollbar{display:none}
+
+/* food categories: 4 per row, compact */
+.fw-cats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:4px 14px 6px}
+.fw-cat{display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center}
+.fw-cat-thumb{width:100%;aspect-ratio:1;border-radius:14px;overflow:hidden;background:var(--bg2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:var(--txt2);position:relative}
+.fw-cat-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.fw-cat-name{font-size:11px;font-weight:600;color:var(--txt2);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%}
+
+/* recommended: 3-col grid, reusing cardHTML() markup */
+.fw-grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);margin:0 0}
+.fw-grid3 .pcard{border:none}
+.fw-grid3 > div{background:var(--bg)}
+.fw-grid3 .pcName{font-size:12px}
+.fw-grid3 .pcPrice{font-size:14px}
+
+.fw-empty{padding:40px 20px;text-align:center;color:var(--txt3);font-size:13.5px}

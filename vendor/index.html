@@ -469,6 +469,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
       <h3 id="pFormTitle">Add Product</h3>
       <div class="fld"><label>Product Photos</label><div id="pPicker"></div></div>
       <label class="rmbgToggle"><input type="checkbox" id="pRmBg"> Remove background from new photos</label>
+      <div class="ad-hint" style="margin:4px 0 8px">Turned on automatically for <b>Beauty</b> categories — the main photo is cut out with the store's secure server pipeline (your original photo is kept).</div>
       <div class="progWrap" id="pImgProg"><div class="progBar" id="pImgProgBar"></div></div>
       <div class="fld"><label>Product Name</label><input id="pName" placeholder="e.g. Colorblock Zip-Up Jacket"></div>
       <div id="pAI"></div>
@@ -482,6 +483,10 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
       <div id="pAttrs"></div>
       <div class="fld"><label>Short description</label><textarea id="pDesc" rows="3" placeholder="One or two lines about the product"></textarea></div>
       <div class="fld"><label>Full description (optional)</label><div id="pBlocks"></div></div>
+      <div class="fld" id="pPairWrap" style="display:none">
+        <label>Pairs well with <span style="font-weight:400;color:var(--txt3,#888)">(shown as &ldquo;Complete your meal&rdquo; on the product page)</span></label>
+        <div id="pPairList" style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;border:1px solid var(--border,#e8e8e8);border-radius:8px;padding:8px"></div>
+      </div>
       <div class="btnRow">
         <button class="btnCancel" id="pCancelBtn" style="display:none">Cancel</button>
         <button class="btnSave" id="pSaveBtn">Add Product</button>
@@ -526,6 +531,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 <script src="../components/product-attributes.js"></script>
 <script src="../components/ai-product.js"></script>
 <script src="../data/categories.js"></script>
+<script src="../data/food-pairings.js"></script>
 <script src="../data/tracking.js"></script>
 <script src="orders.js"></script>
 <script src="../components/category-picker.js"></script>
@@ -1070,6 +1076,39 @@ async function removeImageBackground(file) {
   return _removeBgFn(file);
 }
 
+/* ── Beauty background removal (secure server pipeline) ─────────────────
+   Beauty products: the main photo is cut out server-side (remove.bg via
+   /api/remove-bg.js with the Vercel env-var key — never in this page) and
+   cached in Storage, so the same photo is never processed twice. The
+   original photo is always kept; Beauty surfaces use beauty_image_url. */
+let pRmBgTouched = false;
+let editProdImgUrl = null;
+function isBeautyCategory() {
+  const id = catPicker.getValue();
+  if (id == null || !catTree) return false;
+  const root = catTree.bySlug && catTree.bySlug['beauty'];
+  if (!root || root.active === false) return false;
+  const ids = (catTree.descendantIds && catTree.descendantIds(root.id)) || [];
+  return Number(id) === root.id || ids.includes(Number(id));
+}
+async function removeBgServer(url) {
+  try {
+    const res = await fetch('/api/remove-bg', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data && data.url ? data.url : null;
+  } catch (e) { return null; }
+}
+function syncRmBgAutoCheck() {
+  if (!pRmBgTouched) document.getElementById('pRmBg').checked = isBeautyCategory();
+}
+document.getElementById('pRmBg').addEventListener('change', () => { pRmBgTouched = true; });
+document.getElementById('pCat').addEventListener('change', syncRmBgAutoCheck);
+
 const pPicker = new Pcx.MultiImagePicker(document.getElementById('pPicker'), { max: 8, label: 'Add photos' });
 const sLogoPicker = new Pcx.MultiImagePicker(document.getElementById('sLogoPicker'), { max: 1, label: 'Upload logo' });
 const pAttrs = new Pcx.ProductAttributes(document.getElementById('pAttrs'));
@@ -1115,9 +1154,11 @@ const aiProd = new Pcx.AIProduct(document.getElementById('pAI'), {
 });
 
 /* ===== PRODUCTS (scoped to this vendor only) ===== */
+let myProductsCache = [];
 async function loadProducts() {
   const { data, error } = await sb.from('products').select('*').eq('vendor_id', session.user.id).order('created_at', { ascending: false });
   if (error) { toast('Failed to load products: ' + error.message, true); return; }
+  myProductsCache = data || [];
   const list = document.getElementById('pList');
   if (!data || !data.length) { list.innerHTML = '<div class="empty">No products yet. Add your first one above.</div>'; return; }
   list.innerHTML = data.map(p => `
@@ -1135,10 +1176,54 @@ async function loadProducts() {
   `).join('');
 }
 
+/* "Pairs well with" — only shown for a food product being edited (pairings need a saved
+   product id on both sides, so this doesn't apply to a brand-new, unsaved product).
+   Each checkbox writes straight to product_pairings; RLS only lets a vendor link two of
+   their own products, so this can never pair with another restaurant's food. */
+async function loadPairPicker(p) {
+  const wrap = document.getElementById('pPairWrap'), list = document.getElementById('pPairList');
+  const isFood = catTree && window.Pcx && Pcx.FoodPairings && Pcx.FoodPairings.isFoodProduct(p, catTree);
+  const others = myProductsCache.filter(x => x.id !== p.id);
+  if (!isFood || !others.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+  list.innerHTML = '<div style="font-size:12px;color:var(--txt3,#888)">Loading…</div>';
+  let existing = [];
+  try {
+    const { data, error } = await sb.from('product_pairings').select('pair_product_id').eq('product_id', p.id);
+    if (error) throw error;
+    existing = (data || []).map(r => r.pair_product_id);
+  } catch (e) { /* product_pairings not migrated on this deployment yet — picker still renders, just unchecked */ }
+  const existSet = new Set(existing);
+  list.innerHTML = others.map(o => `
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+      <input type="checkbox" data-pair-id="${num(o.id)}" ${existSet.has(o.id) ? 'checked' : ''}>
+      <span>${esc(o.name)}</span>
+    </label>`).join('');
+  list.querySelectorAll('[data-pair-id]').forEach(cb => {
+    cb.addEventListener('change', async () => {
+      const pairId = Number(cb.dataset.pairId);
+      try {
+        if (cb.checked) {
+          const { error } = await sb.from('product_pairings').insert([{ product_id: p.id, pair_product_id: pairId }]);
+          if (error) throw error;
+        } else {
+          const { error } = await sb.from('product_pairings').delete().eq('product_id', p.id).eq('pair_product_id', pairId);
+          if (error) throw error;
+        }
+      } catch (e) {
+        cb.checked = !cb.checked;
+        toast(/product_pairings/i.test(e.message || '') ? 'Run the food pairings SQL in Supabase first.' : 'Could not save pairing: ' + e.message, true);
+      }
+    });
+  });
+}
+
 window.editProduct = async (id) => {
   const { data: p } = await sb.from('products').select('*').eq('id', id).single();
   if (!p) return;
   editProdId = id;
+  editProdImgUrl = p.image_url || null;
+  pRmBgTouched = false;
   document.getElementById('pFormTitle').textContent = 'Edit Product';
   document.getElementById('pName').value = p.name || '';
   brandPicker.setByProduct(p.brand_id, p.brand);
@@ -1150,12 +1235,14 @@ window.editProduct = async (id) => {
     if (m.length === 1) catId = m[0].id;
   }
   catPicker.setValue(catId);
+  syncRmBgAutoCheck();
   document.getElementById('pStock').value = p.stock || 0;
   document.getElementById('pDesc').value = p.description || '';
   pPicker.setImages(Array.isArray(p.images) && p.images.length ? p.images : (p.image_url ? [p.image_url] : []));
   pAttrs.load(p.attributes, catPicker.names().length ? catPicker.names() : p.category);
   pBlocks.setBlocks(p.description_blocks);
   aiProd.reset(); aiProd.setExisting(p.attributes);
+  loadPairPicker(p);
   document.getElementById('pCancelBtn').style.display = 'block';
   document.getElementById('pSaveBtn').textContent = 'Update Product';
   document.getElementById('panel-products').scrollIntoView({ behavior: 'smooth' });
@@ -1182,10 +1269,14 @@ function resetProdForm() {
   document.getElementById('pStock').value = '';
   document.getElementById('pDesc').value = '';
   document.getElementById('pRmBg').checked = false;
+  pRmBgTouched = false;
+  editProdImgUrl = null;
   pPicker.clear();
   pAttrs.clear();
   pBlocks.clear();
   aiProd.reset();
+  document.getElementById('pPairWrap').style.display = 'none';
+  document.getElementById('pPairList').innerHTML = '';
   document.getElementById('pCancelBtn').style.display = 'none';
   document.getElementById('pSaveBtn').textContent = 'Add Product';
 }
@@ -1202,9 +1293,14 @@ document.getElementById('pSaveBtn').onclick = async () => {
   showLoad('Saving product...');
   try {
     const removeBg = document.getElementById('pRmBg').checked;
+    const beautyCat = isBeautyCategory();
+    let beautyCutout = null;
     const urls = await pPicker.resolve(async (file) => {
       let f = file, transparent = false;
-      if (removeBg) {
+      /* Beauty products: the main photo is cut out server-side AFTER upload
+         (remove.bg via /api/remove-bg.js) so the API key never reaches the
+         browser. Other categories keep the in-browser removal. */
+      if (removeBg && !beautyCat) {
         showLoad('Removing background...');
         try { f = await removeImageBackground(file); transparent = true; }
         catch (e) { toast('Background removal failed -- using original photo', true); }
@@ -1212,6 +1308,13 @@ document.getElementById('pSaveBtn').onclick = async () => {
       }
       return uploadImage(f, 'vendor-products', transparent);
     });
+
+    if (removeBg && beautyCat && urls.length) {
+      showLoad('Removing background...');
+      beautyCutout = await removeBgServer(urls[0]);
+      if (!beautyCutout) toast('Background removal unavailable — using the original photo', true);
+      showLoad('Saving product...');
+    }
 
     const description_blocks = await pBlocks.resolve(f => uploadImage(f, 'vendor-products', false));
 
@@ -1238,6 +1341,12 @@ document.getElementById('pSaveBtn').onclick = async () => {
       images: urls,
       vendor_id: session.user.id
     };
+    /* Beauty: transparent main photo (server-side cutout). The original photo in
+       image_url is always kept; Beauty surfaces show beauty_image_url when present. */
+    if (beautyCat) {
+      if (beautyCutout) prod.beauty_image_url = beautyCutout;
+      else if (editProdId && urls[0] && urls[0] !== editProdImgUrl) prod.beauty_image_url = null; /* main photo changed, no fresh cutout */
+    }
 
     const write = p => editProdId
       ? sb.from('products').update(p).eq('id', editProdId).eq('vendor_id', session.user.id)
@@ -1248,8 +1357,8 @@ document.getElementById('pSaveBtn').onclick = async () => {
       const { brand_id, ...noBrandId } = prod;
       ({ error } = await write(noBrandId));
     }
-    if (error && /images|brand/i.test(error.message)) {   // columns not added yet: save the main photo anyway
-      const { images, brand, brand_id, ...rest } = prod;
+    if (error && /images|brand|category_id|beauty_image_url/i.test(error.message)) {   // columns not added yet: save the main photo anyway
+      const { images, brand, brand_id, category_id, beauty_image_url, ...rest } = prod;
       ({ error } = await write(rest));
       legacy = !error;
     }

@@ -52,6 +52,12 @@
   window.addToCart = (id, src) => {
     const p = state.byId[id];
     if (!p) return;
+    /* fashion products with sizes are bought from the product page, where a size is picked */
+    if (window.Pcx && Pcx.Fashion && Pcx.Fashion.sizeGroups(p).length) {
+      toast('Select a size');
+      window.openProduct(id);
+      return;
+    }
     if (src) window.flyToCart(src);
     const ex = window.cart.find(x => x.id === id);
     if (ex) ex.qty += 1;

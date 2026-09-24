@@ -18,12 +18,26 @@
 <script defer src="data/promotions.js"></script>
 <link rel="stylesheet" href="components/ad-page.css">
 <link rel="stylesheet" href="components/tile-row.css">
+<link rel="stylesheet" href="components/checkout-page.css">
+<link rel="stylesheet" href="components/profile-page.css">
+<script defer src="data/buyer.js"></script>
+<script defer src="components/address-search.js"></script>
+<script defer src="components/checkout-page.js"></script>
+<script defer src="components/profile-page.js"></script>
 <script defer src="components/tile-row.js"></script>
 <link rel="stylesheet" href="components/explore-marcato.css">
 <script defer src="data/worlds.js"></script>
 <script defer src="components/explore-marcato.js"></script>
 <link rel="stylesheet" href="components/world-page.css">
 <script defer src="components/world-page.js"></script>
+<link rel="stylesheet" href="components/food-world.css">
+<script defer src="components/food-world.js"></script>
+<script defer src="data/beauty.js"></script>
+<link rel="stylesheet" href="components/beauty-world.css">
+<script defer src="components/beauty-world.js"></script>
+<link rel="stylesheet" href="components/fashion-world.css">
+<script defer src="components/fashion.js"></script>
+<script defer src="components/fashion-world.js"></script>
 <script defer src="components/ad-page.js"></script>
 <script defer src="data/ads.js"></script>
 <link rel="stylesheet" href="components/categories.css">
@@ -46,8 +60,11 @@
 <script defer src="components/mac-fab.js"></script>
 <script defer src="components/mac-chat.js"></script>
 <link rel="stylesheet" href="components/product-page.css">
+<link rel="stylesheet" href="components/food-pairing-ui.css">
 <script defer src="components/product-gallery.js"></script>
 <script defer src="components/image-viewer.js"></script>
+<script src="data/food-pairings.js"></script>
+<script src="components/food-pairing-ui.js"></script>
 <link rel="stylesheet" href="components/theme-tokens.css">
 <link rel="stylesheet" href="components/product-card.css">
 <link rel="stylesheet" href="components/seller-brand.css">
@@ -280,6 +297,18 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 .pCode b{color:var(--txt);font-weight:600}
 .pStockLine{font-size:13px;color:#16a34a;font-weight:600;margin-bottom:6px}
 .pStockLine:empty{display:none}
+/* size selection (fashion products with sizes in their attributes) */
+.pSizeRow{display:flex;align-items:baseline;gap:10px;margin:12px 0 0}
+.pSizeRow + .pSizeRow{margin-top:8px}
+.pSizeLbl{font-size:14px;font-weight:700;flex-shrink:0;color:var(--txt)}
+.pSizes{display:flex;flex-wrap:wrap;gap:7px;min-width:0}
+.pSizeChip{
+  min-width:42px;height:36px;padding:0 12px;border-radius:8px;border:1.5px solid var(--border);
+  background:var(--bg);color:var(--txt);font-size:13px;font-weight:700;transition:all .15s;
+}
+.pSizeChip.on{border-color:var(--txt);background:var(--txt);color:var(--bg)}
+.pSizeChip:active{transform:scale(.95)}
+.pSizeRow.miss .pSizeLbl{color:var(--red)}
 .pQtyRow{display:flex;align-items:center;gap:10px;margin:14px 0 12px;padding-top:14px;border-top:1px solid var(--border)}
 .pQtyRow > span{font-size:17px;color:var(--txt2)}
 .pQty{display:flex;align-items:center;border:1.5px solid var(--border);border-radius:8px;overflow:hidden;height:46px}
@@ -393,19 +422,33 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 #cookieDecline{background:var(--bg2);color:var(--txt)}
 
 /* ── FOOTER ───────────────────────────────────────── */
-#siteFooter{background:var(--bg2);padding:32px 16px calc(24px + 66px);margin-top:20px}
+/* Its own palette regardless of site theme: solid black in light mode, brand red in dark mode.
+   Both are dark backgrounds, so text stays light either way. */
+#siteFooter{
+  --ft-bg:#0d0d0d;--ft-txt:#fff;--ft-txt2:rgba(255,255,255,.82);--ft-txt3:rgba(255,255,255,.56);
+  --ft-border:rgba(255,255,255,.14);--ft-chip:rgba(255,255,255,.1);
+  background:var(--ft-bg);padding:32px 16px calc(24px + 66px);margin-top:20px;
+}
+[data-theme=dark] #siteFooter{--ft-bg:var(--red);--ft-border:rgba(255,255,255,.24);--ft-chip:rgba(255,255,255,.16)}
 .ftTop{display:grid;grid-template-columns:1fr 1fr;gap:24px 16px;margin-bottom:24px}
 .ftCol{display:flex;flex-direction:column;gap:9px}
+.ftCol#ftWorlds,#ftWorlds{display:flex;flex-direction:column;gap:9px}
 .ftLogo{display:flex;align-items:center;gap:8px;margin-bottom:2px}
 .ftLogo img{height:26px;width:auto}
-.ftLogo span{font-size:17px;font-weight:900;color:var(--txt)}
-.ftTag{font-size:12.5px;color:var(--txt3);line-height:1.5}
-.ftHead{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--txt3);margin-bottom:2px}
-.ftCol a,.ftCol span{font-size:13.5px;color:var(--txt2);text-decoration:none}
+.ftLogo span{font-size:17px;font-weight:900;color:var(--ft-txt)}
+.ftTag{font-size:12.5px;color:var(--ft-txt3);line-height:1.5}
+.ftHead{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--ft-txt3);margin-bottom:2px}
+.ftCol a,.ftCol span,#ftWorlds a{font-size:13.5px;color:var(--ft-txt2);text-decoration:none}
+.ftCol a:active,#ftWorlds a:active{opacity:.7}
 .ftSocial{display:flex;gap:10px;margin-top:4px}
-.ftSocial a{width:32px;height:32px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;color:var(--txt2)}
-.ftBottom{border-top:1px solid var(--border);padding-top:16px;display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--txt3)}
-.ftBottom a{color:var(--txt3);text-decoration:underline}
+.ftSocial a{width:32px;height:32px;border-radius:50%;background:var(--ft-chip);display:flex;align-items:center;justify-content:center;color:var(--ft-txt2)}
+.ftBottom{border-top:1px solid var(--ft-border);padding-top:16px;display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--ft-txt3)}
+.ftBottom a{color:var(--ft-txt3);text-decoration:underline}
+@media (min-width:720px){
+  .ftTop{grid-template-columns:1.4fr 1fr 1fr 1fr 1fr;gap:24px;max-width:1200px;margin:0 auto 28px}
+  .ftBottom{max-width:1200px;margin:0 auto}
+}
+
 
 /* ── PER-CATEGORY ROWS (admin-chosen accent color) ───*/
 .catRowSec{margin-bottom:4px}
@@ -469,6 +512,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 .cItemInfo{flex:1;min-width:0}
 .cItemName{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cItemPrice{font-size:14px;font-weight:800;color:var(--red);margin-top:2px}
+.cItemSize{display:inline-block;margin-top:3px;padding:2px 8px;border-radius:6px;background:var(--bg2);border:1px solid var(--border);font-size:11px;font-weight:700;color:var(--txt2)}
 .cQty{display:flex;align-items:center;gap:8px;margin-top:5px}
 .qb{width:26px;height:26px;border-radius:5px;background:var(--bg2);font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center}
 .qb:active{background:var(--bg3)}
@@ -481,16 +525,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 .cEmpty{padding:36px;text-align:center;color:var(--txt3)}
 .cEmpty svg{margin:0 auto 10px;opacity:.28}
 
-/* ── CHECKOUT SHEET ───────────────────────────────── */
-#chkOver{position:fixed;inset:0;z-index:350;background:rgba(0,0,0,.55);display:none;align-items:flex-end}
-#chkOver.open{display:flex}
-#chkSheet{
-  background:var(--bg);border-radius:20px 20px 0 0;width:100%;
-  padding:22px 16px calc(22px + env(safe-area-inset-bottom));
-  animation:su .28s ease-out;
-}
-@keyframes su{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
-#chkSheet h3{font-size:17px;font-weight:800;margin-bottom:16px}
+/* checkout page and profile page: components/checkout-page.css, components/profile-page.css */
 .fg{margin-bottom:12px}
 .fg label{display:block;font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
 .fg input,.fg textarea{
@@ -500,9 +535,6 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 }
 .fg input:focus,.fg textarea:focus{border-color:var(--red)}
 .fg textarea{height:72px;padding:10px 12px;resize:none}
-#placeBtn{width:100%;height:50px;background:var(--red);color:#fff;font-size:16px;font-weight:800;border-radius:6px;margin-top:4px}
-#placeBtn:active{background:var(--red2)}
-#cancelChkBtn{width:100%;height:40px;font-size:13px;color:var(--txt2);margin-top:6px}
 
 /* ── SIDE MENU ────────────────────────────────────── */
 #menuOver{position:fixed;inset:0;z-index:250;background:rgba(0,0,0,0);pointer-events:none;transition:background .28s}
@@ -697,16 +729,24 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
       <a href="#allSec">All Products</a>
       <a href="#cat=all">All Categories</a>
       <a href="#flashSec">Flash Sales</a>
-      <a href="/vendor/" target="_blank">Sell on Maccato</a>
+      <a href="#vendorSec">Vendors</a>
+    </div>
+    <div class="ftCol">
+      <div class="ftHead">Explore Marcato</div>
+      <div id="ftWorlds"></div>
     </div>
     <div class="ftCol">
       <div class="ftHead">Account</div>
       <a href="#" onclick="openAccount();return false">My Account</a>
       <a href="#" onclick="openAccount();setTimeout(showMyOrders,150);return false">My Orders</a>
+      <a href="#" onclick="openNotifCenter();return false">Notifications</a>
+      <a href="#" onclick="showFavorites();return false">Saved Items</a>
       <a href="#" onclick="openCart();return false">My Cart</a>
     </div>
     <div class="ftCol" id="ftContactCol">
-      <div class="ftHead">Contact</div>
+      <div class="ftHead">Support</div>
+      <a href="#" onclick="openWhatsAppHelp();return false">Need Help?</a>
+      <a href="/vendor/" target="_blank">Sell on Maccato</a>
       <a href="#" id="ftPhone" style="display:none"></a>
       <a href="#" id="ftEmail" style="display:none"></a>
       <span id="ftAddress" style="display:none"></span>
@@ -794,6 +834,8 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 
 <!-- WORLD PAGE: Explore Marcato destination placeholder (#world=slug) -->
 <div id="worldPage"></div>
+<div id="fashionPage"></div>
+<div id="fashionCatsPage"></div>
 
 <!-- ORDER TRACKING PAGE (#order=ID) and NOTIFICATION CENTER (#notifications) -->
 <div id="orderPage"></div>
@@ -801,6 +843,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 
 <!-- PRODUCT PAGE -->
 <div id="pModal">
+  <div id="pBwBg" aria-hidden="true"></div><!-- Beauty world background (visible only for Beauty products) -->
   <div id="pModalHdr">
     <button id="pModalBack" onclick="closePModal()" aria-label="Back">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
@@ -836,6 +879,14 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
       <div id="pRating"></div>
       <div class="pCode" id="pCode"></div>
       <div class="pStockLine" id="pStockLine"></div>
+      <div class="pSizeRow" id="pSizeRow" style="display:none">
+        <span class="pSizeLbl" id="pSizeLbl">Size:</span>
+        <div class="pSizes" id="pSizes"></div>
+      </div>
+      <div class="pSizeRow" id="pSize2Row" style="display:none">
+        <span class="pSizeLbl" id="pSize2Lbl">Cup:</span>
+        <div class="pSizes" id="pSizes2"></div>
+      </div>
       <div class="pQtyRow">
         <span>Quantity:</span>
         <div class="pQty">
@@ -845,6 +896,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
         </div>
       </div>
       <a class="pBulk" id="pBulk" href="#" style="display:none">Call us for Bulk Purchases<b id="pBulkNum"></b></a>
+      <div id="pPairing" class="pPairing" style="display:none"></div>
       <div class="pActions">
         <a class="pCallBtn" id="pCallBtn" href="#" aria-label="Call" style="display:none">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
@@ -1032,17 +1084,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
   </div>
 </div>
 
-<!-- CHECKOUT -->
-<div id="chkOver">
-  <div id="chkSheet">
-    <h3>Complete Your Order</h3>
-    <div class="fg"><label>Full Name</label><input type="text" id="oName" placeholder="Enter your full name"></div>
-    <div class="fg"><label>Phone Number</label><input type="tel" id="oPhone" placeholder="Enter phone number"></div>
-    <div class="fg"><label>Delivery Address</label><textarea id="oAddr" placeholder="Enter delivery address"></textarea></div>
-    <button id="placeBtn">Place Order</button>
-    <button id="cancelChkBtn" onclick="closeCheckout()">Cancel</button>
-  </div>
-</div>
+<!-- CHECKOUT PAGE (#chkPage) and PROFILE PAGE (#profPage) are built by components/checkout-page.js and profile-page.js -->
 
 <script>
 'use strict';
@@ -1116,7 +1158,7 @@ function setNavItems(items) { navItems = items; buildMenuCats(); renderCatNav();
 function buildMenuCats() {
   const wrap = $('menuCatsWrap');
   if (catTree) {
-    const roots = catTree.visibleRoots();
+    const roots = catTree.visibleRootsIn(null);   // main store menu: Fashion-world categories stay in the Fashion world
     if (!roots.length) { wrap.style.display = 'none'; return; }
     wrap.style.display = '';
     $('menuCats').innerHTML = roots.map(menuCatRow).join('');
@@ -1231,13 +1273,13 @@ function filterByBrand(id) {
 let catTree = null, catPage = null, catDeepLinked = false;
 
 function buildCategoryTiles() {
-  setNavItems(catTree.visibleRoots().map(c => ({ title: c.name, slug: c.slug, thumb: Pcx.Categories.thumb(catTree, c, 'fill') })));
+  setNavItems(catTree.visibleRootsIn(null).map(c => ({ title: c.name, slug: c.slug, thumb: Pcx.Categories.thumb(catTree, c, 'fill') })));
 }
 
 function buildCategoryRowsTree(prods) {
   const wrap = document.getElementById('catRows');
   const esc = Pcx.Categories.esc;
-  wrap.innerHTML = catTree.visibleRoots().map(root => {
+  wrap.innerHTML = catTree.visibleRootsIn(null).map(root => {
     const matches = prods.filter(catTree.productMatcher(root.id));
     if (!matches.length) return '';
     return `
@@ -1261,7 +1303,12 @@ function openCategory(slug) { location.hash = 'cat=' + slug; }
 function syncCatPage() {
   if (!catPage) return;
   const slug = catFromHash();
-  if (!slug) { catPage.close(); return; }
+  if (!slug) {
+    catPage.close();
+    /* if the category page was opened over the Fashion world, that world is still on screen */
+    if ((fashionPage && fashionPage.isOpen()) || (fashionCatsPage && fashionCatsPage.isOpen())) document.body.style.overflow = 'hidden';
+    return;
+  }
   if (catTree) catPage.open(slug);
 }
 function closeCatPage() {
@@ -1273,7 +1320,8 @@ function closeCatPage() {
 }
 function initCategoryPage() {
   catPage = new Pcx.CategoryPage(document.getElementById('catPage'), {
-    tree: () => catTree, products: () => allProds, cardHTML, go: openCategory, onBack: closeCatPage, onHome: goHome
+    tree: () => catTree, products: () => allProds, cardHTML, go: openCategory, onBack: closeCatPage, onHome: goHome,
+    world: null   /* the main store's "All categories" page: Fashion-world categories live in the Fashion world */
   });
   catDeepLinked = !!catFromHash();
   window.addEventListener('hashchange', syncCatPage);
@@ -1299,7 +1347,17 @@ function worldsForCards(worldRows) {
 function syncWorldPage() {
   if (!worldPage) return;
   const slug = worldFromHash();
-  if (!slug) { worldPage.close(); return; }
+  if (!slug) {
+    worldPage.close();
+    if (fashionPage) fashionPage.close();
+    return;
+  }
+  if (slug === 'fashion') {          /* the Fashion world is a real page; other worlds stay placeholders */
+    worldPage.close();
+    if (fashionPage) fashionPage.open();
+    return;
+  }
+  if (fashionPage) fashionPage.close();
   const w = worldBySlug(slug);
   if (w) worldPage.open(w); else closeWorldPage();
 }
@@ -1311,10 +1369,120 @@ function closeWorldPage() {
   } else history.back();
 }
 function initWorldPage() {
-  worldPage = new Pcx.WorldPage(document.getElementById('worldPage'), { onBack: closeWorldPage, storeName: () => storeName });
+  worldPage = new Pcx.WorldPage(document.getElementById('worldPage'), {
+    onBack: closeWorldPage,
+    storeName: () => storeName,
+    /* Beauty world content, read when the world opens (see components/beauty-world.js).
+       catTree/products/etc. are declared `let` in this script, so they are handed
+       over by closure — the world must never rely on them being on window. */
+    beauty: () => ({
+      heroes: beautyHeroes, cats: beautyCats, settings: beautySettings, stats: beautyStats,
+      catTree: catTree, products: allProds, vendors: vendorsMap,
+      brands: brandsList, brandById: brandById, ratings: ratingMap, fmt: fmt
+    })
+  });
   worldDeepLinked = !!worldFromHash();
+  initFashionWorld();
   window.addEventListener('hashchange', syncWorldPage);
   syncWorldPage();
+}
+
+/* Real popularity only: sold units from order_items (public read) + review counts
+   from product_ratings. If either is missing, popularity stays at zero — never faked. */
+async function loadBeautyStats() {
+  try {
+    if (!Pcx.BeautyData) return;
+    const pool = Pcx.BeautyData.pool(catTree, allProds);
+    if (!pool.length) return;
+    const { data } = await sb.from('order_items').select('product_id,qty,status');
+    if (!data) return;
+    const sold = {};
+    (data || []).forEach(r => {
+      if (r.status === 'cancelled' || r.status === 'refunded') return;
+      sold[r.product_id] = (sold[r.product_id] || 0) + (Number(r.qty) || 1);
+    });
+    pool.forEach(p => { beautyStats[p.id] = { sold: sold[p.id] || 0, reviews: ratingMap[p.id] ? ratingMap[p.id].n : 0 }; });
+  } catch (e) { /* no stats -> Popular sorts by newest instead */ }
+}
+
+/* ── FASHION WORLD (#world=fashion) ──────────────────
+   The dedicated Fashion experience: gender cards, hero ads, circular categories and
+   discovery rails — all fed by real database tables (see migration_fashion.sql) and
+   built on the existing product card / category tree / seller storefront systems. */
+let fashionPage = null, fashionCatsPage = null, fcatDeepLinked = false;
+let fwGenders = [], fwAds = [], fwSections = [], fwUniverse = [], fwTableMissing = false;
+let searchScope = null;   /* when the Fashion world opens search: { products, categories } or null = everything */
+
+function fcatFromHash() { return location.hash === '#fcats'; }
+function openFashionCats() { location.hash = 'fcats'; }
+function syncFashionCats() {
+  if (!fashionCatsPage) return;
+  if (fcatFromHash()) fashionCatsPage.open();
+  else {
+    fashionCatsPage.close();
+    /* the category page (or the Fashion world) may still be underneath */
+    if ((catPage && catPage.isOpen) || (fashionPage && fashionPage.isOpen())) document.body.style.overflow = 'hidden';
+  }
+}
+function closeFashionCats() {
+  if (fcatDeepLinked) { fcatDeepLinked = false; history.replaceState(null, '', location.pathname + location.search); fashionCatsPage.close(); }
+  else history.back();
+}
+
+function initFashionWorld() {
+  fashionPage = new Pcx.FashionWorld(document.getElementById('fashionPage'), {
+    genders: () => fwGenders,
+    ads: () => fwAds,
+    sections: () => fwSections,
+    tree: () => catTree,
+    products: () => fwUniverse,
+    vendorsMap: () => vendorsMap,
+    storeName: () => storeName,
+    cardHTML: p => cardHTML(p),
+    onBack: closeWorldPage,
+    openCart: () => openCart(),
+    openSearch: () => openFashionSearch(),
+    openCategory: slug => openCategory(slug),
+    openAllCategories: () => openFashionCats(),
+    openStore: id => openStore(id),
+    afterRender: grid => observeAll(grid.querySelectorAll('.au')),
+    toast: msg => toast(msg)
+  });
+  fashionCatsPage = new Pcx.FashionCatsPage(document.getElementById('fashionCatsPage'), {
+    tree: () => catTree,
+    openCategory: slug => openCategory(slug),
+    onBack: closeFashionCats
+  });
+  fcatDeepLinked = fcatFromHash();
+  window.addEventListener('hashchange', syncFashionCats);
+  syncFashionCats();
+}
+
+/* every product that belongs to a Fashion category (via the existing tree matcher) */
+function refreshFashionUniverse() {
+  fwUniverse = (catTree && allProds.length)
+    ? allProds.filter(Pcx.Fashion.productMatcher(catTree))
+    : [];
+}
+
+/* Fashion-scoped search: the SAME SearchPage, pointed at fashion products and
+   fashion categories while it is opened from the Fashion world. */
+function openFashionSearch() {
+  searchScope = {
+    products: fwUniverse,
+    categories: (catTree ? Pcx.Fashion.fashionRoots(catTree) : []).map(c => ({ title: c.name, slug: c.slug, path: c.name }))
+  };
+  openSearch();
+}
+
+async function loadFashionData() {
+  const [g, a, s] = await Promise.all([
+    Pcx.Fashion.fetchGenders(sb),
+    Pcx.Fashion.fetchAds(sb),
+    Pcx.Fashion.fetchSections(sb)
+  ]);
+  fwGenders = g.rows; fwAds = a.rows; fwSections = s.rows;
+  fwTableMissing = g.missing || a.missing;
 }
 
 /* ── VENDOR ROW ───────────────────────────────────── */
@@ -1347,6 +1515,8 @@ function showList(title, list, emptyMsg) {
 
 /* ── CATEGORY FILTER ──────────────────────────────── */
 let activeCat = 'All', allProds = [], catPills = [];
+/* Beauty world content (see migration_beauty.sql + data/beauty.js) */
+let beautyHeroes = [], beautyCats = [], beautySettings = {}, beautyStats = {};
 
 function buildCatFilter(cats) {
   const row = document.getElementById('catFilter');
@@ -1370,7 +1540,7 @@ function filterCat(cat) {
   renderCatNav();
   let filtered = allProds;
   if (cat !== 'All') {
-    const root = catTree && catTree.visibleRoots().find(r => r.name === cat);
+    const root = catTree && catTree.visibleRootsIn(null).find(r => r.name === cat);
     filtered = root ? allProds.filter(catTree.productMatcher(root.id)) : allProds.filter(p => p.category === cat);
   }
   buildCatFilter(catPills);
@@ -1481,7 +1651,7 @@ function renderRecentRail(el, excludeId) {
 /* ── FLY TO CART ──────────────────────────────────── */
 /* The product photo flies to whichever cart icon is on screen (product page, brand page or main header). */
 function cartTarget() {
-  for (const el of document.querySelectorAll('#pCartBtn, .adp-cart, #cartBtn')) {
+  for (const el of document.querySelectorAll('#pCartBtn, .adp-cart, .fw-cartbtn, #cartBtn')) {
     const r = el.getBoundingClientRect();
     if (!r.width || !r.height) continue;
     const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
@@ -1573,6 +1743,30 @@ function renderGrid(prods, id, withAds, emptyMsg) {
 /* Photos: components/product-gallery.js (auto-rotating) + components/image-viewer.js (full screen).
    Everything shown here comes from real data: no placeholder ratings, reviews or counts. */
 let pGal = null, pViewer = null, pCur = null, pQty = 1, pHist = [];
+let foodPairingUI = null, pairingRowsPromise = null;
+function ensureFoodPairingUI() {
+  if (!foodPairingUI) foodPairingUI = new Pcx.FoodPairingUI($('pPairing'), { fmt, esc });
+  return foodPairingUI;
+}
+/* product_pairings is small (vendor-curated links only) and read once per session, like ratingMap. */
+function ensurePairingRows() {
+  if (!pairingRowsPromise) {
+    pairingRowsPromise = sb.from('product_pairings').select('product_id,pair_product_id,sort_order')
+      .then(({ data, error }) => { if (error) throw error; return data || []; })
+      .catch(() => []);   // table may not exist yet on older deployments — pairings simply don't show
+  }
+  return pairingRowsPromise;
+}
+function renderPairings(p) {
+  const ui = ensureFoodPairingUI();
+  if (!catTree || !Pcx.FoodPairings.isFoodProduct(p, catTree)) { ui.reset(); return; }
+  ensurePairingRows().then(rows => {
+    if (pCur !== p) return;   // the customer already moved to another product
+    const sugg = Pcx.FoodPairings.suggestionsFor(p, { catTree, allProds, explicitRows: rows });
+    ui.render(sugg, p);
+    ui.onChange(() => {});
+  });
+}
 
 const ICON_TRUCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="14" height="11" rx="1"/><path d="M15 9h4l3 3v5h-7"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>';
 const ICON_RETURN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>';
@@ -1602,9 +1796,24 @@ function openProduct(id, isBack) {
 
   $('pModalName').textContent = p.name;
 
-  /* photos */
-  const imgs = Ads.productImages(p);
-  pGal = new Pcx.ProductGallery($('pGal'), { images: imgs, alt: p.name, onOpen: i => openViewer(imgs, i, p.name) });
+  /* photos — Beauty products continue the liquid-glass environment: same blurred
+     Beauty background, the transparent cutout (beauty_image_url, made by the secure
+     server pipeline) as the main photo, and a thumbnail strip when there are more
+     photos. Non-Beauty products render exactly as before. */
+  const isBW = Pcx.BeautyData && Pcx.BeautyData.isBeautyProduct(p, catTree);
+  if (isBW) {
+    modal.classList.add('bw-theme');
+    const bwBg = Pcx.BeautyData.backgroundUrl(beautySettings);
+    if (bwBg) modal.style.setProperty('--bw-bg-img', 'url("' + bwBg + '")');
+    else modal.style.removeProperty('--bw-bg-img');
+  } else {
+    modal.classList.remove('bw-theme');
+    modal.style.removeProperty('--bw-bg-img');
+  }
+  const imgs = (isBW && p.beauty_image_url && Ads.productImages(p).length)
+    ? Ads.productImages(p).map((u, i) => (i === 0 ? p.beauty_image_url : u))
+    : Ads.productImages(p);
+  pGal = new Pcx.ProductGallery($('pGal'), { images: imgs, alt: p.name, thumbnails: !!isBW, onOpen: i => openViewer(imgs, i, p.name) });
 
   /* favorite */
   const fb = $('pFavBtn');
@@ -1644,6 +1853,7 @@ function openProduct(id, isBack) {
   renderPRating();
   $('pCode').innerHTML = `Product Code: <b>${esc(p.id)}</b>`;
   $('pStockLine').textContent = p.stock > 0 ? `${p.stock} in stock` : '';
+  renderPSizes(p);   /* size chips from the product's own attributes (letter / shoe / waist / band sizes) */
 
   /* call vendor (falls back to the store number) */
   const phone = ((v && v.phone) || storePhone || '').trim();
@@ -1663,6 +1873,7 @@ function openProduct(id, isBack) {
   $('pDescMore').firstChild.textContent = 'See more ';
   renderBlocks(blocks);
   renderSpecs(p);
+  renderPairings(p);
 
   renderDelivery();
   buildRails(p, sellerName);
@@ -1678,7 +1889,10 @@ function closePModal(force) {
   if (!force && pHist.length) { openProduct(pHist.pop(), true); return; }
   pHist = [];
   destroyProductMedia();
-  $('pModal').classList.remove('open');
+  const m = $('pModal');
+  m.classList.remove('open');
+  m.classList.remove('bw-theme');          /* drop the Beauty glass theme with the page */
+  m.style.removeProperty('--bw-bg-img');
   document.body.style.overflow = '';
 }
 
@@ -1730,13 +1944,76 @@ function toggleDesc() {
 
 function pQtyChange(d) { pQty = Math.max(1, Math.min(99, pQty + d)); $('pQtyN').textContent = String(pQty); }
 
-function pAddToCart() { if (pCur) addToCart(pCur.id, pGal && pGal.currentImage(), pQty, true); }
+/* ── SIZE SELECTION (fashion products whose attributes carry sizes) ──
+   Groups come from Pcx.Fashion.sizeGroups: attributes.sizes ({system, values}),
+   waist, or band + cup sizes. No sizes → no selector, nothing is forced. */
+let pSizeGroups = [], pSizePicks = {};
+
+function renderPSizes(p) {
+  pSizeGroups = (window.Pcx && Pcx.Fashion) ? Pcx.Fashion.sizeGroups(p) : [];
+  pSizePicks = {};
+  const row1 = $('pSizeRow'), row2 = $('pSize2Row');
+  row1.classList.remove('miss'); row2.classList.remove('miss');
+  if (!pSizeGroups.length) { row1.style.display = 'none'; row2.style.display = 'none'; return; }
+  const primary = pSizeGroups[0], cups = pSizeGroups.find(g => g.key === 'cups');
+  row1.style.display = '';
+  $('pSizeLbl').textContent = primary.label + ':';
+  $('pSizes').innerHTML = primary.values.map((v, i) =>
+    `<button type="button" class="pSizeChip" data-i="${i}" onclick="pickPSize(0,${i})">${esc(v)}</button>`).join('');
+  if (cups) {
+    row2.style.display = '';
+    $('pSize2Lbl').textContent = cups.label + ':';
+    $('pSizes2').innerHTML = cups.values.map((v, i) =>
+      `<button type="button" class="pSizeChip" data-i="${i}" onclick="pickPSize(1,${i})">${esc(v)}</button>`).join('');
+  } else row2.style.display = 'none';
+}
+
+function pickPSize(slot, i) {
+  const g = pSizeGroups[slot === 0 ? 0 : pSizeGroups.findIndex(x => x.key === 'cups')];
+  if (!g) return;
+  pSizePicks[slot] = pSizePicks[slot] === g.values[i] ? undefined : g.values[i];
+  document.querySelectorAll('#pSizes .pSizeChip').forEach(el => el.classList.toggle('on', pSizePicks[0] === pSizeGroups[0].values[Number(el.dataset.i)]));
+  const cupsGroup = pSizeGroups.find(x => x.key === 'cups');
+  if (cupsGroup) document.querySelectorAll('#pSizes2 .pSizeChip').forEach(el => el.classList.toggle('on', pSizePicks[1] === cupsGroup.values[Number(el.dataset.i)]));
+  $('pSizeRow').classList.remove('miss'); $('pSize2Row').classList.remove('miss');
+}
+
+/* the chosen size written on the cart line ("M" or "36 / B"); null when the product has no sizes */
+function pPickedSize() {
+  if (!pSizeGroups.length) return null;
+  const cupsGroup = pSizeGroups.find(x => x.key === 'cups');
+  return Pcx.Fashion.sizeLabel([pSizePicks[0], cupsGroup ? pSizePicks[1] : null]) || null;
+}
+
+function pSizeMissing() {
+  if (!pSizeGroups.length) return false;
+  if (!pSizePicks[0]) { $('pSizeRow').classList.add('miss'); $('pSizeRow').scrollIntoView({ behavior: 'smooth', block: 'center' }); return true; }
+  if (pSizeGroups.some(x => x.key === 'cups') && !pSizePicks[1]) { $('pSize2Row').classList.add('miss'); return true; }
+  return false;
+}
+
+function pAddToCart() {
+  if (!pCur) return;
+  if (pSizeMissing()) { toast('Select a size', true); return; }
+  addToCart(pCur.id, pGal && pGal.currentImage(), pQty, true, pPickedSize());
+  addPairingsToCart();
+}
 
 function pBuyNow() {
   if (!pCur) return;
-  const ex = cart.find(x => x.id === pCur.id);
-  if (ex) { ex.qty = pQty; saveCart(); updateCartBadge(); } else cartAdd(pCur, pQty);
+  if (pSizeMissing()) { toast('Select a size', true); return; }
+  const size = pPickedSize();
+  const ex = cart.find(x => x.id === pCur.id && (x.size || null) === (size || null));
+  if (ex) { ex.qty = pQty; saveCart(); updateCartBadge(); } else cartAdd(pCur, pQty, size);
+  addPairingsToCart();
   openCheckout();
+}
+
+/* Pairings are never added on their own — only alongside the main product, and only the
+   quantities the customer actually chose with the [+] control (0 = not added). */
+function addPairingsToCart() {
+  if (!foodPairingUI) return;
+  foodPairingUI.getSelections().forEach(sel => cartAdd(sel.product, sel.qty));
 }
 
 function viewSeller() {
@@ -1889,30 +2166,46 @@ function loadCart() {
 }
 function saveCart() { localStorage.setItem('cart_v3', JSON.stringify(cart)); }
 
-function cartAdd(p, qty) {
-  const ex = cart.find(x => x.id === p.id);
-  if (ex) ex.qty += qty; else cart.push({id:p.id, name:p.name, price:p.price, image_url:p.image_url, vendor_id:p.vendor_id||null, qty});
+function cartAdd(p, qty, size) {
+  const sizeKey = size || null;
+  const ex = cart.find(x => x.id === p.id && (x.size || null) === sizeKey);
+  if (ex) ex.qty += qty; else cart.push({id:p.id, name:p.name, price:p.price, image_url:p.image_url, vendor_id:p.vendor_id||null, qty, size:sizeKey});
   saveCart(); updateCartBadge();
 }
-/* src = the element to fly from (a card button or the product photo); note = also show the toast */
-function addToCart(id, src, qty, note) {
+/* src = the element to fly from (a card button or the product photo); note = also show the toast;
+   size = the size picked on the product page (null when the product has no sizes).
+   A product WITH sizes can only be added from its page: every other entry point
+   (card button, assistant) opens the product page so a size is always chosen first. */
+function addToCart(id, src, qty, note, size) {
   const p = allProds.find(x => x.id===id);
   if (!p) return;
+  if (size == null && window.Pcx && Pcx.Fashion && Pcx.Fashion.sizeGroups(p).length) {
+    openProduct(id);
+    toast('Select a size');
+    return;
+  }
   if (src) flyToCart(src);               /* first: cartAdd() re-renders the card and detaches the tapped button */
-  cartAdd(p, qty || 1);
+  cartAdd(p, qty || 1, size);
   if (note || !src) toast('Added to cart');
 }
-function removeFromCart(id) { cart=cart.filter(x=>x.id!==id); saveCart(); updateCartBadge(); renderCartList(); }
-function changeQty(id, d) {
-  const i=cart.find(x=>x.id===id);
-  if (i) { i.qty=Math.max(1,i.qty+d); saveCart(); updateCartBadge(); renderCartList(); }
+function removeFromCartAt(i) { cart.splice(i,1); saveCart(); updateCartBadge(); renderCartList(); }
+function changeQtyAt(i, d) {
+  const it = cart[i];
+  if (!it) return;
+  it.qty = Math.max(1, it.qty + d);
+  saveCart(); updateCartBadge(); renderCartList();
 }
+/* kept for older call sites: first line of that product */
+function removeFromCart(id) { const i = cart.findIndex(x => x.id === id); if (i >= 0) removeFromCartAt(i); }
+function changeQty(id, d) { const i = cart.findIndex(x => x.id === id); if (i >= 0) changeQtyAt(i, d); }
 function updateCartBadge() {
   const n = cart.reduce((s,x)=>s+x.qty,0);
   const dot = document.getElementById('cartDot');
   dot.textContent = n; dot.style.display = n>0 ? 'flex' : 'none';
   const pdot = $('pCartDot');
   pdot.textContent = n; pdot.style.display = n>0 ? 'flex' : 'none';
+  const fdot = $('fwCartDot');
+  if (fdot) { fdot.textContent = n; fdot.style.display = n>0 ? 'flex' : 'none'; }
   syncCardCtls();
   if ($('cartDrawer').classList.contains('open')) renderCartList();
   document.getElementById('cartTotal').textContent = fmt(cart.reduce((s,x)=>s+x.price*x.qty,0));
@@ -1924,21 +2217,22 @@ function renderCartList() {
     el.innerHTML=`<div class="cEmpty"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7.5 18C8.32843 18 9 18.6716 9 19.5C9 20.3284 8.32843 21 7.5 21C6.67157 21 6 20.3284 6 19.5C6 18.6716 6.67157 18 7.5 18Z" stroke="currentColor" stroke-width="1.5"/><path d="M16.5 18.0001C17.3284 18.0001 18 18.6716 18 19.5001C18 20.3285 17.3284 21.0001 16.5 21.0001C15.6716 21.0001 15 20.3285 15 19.5001C15 18.6716 15.6716 18.0001 16.5 18.0001Z" stroke="currentColor" stroke-width="1.5"/><path d="M2 3L2.26121 3.09184C3.5628 3.54945 4.2136 3.77826 4.58584 4.32298C4.95808 4.86771 4.95808 5.59126 4.95808 7.03836V9.76C4.95808 12.7016 5.02132 13.6723 5.88772 14.5862C6.75412 15.5 8.14857 15.5 10.9375 15.5H12M16.2404 15.5C17.8014 15.5 18.5819 15.5 19.1336 15.0504C19.6853 14.6008 19.8429 13.8364 20.158 12.3075L20.6578 9.88275C21.0049 8.14369 21.1784 7.27417 20.7345 6.69708C20.2906 6.12 18.7738 6.12 17.0888 6.12H11.0235M4.95808 6.12H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><p>Cart is empty</p></div>`;
     return;
   }
-  el.innerHTML = cart.map(item => `
+  el.innerHTML = cart.map((item, i) => `
     <div class="cItem">
       ${item.image_url
         ? `<img class="cItemImg" src="${item.image_url}" alt="">`
         : `<div class="cItemImg" style="display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--txt3)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div>`}
       <div class="cItemInfo">
         <div class="cItemName">${esc(item.name)}</div>
+        ${item.size ? `<div class="cItemSize">Size: ${esc(item.size)}</div>` : ''}
         <div class="cItemPrice">${fmt(item.price)}</div>
         <div class="cQty">
-          <button class="qb" onclick="changeQty(${item.id},-1)">-</button>
+          <button class="qb" onclick="changeQtyAt(${i},-1)">-</button>
           <span class="qn">${item.qty}</span>
-          <button class="qb" onclick="changeQty(${item.id},1)">+</button>
+          <button class="qb" onclick="changeQtyAt(${i},1)">+</button>
         </div>
       </div>
-      <button class="cDel" onclick="removeFromCart(${item.id})">
+      <button class="cDel" onclick="removeFromCartAt(${i})">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
       </button>
     </div>`).join('');
@@ -1946,54 +2240,17 @@ function renderCartList() {
 function openCart()  { renderCartList(); renderRecentRail($('cartRecent'), 0); document.getElementById('cartDrawer').classList.add('open'); document.getElementById('cartOver').classList.add('open'); document.body.style.overflow='hidden'; }
 function closeCart() { document.getElementById('cartDrawer').classList.remove('open'); document.getElementById('cartOver').classList.remove('open'); document.body.style.overflow = $('pModal').classList.contains('open') ? 'hidden' : ''; }
 
-/* ── CHECKOUT ─────────────────────────────────────── */
-function openCheckout()  { if (!cart.length) { toast('Cart is empty'); return; } closeCart(); document.getElementById('chkOver').classList.add('open'); }
-function closeCheckout() { document.getElementById('chkOver').classList.remove('open'); }
-async function legacyPlaceOrder(name, phone, addr) {
-  const {data:orderRow, error} = await sb.from('orders').insert([{
-    customer_name:name, phone, address:addr,
-    items:cart, total:cart.reduce((s,x)=>s+x.price*x.qty,0), status:'pending',
-    user_id: buyerSession ? buyerSession.user.id : null
-  }]).select().single();
-  if (error) throw error;
-  const lineItems = cart.map(x => ({ order_id: orderRow.id, product_id: x.id, vendor_id: x.vendor_id || null, name: x.name, price: x.price, qty: x.qty, status: 'pending' }));
-  const { error: itemsErr } = await sb.from('order_items').insert(lineItems);
-  if (itemsErr) console.error('order_items insert failed:', itemsErr);
-  return { id: orderRow.id, order_number: null };
-}
-document.getElementById('placeBtn').onclick = async () => {
-  const name  = document.getElementById('oName').value.trim();
-  const phone = document.getElementById('oPhone').value.trim();
-  const addr  = document.getElementById('oAddr').value.trim();
-  if (!name||!phone||!addr) { toast('Fill all fields'); return; }
-  document.getElementById('placeBtn').textContent='Placing...';
-  document.getElementById('placeBtn').disabled=true;
-  try {
-    /* One server-side step: prices, sellers and the buyer come from the database, and the order, its lines and the
-       seller shipments are created together. If that function is not installed yet, fall back to the old inserts. */
-    let placed = null;
-    const rpc = await sb.rpc('place_order', { p_name: name, p_phone: phone, p_address: addr, p_items: cart.map(x => ({ id: x.id, qty: x.qty })) });
-    if (!rpc.error) placed = rpc.data;
-    else if (rpc.error.code === 'PGRST202' || /place_order/.test(rpc.error.message || '')) placed = await legacyPlaceOrder(name, phone, addr);
-    else throw rpc.error;
-
-    fetch('/api/notify-order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'placed', orderId: placed.id }) }).catch(() => {});
-
-    cart=[]; saveCart(); updateCartBadge(); closeCheckout();
-    ['oName','oPhone','oAddr'].forEach(id=>document.getElementById(id).value='');
-    toast(placed.order_number ? `Order #${placed.order_number} placed!` + (buyerSession ? ' Track it under My Orders.' : ' Sign in next time to track it.') : 'Order placed! We will contact you soon.');
-  } catch(e) {
-    toast(/no longer available/.test(e.message || '') ? 'An item in your cart is no longer available. Please remove it and try again.' : 'Order failed. Try again.'); console.error(e);
-  } finally {
-    document.getElementById('placeBtn').textContent='Place Order';
-    document.getElementById('placeBtn').disabled=false;
-  }
-};
+/* -- CHECKOUT -------------------------------------- */
+/* The full-screen checkout page lives in components/checkout-page.js. It never sets prices or marks anything paid:
+   /api/checkout builds the order from product ids, and only a verified payment confirmation changes an order's payment status. */
+function openCheckout() { if (!cart.length) { toast('Cart is empty'); return; } closeCart(); Pcx.Checkout.open(); }
+function closeCheckout() { Pcx.Checkout.close(); }
 
 /* ── SEARCH ───────────────────────────────────────── */
 /* Recent searches, live suggestions, typo tolerance, sort + filters: see data/search.js and components/search-page.js */
 function searchCategories() {
-  if (catTree) return catTree.list.filter(c => catTree.isVisible(c.id)).map(c => ({ title: c.name, slug: c.slug, path: catTree.label(c.id) }));
+  if (catTree) return catTree.visibleRootsIn(searchScope ? 'fashion' : null)
+    .map(c => ({ title: c.name, slug: c.slug, path: catTree.label(c.id) }));
   return navItems.map(it => ({ title: it.title, slug: it.slug || '', path: it.title }));
 }
 function productCatNames(p) {
@@ -2002,7 +2259,8 @@ function productCatNames(p) {
 }
 function initSearchPage() {
   searchPage = new Pcx.SearchPage($('searchPage'), {
-    products: () => allProds,
+    /* Fashion world search points these at the fashion universe (see openFashionSearch) */
+    products: () => (searchScope ? searchScope.products : allProds),
     brands: () => brandsList,
     categories: searchCategories,
     brandOf,
@@ -2014,7 +2272,12 @@ function initSearchPage() {
     onBrand: id => filterByBrand(id),
     onCategory: item => { if (item.slug) openCategory(item.slug); else catNavGo(item.title); }
   });
+  /* clear the Fashion scope whenever the search page closes (back, Escape, goHome) */
+  const spClose = searchPage.close.bind(searchPage);
+  searchPage.close = function () { spClose(); searchScope = null; };
 }
+/* The search page reads products() on every keystroke, so the Fashion scope set by
+   openFashionSearch() must stay active while that search session is open. */
 function openSearch(q) { if (searchPage) searchPage.open(q); }
 
 /* ── HOME (logo / store name, from anywhere) ─────── */
@@ -2081,6 +2344,7 @@ function dismissInstall() {
 /* ── INIT ─────────────────────────────────────────── */
 /* ── BUYER ACCOUNT ────────────────────────────────── */
 function openAccount() {
+  if (buyerSession && !RECOVERY && window.Pcx && Pcx.Profile) { Pcx.Profile.open(); return; }   // a recovery link still needs the reset-password screen below, not the profile page
   document.getElementById('acctOver').classList.add('open');
   document.getElementById('acctDrawer').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -2092,6 +2356,10 @@ function populateFooter(storeName, tagline, phone, email, address, ig, fb, x) {
   document.getElementById('ftTagline').textContent = tagline || '';
   document.getElementById('ftCopyright').textContent = `© ${new Date().getFullYear()} ${storeName}. All rights reserved.`;
 
+  document.getElementById('ftWorlds').innerHTML = Worlds.list().map(w =>
+    `<a href="#world=${w.slug}" onclick="openWorld('${w.slug}');return false">${w.name}</a>`
+  ).join('');
+
   const phoneEl = document.getElementById('ftPhone');
   if (phone) { phoneEl.textContent = phone; phoneEl.href = `tel:${phone.replace(/[^0-9+]/g,'')}`; phoneEl.style.display = ''; }
 
@@ -2100,10 +2368,6 @@ function populateFooter(storeName, tagline, phone, email, address, ig, fb, x) {
 
   const addrEl = document.getElementById('ftAddress');
   if (address) { addrEl.textContent = address; addrEl.style.display = ''; }
-
-  if (!phone && !email && !address) {
-    document.getElementById('ftContactCol').style.display = 'none';
-  }
 
   const socialIcons = {
     instagram: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><line x1="17.5" y1="6.5" x2="17.5" y2="6.5"/></svg>',
@@ -2473,6 +2737,17 @@ function initTrackingPages() {
   if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', e => { if (e.data && e.data.type === 'notification') notifCenter.refreshUnread(); });
 }
 
+/* ── CHECKOUT + PROFILE WIRING ───────────────────── */
+function initBuyerUI() {
+  const common = { sb, session: () => buyerSession, fmt, toast };
+  Pcx.Checkout.init({ ...common, cart: () => cart,
+    sellerName: id => (vendorsMap[id] && vendorsMap[id].business_name) || 'Seller',
+    onPaid: () => { cart = []; saveCart(); updateCartBadge(); },
+    onExit: () => openCart(), openCart: () => openCart(), openOrders: () => Pcx.Profile.openOrders('all') });
+  Pcx.Profile.init({ ...common, signOut: buyerSignOut, openNotifCenter, openLegal,
+    openWishlist: () => showFavorites(), openHistory: () => showList('Recently viewed', recentProducts(), 'Nothing viewed yet'), openSupport: openWhatsAppHelp });
+}
+
 /* ── ADS + BANNER PAGES ───────────────────────────── */
 /* Feed cards: data/ads.js decides where they go; each card is the PromotionalCarousel in single-card mode.
    Pages: components/ad-page.js, opened through #ad=ID (an ad) or #promo=ID (a hero banner that opens a filtered
@@ -2573,10 +2848,12 @@ function initAssistant() {
 }
 
 async function init() {
+  initBuyerUI();
   await checkBuyerSession();
   initTrackingPages();
   initAssistant();
   notifCenter.refreshUnread();
+  Pcx.Checkout.handleReturn();   // finishes a payment when the customer comes back from the payment page
   maybePromptDeliveryConfirmation();
   sb.auth.onAuthStateChange((_event, session) => {
     buyerSession = session;
@@ -2597,7 +2874,10 @@ async function init() {
       {data:catRows},
       {data:brandRows},
       {data:ratingRows},
-      {data:worldRows}
+      {data:worldRows},
+      {data:beautyHeroRows},
+      {data:beautyCatRows},
+      {data:beautySetRows}
     ] = await Promise.all([
       sb.from('products').select('*').order('created_at',{ascending:false}),
       sb.from('banners').select('*').order('sort_order',{ascending:true}),
@@ -2609,7 +2889,13 @@ async function init() {
       Pcx.Categories.fetchAll(sb).then(r => ({ data: r.rows })),
       sb.from('brands').select('*').order('name',{ascending:true}),
       sb.from('product_ratings').select('*'),
-      sb.from('worlds').select('slug,image_url')
+      sb.from('worlds').select('slug,image_url'),
+      /* Beauty world content (migration_beauty.sql). Missing tables are fine:
+         the world shows a clean setup state instead of breaking the home page. */
+      sb.from('beauty_heroes').select('*').order('sort_order',{ascending:true}),
+      sb.from('beauty_categories').select('*').order('sort_order',{ascending:true}),
+      sb.from('beauty_settings').select('*'),
+      loadFashionData()          /* fashion genders / hero ads / sections (tables may not exist yet: fine) */
     ]);
 
     const get = k => settings?.find(s=>s.key===k)?.value;
@@ -2656,17 +2942,29 @@ async function init() {
     buildBrandRow();
     worldsList = worldsForCards(worldRows);
     Pcx.ExploreMarcato.mount(document.getElementById('exploreRow'), worldsList, openWorld);
-    initWorldPage();
 
     /* Categories come from the `categories` table. If it is empty or not created yet, fall back to the old shortcut cards. */
     Pcx.Categories.init(sb);
     catTree = catRows && catRows.length ? new Pcx.Categories.Tree(catRows) : null;
     if (catTree) Ads.setCategoryResolver(id => catTree.productMatcher(id));   // a main category also matches its subcategories
+    /* Beauty world data: raw rows only — the world component shapes them (data/beauty.js).
+       Popularity is loaded separately and only from REAL order/review data. */
+    beautyHeroes = beautyHeroRows || [];
+    beautyCats = beautyCatRows || [];
+    beautySettings = (Pcx.BeautyData) ? Pcx.BeautyData.settingsMap(beautySetRows)
+      : (beautySetRows || []).reduce((a, r) => (a[r.key] = r.value == null ? '' : String(r.value), a), {});
+    /* The world page opens AFTER the data above exists: a deep link (#world=beauty)
+       must boot with its category tree, and the real popularity stats are awaited in
+       that case so "Popular" never silently degrades to newest on first open. */
+    if (worldFromHash()) await loadBeautyStats(); else loadBeautyStats();
+    initWorldPage();
+    refreshFashionUniverse();       /* fashion product universe (existing tree matcher over fashion categories) */
+    if (fashionPage && fashionPage.isOpen()) fashionPage.renderAll();   /* deep link opened it before categories resolved */
     if (catTree) {
       initCategoryPage();
       buildCategoryTiles();
       buildCategoryRowsTree(allProds);
-      catPills = catTree.visibleRoots().filter(r => allProds.some(catTree.productMatcher(r.id))).map(r => r.name);
+      catPills = catTree.visibleRootsIn(null).filter(r => allProds.some(catTree.productMatcher(r.id))).map(r => r.name);
     } else {
       setNavItems((shortcuts || []).filter(sc => sc.title).map(sc => ({ title: sc.title, image: sc.image_url, bg: sc.bg_color })));
       buildCategoryRows(shortcuts || [], allProds);
@@ -2716,6 +3014,95 @@ async function init() {
 }
 
 window.addEventListener('load', () => { if (window.registerSW) registerSW('/sw.js'); else if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {}); });
+
+loadCart();
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
+igator) navigator.serviceWorker.register('/sw.js').catch(() => {}); });
+
+loadCart();
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
+sw.js').catch(() => {}); });
+
+loadCart();
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
+ep link opened it before categories resolved */
+    if (catTree) {
+      initCategoryPage();
+      buildCategoryTiles();
+      buildCategoryRowsTree(allProds);
+      catPills = catTree.visibleRootsIn(null).filter(r => allProds.some(catTree.productMatcher(r.id))).map(r => r.name);
+    } else {
+      setNavItems((shortcuts || []).filter(sc => sc.title).map(sc => ({ title: sc.title, image: sc.image_url, bg: sc.bg_color })));
+      buildCategoryRows(shortcuts || [], allProds);
+      catPills = catsJSON
+        ? JSON.parse(catsJSON)
+        : [...new Set(allProds.map(p=>p.category).filter(Boolean))];
+    }
+    buildCatFilter(catPills);
+    initSearchPage();
+
+    const flashProds = allProds.filter(p => p.flash_sale);
+    if (flashEnd && Date.now() < flashEnd && flashProds.length) {
+      document.getElementById('flashSec').style.display = '';
+      document.getElementById('flashGap').style.display = '';
+      startCountdown(flashEnd);
+      buildFlash(flashProds);
+    }
+
+    const featured = allProds.filter(p => p.featured);
+    if (featured.length) {
+      document.getElementById('featSec').style.display = '';
+      document.getElementById('featGap').style.display = '';
+      renderGrid(featured, 'featGrid');
+    }
+
+    renderGrid(allProds, 'allGrid', true);
+    syncAdPage();
+    syncCatPage();
+    syncTrackingPages();
+    document.getElementById('pCount').textContent =
+      `${allProds.length} item${allProds.length!==1?'s':''}`;
+
+    updateFavCount();
+    syncFavsFromServer();
+    const sharedId = Number(new URLSearchParams(location.search).get('p'));   /* shared link: /?p=ID */
+    if (sharedId) openProduct(sharedId);
+
+  } catch(err) {
+    console.error(err);
+    document.getElementById('allGrid').innerHTML =
+      `<div class="empty"><h3>Connection error</h3><p>Check internet and reload.</p></div>`;
+  } finally {
+    const l = document.getElementById('loader');
+    l.classList.add('done');
+    setTimeout(()=>l.remove(), 350);
+  }
+}
+
+window.addEventListener('load', () => { if (window.registerSW) registerSW('/sw.js'); else if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {}); });
+
+loadCart();
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
+igator) navigator.serviceWorker.register('/sw.js').catch(() => {}); });
+
+loadCart();
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
+sw.js').catch(() => {}); });
 
 loadCart();
 document.addEventListener('DOMContentLoaded', init);
