@@ -23,6 +23,8 @@
 <script defer src="data/worlds.js"></script>
 <script defer src="components/explore-marcato.js"></script>
 <link rel="stylesheet" href="components/world-page.css">
+<link rel="stylesheet" href="components/world-sections.css">
+<script defer src="components/world-sections.js"></script>
 <script defer src="components/world-page.js"></script>
 <link rel="stylesheet" href="components/food-world.css">
 <script defer src="components/food-world.js"></script>
@@ -1209,6 +1211,8 @@ function catFromHash() { const m = /^#cat=([a-z0-9-]+)/.exec(location.hash); ret
 function openCategory(slug) { location.hash = 'cat=' + slug; }
 function syncCatPage() {
   if (!catPage) return;
+  const wc = wcatFromHash();
+  if (wc) { showWorldCategory(wc); return; }
   const slug = catFromHash();
   if (!slug) { catPage.close(); return; }
   if (catTree) catPage.open(slug);
@@ -1224,7 +1228,7 @@ function initCategoryPage() {
   catPage = new Pcx.CategoryPage(document.getElementById('catPage'), {
     tree: () => catTree, products: () => allProds, cardHTML, go: openCategory, onBack: closeCatPage, onHome: goHome
   });
-  catDeepLinked = !!catFromHash();
+  catDeepLinked = !!catFromHash() || !!wcatFromHash();
   window.addEventListener('hashchange', syncCatPage);
 }
 
@@ -1232,18 +1236,24 @@ function initCategoryPage() {
 function openStore(identifier) { if (identifier) location.href = '/store/' + identifier; }
 
 /* ── EXPLORE MARCATO WORLDS (#world=slug) ────────────
-   Placeholder destinations only — see data/worlds.js and components/world-page.js. Same
-   hash-routing idea as the category page (#cat=slug) so back/forward and deep links work. */
+   The worlds (title, order, on/off, card image + GIF) come from the `worlds` table — see data/worlds.js. A world page is
+   the same page for every world: hero + display categories + products (components/world-sections.js). Same hash-routing
+   idea as the category page (#cat=slug) so back/forward and deep links work. A display category opens at #wcat=ID. */
 let worldPage = null, worldDeepLinked = false, worldsList = [];
 function worldFromHash() { const m = /^#world=([a-z0-9-]+)/.exec(location.hash); return m ? m[1] : null; }
 function openWorld(slug) { location.hash = 'world=' + slug; }
-function worldBySlug(slug) { return worldsList.find(w => w.slug === slug) || Worlds.bySlug(slug); }
-/* Merges the admin-uploaded image (worlds table, `worlds` missing/empty is fine — see
-   migration_worlds.sql) onto the fixed name/tagline/gradient/icon list from data/worlds.js. */
-function worldsForCards(worldRows) {
-  const imgBySlug = {};
-  (worldRows || []).forEach(r => { if (r.image_url) imgBySlug[r.slug] = r.image_url; });
-  return Worlds.list().map(w => imgBySlug[w.slug] ? Object.assign({}, w, { image_url: imgBySlug[w.slug] }) : w);
+function worldBySlug(slug) { return worldsList.find(w => w.slug === slug) || null; }   // only worlds that are switched on
+function renderWorldLinks() {
+  document.getElementById('ftWorlds').innerHTML = worldsList.map(w =>
+    `<a href="#world=${hs(w.slug)}" onclick="openWorld('${hs(w.slug)}');return false">${esc(w.name)}</a>`
+  ).join('');
+}
+function setWorlds(list) {
+  worldsList = list || [];
+  Worlds.set(worldsList);
+  Pcx.ExploreMarcato.mount(document.getElementById('exploreRow'), worldsList, openWorld);
+  document.getElementById('exploreSec').style.display = worldsList.length ? '' : 'none';   // no worlds switched on: no empty heading
+  renderWorldLinks();
 }
 function syncWorldPage() {
   if (!worldPage) return;
@@ -1259,11 +1269,41 @@ function closeWorldPage() {
     worldPage.close();
   } else history.back();
 }
+/* Everything a world page needs, as getters, so no component reads page-script variables off `window`
+   (top-level `let`/`const` are not window properties). */
+const worldCtx = {
+  sb,
+  tree: () => catTree,
+  products: () => allProds,
+  vendors: () => vendorsMap,
+  cardHTML,
+  openStore,
+  openCategory,
+  openWorldCategory: id => { location.hash = 'wcat=' + id; },
+  onBack: () => closeWorldPage()
+};
 function initWorldPage() {
-  worldPage = new Pcx.WorldPage(document.getElementById('worldPage'), { onBack: closeWorldPage, storeName: () => storeName });
+  worldPage = new Pcx.WorldPage(document.getElementById('worldPage'), { onBack: closeWorldPage, storeName: () => storeName, ctx: worldCtx });
   worldDeepLinked = !!worldFromHash();
   window.addEventListener('hashchange', syncWorldPage);
   syncWorldPage();
+}
+
+/* Display-category results (#wcat=ID): the normal category page's layout and product cards, showing only the products in the
+   marketplace categories that display category is linked to. */
+function wcatFromHash() { const m = /^#wcat=(\d+)$/.exec(location.hash); return m ? m[1] : null; }
+let wcatSeq = 0;
+async function showWorldCategory(id) {
+  const seq = ++wcatSeq, WS = Pcx.WorldSections;
+  const info = await WS.loadCategory(sb, id).catch(() => null);
+  if (seq !== wcatSeq || wcatFromHash() !== String(id) || !catPage) return;      // the person already moved on
+  if (!info) { catPage.openList({ title: 'Category', products: [], emptyTitle: 'Category not found', emptyText: 'It may have been moved or switched off.' }); return; }
+  const linked = info.categoryIds.length > 0;
+  catPage.openList({
+    title: info.cat.name, crumb: info.worldName, products: WS.productsForCategories(worldCtx, info.categoryIds),
+    emptyTitle: linked ? 'No products here yet' : 'Nothing connected yet',
+    emptyText: linked ? 'Check back soon.' : 'Products for this category have not been connected yet.'
+  });
 }
 
 /* ── VENDOR ROW ───────────────────────────────────── */
@@ -2073,9 +2113,7 @@ function populateFooter(storeName, tagline, phone, email, address, ig, fb, x) {
   document.getElementById('ftTagline').textContent = tagline || '';
   document.getElementById('ftCopyright').textContent = `© ${new Date().getFullYear()} ${storeName}. All rights reserved.`;
 
-  document.getElementById('ftWorlds').innerHTML = Worlds.list().map(w =>
-    `<a href="#world=${w.slug}" onclick="openWorld('${w.slug}');return false">${w.name}</a>`
-  ).join('');
+  renderWorldLinks();
 
   const phoneEl = document.getElementById('ftPhone');
   if (phone) { phoneEl.textContent = phone; phoneEl.href = `tel:${phone.replace(/[^0-9+]/g,'')}`; phoneEl.style.display = ''; }
@@ -2446,7 +2484,7 @@ async function init() {
       {data:catRows},
       {data:brandRows},
       {data:ratingRows},
-      {data:worldRows}
+      worldsResult
     ] = await Promise.all([
       sb.from('products').select('*').order('created_at',{ascending:false}),
       sb.from('banners').select('*').order('sort_order',{ascending:true}),
@@ -2458,7 +2496,7 @@ async function init() {
       Pcx.Categories.fetchAll(sb).then(r => ({ data: r.rows })),
       sb.from('brands').select('*').order('name',{ascending:true}),
       sb.from('product_ratings').select('*'),
-      sb.from('worlds').select('slug,image_url')
+      Worlds.fetch(sb).catch(() => ({ list: Worlds.defaults(), legacy: true }))
     ]);
 
     const get = k => settings?.find(s=>s.key===k)?.value;
@@ -2503,8 +2541,7 @@ async function init() {
     buildCarousel(banners || []);
     buildVendorRow(vendors || []);
     buildBrandRow();
-    worldsList = worldsForCards(worldRows);
-    Pcx.ExploreMarcato.mount(document.getElementById('exploreRow'), worldsList, openWorld);
+    setWorlds(worldsResult.list);
     initWorldPage();
 
     /* Categories come from the `categories` table. If it is empty or not created yet, fall back to the old shortcut cards. */

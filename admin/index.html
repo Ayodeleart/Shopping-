@@ -259,6 +259,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 <link rel="stylesheet" href="../components/ai-product.css">
 <script src="../components/sw-register.js"></script>
 <link rel="stylesheet" href="categories.css">
+<link rel="stylesheet" href="worlds.css">
 </head>
 <body data-theme="light">
 
@@ -618,7 +619,7 @@ async function uploadImage(file, folder, progressBarId, progressId, transparent)
     reader.onload = e => {
       const img = new Image();
       img.onload = () => {
-        const maxW = folder === 'banners' ? 1200 : folder === 'ads' ? 1400 : 900;
+        const maxW = folder === 'banners' ? 1200 : (folder === 'ads' || folder === 'worlds/hero') ? 1400 : 900;
         let w = img.width, h = img.height;
         if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
         const canvas = document.createElement('canvas');

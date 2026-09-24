@@ -267,3 +267,11 @@ On iPhone: tap Share → Add to Home Screen.
 - Cart is stored locally in the customer's browser
 - The admin session stays active until the browser tab is closed
 - Service worker caches the app shell for offline access
+
+## Explore Marcato worlds
+
+Every world (Food, Fashion, Beauty, Home, Gifts, or any you add) is data, not code: **Explore World → Hero → Display Categories → Products**.
+Admin › Explore Marcato adds, edits, hides, re-orders and deletes worlds, and inside each world manages its hero slides and its display categories
+(image + optional GIF each). A display category is a picture card that opens the products of the marketplace categories linked to it; it is not the
+marketplace category itself. Needs the Explore worlds SQL run once in the Supabase SQL editor (pasted in the chat, never stored in this repo).
+Until it is run the homepage keeps showing the original five worlds. Tests: `tests/worlds.test.js` (storefront) and `tests/worlds-admin.test.js` (admin).
