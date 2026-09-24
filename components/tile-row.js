@@ -61,7 +61,7 @@
         if (r && Math.abs(r - 1) > 0.05) box.style.aspectRatio = Math.min(2, Math.max(0.5, r)) + ' / 1';
       }, { once: true });
       if (reduced) img.addEventListener('load', function () { still(img, t.caption); }, { once: true });
-      img.src = t.image;
+      img.src = Pcx.Safe.safeHref(t.image);
       box.appendChild(img);
       el.appendChild(box);
       if (t.caption) el.appendChild(h('span', 'tile__cap', t.caption));

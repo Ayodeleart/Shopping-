@@ -160,12 +160,12 @@
 
       var bs = q('brand'), keepB = bs.value || pendingBrand || '';
       bs.innerHTML = '<option value="">Choose a brand</option>' + data.brands.map(function (b) { return '<option value="' + b.id + '" data-name="' + esc(b.name) + '">' + esc(b.name) + '</option>'; }).join('');
-      if (keepB && !bs.querySelector('option[value="' + keepB + '"]')) bs.insertAdjacentHTML('beforeend', '<option value="' + keepB + '">Brand #' + keepB + '</option>');
+      if (keepB && !bs.querySelector('option[value="' + keepB + '"]')) bs.insertAdjacentHTML('beforeend', '<option value="' + esc(keepB) + '">Brand #' + esc(keepB) + '</option>');
       bs.value = keepB; pendingBrand = null;
 
       var as = q('ad'), keepA = as.value || pendingAd || '';
       as.innerHTML = '<option value="">Choose an ad</option>' + data.ads.map(function (a) { return '<option value="' + a.id + '">' + esc(a.name) + '</option>'; }).join('');
-      if (keepA && !as.querySelector('option[value="' + keepA + '"]')) as.insertAdjacentHTML('beforeend', '<option value="' + keepA + '">Ad #' + keepA + '</option>');
+      if (keepA && !as.querySelector('option[value="' + keepA + '"]')) as.insertAdjacentHTML('beforeend', '<option value="' + esc(keepA) + '">Ad #' + esc(keepA) + '</option>');
       as.value = keepA; pendingAd = null;
       updateMatch();
     }
@@ -222,7 +222,7 @@
         q('disc').value = r.discountMin || ''; q('key').value = r.keyword || ''; q('max').value = r.priceMax || '';
         q('flag').value = r.flag || ''; q('sort').value = r.sort || '';
         pendingCat = r.categoryId || r.category || '';
-        if (q('cat')) { if (q('cat').tagName === 'SELECT' && r.categoryId && !q('cat').querySelector('option[value="' + r.categoryId + '"]')) q('cat').insertAdjacentHTML('beforeend', '<option value="' + r.categoryId + '">Category #' + r.categoryId + '</option>'); q('cat').value = pendingCat; }
+        if (q('cat')) { if (q('cat').tagName === 'SELECT' && r.categoryId && !q('cat').querySelector('option[value="' + r.categoryId + '"]')) q('cat').insertAdjacentHTML('beforeend', '<option value="' + esc(r.categoryId) + '">Category #' + esc(r.categoryId) + '</option>'); q('cat').value = pendingCat; }
       } else if (t.type === 'brand') { pendingBrand = String(t.brand_id || ''); refresh(); }
       else if (t.type === 'products') {
         q('ptitle').value = t.title || ''; ids = (t.ids || []).map(Number);

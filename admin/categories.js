@@ -46,17 +46,17 @@
     if (kids) meta.push(kids + ' sub' + (kids === 1 ? '' : 's'));
     meta.push(c.slug);
     var chev = kids && !showPath
-      ? '<button type="button" class="cat-chev" data-act="tog" data-id="' + c.id + '" aria-label="Show subcategories">' + (expanded[c.id] ? '\u25be' : '\u25b8') + '</button>'
+      ? '<button type="button" class="cat-chev" data-act="tog" data-id="' + esc(c.id) + '" aria-label="Show subcategories">' + (expanded[c.id] ? '\u25be' : '\u25b8') + '</button>'
       : '<span class="cat-chev none"></span>';
     return '<div class="cat-row' + (c.active ? '' : ' off') + '" style="margin-left:' + (showPath ? 0 : depth * 16) + 'px">' +
       chev + C.thumb(tree, c, 's40') +
       '<div class="cat-main"><div class="cat-name">' + esc(c.name) + (c.active ? '' : '<span class="pill">hidden</span>') + '</div>' +
       '<div class="cat-meta">' + esc(meta.join(' \u00b7 ')) + '</div></div>' +
       '<div class="cat-acts">' +
-        (showPath ? '' : '<button type="button" data-act="up" data-id="' + c.id + '"' + (idx <= 0 ? ' disabled' : '') + ' aria-label="Move up">\u2191</button>' +
-                         '<button type="button" data-act="down" data-id="' + c.id + '"' + (idx >= sibs.length - 1 ? ' disabled' : '') + ' aria-label="Move down">\u2193</button>') +
-        '<button type="button" data-act="sub" data-id="' + c.id + '" aria-label="Add subcategory">+</button>' +
-        '<button type="button" data-act="edit" data-id="' + c.id + '">Edit</button>' +
+        (showPath ? '' : '<button type="button" data-act="up" data-id="' + esc(c.id) + '"' + (idx <= 0 ? ' disabled' : '') + ' aria-label="Move up">\u2191</button>' +
+                         '<button type="button" data-act="down" data-id="' + esc(c.id) + '"' + (idx >= sibs.length - 1 ? ' disabled' : '') + ' aria-label="Move down">\u2193</button>') +
+        '<button type="button" data-act="sub" data-id="' + esc(c.id) + '" aria-label="Add subcategory">+</button>' +
+        '<button type="button" data-act="edit" data-id="' + esc(c.id) + '">Edit</button>' +
       '</div></div>';
   }
 
@@ -131,7 +131,7 @@
     parentPicker.setValue(e.parentId);
     $('cfFile').addEventListener('change', function () {
       pendingFile = this.files[0] || null; removeImage = false;
-      if (pendingFile) $('cfPrev').innerHTML = '<div class="cat-thumb s56"><img src="' + URL.createObjectURL(pendingFile) + '" alt=""></div>';
+      if (pendingFile) $('cfPrev').innerHTML = '<div class="cat-thumb s56"><img src="' + safeUrl(URL.createObjectURL(pendingFile)) + '" alt=""></div>';
     });
     $('cfName').addEventListener('input', function () {   // slug follows the name until it is edited by hand or already saved
       if (!editing.id && !editing.slugTouched) $('cfSlug').value = C.slugify(this.value);

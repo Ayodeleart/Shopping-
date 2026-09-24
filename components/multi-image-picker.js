@@ -43,6 +43,11 @@
     return this.items.filter(function (i) { return i.url; }).map(function (i) { return i.url; });
   };
 
+  /* every photo as { file } (chosen, not uploaded yet) or { url } (already stored): used by the AI listing assistant */
+  P.getSources = function () {
+    return this.items.map(function (i) { return i.file && !i.url ? { file: i.file } : { url: i.url }; }).filter(function (i) { return i.file || i.url; });
+  };
+
   P.hasPending = function () {
     return this.items.some(function (i) { return i.file && !i.url; });
   };
@@ -108,7 +113,7 @@
       var img = document.createElement('img');
       img.alt = '';
       img.draggable = false;
-      img.src = it.url || it.preview;
+      img.src = safeHref(it.url || it.preview);
       cell.appendChild(img);
       if (idx === 0 && o.max > 1) {
         var tag = document.createElement('span'); tag.className = 'mip__tag'; tag.textContent = 'Main'; cell.appendChild(tag);

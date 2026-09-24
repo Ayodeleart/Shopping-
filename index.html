@@ -11,6 +11,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="app-icon-32.png">
 <title>Maccato</title>
 <link rel="stylesheet" href="components/promotional-carousel.css">
+<script src="data/safe.js"></script>
 <script defer src="components/drag-gesture.js"></script>
 <script defer src="components/promotion-slide.js"></script>
 <script defer src="components/promotional-carousel.js"></script>
@@ -18,6 +19,11 @@
 <link rel="stylesheet" href="components/ad-page.css">
 <link rel="stylesheet" href="components/tile-row.css">
 <script defer src="components/tile-row.js"></script>
+<link rel="stylesheet" href="components/explore-marcato.css">
+<script defer src="data/worlds.js"></script>
+<script defer src="components/explore-marcato.js"></script>
+<link rel="stylesheet" href="components/world-page.css">
+<script defer src="components/world-page.js"></script>
 <script defer src="components/ad-page.js"></script>
 <script defer src="data/ads.js"></script>
 <link rel="stylesheet" href="components/categories.css">
@@ -33,18 +39,27 @@
 <script defer src="data/tracking.js"></script>
 <script defer src="components/order-tracking.js"></script>
 <script defer src="components/notification-center.js"></script>
+<script>window.MAC_FAB_MANUAL = true; window.MAC_CHAT_MANUAL = true;</script>
+<link rel="stylesheet" href="components/mac-fab.css">
+<link rel="stylesheet" href="components/mac-chat.css">
+<script defer src="components/mac-theme.js"></script>
+<script defer src="components/mac-fab.js"></script>
+<script defer src="components/mac-chat.js"></script>
 <link rel="stylesheet" href="components/product-page.css">
 <script defer src="components/product-gallery.js"></script>
 <script defer src="components/image-viewer.js"></script>
 <link rel="stylesheet" href="components/theme-tokens.css">
 <link rel="stylesheet" href="components/product-card.css">
+<link rel="stylesheet" href="components/seller-brand.css">
 <script src="components/product-card.js"></script>
+<script src="components/seller-brand.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 /* Theme tokens now live in components/theme-tokens.css (shared with /store). */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{scroll-behavior:smooth}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--txt);overflow-x:hidden;padding-top:var(--hh)}
+html{overscroll-behavior:none}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--txt);overflow-x:hidden;padding-top:var(--hh);overscroll-behavior:none;touch-action:manipulation}
 button{cursor:pointer;border:none;background:none;font-family:inherit;color:inherit}
 img{display:block;object-fit:cover}
 a{text-decoration:none;color:inherit}
@@ -95,6 +110,11 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
   display:none;
 }
 #callBar.show{display:block}
+
+/* ── HEADER PROMO STRIP (tiny, admin-set, GIF-friendly) ── */
+#headerPromoBar{display:none;width:100%;height:30px;overflow:hidden;background:var(--bg2)}
+#headerPromoBar.show{display:block}
+#headerPromoBar img{width:100%;height:100%;object-fit:cover;display:block}
 
 /* ── MAIN ─────────────────────────────────────────── */
 #main{padding-top:0}
@@ -428,6 +448,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 .revEmpty b{font-size:19px;font-weight:700;color:var(--txt2)}
 .revEmpty span{font-size:14px;color:var(--txt3)}
 .revSignInBtn{width:100%;height:44px;background:var(--bg2);color:var(--txt);border-radius:10px;font-size:13px;font-weight:700;margin-top:10px}
+.revEligCheck{padding:12px 14px;background:var(--bg2);border-radius:10px;font-size:12.5px;color:var(--txt3);margin-top:10px;line-height:1.5}
 .revForm{margin-top:14px;background:var(--bg2);border-radius:12px;padding:14px}
 .revForm-lbl{font-size:12px;font-weight:700;color:var(--txt2);margin-bottom:8px}
 .revPicker{display:flex;gap:6px;margin-bottom:12px}
@@ -561,6 +582,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
     <span id="cartDot"></span>
   </button>
 </header>
+<a id="headerPromoBar" target="_blank" rel="noopener"><img id="headerPromoImg" alt=""></a>
 
 <!-- CATEGORY TITLES: fixed under the header, shown only after the search bar has scrolled away -->
 <nav id="catNav" aria-label="Categories"><div id="catNavRow"></div></nav>
@@ -597,15 +619,20 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
   <!-- SQUARE GIF TILES (admin: Banners > Tiles) -->
   <section id="tileSec" hidden><div id="tileRow" hidden></div></section>
 
+  <!-- EXPLORE MARCATO: specialized shopping worlds (Food, Fashion, Beauty, Home, Gifts). Not categories,
+       not brands, not vendors — separate concepts, see data/worlds.js and components/explore-marcato.js -->
+  <section id="exploreSec">
+    <div class="xmHd">
+      <span class="secTtl">Explore Marcato</span>
+      <span class="xmSub">Step into a world made just for you</span>
+    </div>
+    <div id="exploreRow" class="xmRow"></div>
+  </section>
+
   <!-- SHOP BY BRAND -->
   <section id="brandSec" style="display:none">
     <div class="secHd"><span class="secTtl">Shop by Brand</span></div>
     <div id="brandRow"></div>
-  </section>
-
-  <section id="vendorSec" style="display:none">
-    <div class="secHd"><span class="secTtl">Vendors</span></div>
-    <div id="vendorRow"></div>
   </section>
 
   <!-- FLASH SALE -->
@@ -647,6 +674,13 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
   </section>
 
   <div id="catRows"></div>
+
+  <!-- VENDORS: moved further down the homepage now that "Explore Marcato" occupies the early slot.
+       Functionality is unchanged; vendor discovery is also used inside the specialized worlds later. -->
+  <section id="vendorSec" style="display:none">
+    <div class="secHd"><span class="secTtl">Vendors</span></div>
+    <div id="vendorRow"></div>
+  </section>
 
 </main>
 
@@ -757,6 +791,9 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 
 <!-- CATEGORY PAGE (#cat=slug) -->
 <div id="catPage"></div>
+
+<!-- WORLD PAGE: Explore Marcato destination placeholder (#world=slug) -->
+<div id="worldPage"></div>
 
 <!-- ORDER TRACKING PAGE (#order=ID) and NOTIFICATION CENTER (#notifications) -->
 <div id="orderPage"></div>
@@ -960,6 +997,18 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
       <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="34" height="34"><path opacity="0.4" d="M12.1207 12.78C12.0507 12.77 11.9607 12.77 11.8807 12.78C10.1207 12.72 8.7207 11.28 8.7207 9.50998C8.7207 7.69998 10.1807 6.22998 12.0007 6.22998C13.8107 6.22998 15.2807 7.69998 15.2807 9.50998C15.2707 11.28 13.8807 12.72 12.1207 12.78Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path opacity="0.34" d="M18.7398 19.3801C16.9598 21.0101 14.5998 22.0001 11.9998 22.0001C9.39977 22.0001 7.03977 21.0101 5.25977 19.3801C5.35977 18.4401 5.95977 17.5201 7.02977 16.8001C9.76977 14.9801 14.2498 14.9801 16.9698 16.8001C18.0398 17.5201 18.6398 18.4401 18.7398 19.3801Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </div>
     <p class="acctMsg" id="acctEmail"></p>
+
+    <div id="walletCard" style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin:0 0 14px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:12px;color:var(--txt3);font-weight:700">Marcato Wallet</div>
+          <div style="font-size:20px;font-weight:800" id="walletBalance">₦0</div>
+        </div>
+        <button id="walletAddBtn" onclick="openWalletDeposit()" style="background:var(--red);color:#fff;font-weight:800;font-size:12px;padding:8px 14px;border-radius:20px">+ Add Money</button>
+      </div>
+      <div id="walletTxList" style="margin-top:10px;font-size:12px;color:var(--txt3)"></div>
+    </div>
+
     <div class="acctLinks">
       <a href="#" onclick="showMyOrders();return false;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
@@ -1079,7 +1128,7 @@ function buildMenuCats() {
     <button class="mCatMain" data-i="${i}">
       <span class="mCatThumb"${it.thumb ? '' : ` style="background:${esc(it.bg || '')}"`}>${it.thumb
         ? it.thumb
-        : it.image ? `<img src="${esc(it.image)}" alt="" loading="lazy">` : esc((it.title[0] || '?').toUpperCase())}</span>
+        : it.image ? `<img src="${safeUrl(it.image)}" alt="" loading="lazy">` : esc((it.title[0] || '?').toUpperCase())}</span>
       <span class="mCatName">${esc(it.title)}</span>
     </button>`).join('');
 }
@@ -1093,11 +1142,11 @@ function menuCatRow(c) {
         ${Pcx.Categories.thumb(catTree, c, 'mCatThumb')}
         <span class="mCatName">${esc(c.name)}</span>
       </button>
-      ${hasKids ? `<button class="mCatToggle" data-toggle="${c.id}" aria-label="Show ${esc(c.name)} subcategories">
+      ${hasKids ? `<button class="mCatToggle" data-toggle="${esc(c.id)}" aria-label="Show ${esc(c.name)} subcategories">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
       </button>` : ''}
     </div>
-    ${hasKids ? `<div class="mCatKids" data-kids="${c.id}">${kids.map(k => `<button class="mCatSub" data-slug="${esc(k.slug)}">${esc(k.name)}</button>`).join('')}</div>` : ''}`;
+    ${hasKids ? `<div class="mCatKids" data-kids="${esc(c.id)}">${kids.map(k => `<button class="mCatSub" data-slug="${esc(k.slug)}">${esc(k.name)}</button>`).join('')}</div>` : ''}`;
 }
 
 $('menuCats').addEventListener('click', e => {
@@ -1158,11 +1207,11 @@ function buildBrandRow() {
     const bg = prods.find(p => p.image_url);
     const letter = esc((b.name[0] || '?').toUpperCase());
     return `
-      <button class="bcard" onclick="filterByBrand(${b.id})">
+      <button class="bcard" onclick="filterByBrand(${num(b.id)})">
         <span class="bcard-tile">
-          ${bg ? `<img class="bcard-bg" src="${esc(bg.image_url)}" alt="" loading="lazy">` : ''}
+          ${bg ? `<img class="bcard-bg" src="${safeUrl(bg.image_url)}" alt="" loading="lazy">` : ''}
           <span class="bcard-logo${b.logo_url ? '' : ' nologo'}" data-l="${letter}">${b.logo_url
-            ? `<img src="${esc(b.logo_url)}" alt="${esc(b.name)}" loading="lazy" onerror="this.parentNode.classList.add('nologo');this.remove()">`
+            ? `<img src="${safeUrl(b.logo_url)}" alt="${esc(b.name)}" loading="lazy" onerror="this.parentNode.classList.add('nologo');this.remove()">`
             : ''}</span>
         </span>
         <span class="bcard-name">${esc(b.name)}</span>
@@ -1195,7 +1244,7 @@ function buildCategoryRowsTree(prods) {
       <div class="catRowSec">
         <div class="catRowHd">
           <span class="catRowBar" style="background:var(--red)"></span>
-          <span class="catRowName" style="color:var(--red)" onclick="openCategory('${esc(root.slug)}')">${esc(root.name)}</span>
+          <span class="catRowName" style="color:var(--red)" onclick="openCategory('${hs(root.slug)}')">${esc(root.name)}</span>
           <span class="catRowCount">${matches.length} item${matches.length!==1?'s':''}</span>
         </div>
         <div class="catRowScroll">
@@ -1230,6 +1279,44 @@ function initCategoryPage() {
   window.addEventListener('hashchange', syncCatPage);
 }
 
+/* Real seller storefronts live at /store/[slug] (see /store/). */
+function openStore(identifier) { if (identifier) location.href = '/store/' + identifier; }
+
+/* ── EXPLORE MARCATO WORLDS (#world=slug) ────────────
+   Placeholder destinations only — see data/worlds.js and components/world-page.js. Same
+   hash-routing idea as the category page (#cat=slug) so back/forward and deep links work. */
+let worldPage = null, worldDeepLinked = false, worldsList = [];
+function worldFromHash() { const m = /^#world=([a-z0-9-]+)/.exec(location.hash); return m ? m[1] : null; }
+function openWorld(slug) { location.hash = 'world=' + slug; }
+function worldBySlug(slug) { return worldsList.find(w => w.slug === slug) || Worlds.bySlug(slug); }
+/* Merges the admin-uploaded image (worlds table, `worlds` missing/empty is fine — see
+   migration_worlds.sql) onto the fixed name/tagline/gradient/icon list from data/worlds.js. */
+function worldsForCards(worldRows) {
+  const imgBySlug = {};
+  (worldRows || []).forEach(r => { if (r.image_url) imgBySlug[r.slug] = r.image_url; });
+  return Worlds.list().map(w => imgBySlug[w.slug] ? Object.assign({}, w, { image_url: imgBySlug[w.slug] }) : w);
+}
+function syncWorldPage() {
+  if (!worldPage) return;
+  const slug = worldFromHash();
+  if (!slug) { worldPage.close(); return; }
+  const w = worldBySlug(slug);
+  if (w) worldPage.open(w); else closeWorldPage();
+}
+function closeWorldPage() {
+  if (worldDeepLinked) {
+    worldDeepLinked = false;
+    history.replaceState(null, '', location.pathname + location.search);
+    worldPage.close();
+  } else history.back();
+}
+function initWorldPage() {
+  worldPage = new Pcx.WorldPage(document.getElementById('worldPage'), { onBack: closeWorldPage, storeName: () => storeName });
+  worldDeepLinked = !!worldFromHash();
+  window.addEventListener('hashchange', syncWorldPage);
+  syncWorldPage();
+}
+
 /* ── VENDOR ROW ───────────────────────────────────── */
 function buildVendorRow(vendors) {
   const sec = document.getElementById('vendorSec');
@@ -1237,8 +1324,8 @@ function buildVendorRow(vendors) {
   if (!vendors.length) { sec.style.display = 'none'; return; }
   sec.style.display = '';
   row.innerHTML = vendors.map(v => `
-    <div class="vcard" onclick="filterByVendor('${esc(v.id)}')">
-      <div class="vcard-img">${v.logo_url ? `<img src="${esc(v.logo_url)}" alt="">` : esc((v.business_name||'?')[0].toUpperCase())}</div>
+    <div class="vcard" onclick="openStore('${hs(v.store_slug || v.id)}')">
+      <div class="vcard-img">${v.logo_url ? `<img src="${safeUrl(v.logo_url)}" alt="">` : esc((v.business_name||'?')[0].toUpperCase())}</div>
       <span class="vcard-lbl">${esc(v.business_name||'')}</span>
     </div>`).join('');
 }
@@ -1319,7 +1406,7 @@ function startCountdown(endTs) {
 
 /* ── CURRENCY ─────────────────────────────────────── */
 let currency = '₦';
-const fmt = n => currency + Number(n).toLocaleString('en-NG');
+const fmt = n => esc(currency) + Number(n).toLocaleString('en-NG');   // currency is an admin-set store_settings value
 
 /* ── FAVORITES ────────────────────────────────────── */
 /* Guests: saved on this device. Signed in: also synced to the `favorites` table. */
@@ -1450,12 +1537,12 @@ function buildCategoryRows(shortcuts, prods) {
   const rows = (shortcuts || []).map(sc => {
     const matches = prods.filter(p => (p.category || '').trim().toLowerCase() === (sc.title || '').trim().toLowerCase());
     if (!matches.length) return '';
-    const color = sc.bg_color || '#D91C2D';
+    const color = cssColor(sc.bg_color) || '#D91C2D';
     return `
       <div class="catRowSec">
         <div class="catRowHd">
           <span class="catRowBar" style="background:${color}"></span>
-          <span class="catRowName" style="color:${color}">${sc.title}</span>
+          <span class="catRowName" style="color:${color}">${esc(sc.title)}</span>
           <span class="catRowCount">${matches.length} item${matches.length!==1?'s':''}</span>
         </div>
         <div class="catRowScroll">
@@ -1532,7 +1619,7 @@ function openProduct(id, isBack) {
   const letter = esc((sellerName[0] || '?').toUpperCase());
   $('pSold').innerHTML = `
     <div class="pSoldAv${logo ? ' hasLogo' : ''}" data-l="${letter}">${logo
-      ? `<img src="${esc(logo)}" alt="" onerror="this.parentNode.classList.remove('hasLogo');this.replaceWith(document.createTextNode(this.parentNode.dataset.l))">`
+      ? `<img src="${safeUrl(logo)}" alt="" onerror="this.parentNode.classList.remove('hasLogo');this.replaceWith(document.createTextNode(this.parentNode.dataset.l))">`
       : letter}</div>
     <div class="pSoldTxt"><div class="pSoldLbl">Sold by</div><div class="pSoldName">${esc(sellerName)}</div></div>
     <button class="pSoldBtn" onclick="viewSeller()">View Store</button>`;
@@ -1543,9 +1630,9 @@ function openProduct(id, isBack) {
   if (bName) {
     br.style.display = 'flex';
     br.innerHTML = (b ? `<span class="pBrandLogo" data-l="${esc((b.name[0] || '?').toUpperCase())}">${b.logo_url
-        ? `<img src="${esc(b.logo_url)}" alt="" onerror="this.replaceWith(document.createTextNode(this.parentNode.dataset.l))">`
+        ? `<img src="${safeUrl(b.logo_url)}" alt="" onerror="this.replaceWith(document.createTextNode(this.parentNode.dataset.l))">`
         : esc((b.name[0] || '?').toUpperCase())}</span>` : '') +
-      `<span>Brand:</span>` + (b ? `<button onclick="closePModal(true);filterByBrand(${b.id})">${esc(bName)}</button>` : `<b>${esc(bName)}</b>`);
+      `<span>Brand:</span>` + (b ? `<button onclick="closePModal(true);filterByBrand(${num(b.id)})">${esc(bName)}</button>` : `<b>${esc(bName)}</b>`);
   } else { br.style.display = 'none'; br.innerHTML = ''; }
 
   /* price */
@@ -1560,7 +1647,7 @@ function openProduct(id, isBack) {
 
   /* call vendor (falls back to the store number) */
   const phone = ((v && v.phone) || storePhone || '').trim();
-  const tel = phone ? 'tel:' + phone.replace(/[^0-9+]/g, '') : '';
+  const tel = phone ? 'tel:' + phone.replace(/[^0-9+]/g, '') : '';   /* digits and + only, fixed tel: scheme */
   $('pBulk').style.display = phone ? '' : 'none';
   $('pCallBtn').style.display = phone ? '' : 'none';
   if (phone) { $('pBulk').href = tel; $('pBulkNum').textContent = phone; $('pCallBtn').href = tel; }
@@ -1600,7 +1687,7 @@ function renderBlocks(blocks) {
   blockImgs = blocks.filter(b => b.type === 'image').map(b => b.url);
   let k = -1;
   $('pBlocks').innerHTML = blocks.map(b => {
-    if (b.type === 'image') { k++; return `<img class="pBlkImg" src="${esc(b.url)}" alt="" loading="lazy" onclick="openBlockImage(${k})">`; }
+    if (b.type === 'image') { k++; return `<img class="pBlkImg" src="${safeUrl(b.url)}" alt="" loading="lazy" onclick="openBlockImage(${k})">`; }
     if (b.type === 'heading') return `<h4 class="pBlkH">${esc(b.text)}</h4>`;
     return `<p class="pBlkP">${esc(b.text)}</p>`;
   }).join('');
@@ -1653,9 +1740,10 @@ function pBuyNow() {
 }
 
 function viewSeller() {
-  const vid = pCur ? pCur.vendor_id : null;
+  const v = pCur && pCur.vendor_id ? vendorsMap[pCur.vendor_id] : null;
+  if (!v) return;
   closePModal(true);
-  filterByVendor(vid || null);
+  openStore(v.store_slug || v.id);
 }
 
 async function shareProduct() {
@@ -1671,7 +1759,7 @@ async function shareProduct() {
 function renderPRating() {
   const el = $('pRating'), r = pCur && ratingMap[pCur.id];
   if (!r || !r.n) { el.innerHTML = ''; return; }
-  el.innerHTML = `<button onclick="document.getElementById('reviewsSec').scrollIntoView({behavior:'smooth'})">${starsHTML(r.avg, 17)}<span>${r.avg.toFixed(1)} (${r.n} review${r.n !== 1 ? 's' : ''})</span></button>`;
+  el.innerHTML = `<button onclick="document.getElementById('reviewsSec').scrollIntoView({behavior:'smooth'})">${starsHTML(r.avg, 17)}<span>${r.avg.toFixed(1)} (${esc(r.n)} review${r.n !== 1 ? 's' : ''})</span></button>`;
 }
 
 /* Delivery text comes from Admin > Settings. Nothing is promised that the store has not written. */
@@ -1680,7 +1768,7 @@ function renderDelivery() {
   if (policy.returns) rows.push([ICON_RETURN, 'Return Policy', policy.returns]);
   if (policy.warranty) rows.push([ICON_SHIELD, 'Warranty', policy.warranty]);
   $('pDelivBody').innerHTML = rows.map(([icon, title, text]) =>
-    `<div class="pInfoRow">${icon}<div><h4>${title}</h4><p>${esc(text)}</p></div></div>`).join('');
+    `<div class="pInfoRow">${icon}<div><h4>${esc(title)}</h4><p>${esc(text)}</p></div></div>`).join('');
 }
 
 function buildRails(p, sellerName) {
@@ -1743,10 +1831,23 @@ async function loadReviews(productId) {
   renderReviewForm();
 }
 
-function renderReviewForm() {
+async function renderReviewForm() {
   const wrap = $('revFormWrap');
   if (!buyerSession) {
     wrap.innerHTML = `<button class="revSignInBtn" onclick="closePModal(true);openAccount()">Sign in to write a review</button>`;
+    return;
+  }
+  const forProductId = curProductId;
+  wrap.innerHTML = `<div class="revEligCheck">Checking your orders...</div>`;
+  const { data, error } = await sb.from('order_items')
+    .select('id, orders!inner(user_id)')
+    .eq('product_id', forProductId)
+    .eq('status', 'completed')
+    .eq('orders.user_id', buyerSession.user.id)
+    .limit(1);
+  if (curProductId !== forProductId) return;        /* another product was opened meanwhile */
+  if (error || !data || !data.length) {
+    wrap.innerHTML = `<div class="revEligCheck">You can review this product once your order for it has been delivered.</div>`;
     return;
   }
   wrap.innerHTML = `
@@ -1924,9 +2025,10 @@ function goHome(e) {
   closePModal(true);
   /* ad / tile / banner / category pages are opened through the URL hash: clear it without adding history entries */
   if (location.hash || location.search) history.replaceState(null, '', location.pathname);
-  adDeepLinked = false; catDeepLinked = false;
+  adDeepLinked = false; catDeepLinked = false; worldDeepLinked = false;
   if (adPage) adPage.close();
   if (catPage) catPage.close();
+  if (worldPage) worldPage.close();
   document.body.style.overflow = '';
   filterCat('All');
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2010,7 +2112,7 @@ function populateFooter(storeName, tagline, phone, email, address, ig, fb, x) {
   };
   const socials = [['instagram', ig], ['facebook', fb], ['x', x]].filter(([, url]) => url);
   document.getElementById('ftSocial').innerHTML = socials.map(([type, url]) =>
-    `<a href="${url}" target="_blank" rel="noopener">${socialIcons[type]}</a>`
+    `<a href="${safeUrl(url)}" target="_blank" rel="noopener">${socialIcons[type]}</a>`
   ).join('');
   if (!socials.length) document.getElementById('ftSocial').style.display = 'none';
 }
@@ -2085,8 +2187,64 @@ async function checkBuyerSession() {
   document.getElementById('acctSignedOut').style.display = session ? 'none' : '';
   document.getElementById('acctSignedIn').style.display = session ? '' : 'none';
   document.getElementById('menuLogoutLink').style.display = session ? '' : 'none';
-  if (session) document.getElementById('acctEmail').textContent = session.user.email;
+  if (session) { document.getElementById('acctEmail').textContent = session.user.email; loadWallet(); }
   if (!session) authView('signin');
+}
+
+/* ── WALLET ───────────────────────────────────────── */
+async function loadWallet() {
+  if (!buyerSession) return;
+  const { data: wallet } = await sb.from('customer_wallets').select('available_balance').eq('user_id', buyerSession.user.id).maybeSingle();
+  document.getElementById('walletBalance').textContent = '₦' + Number((wallet && wallet.available_balance) || 0).toLocaleString();
+  const { data: txs } = await sb.from('customer_wallet_transactions').select('transaction_type,amount,status,created_at')
+    .eq('user_id', buyerSession.user.id).order('created_at', { ascending: false }).limit(5);
+  const list = document.getElementById('walletTxList');
+  if (!txs || !txs.length) { list.textContent = 'No transactions yet.'; return; }
+  const LABEL = { deposit: 'Deposit', purchase: 'Purchase', refund: 'Refund', reversal: 'Reversal', adjustment: 'Adjustment' };
+  const SIGN = { deposit: '+', purchase: '-', refund: '+', reversal: '', adjustment: '' };
+  list.innerHTML = txs.map(t => `<div style="display:flex;justify-content:space-between;padding:4px 0">
+    <span>${LABEL[t.transaction_type] || t.transaction_type}${t.status !== 'completed' ? ' (' + t.status + ')' : ''}</span>
+    <span>${SIGN[t.transaction_type] || ''}₦${Number(t.amount).toLocaleString()}</span>
+  </div>`).join('');
+}
+
+async function openWalletDeposit() {
+  if (!buyerSession) { toast('Sign in first'); return; }
+  const amount = Number(prompt('How much would you like to add to your wallet? (₦)'));
+  if (!amount || amount < 100) { if (amount) toast('Minimum deposit is ₦100'); return; }
+  try {
+    const res = await fetch('/api/wallet-delivery?action=deposit-init', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${buyerSession.access_token}` },
+      body: JSON.stringify({ amount })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not start payment');
+    window.location.href = data.authorization_url;   // customer pays on Paystack's own page; wallet is credited by the webhook, never by this redirect
+  } catch (e) { toast(e.message || 'Could not start payment', true); }
+}
+
+/* ── DELIVERY CONFIRMATION (deep link from push notification) ─────────── */
+async function maybePromptDeliveryConfirmation() {
+  const params = new URLSearchParams(window.location.search);
+  const shipmentId = params.get('confirm_delivery');
+  if (!shipmentId) return;
+  if (!buyerSession) { await checkBuyerSession(); }
+  if (!buyerSession) { toast('Sign in to confirm your delivery'); openAccount(); return; }
+  const yes = confirm('Did your Marcato order arrive?\n\nTap OK for "Yes, I received it", or Cancel for "Not yet".');
+  try {
+    const res = await fetch('/api/wallet-delivery?action=confirm', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${buyerSession.access_token}` },
+      body: JSON.stringify({ shipmentId: Number(shipmentId), response: yes ? 'yes' : 'not_yet' })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not record your response');
+    toast(yes ? 'Thanks — marked as delivered!' : "Thanks — we'll check back later.");
+  } catch (e) { toast(e.message || 'Could not record your response', true); }
+  finally {
+    params.delete('confirm_delivery');
+    const rest = params.toString();
+    history.replaceState(null, '', window.location.pathname + (rest ? '?' + rest : ''));
+  }
 }
 
 /* ── AUTH: sign up / sign in with Google (works now), Facebook (coming soon) or email + password ── */
@@ -2270,8 +2428,8 @@ async function showMyOrders() {
   if (error || !data?.length) { el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--txt3);font-size:13px">No orders yet.</div>'; return; }
   const T = Pcx.Tracking;
   el.innerHTML = data.map(o => o.order_number ? `
-    <div class="myOrd" onclick="openOrder(${o.id})" style="cursor:pointer">
-      <div class="myOrd-top"><span>#${esc(o.order_number)} &middot; ${new Date(o.created_at).toLocaleDateString()}</span><span class="tk-pill ${T.tone(o.fulfillment_status)}">${esc(T.ORDER_LABEL[o.fulfillment_status] || o.fulfillment_status)}</span></div>
+    <div class="myOrd" onclick="openOrder(${num(o.id)})" style="cursor:pointer">
+      <div class="myOrd-top"><span>#${esc(o.order_number)} &middot; ${new Date(o.created_at).toLocaleDateString()}</span><span class="tk-pill ${esc(T.tone(o.fulfillment_status))}">${esc(T.ORDER_LABEL[o.fulfillment_status] || o.fulfillment_status)}</span></div>
       <div class="myOrd-line">${(o.items||[]).length} item${(o.items||[]).length!==1?'s':''} &middot; ${fmt(o.total)} <span class="tk-link" style="float:right">Track order</span></div>
     </div>` : `
     <div class="myOrd">
@@ -2338,7 +2496,7 @@ function feedTileGroups() {
 }
 function feedSlots() {
   const tileSlots = Object.keys(feedTileGroups()).map(n => ({
-    afterRows: +n, order: -1, html: `<div class="tileslot au" data-rows="${n}" style="grid-column:1/-1"></div>`
+    afterRows: +n, order: -1, html: `<div class="tileslot au" data-rows="${esc(n)}" style="grid-column:1/-1"></div>`
   }));
   return adsList.concat(tileSlots);
 }
@@ -2391,10 +2549,35 @@ function initAds(rows, banners, tileRows) {
   window.addEventListener('hashchange', syncAdPage);
 }
 
+/* ── MAC, THE SHOPPING ASSISTANT ────────────────────────── */
+/* MAC is the floating mascot on the home page (components/mac-fab.js); tapping it opens the chat sheet
+   (components/mac-chat.js). Same server as before, untouched: /api/assistant + /api/assistant-ticket (Groq key
+   stays on the server). MAC hides itself automatically whenever a full-page view or drawer is open, its own
+   chat included, since they all lock body scroll to do it. */
+let macChat = null;
+function initAssistant() {
+  if (macChat || !window.Pcx || !Pcx.MacFab || !Pcx.MacChat) return;
+  if (document.querySelector('.macFab') || document.querySelector('.macChat')) return;   // already mounted (e.g. by the component's own auto-init) — never stack a second one
+  Pcx.mac = new Pcx.MacFab({});
+  macChat = new Pcx.MacChat({
+    mac: Pcx.mac,
+    getSession: () => buyerSession,
+    getStoreName: () => storeName,
+    fmt, currency,
+    onNavigate: fn => { macChat.close(); fn(); },
+    openProduct: id => openProduct(Number(id)),
+    openOrder: id => openOrder(id),
+    openSignIn: () => openAccount(),
+    addToCart: (id, qty) => addToCart(Number(id), null, qty || 1, true)
+  });
+}
+
 async function init() {
   await checkBuyerSession();
   initTrackingPages();
+  initAssistant();
   notifCenter.refreshUnread();
+  maybePromptDeliveryConfirmation();
   sb.auth.onAuthStateChange((_event, session) => {
     buyerSession = session;
     if (!session) favSyncedFor = null;
@@ -2413,7 +2596,8 @@ async function init() {
       {data:tileRows},
       {data:catRows},
       {data:brandRows},
-      {data:ratingRows}
+      {data:ratingRows},
+      {data:worldRows}
     ] = await Promise.all([
       sb.from('products').select('*').order('created_at',{ascending:false}),
       sb.from('banners').select('*').order('sort_order',{ascending:true}),
@@ -2424,7 +2608,8 @@ async function init() {
       sb.from('tiles').select('*').eq('active',true).order('sort_order',{ascending:true}),
       Pcx.Categories.fetchAll(sb).then(r => ({ data: r.rows })),
       sb.from('brands').select('*').order('name',{ascending:true}),
-      sb.from('product_ratings').select('*')
+      sb.from('product_ratings').select('*'),
+      sb.from('worlds').select('slug,image_url')
     ]);
 
     const get = k => settings?.find(s=>s.key===k)?.value;
@@ -2452,6 +2637,16 @@ async function init() {
       bar.classList.add('show');
     }
 
+    const promoImg = get('headerPromoImage');
+    if (promoImg) {
+      document.getElementById('headerPromoImg').src = promoImg;
+      const promoLink = get('headerPromoLink');
+      const promoBar = document.getElementById('headerPromoBar');
+      if (promoLink) { promoBar.href = promoLink; promoBar.style.cursor = 'pointer'; }
+      else { promoBar.removeAttribute('href'); promoBar.style.cursor = 'default'; promoBar.onclick = e => e.preventDefault(); }
+      promoBar.classList.add('show');
+    }
+
     populateFooter(storeName, tagline, phone, get('contactEmail'), get('contactAddress'), get('socialInstagram'), get('socialFacebook'), get('socialX'));
 
     allProds = products || [];
@@ -2459,6 +2654,9 @@ async function init() {
     buildCarousel(banners || []);
     buildVendorRow(vendors || []);
     buildBrandRow();
+    worldsList = worldsForCards(worldRows);
+    Pcx.ExploreMarcato.mount(document.getElementById('exploreRow'), worldsList, openWorld);
+    initWorldPage();
 
     /* Categories come from the `categories` table. If it is empty or not created yet, fall back to the old shortcut cards. */
     Pcx.Categories.init(sb);

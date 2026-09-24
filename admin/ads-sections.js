@@ -38,10 +38,10 @@
     var secs = cur.page.sections;
 
     function inp(label, path, attrs, extra) {
-      return '<div class="fg"><label>' + label + '</label><input data-f="' + path + '" value="' + esc(AdsAdmin.getp(cur, path)) + '" ' + (attrs || '') + (extra || '') + '></div>';
+      return '<div class="fg"><label>' + esc(label) + '</label><input data-f="' + esc(path) + '" value="' + esc(AdsAdmin.getp(cur, path)) + '" ' + (attrs || '') + (extra || '') + '></div>';
     }
     function sel(label, path, options, cur_, re) {
-      return '<div class="fg"><label>' + label + '</label><select data-f="' + path + '"' + (re ? ' data-re="1"' : '') + '>' +
+      return '<div class="fg"><label>' + esc(label) + '</label><select data-f="' + esc(path) + '"' + (re ? ' data-re="1"' : '') + '>' +
         options.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (String(o[0]) === String(cur_ == null ? '' : cur_) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') +
         '</select></div>';
     }
@@ -138,9 +138,9 @@
       var term = q.value.trim().toLowerCase();
       var rows = products.filter(function (p) { return !term || (p.name || '').toLowerCase().indexOf(term) !== -1 || (p.brand || '').toLowerCase().indexOf(term) !== -1; });
       list.innerHTML = rows.map(function (p) {
-        return '<label class="pk-row">' + (p.image_url ? '<img src="' + esc(p.image_url) + '" alt="">' : '<span class="pk-ph"></span>') +
+        return '<label class="pk-row">' + (p.image_url ? '<img src="' + safeUrl(p.image_url) + '" alt="">' : '<span class="pk-ph"></span>') +
           '<span class="pk-name">' + esc(p.name) + '<div class="pk-price">' + esc(p.brand || '') + '</div></span>' +
-          '<input type="checkbox" data-id="' + p.id + '"' + (order.indexOf(p.id) !== -1 ? ' checked' : '') + '></label>';
+          '<input type="checkbox" data-id="' + esc(p.id) + '"' + (order.indexOf(p.id) !== -1 ? ' checked' : '') + '></label>';
       }).join('') || '<div class="ad-empty" style="margin:8px">No products found.</div>';
       hd.textContent = 'Choose products (' + order.length + ')';
     }

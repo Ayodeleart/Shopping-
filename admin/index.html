@@ -9,12 +9,14 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" sizes="32x32" href="app-icon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script src="../data/safe.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 :root{--bg:#fff;--bg2:#f5f5f5;--bg3:#ebebeb;--card:#fff;--txt:#111;--txt2:#555;--txt3:#999;--red:#D91C2D;--red2:#a81422;--green:#16a34a;--border:#e0e0e0;--shadow:0 2px 12px rgba(0,0,0,.06);--r:12px}
 [data-theme=dark]{--bg:#0d0d0d;--bg2:#1a1a1a;--bg3:#242424;--card:#1a1a1a;--txt:#f5f5f5;--txt2:#aaa;--txt3:#666;--red:#e8192c;--red2:#c01525;--green:#22c55e;--border:#2a2a2a;--shadow:0 2px 12px rgba(0,0,0,.4)}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;transition:background .2s,color .2s}
+html{overscroll-behavior:none}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;transition:background .2s,color .2s;overscroll-behavior:none;touch-action:manipulation}
 button{cursor:pointer;border:none;background:none;font-family:inherit;color:inherit}
 input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 
@@ -254,6 +256,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 <link rel="stylesheet" href="../components/order-tracking.css">
 <link rel="stylesheet" href="../components/brand-picker.css">
 <link rel="stylesheet" href="../components/auth-screen.css">
+<link rel="stylesheet" href="../components/ai-product.css">
 <script src="../components/sw-register.js"></script>
 <link rel="stylesheet" href="categories.css">
 </head>
@@ -343,6 +346,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
     <div class="fcard" id="pFormCard">
       <h3 id="pFormTitle">Add New Product</h3>
       <div class="fg"><label>Name *</label><input type="text" id="pName" placeholder="Product name"></div>
+      <div id="pAI"></div>
       <div class="fg"><label>Brand (optional)</label><div id="pBrandBox"></div></div>
       <div class="row2">
         <div class="fg"><label>Price *</label><input type="number" id="pPrice" placeholder="0" min="0"></div>
@@ -380,6 +384,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
     <div id="bannerSubnav" style="display:flex;border-bottom:2px solid var(--border);margin-bottom:14px">
       <button class="bsub-tab on" data-sub="banners" onclick="switchBannerSub('banners')">Banners</button>
       <button class="bsub-tab" data-sub="tiles" onclick="switchBannerSub('tiles')">Tiles</button>
+      <button class="bsub-tab" data-sub="worlds" onclick="switchBannerSub('worlds')">Explore Marcato</button>
       <button class="bsub-tab" data-sub="ads" onclick="switchBannerSub('ads')">Ads</button>
       <button class="bsub-tab" data-sub="announce" onclick="switchBannerSub('announce')">Announcements</button>
     </div>
@@ -418,6 +423,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
     <div id="bList"></div>
     </div>
     <div id="tilesPane" style="display:none"></div>
+    <div id="worldsPane" style="display:none"></div>
     <div id="adsPane" style="display:none"></div>
     <div id="announcePane" style="display:none">
       <div id="announceSubnav" style="display:flex;border-bottom:2px solid var(--border);margin-bottom:14px">
@@ -472,6 +478,25 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
     </div>
 
     <div class="ssec">
+      <div class="ssec-ttl">Header Promo Banner</div>
+      <p style="font-size:12px;color:var(--txt3);margin-bottom:10px">A tiny animated strip shown right under the header. GIFs work — upload one to run it non-stop.</p>
+      <div class="fg">
+        <label>Banner Image / GIF</label>
+        <div class="iup-area" id="hpImgArea">
+          <input type="file" id="hpImgFile" accept="image/*">
+          <div class="iup-txt" id="hpImgTxt">Tap to upload image or GIF</div>
+        </div>
+        <div class="uprog" id="hpImgProg"><div class="uprog-bar" id="hpImgProgBar" style="width:0%"></div></div>
+        <img class="iup-prev" id="hpImgPrev" alt="">
+      </div>
+      <div class="srow"><label>Link (optional)</label><input type="text" id="hpLink" placeholder="e.g. #allSec or a full URL"></div>
+      <div class="form-btns">
+        <button class="btn-p" onclick="saveHeaderPromo()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg>Save Banner</button>
+        <button class="btn-s" onclick="removeHeaderPromo()">Remove</button>
+      </div>
+    </div>
+
+    <div class="ssec">
       <div class="ssec-ttl">Product Page: Delivery &amp; Returns</div>
       <div class="srow"><label>Delivery</label><textarea id="sDelivery" rows="3" placeholder="e.g. Delivery takes 1-3 working days within Lagos."></textarea></div>
       <div class="srow"><label>Return Policy (leave empty to hide)</label><textarea id="sReturns" rows="3" placeholder="e.g. Returns accepted within 7 days if unused."></textarea></div>
@@ -522,6 +547,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 </div>
 
 <script src="../components/multi-image-picker.js"></script>
+<script src="../components/ai-product.js"></script>
 <script src="../data/categories.js"></script>
 <script src="../data/tracking.js"></script>
 <script src="../components/category-picker.js"></script>
@@ -574,7 +600,7 @@ async function uploadImage(file, folder, progressBarId, progressId, transparent)
   if (prog) { prog.classList.add('on'); bar.style.width = '0%'; }
 
   if (file.type === 'image/gif') {   // animated GIFs go up untouched: drawing them on a canvas would keep only the first frame
-    if (file.size > 4 * 1024 * 1024) { if (prog) prog.classList.remove('on'); throw new Error('This GIF is over 4 MB. Compress it (about 480 x 480) and try again.'); }
+    if (file.size > 10 * 1024 * 1024) { if (prog) prog.classList.remove('on'); throw new Error('This GIF is over 10 MB. Compress it (about 480 x 480) and try again.'); }
     if (prog) bar.style.width = '60%';
     const gifPath = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2)}.gif`;
     const up = await sb.storage.from(BUCKET).upload(gifPath, file, { contentType: 'image/gif', cacheControl: '31536000' });
@@ -646,6 +672,41 @@ function previewFile(fileInputId, prevId, txtId) {
 }
 const pPicker = new Pcx.MultiImagePicker(document.getElementById('pPicker'), { max: 8, label: 'Add photos' });
 document.getElementById('bImgFile').addEventListener('change', () => previewFile('bImgFile', 'bImgPrev', 'bImgTxt'));
+document.getElementById('hpImgFile').addEventListener('change', () => previewFile('hpImgFile', 'hpImgPrev', 'hpImgTxt'));
+
+async function saveHeaderPromo() {
+  const file = document.getElementById('hpImgFile').files[0];
+  const link = document.getElementById('hpLink').value.trim();
+  showLoad('Saving banner...');
+  try {
+    const rows = [{ key: 'headerPromoLink', value: link }];
+    if (file) {
+      const url = await uploadImage(file, 'header-promo', 'hpImgProgBar', 'hpImgProg');
+      rows.push({ key: 'headerPromoImage', value: url });
+    }
+    const { error } = await sb.from('store_settings').upsert(rows);
+    if (error) throw error;
+    toast('Header banner saved');
+  } catch (e) {
+    toast('Save failed: ' + e.message, true);
+  } finally { hideLoad(); }
+}
+
+async function removeHeaderPromo() {
+  showLoad('Removing...');
+  try {
+    const { error } = await sb.from('store_settings').upsert([{ key: 'headerPromoImage', value: '' }, { key: 'headerPromoLink', value: '' }]);
+    if (error) throw error;
+    document.getElementById('hpImgPrev').classList.remove('on');
+    document.getElementById('hpImgPrev').src = '';
+    document.getElementById('hpImgTxt').textContent = 'Tap to upload image or GIF';
+    document.getElementById('hpLink').value = '';
+    document.getElementById('hpImgFile').value = '';
+    toast('Header banner removed');
+  } catch (e) {
+    toast('Failed: ' + e.message, true);
+  } finally { hideLoad(); }
+}
 
 /* ===== TABS ===== */
 document.querySelectorAll('.tab').forEach(t => {
@@ -668,6 +729,23 @@ const brandPicker = new Pcx.BrandPicker(document.getElementById('pBrandBox'), {
   upload: file => uploadImage(file, 'products', 'pImgProgBar', 'pImgProg', true)
 });
 const catPicker = new Pcx.CategoryPicker(document.getElementById('pCat'), {});
+
+/* AI listing assistant: fills a DRAFT into the form below; the admin edits it and presses Save (nothing is published automatically) */
+let editProdAttrs = null;
+const aiProd = new Pcx.AIProduct(document.getElementById('pAI'), {
+  endpoint: '/api/ai-product',
+  getToken: async () => { const { data: { session: s } } = await sb.auth.getSession(); return s ? s.access_token : null; },
+  getPicker: () => pPicker,
+  getInput: () => { const b = brandPicker.getValue(); return { name: document.getElementById('pName').value.trim(), brand: b ? b.name : '', price: document.getElementById('pPrice').value, category: catPicker.names()[0] || '' }; },
+  apply: {
+    title: v => { document.getElementById('pName').value = v; },
+    shortDescription: v => { document.getElementById('pDesc').value = v; },
+    description: v => { document.getElementById('pDesc').value = v; },
+    highlights: list => { const d = document.getElementById('pDesc'); d.value = (d.value.trim() + '\n\n' + list.map(x => '- ' + x).join('\n')).trim(); },
+    categoryId: id => catPicker.setValue(id)
+  },
+  onApplied: () => toast('Draft applied. Review it, then press Save.')
+});
 document.addEventListener('categories:loaded', e => {
   catTree = e.detail;
   catPicker.setTree(catTree);
@@ -675,7 +753,7 @@ document.addEventListener('categories:loaded', e => {
 
 /* ===== CURRENCY ===== */
 let currency = '₦';
-function fmt(n) { return currency + Number(n).toLocaleString('en-NG'); }
+function fmt(n) { return esc(currency) + Number(n).toLocaleString('en-NG'); }   // currency is an admin-set store_settings value
 
 /* ===== BANNER COLORS ===== */
 const COLORS = ['#D91C2D','#0f3460','#16213e','#533483','#065143','#1a1a2e','#e94560','#f58549','#2b2d42','#1b262c'];
@@ -730,6 +808,8 @@ async function saveProduct() {
       featured: document.getElementById('pFeatTgl').classList.contains('on'),
       flash_sale: document.getElementById('pFlashTgl').classList.contains('on')
     };
+    const aiExtras = aiProd.extras();            // tags / alt text from the reviewed AI draft, kept inside the existing attributes column
+    if (aiExtras) prod.attributes = Object.assign({}, editProdAttrs || {}, aiExtras);
 
     const write = p => editProdId
       ? sb.from('products').update(p).eq('id', editProdId)
@@ -767,6 +847,7 @@ function cancelProdEdit() {
   catPicker.clear();
   document.getElementById('pRmBg').checked = false;
   pPicker.clear();
+  aiProd.reset(); editProdAttrs = null;
   document.getElementById('pFeatTgl').classList.remove('on');
   document.getElementById('pFlashTgl').classList.remove('on');
   document.getElementById('pFormTitle').textContent = 'Add New Product';
@@ -792,6 +873,7 @@ async function editProduct(id) {
   document.getElementById('pMaxStock').value = p.max_stock || '';
   document.getElementById('pDesc').value = p.description || '';
   pPicker.setImages(Array.isArray(p.images) && p.images.length ? p.images : (p.image_url ? [p.image_url] : []));
+  aiProd.reset(); aiProd.setExisting(p.attributes); editProdAttrs = p.attributes || null;
   document.getElementById('pFeatTgl').classList.toggle('on', !!p.featured);
   document.getElementById('pFlashTgl').classList.toggle('on', !!p.flash_sale);
   document.getElementById('pFormTitle').textContent = 'Edit Product';
@@ -826,20 +908,20 @@ async function loadProducts() {
     const disc = p.original_price && p.original_price > p.price ? Math.round((1 - p.price / p.original_price) * 100) : 0;
     return `
       <div class="pitem">
-        <div class="pitem-img">${p.image_url ? `<img src="${p.image_url}" alt="">` : `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--txt3)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>`}</div>
+        <div class="pitem-img">${p.image_url ? `<img src="${safeUrl(p.image_url)}" alt="">` : `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--txt3)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>`}</div>
         <div class="pitem-body">
-          <div class="pitem-name">${p.name}</div>
+          <div class="pitem-name">${esc(p.name)}</div>
           <div class="pitem-price">${fmt(p.price)}${disc > 0 ? ` <span style="font-size:11px;color:var(--txt3);text-decoration:line-through;font-weight:400">${fmt(p.original_price)}</span>` : ''}</div>
           <div class="pitem-tags">
-            ${p.category ? `<span class="tag">${p.category}</span>` : ''}
-            <span class="tag">${p.stock} in stock</span>
+            ${p.category ? `<span class="tag">${esc(p.category)}</span>` : ''}
+            <span class="tag">${esc(p.stock)} in stock</span>
             ${p.featured ? `<span class="tag tag-g">Featured</span>` : ''}
             ${p.flash_sale ? `<span class="tag tag-r">Flash Sale</span>` : ''}
             ${disc > 0 ? `<span class="tag tag-r">-${disc}%</span>` : ''}
           </div>
           <div class="pitem-acts">
-            <button class="btn-e" onclick="editProduct(${p.id})">Edit</button>
-            <button class="btn-d" onclick="deleteProduct(${p.id})">Delete</button>
+            <button class="btn-e" onclick="editProduct(${num(p.id)})">Edit</button>
+            <button class="btn-d" onclick="deleteProduct(${num(p.id)})">Delete</button>
           </div>
         </div>
       </div>`;
@@ -923,7 +1005,7 @@ async function editBanner(id) {
   document.getElementById('bCta').value = b.cta_text || '';
   document.getElementById('bOrder').value = b.sort_order || 1;
   document.getElementById('bBgColor').value = b.bg_color || '#D91C2D';
-  if (b.image_url) { document.getElementById('bImgPrev').src = b.image_url; document.getElementById('bImgPrev').classList.add('on'); document.getElementById('bImgTxt').textContent = 'Image loaded. Tap to replace.'; }
+  if (b.image_url) { document.getElementById('bImgPrev').src = safeHref(b.image_url); document.getElementById('bImgPrev').classList.add('on'); document.getElementById('bImgTxt').textContent = 'Image loaded. Tap to replace.'; }
   document.getElementById('bFormTitle').textContent = 'Edit Banner';
   BannerDest.write(b.target || (b.link_url ? { type: 'url', url: b.link_url } : null));
   document.getElementById('cancelBannerBtn').style.display = '';
@@ -950,14 +1032,14 @@ async function loadBanners() {
   if (!banners?.length) { el.innerHTML = `<div class="no-items"><h3>No banners yet</h3><p>Add your first banner above.</p></div>`; return; }
   el.innerHTML = banners.map(b => `
     <div class="bitem">
-      <div class="bprev" style="background:${b.bg_color || '#D91C2D'}">
-        ${b.image_url ? `<img src="${b.image_url}" alt="">` : ''}
-        ${(b.title || b.subtitle) ? `<div class="bprev-txt">${b.title ? `<div class="bprev-title">${b.title}</div>` : ''}${b.subtitle ? `<div class="bprev-sub">${b.subtitle}</div>` : ''}</div>` : ''}
+      <div class="bprev" style="background:${cssColor(b.bg_color) || '#D91C2D'}">
+        ${b.image_url ? `<img src="${safeUrl(b.image_url)}" alt="">` : ''}
+        ${(b.title || b.subtitle) ? `<div class="bprev-txt">${b.title ? `<div class="bprev-title">${esc(b.title)}</div>` : ''}${b.subtitle ? `<div class="bprev-sub">${esc(b.subtitle)}</div>` : ''}</div>` : ''}
       </div>
       <div class="bfoot">
-        <span class="bfoot-name">Order ${b.sort_order || 1}${b.title ? ' — ' + b.title : ''}</span>
-        <button class="btn-e" onclick="editBanner(${b.id})">Edit</button>
-        <button class="btn-d" onclick="deleteBanner(${b.id})">Delete</button>
+        <span class="bfoot-name">Order ${esc(b.sort_order || 1)}${esc(b.title ? ' — ' + b.title : '')}</span>
+        <button class="btn-e" onclick="editBanner(${num(b.id)})">Edit</button>
+        <button class="btn-d" onclick="deleteBanner(${num(b.id)})">Delete</button>
       </div>
     </div>`).join('');
 }
@@ -996,18 +1078,18 @@ async function loadOrdersLegacy() {
   el.innerHTML = orders.map(o => `
     <div class="oitem">
       <div class="oitem-head">
-        <span class="oid">Order #${String(o.id).slice(-6)}</span>
-        <span class="ostatus ${o.status === 'completed' ? 'completed' : ''}">${o.status || 'pending'}</span>
+        <span class="oid">Order #${esc(String(o.id).slice(-6))}</span>
+        <span class="ostatus ${o.status === 'completed' ? 'completed' : ''}">${esc(o.status || 'pending')}</span>
       </div>
-      <div class="ocust">${o.customer_name}</div>
-      <div class="odet">${o.phone}</div>
-      <div class="odet">${o.address}</div>
+      <div class="ocust">${esc(o.customer_name)}</div>
+      <div class="odet">${esc(o.phone)}</div>
+      <div class="odet">${esc(o.address)}</div>
       <div class="odet">${new Date(o.created_at).toLocaleString()}</div>
-      <div class="oitems">${(o.items||[]).map(i => `${i.name} x${i.qty}`).join(', ')}</div>
+      <div class="oitems">${esc((o.items||[]).map(i => `${i.name} x${i.qty}`).join(', '))}</div>
       <div class="ototal">${fmt(o.total || 0)}</div>
       <div class="oact">
-        ${o.status !== 'completed' ? `<button class="btn-e" onclick="markOrderStatus(${o.id},'completed')">Mark Complete</button>` : ''}
-        <button class="btn-d" onclick="deleteOrder(${o.id})">Delete</button>
+        ${o.status !== 'completed' ? `<button class="btn-e" onclick="markOrderStatus(${num(o.id)},'completed')">Mark Complete</button>` : ''}
+        <button class="btn-d" onclick="deleteOrder(${num(o.id)})">Delete</button>
       </div>
     </div>`).join('');
 }
@@ -1026,6 +1108,9 @@ async function loadSettings() {
   document.getElementById('sIG').value = get('socialInstagram') || '';
   document.getElementById('sFB').value = get('socialFacebook') || '';
   document.getElementById('sX').value = get('socialX') || '';
+  const hpImg = get('headerPromoImage');
+  if (hpImg) { document.getElementById('hpImgPrev').src = hpImg; document.getElementById('hpImgPrev').classList.add('on'); document.getElementById('hpImgTxt').textContent = 'Current banner (tap to replace)'; }
+  document.getElementById('hpLink').value = get('headerPromoLink') || '';
   document.getElementById('sDelivery').value = get('deliveryInfo') || '';
   document.getElementById('sReturns').value = get('returnPolicy') || '';
   document.getElementById('sWarranty').value = get('warrantyInfo') || '';
@@ -1163,7 +1248,7 @@ async function loadVendors() {
     allEl.innerHTML = vendors.length ? vendors.map(vendorRowHtml).join('') : '<div class="no-items"><h3>No vendors yet</h3></div>';
     document.getElementById('stVendors') && (document.getElementById('stVendors').textContent = vendors.length);
   } catch (e) {
-    pendingEl.innerHTML = `<div class="no-items"><h3>Couldn't load vendors</h3><p>${e.message}. Have you deployed /api/admin-vendors.js with SUPABASE_SERVICE_ROLE_KEY and ADMIN_EMAIL set?</p></div>`;
+    pendingEl.innerHTML = `<div class="no-items"><h3>Couldn't load vendors</h3><p>${esc(e.message)}. Have you deployed /api/admin-vendors.js with SUPABASE_SERVICE_ROLE_KEY and ADMIN_EMAIL set?</p></div>`;
     allEl.innerHTML = '';
   }
 }
@@ -1171,11 +1256,11 @@ async function loadVendors() {
 function vendorRowHtml(v) {
   const badgeColor = v.status === 'approved' ? 'var(--green)' : v.status === 'suspended' ? 'var(--red)' : '#d97706';
   return `
-    <div class="bitem" onclick="openVendorDetail('${v.id}')" style="cursor:pointer">
+    <div class="bitem" onclick="openVendorDetail('${hs(v.id)}')" style="cursor:pointer">
       <div class="bfoot" style="flex-wrap:wrap">
-        <span class="bfoot-name" style="flex:1"><b>${v.business_name || '(no store name yet)'}</b> · ${v.email || ''}<br><span style="color:${badgeColor};font-weight:700;text-transform:uppercase;font-size:11px">${v.application_status === 'rejected' ? 'changes needed' : v.status}</span></span>
-        ${v.status !== 'approved' ? `<button class="btn-e" onclick="event.stopPropagation();setVendorStatus('${v.id}','approved')">Approve</button>` : ''}
-        ${v.status !== 'suspended' ? `<button class="btn-d" onclick="event.stopPropagation();setVendorStatus('${v.id}','suspended')">Suspend</button>` : ''}
+        <span class="bfoot-name" style="flex:1"><b>${esc(v.business_name || '(no store name yet)')}</b> · ${esc(v.email || '')}<br><span style="color:${badgeColor};font-weight:700;text-transform:uppercase;font-size:11px">${esc(v.application_status === 'rejected' ? 'changes needed' : v.status)}</span></span>
+        ${v.status !== 'approved' ? `<button class="btn-e" onclick="event.stopPropagation();setVendorStatus('${hs(v.id)}','approved')">Approve</button>` : ''}
+        ${v.status !== 'suspended' ? `<button class="btn-d" onclick="event.stopPropagation();setVendorStatus('${hs(v.id)}','suspended')">Suspend</button>` : ''}
       </div>
     </div>`;
 }
@@ -1200,14 +1285,14 @@ function openVendorDetail(id) {
   const statusColor = v.status === 'approved' ? '#16a34a' : v.status === 'suspended' ? '#dc2626' : '#d97706';
   const idColor = v.id_verification_status === 'verified' ? '#16a34a' : v.id_verification_status === 'failed' ? '#dc2626' : '#8a93a3';
   const bankColor = v.bank_verification_status === 'verified' ? '#16a34a' : v.bank_verification_status === 'failed' ? '#dc2626' : '#8a93a3';
-  const row = (label, val) => val ? `<div class="vdRow"><span class="vdLabel">${label}</span><span class="vdVal">${val}</span></div>` : '';
+  const row = (label, val) => val ? `<div class="vdRow"><span class="vdLabel">${esc(label)}</span><span class="vdVal">${esc(val)}</span></div>` : '';
 
   document.getElementById('vdBody').innerHTML = `
     <div class="vdSec" style="display:flex;align-items:center;gap:12px">
-      ${v.logo_url ? `<img class="vdLogo" src="${v.logo_url}">` : `<div class="vdLogo" style="display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--txt3)">${(v.business_name || '?')[0].toUpperCase()}</div>`}
+      ${v.logo_url ? `<img class="vdLogo" src="${safeUrl(v.logo_url)}">` : `<div class="vdLogo" style="display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--txt3)">${esc((v.business_name || '?')[0].toUpperCase())}</div>`}
       <div>
-        <div style="font-weight:800;font-size:16px">${v.business_name || '(no store name yet)'}</div>
-        <span class="vdBadge" style="background:${statusColor}22;color:${statusColor}">${v.application_status === 'rejected' ? 'CHANGES NEEDED' : v.status}</span>
+        <div style="font-weight:800;font-size:16px">${esc(v.business_name || '(no store name yet)')}</div>
+        <span class="vdBadge" style="background:${statusColor}22;color:${statusColor}">${esc(v.application_status === 'rejected' ? 'CHANGES NEEDED' : v.status)}</span>
       </div>
     </div>
 
@@ -1232,13 +1317,13 @@ function openVendorDetail(id) {
     </div></div>
 
     <div class="vdSec"><div class="vdSecTtl">Identity Verification</div><div class="vdCard">
-      <div class="vdRow"><span class="vdLabel">Status</span><span class="vdVal" style="color:${idColor}">${(v.id_verification_status || 'not_started').replace('_',' ')}</span></div>
+      <div class="vdRow"><span class="vdLabel">Status</span><span class="vdVal" style="color:${idColor}">${esc((v.id_verification_status || 'not_started').replace('_',' '))}</span></div>
       ${row('Method', v.id_verification_method)}
       ${row('Provider', v.id_verification_provider || 'not configured — manual review')}
     </div></div>
 
     <div class="vdSec"><div class="vdSecTtl">Bank / Payout</div><div class="vdCard">
-      <div class="vdRow"><span class="vdLabel">Status</span><span class="vdVal" style="color:${bankColor}">${(v.bank_verification_status || 'not_started').replace('_',' ')}</span></div>
+      <div class="vdRow"><span class="vdLabel">Status</span><span class="vdVal" style="color:${bankColor}">${esc((v.bank_verification_status || 'not_started').replace('_',' '))}</span></div>
       ${row('Bank', v.bank_name)}
       ${row('Account Number', v.bank_account_number ? '••••••' + String(v.bank_account_number).slice(-4) : '')}
       ${row('Account Name', v.bank_account_name)}
@@ -1251,9 +1336,9 @@ function openVendorDetail(id) {
     </div></div>
 
     <div class="vdActions">
-      ${v.status !== 'approved' ? `<button class="btn-e" onclick="setVendorStatus('${v.id}','approved')">Approve</button>` : ''}
-      <button class="btn-d" onclick="vdRequestChanges('${v.id}')">Request Changes</button>
-      ${v.status !== 'suspended' ? `<button class="btn-d" onclick="setVendorStatus('${v.id}','suspended')">Suspend</button>` : `<button class="btn-e" onclick="setVendorStatus('${v.id}','pending')">Reinstate</button>`}
+      ${v.status !== 'approved' ? `<button class="btn-e" onclick="setVendorStatus('${hs(v.id)}','approved')">Approve</button>` : ''}
+      <button class="btn-d" onclick="vdRequestChanges('${hs(v.id)}')">Request Changes</button>
+      ${v.status !== 'suspended' ? `<button class="btn-d" onclick="setVendorStatus('${hs(v.id)}','suspended')">Suspend</button>` : `<button class="btn-e" onclick="setVendorStatus('${hs(v.id)}','pending')">Reinstate</button>`}
     </div>
   `;
   document.getElementById('vendorDetailOver').classList.add('open');
@@ -1315,7 +1400,7 @@ async function loadDevices() {
   const { data: { session } } = await sb.auth.getSession();
   const { data, error } = await sb.from('push_subscriptions').select('role, created_at').eq('user_id', session.user.id);
   if (error || !data?.length) { el.innerHTML = '<div class="no-items"><h3>No devices enabled yet</h3><p>Use "Enable Push Notifications" above on each device you want alerts on.</p></div>'; return; }
-  el.innerHTML = data.map(d => `<div class="deviceItem"><span>${d.role} device</span><span>${new Date(d.created_at).toLocaleDateString()}</span></div>`).join('');
+  el.innerHTML = data.map(d => `<div class="deviceItem"><span>${esc(d.role)} device</span><span>${new Date(d.created_at).toLocaleDateString()}</span></div>`).join('');
 }
 
 /* ===== PUSH NOTIFICATIONS (admin's own device) ===== */
@@ -1358,7 +1443,7 @@ async function loadNotifications() {
   list.innerHTML = data.map(o => `
     <div class="notifItem">
       <div class="notifItem-top"><span>New order</span><span>${new Date(o.created_at).toLocaleString()}</span></div>
-      <div class="notifItem-msg">${o.customer_name} · ${(o.items || []).length} item${(o.items || []).length !== 1 ? 's' : ''} · ${currency}${Number(o.total || 0).toLocaleString()}</div>
+      <div class="notifItem-msg">${esc(o.customer_name)} · ${(o.items || []).length} item${(o.items || []).length !== 1 ? 's' : ''} · ${currency}${Number(o.total || 0).toLocaleString()}</div>
     </div>`).join('');
   localStorage.setItem('adminLastSeenNotif', data[0]?.created_at || '');
   document.getElementById('aBellDot').style.display = 'none';
@@ -1394,6 +1479,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 <script src="ads-sections.js"></script>
 <script src="ads.js"></script>
 <script src="tiles.js"></script>
+<script src="../data/worlds.js"></script>
+<script src="worlds.js"></script>
 <script src="categories.js"></script>
 <script src="orders.js"></script>
 </body>

@@ -141,7 +141,7 @@
     if (ad.logo) {
       var logo = h('img', 'adp-logo'); logo.alt = ad.brand || ad.name;
       logo.addEventListener('error', function () { logo.replaceWith(h('div', 'adp-brandname', ad.brand || ad.name)); });   // a dead logo link falls back to the name
-      logo.src = ad.logo; brand.appendChild(logo);
+      logo.src = safeHref(ad.logo); brand.appendChild(logo);
     } else {
       brand.appendChild(h('div', 'adp-brandname', ad.brand || ad.name));
     }
@@ -179,7 +179,7 @@
       var r = im.naturalWidth / im.naturalHeight;
       if (r > 0) box.style.setProperty('--pcx-ratio', Math.min(3.2, Math.max(1.3, r)).toFixed(3) + ' / 1');
     };
-    im.src = promos[0].image;
+    im.src = safeHref(promos[0].image);
     return box;
   };
 
@@ -256,7 +256,7 @@
       if (it.product_id || it.href) { card.setAttribute('role', 'link'); card.tabIndex = 0; }
       if (it.title) card.appendChild(h('h4', 'adp-fcard__t', it.title));
       if (it.image) {
-        var box = h('div', 'adp-fcard__img'); var im = h('img'); im.alt = it.title || ''; im.loading = 'lazy'; im.src = it.image; box.appendChild(im); card.appendChild(box);
+        var box = h('div', 'adp-fcard__img'); var im = h('img'); im.alt = it.title || ''; im.loading = 'lazy'; im.src = safeHref(it.image); box.appendChild(im); card.appendChild(box);
       }
       if (it.product_id || it.href) {
         var btn = h('span', 'adp-black', it.button || 'Buy Now'); card.appendChild(btn);
@@ -272,7 +272,7 @@
     if (!sec.image) return null;
     var self = this;
     var el = h('section', 'adp-sec adp-banner');
-    var im = h('img'); im.alt = sec.title || ''; im.loading = 'lazy'; im.src = sec.image; el.appendChild(im);
+    var im = h('img'); im.alt = sec.title || ''; im.loading = 'lazy'; im.src = safeHref(sec.image); el.appendChild(im);
     if (sec.product_id || sec.href) {
       el.classList.add('is-link'); el.setAttribute('role', 'link'); el.tabIndex = 0;
       el.addEventListener('click', function () { self._go(sec); });
@@ -301,7 +301,7 @@
       box.appendChild(play);
     } else {
       var v = document.createElement('video');
-      v.controls = true; v.playsInline = true; v.preload = 'metadata'; v.src = direct.href;
+      v.controls = true; v.playsInline = true; v.preload = 'metadata'; v.src = safeHref(direct.href);
       box.appendChild(v);
     }
     el.appendChild(box);
@@ -324,7 +324,7 @@
       var r = h('div', 'adp-foot__row');
       var i = h('span', 'adp-foot__ico'); i.innerHTML = icon; r.appendChild(i);
       var t = h('div'); t.appendChild(h('div', 'adp-foot__lbl', label));
-      var v = h(href ? 'a' : 'div', 'adp-foot__val', value); if (href) v.href = href;
+      var v = h(href ? 'a' : 'div', 'adp-foot__val', value); if (href) v.href = safeHref(href);
       t.appendChild(v); r.appendChild(t); return r;
     }
     if (c.email) foot.appendChild(row(MAIL, 'EMAIL SUPPORT', c.email, 'mailto:' + c.email));

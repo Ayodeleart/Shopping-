@@ -166,7 +166,7 @@
     var popular = brands.filter(function (b) { return counts[b.id]; }).sort(function (a, b) { return counts[b.id] - counts[a.id]; }).slice(0, 10);
     if (popular.length) {
       html += '<div class="sp-sec"><div class="sp-sech"><b>Popular brands</b></div><div class="sp-chips">' +
-        popular.map(function (b) { return '<button type="button" class="sp-chip sp-chip-brand" data-brand="' + b.id + '">' + this._logo(b) + e(b.name) + '</button>'; }, this).join('') +
+        popular.map(function (b) { return '<button type="button" class="sp-chip sp-chip-brand" data-brand="' + esc(b.id) + '">' + this._logo(b) + e(b.name) + '</button>'; }, this).join('') +
         '</div></div>';
     }
     this.body.innerHTML = html || '<div class="sp-hint">Type what you are looking for. Try a product, a brand or a category.</div>';
@@ -174,7 +174,7 @@
   };
 
   P._logo = function (b) {
-    return b.logo_url ? '<img src="' + this._esc(b.logo_url) + '" alt="" loading="lazy" onerror="this.remove()">' : '';
+    return b.logo_url ? '<img src="' + safeUrl(b.logo_url) + '" alt="" loading="lazy" onerror="this.remove()">' : '';
   };
 
   /* ── typing: live suggestions ──────────────────────── */
@@ -192,7 +192,7 @@
 
     if (brands.length) {
       html += '<div class="sp-sec"><div class="sp-sech"><b>Brands</b></div><div class="sp-chips">' +
-        brands.map(function (b) { return '<button type="button" class="sp-chip sp-chip-brand" data-brand="' + b.id + '">' + this._logo(b) + Sx.highlight(b.name, q) + '</button>'; }, this).join('') + '</div></div>';
+        brands.map(function (b) { return '<button type="button" class="sp-chip sp-chip-brand" data-brand="' + esc(b.id) + '">' + this._logo(b) + Sx.highlight(b.name, q) + '</button>'; }, this).join('') + '</div></div>';
     }
     if (cats.length) {
       html += '<div class="sp-sec"><div class="sp-sech"><b>Categories</b></div><div class="sp-chips">' +
@@ -204,8 +204,8 @@
       html += '<div class="sp-sec"><div class="sp-sech"><b>' + (res.partial ? 'Similar products' : 'Products') + '</b></div>' +
         top.map(function (r) {
           var p = r.p, b = d.brandOf(p), names = d.catNames(p), sub = [b ? b.name : (p.brand || ''), names.length ? names[names.length - 1] : ''].filter(Boolean).join(' \u00b7 ');
-          return '<button type="button" class="sp-item" data-product="' + p.id + '">' +
-            (p.image_url ? '<img class="sp-item-img" src="' + e(p.image_url) + '" alt="" loading="lazy">' : '<span class="sp-item-img sp-item-noimg">' + I.img + '</span>') +
+          return '<button type="button" class="sp-item" data-product="' + esc(p.id) + '">' +
+            (p.image_url ? '<img class="sp-item-img" src="' + safeUrl(p.image_url) + '" alt="" loading="lazy">' : '<span class="sp-item-img sp-item-noimg">' + I.img + '</span>') +
             '<span class="sp-item-txt"><span class="sp-item-name">' + Sx.highlight(p.name, q) + '</span>' +
             (sub ? '<span class="sp-item-sub">' + e(sub) + '</span>' : '') +
             '<span class="sp-item-price">' + e(d.fmt(p.price)) + '</span></span></button>';
@@ -264,7 +264,7 @@
     var brands = this._facet(res.items, function (p) { var b = d.brandOf(p); return b ? b.name : (p.brand || ''); });
 
     var sel = function (key, label, opts) {
-      return '<label class="sp-sel" data-wrap="' + key + '"><select data-f="' + key + '" aria-label="' + e(label) + '">' + opts + '</select></label>';
+      return '<label class="sp-sel" data-wrap="' + esc(key) + '"><select data-f="' + esc(key) + '" aria-label="' + e(label) + '">' + opts + '</select></label>';
     };
     var opt = function (v, t, cur) { return '<option value="' + e(v) + '"' + (v === cur ? ' selected' : '') + '>' + e(t) + '</option>'; };
 

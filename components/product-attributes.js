@@ -276,6 +276,7 @@
       else if (k === 'text') e.textContent = v;
       else if (k === 'style') e.style.cssText = v;
       else if (k.slice(0, 2) === 'on') e.addEventListener(k.slice(2), v);
+      else if (k === 'src' || k === 'href') e.setAttribute(k, safeHref(v));       // a URL from the database is validated first
       else e.setAttribute(k, v === true ? '' : v);
     });
     (kids || []).forEach(function (c) {
@@ -628,6 +629,13 @@
     this._render();
   };
   D.clear = function () { this.setBlocks([]); };
+  /* puts `text` in the first text block (adds one at the top if there is none); photos and other blocks stay as they are */
+  D.setText = function (text) {
+    var b = null;
+    for (var i = 0; i < this.blocks.length; i++) if (this.blocks[i].type === 'text') { b = this.blocks[i]; break; }
+    if (b) b.text = String(text || ''); else this.blocks.unshift({ type: 'text', text: String(text || '') });
+    this._render();
+  };
   D._revoke = function () {
     this.blocks.forEach(function (b) { if (b.preview) { try { URL.revokeObjectURL(b.preview); } catch (e) {} } });
   };

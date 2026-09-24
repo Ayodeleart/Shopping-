@@ -77,7 +77,7 @@
       var show = function () { img.classList.add('is-loaded'); };
       img.addEventListener('load', show, { once: true });
       img.addEventListener('error', function () { img.remove(); el.classList.add('pcx__slide--plain'); }, { once: true });
-      img.src = p.image;
+      img.src = safeHref(p.image);
       if (img.complete && img.naturalWidth) show();
       el.appendChild(img);
     } else {
@@ -100,7 +100,7 @@
 
     if (link) {
       var a = h('a', 'pcx__link');
-      a.href = link.href;
+      a.href = safeHref(link.href);
       a.draggable = false;
       if (link.external) { a.target = '_blank'; a.rel = 'noopener noreferrer'; }
       a.setAttribute('aria-label', p.alt || [p.label, p.title, p.meta].filter(Boolean).join('. ') || 'View promotion');

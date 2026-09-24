@@ -63,6 +63,12 @@ module.exports = async (req, res) => {
         .update({ staff_notified_at: new Date().toISOString() }).eq('id', order.id).is('staff_notified_at', null).select('id');
       if (!claimErr && (!claimed || !claimed.length)) return res.status(200).json({ ok: true, staffAlreadyNotified: true, buyer });
 
+      // Record each seller's PENDING earnings for this order now that it's confirmed placed
+      // (seller_earnings_record_pending is idempotent per shipment — see migration_wallet_delivery.sql).
+      // Earnings move pending -> available only on confirmed delivery, never here.
+      try { await supabaseAdmin.rpc('seller_earnings_record_pending', { p_order_id: order.id }); }
+      catch (e) { console.error('seller_earnings_record_pending failed (order itself is fine):', e.message); }
+
       const { data: items } = await supabaseAdmin.from('order_items').select('vendor_id').eq('order_id', orderId);
       const vendorIds = [...new Set((items || []).map(i => i.vendor_id).filter(Boolean))];
 

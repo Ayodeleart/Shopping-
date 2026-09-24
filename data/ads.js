@@ -82,7 +82,7 @@
     var out = cells.slice();
     slots.map(function (sl, i) {
       var at = Math.min((sl.afterRows || 0) * cols, cells.length);
-      var html = sl.html || '<div class="adslot au" data-ad="' + sl.id + '" style="grid-column:1/-1"></div>';
+      var html = sl.html || '<div class="adslot au" data-ad="' + esc(sl.id) + '" style="grid-column:1/-1"></div>';
       return { at: at, html: html, i: i, order: sl.order || 0 };
     })
       /* insert from the back so earlier indexes stay valid; equal positions keep list order */

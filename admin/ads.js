@@ -71,14 +71,14 @@
   function itemHTML(a) {
     var live = a.active;
     return '<div class="aditem">' +
-      '<div class="aditem-img">' + (a.feed_image ? '<img src="' + esc(a.feed_image) + '" alt="">' : '') + '</div>' +
+      '<div class="aditem-img">' + (a.feed_image ? '<img src="' + safeUrl(a.feed_image) + '" alt="">' : '') + '</div>' +
       '<div class="aditem-body"><div class="aditem-name">' + esc(a.name) + '<span class="pill' + (live ? ' live' : '') + '">' + (live ? 'Live' : 'Paused') + '</span></div>' +
       '<div class="aditem-meta">' + esc(a.brand || 'No brand') + ' &middot; after ' + esc(a.after_rows) + ' row' + (a.after_rows == 1 ? '' : 's') + '</div></div>' +
       '<div class="aditem-acts">' +
-        '<button class="abtn" data-a="edit" data-id="' + a.id + '">Edit</button>' +
-        '<button class="abtn" data-a="preview" data-id="' + a.id + '">Preview</button>' +
-        '<button class="abtn" data-a="toggle" data-id="' + a.id + '">' + (live ? 'Pause' : 'Resume') + '</button>' +
-        '<button class="abtn danger" data-a="delete" data-id="' + a.id + '">Delete</button>' +
+        '<button class="abtn" data-a="edit" data-id="' + esc(a.id) + '">Edit</button>' +
+        '<button class="abtn" data-a="preview" data-id="' + esc(a.id) + '">Preview</button>' +
+        '<button class="abtn" data-a="toggle" data-id="' + esc(a.id) + '">' + (live ? 'Pause' : 'Resume') + '</button>' +
+        '<button class="abtn danger" data-a="delete" data-id="' + esc(a.id) + '">Delete</button>' +
       '</div></div>';
   }
 
@@ -93,7 +93,7 @@
   /* ── form ── */
 
   function fieldInput(label, path, attrs) {
-    return '<div class="fg"><label>' + label + '</label><input data-f="' + path + '" value="' + esc(getp(cur, path)) + '" ' + (attrs || '') + '></div>';
+    return '<div class="fg"><label>' + esc(label) + '</label><input data-f="' + esc(path) + '" value="' + esc(getp(cur, path)) + '" ' + (attrs || '') + '></div>';
   }
 
   function renderForm() {
@@ -308,9 +308,11 @@
     document.querySelectorAll('.bsub-tab').forEach(function (t) { t.classList.toggle('on', t.dataset.sub === which); });
     document.getElementById('bannersPane').style.display = which === 'banners' ? '' : 'none';
     document.getElementById('tilesPane').style.display = which === 'tiles' ? '' : 'none';
+    document.getElementById('worldsPane').style.display = which === 'worlds' ? '' : 'none';
     document.getElementById('adsPane').style.display = which === 'ads' ? '' : 'none';
     document.getElementById('announcePane').style.display = which === 'announce' ? '' : 'none';
     if (which === 'ads') window.AdsAdmin.open();
     if (which === 'tiles') window.TilesAdmin.open();
+    if (which === 'worlds') window.WorldsAdmin.open();
   };
 })();

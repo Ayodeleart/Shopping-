@@ -42,13 +42,13 @@
     var size = opts.size || 24;
     var letter = esc((id.name[0] || '?').toUpperCase());
     var avatar = id.logo
-      ? '<img src="' + esc(id.logo) + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%" ' +
+      ? '<img src="' + safeUrl(id.logo) + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%" ' +
         'onerror="this.parentNode.dataset.fallback=\'1\';this.remove()">'
       : '';
     return (
       '<span class="sbChip" style="display:inline-flex;align-items:center;gap:6px;min-width:0">' +
-        '<span style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;overflow:hidden;flex-shrink:0;' +
-          'background:var(--bg3,#ebebeb);display:flex;align-items:center;justify-content:center;font-size:' + Math.round(size * 0.45) + 'px;font-weight:800;color:var(--txt2,#555)" data-fallback="0">' +
+        '<span style="width:' + num(size) + 'px;height:' + num(size) + 'px;border-radius:50%;overflow:hidden;flex-shrink:0;' +
+          'background:var(--bg3,#ebebeb);display:flex;align-items:center;justify-content:center;font-size:' + num(Math.round(size * 0.45)) + 'px;font-weight:800;color:var(--txt2,#555)" data-fallback="0">' +
           avatar + (id.logo ? '' : letter) +
         '</span>' +
         '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(id.name) + '</span>' +
@@ -62,14 +62,16 @@
     var id = identity(vendor, opts);
     var letter = esc((id.name[0] || '?').toUpperCase());
     var actionHTML = '';
-    if (id.isVendor && opts.onView) {
-      actionHTML = '<button class="sbViewBtn" onclick="' + opts.onView + '">View Store</button>';
+    /* onView is code written by the page (e.g. "viewSellerStore(1)"), never data. Only a plain function call with one
+       number or one short slug is accepted, so nothing else can end up inside an inline handler. */
+    if (id.isVendor && opts.onView && /^[A-Za-z_$][\w$]*\(\s*(-?\d+|'[A-Za-z0-9_-]{1,80}')?\s*\)$/.test(opts.onView)) {
+      actionHTML = '<button class="sbViewBtn" onclick="' + esc(opts.onView) + '">View Store</button>';
     }
     return (
       '<div class="sbRow">' +
         '<div class="sbAvatar' + (id.logo ? ' hasLogo' : '') + '" data-l="' + letter + '">' +
           (id.logo
-            ? '<img src="' + esc(id.logo) + '" alt="" onerror="this.parentNode.classList.remove(\'hasLogo\');this.replaceWith(document.createTextNode(this.parentNode.dataset.l))">'
+            ? '<img src="' + safeUrl(id.logo) + '" alt="" onerror="this.parentNode.classList.remove(\'hasLogo\');this.replaceWith(document.createTextNode(this.parentNode.dataset.l))">'
             : letter) +
         '</div>' +
         '<div class="sbTxt"><div class="sbLbl">Sold by</div><div class="sbName">' + esc(id.name) + '</div></div>' +
