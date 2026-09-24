@@ -8,7 +8,7 @@
 // For real traffic point NOMINATIM_URL at your own Nominatim server or a hosted one.
 //
 // Environment (all optional): NOMINATIM_URL, NOMINATIM_CONTACT (an email for the User-Agent), GEOCODE_COUNTRIES (default "ng")
-const { handler, send, HttpError } = require('./_lib/http');
+const { handler, send, HttpError } = require('../http');
 
 const BASE = () => (process.env.NOMINATIM_URL || 'https://nominatim.openstreetmap.org').replace(/\/+$/, '');
 const isPublic = () => !process.env.NOMINATIM_URL || /nominatim\.openstreetmap\.org/.test(process.env.NOMINATIM_URL);

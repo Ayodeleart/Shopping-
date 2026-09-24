@@ -8,11 +8,11 @@
 //
 // Passing order_id retries payment for an order that is still unpaid.
 const crypto = require('crypto');
-const { handler, send, readJson, siteUrl, HttpError } = require('./_lib/http');
-const { db, rpc } = require('./_lib/db');
-const { optionalUser } = require('./_lib/auth');
-const providers = require('./_lib/payments');
-const { newReference } = require('./_lib/payments/core');
+const { handler, send, readJson, siteUrl, HttpError } = require('../http');
+const { db, rpc } = require('../db');
+const { optionalUser } = require('../auth');
+const providers = require('../payments');
+const { newReference } = require('../payments/core');
 
 module.exports = handler(['POST'], async (req, res) => {
   const provider = providers.active();

@@ -1,7 +1,7 @@
 // POST /api/payment-verify { reference }
 // Called when the customer returns from the payment page. The answer comes from the provider, not from the browser.
-const { handler, send, readJson, HttpError } = require('./_lib/http');
-const { verifyAndFinalize } = require('./_lib/payments/core');
+const { handler, send, readJson, HttpError } = require('../http');
+const { verifyAndFinalize } = require('../payments/core');
 
 module.exports = handler(['POST'], async (req, res) => {
   const { reference } = await readJson(req);

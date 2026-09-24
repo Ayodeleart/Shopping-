@@ -1,9 +1,9 @@
 // /api/mock-pay: the fake payment page for the MOCK provider. Development and tests only; it does nothing unless
 // PAYMENT_PROVIDER=mock and ALLOW_MOCK_PAYMENTS=true, and never on a production deployment. No money moves.
-const { HttpError, send, readJson, handler } = require('./_lib/http');
-const { db } = require('./_lib/db');
-const mock = require('./_lib/payments/mock');
-const { processWebhook } = require('./_lib/payments/core');
+const { HttpError, send, readJson, handler } = require('../http');
+const { db } = require('../db');
+const mock = require('../payments/mock');
+const { processWebhook } = require('../payments/core');
 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 

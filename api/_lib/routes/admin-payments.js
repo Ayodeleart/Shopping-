@@ -5,11 +5,11 @@
 //   refresh_eligibility                      apply the payout policy now
 //   create_payout  { vendor_id, is_test }    pay a seller everything currently eligible
 //   check_payout   { payout_id }             ask the provider about a payout in progress
-const { handler, send, readJson, HttpError } = require('./_lib/http');
-const { requireAdmin } = require('./_lib/auth');
-const { rpc } = require('./_lib/db');
-const providers = require('./_lib/payments');
-const core = require('./_lib/payments/core');
+const { handler, send, readJson, HttpError } = require('../http');
+const { requireAdmin } = require('../auth');
+const { rpc } = require('../db');
+const providers = require('../payments');
+const core = require('../payments/core');
 
 module.exports = handler(['POST'], async (req, res) => {
   const admin = await requireAdmin(req);

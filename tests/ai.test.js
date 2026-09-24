@@ -223,8 +223,8 @@ test('ticket needs a way to contact the customer', async () => {
 test('15/16 ticket endpoint: confirm creates it once; refusing = no call = no ticket', async () => {
   const db = makeDb(tables(), { t1: { id: 'u1', email: 'a@b.co' } });
   require.cache[require.resolve('../api/_lib/db')].exports.getAdmin = () => db;
-  delete require.cache[require.resolve('../api/assistant-ticket')];
-  const handler = require('../api/assistant-ticket');
+  delete require.cache[require.resolve('../api/_lib/routes/assistant-ticket')];
+  const handler = require('../api/_lib/routes/assistant-ticket');
   const ctx = mkCtx({ user: { id: 'u1', email: 'a@b.co' }, db });
   await tools.runTool('prepareSupportTicket', ticketArgs, ctx);
   assert.equal(db.tables.support_tickets.length, 0);          // user pressed Cancel -> client never calls the endpoint
