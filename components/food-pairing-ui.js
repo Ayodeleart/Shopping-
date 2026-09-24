@@ -66,15 +66,15 @@
   };
 
   P._rowHTML = function (p) {
-    var esc = this.d.esc, fmt = this.d.fmt, safeUrl = global.safeUrl || esc;
+    var esc = this.d.esc, fmt = this.d.fmt, safeUrl = global.safeUrl || esc, num = global.num || (function (v) { var n = Number(v); return isFinite(n) ? String(n) : '0'; });
     return (
-      '<div class="pPairRow" data-pair-row="' + p.id + '">' +
+      '<div class="pPairRow" data-pair-row="' + num(p.id) + '">' +
         '<div class="pPairImg">' + (p.image_url ? '<img src="' + safeUrl(p.image_url) + '" alt="" loading="lazy">' : '') + '</div>' +
         '<div class="pPairInfo"><div class="pPairName">' + esc(p.name) + '</div><div class="pPairPrice">' + fmt(p.price) + '</div></div>' +
         '<div class="pPairQty">' +
-          '<button type="button" data-pair-minus="' + p.id + '" aria-label="Remove one ' + esc(p.name) + '">&minus;</button>' +
-          '<b data-pair-n="' + p.id + '">0</b>' +
-          '<button type="button" data-pair-plus="' + p.id + '" aria-label="Add one ' + esc(p.name) + '">+</button>' +
+          '<button type="button" data-pair-minus="' + num(p.id) + '" aria-label="Remove one ' + esc(p.name) + '">&minus;</button>' +
+          '<b data-pair-n="' + num(p.id) + '">0</b>' +
+          '<button type="button" data-pair-plus="' + num(p.id) + '" aria-label="Add one ' + esc(p.name) + '">+</button>' +
         '</div>' +
       '</div>'
     );

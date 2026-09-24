@@ -356,7 +356,7 @@
         return;
       }
     } catch (e) { /* fall through: let the browser navigate */ }
-    global.location.href = promo.href;      // other origin / another page
+    global.location.href = safeHref(promo.href);      // other origin / another page
   };
 
   /* ── categories overlay ────────────────────────────────────────── */
