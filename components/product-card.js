@@ -1,5 +1,5 @@
 /* components/product-card.js
- * The one product-card renderer for every Maccato surface.
+ * The one product-card renderer for every Marcato surface.
  * Moved out of index.html's inline <script> so /store/[slug] (and any
  * future surface) can render the exact same card instead of a second
  * copy of this logic, per the "don't duplicate product-card logic"
@@ -7,7 +7,7 @@
  *
  * Host page contract (already true of index.html before this file
  * existed — nothing here changes that contract):
- *   - `cart`         array of {id, qty, ...} — current cart lines
+ *   - `cart`         array of {id, qty, size, color, ...} — current cart lines (size / color null when the product has none)
  *   - `favs`         a Set of favourited product ids
  *   - `ratingMap`    { [product_id]: {avg, n} } real rating rows only
  *   - `fmt(n)`       formats a price for display
@@ -35,8 +35,16 @@ function starsHTML(avg, px) {
 
 /* ── PRODUCT CARD (JUMIA STYLE) ───────────────────── */
 /* Add to Cart turns into a - 1 + stepper once the product is in the cart (see ctlHTML / syncCardCtls). */
-function ctlHTML(id) {
-  const it = cart.find(x => x.id === id);
+/* A product with colours or sizes is never added from its card (a card cannot know which one the customer wants):
+   its button opens the product page, where the choices are made (see addToCart in index.html). `needs` = that case. */
+function cardNeedsChoice(p) {
+  return !!(p && window.Pcx && Pcx.Variants && Pcx.Variants.needsChoice(p));
+}
+function plainLine(id) { return cart.find(x => x.id === id && !x.size && !x.color); }
+
+function ctlHTML(id, needs) {
+  if (needs) return `<button class="pcAdd pcOpts" onclick="event.stopPropagation();openProduct(${num(id)})">Choose options</button>`;
+  const it = plainLine(id);
   if (!it) return `<button class="pcAdd" onclick="event.stopPropagation();addToCart(${num(id)},this)">Add to Cart</button>`;
   return `
     <div class="pcStep" onclick="event.stopPropagation()">
@@ -49,15 +57,16 @@ function ctlHTML(id) {
 /* every card of a product (home grid, rails, category page, storefront ...) follows the cart */
 function syncCardCtls() {
   document.querySelectorAll('.pcCtl').forEach(el => {
-    const id = Number(el.dataset.pid), it = cart.find(x => x.id === id), q = String(it ? it.qty : 0);
+    if (el.dataset.need === '1') return;      /* "Choose options" buttons never change with the cart */
+    const id = Number(el.dataset.pid), it = plainLine(id), q = String(it ? it.qty : 0);
     if (el.dataset.q === q) return;
     el.dataset.q = q;
-    el.innerHTML = ctlHTML(id);
+    el.innerHTML = ctlHTML(id, false);
   });
 }
 
 function cardQty(id, d, src) {
-  const it = cart.find(x => x.id === id);
+  const it = plainLine(id);
   if (!it) return;
   if (d > 0 && src) flyToCart(src);      /* before the cart updates: the card controls re-render and detach this button */
   it.qty += d;
@@ -71,8 +80,8 @@ function cardHTML(p) {
   const tot = p.max_stock || (p.stock ? p.stock + 15 : 0);
   const pct = tot > 0 ? Math.min(100, Math.round(p.stock/tot*100)) : 0;
   const r = ratingMap[p.id];
-  const inCart = cart.find(x => x.id === p.id);
-  const seller = (p.vendor_id && typeof vendorsMap !== 'undefined' && vendorsMap[p.vendor_id]) ? vendorsMap[p.vendor_id] : null;
+  const needs = cardNeedsChoice(p);
+  const inCart = plainLine(p.id);
 
   return `
     <div class="pcard" onclick="openProduct(${num(p.id)})">
@@ -81,14 +90,11 @@ function cardHTML(p) {
           ? `<img src="${safeUrl(p.image_url)}" alt="${esc(p.name)}" loading="lazy">`
           : `<div class="noImgPh"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>`}
         ${disc > 0 ? `<span class="discBadge">-${disc}%</span>` : ''}
+        <button class="favBtn${favs.has(p.id) ? ' on' : ''}" data-fav="${esc(p.id)}" aria-label="Save ${esc(p.name)} to favorites" aria-pressed="${favs.has(p.id)}" onclick="event.stopPropagation();toggleFav(${num(p.id)})">${HEART_SVG}</button>
       </div>
       <div class="pcBody">
-        ${seller ? `<div class="pcSeller">${Pcx.SellerBrand.chip(seller, { size: 14 })}</div>` : ''}
         <div class="pcName">${esc(p.name)}</div>
-        <div class="pcPriceRow">
-          <div class="pcPrice">${fmt(p.price)}</div>
-          <button class="favBtn${favs.has(p.id) ? ' on' : ''}" data-fav="${esc(p.id)}" aria-label="Save to favorites" onclick="event.stopPropagation();toggleFav(${num(p.id)})">${HEART_SVG}</button>
-        </div>
+        <div class="pcPrice">${fmt(p.price)}</div>
         ${disc > 0 ? `<div class="pcWas">${fmt(p.original_price)}</div>` : ''}
         ${r && r.n > 0 ? `<div class="pcRate">${starsHTML(r.avg, 12)}<span>(${esc(r.n)})</span></div>` : ''}
         ${p.stock > 0 ? `
@@ -96,7 +102,7 @@ function cardHTML(p) {
             <div class="pcBar"><div class="pcBarFill" style="width:${pct}%"></div></div>
             <span class="pcStockTxt">${esc(p.stock)} left</span>
           </div>` : ''}
-        <div class="pcCtl" data-pid="${esc(p.id)}" data-q="${esc(inCart ? inCart.qty : 0)}">${ctlHTML(p.id)}</div>
+        <div class="pcCtl" data-pid="${esc(p.id)}" data-need="${needs ? 1 : 0}" data-q="${esc(inCart ? inCart.qty : 0)}">${ctlHTML(p.id, needs)}</div>
       </div>
     </div>`;
 }

@@ -1,5 +1,5 @@
 /* ── THEME TOKENS ─────────────────────────────────────────────
- * Shared design tokens for every Maccato surface (storefront,
+ * Shared design tokens for every Marcato surface (storefront,
  * vendor board, admin, seller storefront). Extracted from the
  * original inline :root block in index.html so new pages (e.g.
  * /store) don't hand-copy magic colour values.

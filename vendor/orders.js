@@ -10,6 +10,9 @@
 (function () {
   'use strict';
   var T = Pcx.Tracking;
+  /* the customer's colour / size on an order line, e.g. " (Colour: Black, Size: XL)" */
+  var optLabel;
+  optLabel = function (o) { return o && typeof o === 'object' && Object.keys(o).length ? ' (' + Object.keys(o).map(function (k) { return esc(k) + ': ' + esc(o[k]); }).join(', ') + ')' : ''; };
   var esc = function (v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
   var ships = [], items = [], events = [], carriers = [], openForm = {}, busy = false;
   var list = function () { return document.getElementById('ordList'); };
@@ -89,7 +92,7 @@
       '<div class="ordTop"><div><div class="ordName">#' + esc(o.order_number || s.order_id) + ' &middot; ' + esc(o.customer_name || 'Customer') + '</div>' +
       '<div class="ordDate" style="font-size:11px;color:var(--txt3)">' + esc(T.fmtTime(o.created_at || s.created_at)) + '</div></div>' +
       '<span class="tk-pill ' + esc(T.tone(s.status)) + '">' + esc(T.LABEL[s.status] || s.status) + '</span></div>' +
-      its.map(function (i) { return '<div class="ordLine"><span>' + esc(i.name) + ' &times; ' + esc(i.qty) + '</span><span>&#8358;' + Number(i.price * i.qty).toLocaleString() + '</span></div>'; }).join('') +
+      its.map(function (i) { return '<div class="ordLine"><span>' + esc(i.name) + optLabel(i.variants) + ' &times; ' + esc(i.qty) + '</span><span>&#8358;' + Number(i.price * i.qty).toLocaleString() + '</span></div>'; }).join('') +
       '<div class="ordLine" style="font-weight:800;color:var(--txt)"><span>Your part of this order</span><span>&#8358;' + Number(total).toLocaleString() + '</span></div>' +
       '<div style="font-size:11.5px;color:var(--txt3);margin-top:6px;line-height:1.5">Deliver to: ' + esc(o.address || '') + (o.phone ? ' &middot; ' + esc(o.phone) : '') + '</div>' +
       (s.tracking_number || carrier ? '<div class="tk-box">' + (carrier ? '<div class="tk-kv"><span>Carrier</span><span>' + esc(carrier) + '</span></div>' : '') +

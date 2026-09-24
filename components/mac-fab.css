@@ -17,6 +17,11 @@
   filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .22));
 }
 .macFab.isDragging { cursor: grabbing; }
+/* tucked against the edge while the page scrolls, so it never covers a product; springs back when scrolling stops */
+.macFab { transition: translate .3s ease, opacity .3s ease; }
+.macFab.isPeek { opacity: .55; translate: 58% 0; }
+.macFab.isPeek.isLeft { translate: -58% 0; }
+@media (prefers-reduced-motion: reduce) { .macFab { transition: none; } }
 .macFab.isSnapping { transition: transform .4s cubic-bezier(.2, 1.3, .4, 1); }
 .macFab.isHidden,
 .macFab.isCovered { opacity: 0; pointer-events: none; transition: opacity .15s; }   /* still animating underneath; just not shown */

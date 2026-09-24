@@ -1,6 +1,6 @@
 {
-  "name": "Maccato Vendor",
-  "short_name": "Maccato Vendor",
+  "name": "Marcato Vendor",
+  "short_name": "Marcato Vendor",
   "description": "Manage your store, products and orders",
   "start_url": "/vendor/",
   "scope": "/vendor/",

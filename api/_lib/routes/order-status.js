@@ -14,5 +14,5 @@ module.exports = handler(['GET'], async (req, res) => {
   if (!ok) throw new HttpError(403, 'This is not your order', 'forbidden');
   const { data: subs } = await db().from('shipments').select('id, status, subtotal, tracking_number, carrier_name, vendors(business_name), order_items(name, qty, price, line_total)').eq('order_id', o.id);
   const { guest_token, user_id, ...safe } = o;
-  send(res, 200, { order: safe, sellers: (subs || []).map(s => ({ id: s.id, seller: (s.vendors && s.vendors.business_name) || 'Maccato', status: s.status, subtotal: s.subtotal, tracking_number: s.tracking_number, carrier_name: s.carrier_name, items: s.order_items })) });
+  send(res, 200, { order: safe, sellers: (subs || []).map(s => ({ id: s.id, seller: (s.vendors && s.vendors.business_name) || 'Marcato', status: s.status, subtotal: s.subtotal, tracking_number: s.tracking_number, carrier_name: s.carrier_name, items: s.order_items })) });
 });

@@ -145,7 +145,7 @@ test('FashionWorld mounts gender cards, circles and the shop grid; gender filter
     tree: () => tree,
     products: () => universe,
     vendorsMap: () => vendorsMap,
-    storeName: () => 'Maccato',
+    storeName: () => 'Marcato',
     cardHTML: p => `<div class="pcard" data-pid="${p.id}">${p.name}</div>`,
     onBack() {}, openCart() {}, openSearch() {}, openCategory() {}, openAllCategories() {}, openStore() {},
     afterRender() {}, toast() {}
@@ -201,7 +201,7 @@ test('empty world state and the all-categories page degrade gracefully', () => {
   w.document.body.innerHTML = '<div id="fashionPage"></div><div id="fashionCatsPage"></div>';
   const page = new w.Pcx.FashionWorld(w.document.getElementById('fashionPage'), {
     genders: () => [], ads: () => [], sections: () => [], tree: () => null, products: () => [],
-    vendorsMap: () => ({}), storeName: () => 'Maccato', cardHTML: () => '',
+    vendorsMap: () => ({}), storeName: () => 'Marcato', cardHTML: () => '',
     onBack() {}, openCart() {}, openSearch() {}, openCategory() {}, openAllCategories() {}, openStore() {}, toast() {}
   });
   page.open();

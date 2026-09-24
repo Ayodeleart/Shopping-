@@ -609,6 +609,7 @@
     return rows.filter(function (r) { return r.value; });
   };
 
+  ProductAttributes.COLORS = COLORS;          // name -> CSS colour; the product page uses it for swatches (Pcx.Variants.swatch)
   ProductAttributes.detect = detectType;
   ProductAttributes.TEMPLATES = TEMPLATES;
 

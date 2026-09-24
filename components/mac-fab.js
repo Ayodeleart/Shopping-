@@ -139,7 +139,9 @@
 
   function MacFab(opts) {
     var o = this.o = {
-      size: 60, margin: 10, side: 'right', y: 0.72,
+      size: (global.innerWidth && global.innerWidth <= 480) ? 46 : 60,   // smaller on phones so it covers less of the product grid
+      margin: 10, side: 'right', y: 0.72,
+      peekOnScroll: true,      // while the page scrolls MAC tucks against its edge, faded, so it never sits on top of products; it comes back when scrolling stops
       storageKey: 'mac-fab-pos',
       showcase: true,          // keep at least one move going at all times, shuffled, so MAC never sits still
       showcaseMin: 2200, showcaseMax: 4200,      // how long each move plays before MAC switches to the next
@@ -174,6 +176,7 @@
     this._place(false);
     this._bind();
     if (o.hideWhenCovered) this._watchCoverage();
+    if (o.peekOnScroll) this._watchScroll();
     this._scheduleShowcase();
     this._wake();
   }
@@ -433,7 +436,22 @@
     sync();
   };
 
+  /* While the page scrolls, slide MAC mostly off its side edge and fade it (see .isPeek in mac-fab.css). It is only
+     tucked away, never removed: it stays tappable and springs back ~0.9s after scrolling stops. Uses the standalone
+     `translate` property, so it does not fight the drag/snap transform. */
+  P._watchScroll = function () {
+    var self = this, t = null;
+    this._onScroll = function () {
+      if (self.dragging) return;
+      self.el.classList.add('isPeek');
+      clearTimeout(t);
+      t = setTimeout(function () { self.el.classList.remove('isPeek'); }, 900);
+    };
+    global.addEventListener('scroll', this._onScroll, { passive: true, capture: true });
+  };
+
   P.destroy = function () {
+    if (this._onScroll) global.removeEventListener('scroll', this._onScroll, { capture: true });
     cancelAnimationFrame(this._raf); this._raf = 0; this.destroyed = true;
     clearTimeout(this._showT); clearTimeout(this._lp); clearTimeout(this._bt); clearTimeout(this._snapT);
     if (this._coverObserver) this._coverObserver.disconnect();
