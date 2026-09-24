@@ -111,6 +111,37 @@ Needs the ads and storage SQL run once in the Supabase SQL editor. It also fixes
 - **Products**: admin and vendors can add several photos; the first is the main photo. The product page shows a swipe gallery.
 - Code: `components/ad-page.js`, `components/multi-image-picker.js`, `data/ads.js`, `admin/ads.js`, `admin/ads-sections.js`.
 
+## Beauty world (Explore Marcato > Beauty)
+
+Needs `migration_beauty.sql` run once in the Supabase SQL editor. The Beauty world is NOT a separate
+system — it is a liquid-glass view over the existing store data:
+
+- **Where**: the Explore Marcato row (a world card), opens at `#world=beauty`. Products belong to Beauty
+  when they are filed under the **Beauty** main category (the migration seeds it; add subcategories like
+  Makeup/Skincare in Admin > Categories). If a category click / search / filter has no real products, it
+  shows a clean empty state — nothing is faked.
+- **Page** (top to bottom): Beauty search bar (the existing search engine over Beauty products), an
+  auto-sliding hero (admin-managed slides, GIFs animate), round glass category tiles, a "New In" row,
+  and all products with real filters (All / Newest / Popular / Man / Woman / Kids — the last three only
+  exist when a matching real category exists). A sticky glass header with the filter chips + the existing
+  search / favorites / cart / profile actions appears once the search bar scrolls away. There is no bottom
+  navigation anywhere.
+- **Product page**: opening a Beauty product themes the EXISTING product page (same blurred background,
+  gold accent, glass surfaces), shows the transparent cutout as the main photo when one exists, and adds a
+  thumbnail strip when the product has multiple photos. Real reviews only; "Sold by" opens the seller's
+  existing `/store/...` page.
+- **Background removal (server-side)**: for Beauty products the "Remove background" toggle is turned on
+  automatically and the main photo is cut out by `/api/remove-bg.js` (remove.bg, key in the Vercel env var
+  `REMOVE_BG_API_KEY`, never in the browser). The transparent PNG is cached in Storage
+  (`avatars/beauty-cutouts/<hash>.png`) so the same photo is never processed twice; on any failure the
+  original photo is used and the page never breaks. The original photo is always kept (`image_url`).
+- **Admin > Banners > Beauty**: set the Beauty background (upload/replace/remove/enable), manage the hero
+  slides (add, image/GIF, title, subtitle, CTA, destination, reorder, pause, delete) and the category tiles
+  (add, rename, link to a real existing category or keyword-match, image/GIF, reorder, hide, delete).
+  Tables: `beauty_heroes`, `beauty_categories`, `beauty_settings` (public read; signed-in admin write).
+- Code: `data/beauty.js`, `components/beauty-world.js/.css`, `components/world-page.js` (delegation),
+  `api/remove-bg.js`, `admin/beauty.js`, `migration_beauty.sql`.
+
 ## ⚡ Multi-vendor upgrade (read this first)
 
 This repo now has three separate installable PWAs:
@@ -275,3 +306,47 @@ Admin › Explore Marcato adds, edits, hides, re-orders and deletes worlds, and 
 (image + optional GIF each). A display category is a picture card that opens the products of the marketplace categories linked to it; it is not the
 marketplace category itself. Needs the Explore worlds SQL run once in the Supabase SQL editor (pasted in the chat, never stored in this repo).
 Until it is run the homepage keeps showing the original five worlds. Tests: `tests/worlds.test.js` (storefront) and `tests/worlds-admin.test.js` (admin).
+---
+
+# Fashion world (#world=fashion)
+
+The Fashion card in "Explore Marcato" now opens a real dedicated world instead of the placeholder —
+same hash routing (`#world=fashion`), same slide-up page pattern, built entirely on the existing
+architecture (product card, category tree, seller storefronts, PromotionalCarousel, storage bucket).
+
+**One-time SQL:** run `migration_fashion.sql` in the Supabase SQL editor. It adds `categories.world`
+(null = main store, `fashion` = Fashion world, `both` = both), three small tables (`fashion_genders`,
+`fashion_ads`, `fashion_sections`, public read / signed-in-admin write), and seeds the four gender
+cards plus 24 Fashion categories ("Plays!" = second-hand/used clothing). Until it is run, the store
+works exactly as before and the Fashion world shows its "being curated" state.
+
+- **Gender selector (Men / Women / Boys / Girls):** compact portrait cards under the Fashion search
+  bar. The active card shows its admin-uploaded image or GIF (transparent/background-removed GIFs are
+  perfect — artwork is shown whole with `object-fit: contain`, never cropped) plus a strong accent
+  edge; inactive cards stay white. Tapping a gender really filters the products, via
+  `products.attributes.gender` — the field the existing product forms (vendor + admin "Product
+  Details" editor, components/product-attributes.js) already save. Unisex matches every gender.
+- **Hero ads:** `fashion_ads` rows (image or GIF, optional destination) rotate automatically in the
+  existing PromotionalCarousel, with swipe.
+- **Categories:** CIRCULAR tiles, 5 per row (2 rows initially, "See all" opens `#fcats` with the
+  full responsive grid). Each is a normal `categories` row tagged `world='fashion'`, so tapping one
+  opens the existing category page with only that category's products.
+- **Discovery sections:** admin rows from `fashion_sections` (title, type: category / seller /
+  gender / new / featured / sale, limit, order, active) plus automatic rails built from real data
+  (New Fashion Finds, Trending, per-gender, top sellers with real logo + "See more" into the existing
+  storefront, per-category). A rail with no real products hides itself — nothing is invented.
+- **All Fashion grid:** the one shared product card in a 3-per-row grid or a list layout, with
+  category chips, price/discount sorting and an in-stock filter, all respecting the gender selection.
+- **Sizes:** the product page now renders size chips from the product's own attributes
+  (`sizes` / `waist` / `band` + `cups`). Products with sizes must have one picked before add-to-cart
+  (card buttons and the assistant open the product page instead); products without sizes are
+  untouched. The chosen size is stored on the cart line and shown in the cart.
+- **Search:** the Fashion search bar opens the existing full-screen search scoped to fashion
+  products and fashion categories; closing it restores the store-wide search.
+- **Admin:** a new "Fashion" tab manages gender cards, hero ads, categories (name, slug, media,
+  order, visibility, delete) and discovery sections — all persisted in Supabase, all uploads through
+  the existing storage helper (GIFs up untouched so they keep animating). The admin product form also
+  gained the same "Product Details" editor the vendor form has (sizes, colours, gender, material...),
+  and the main-store surfaces (menu, home rows, pills, search) stay free of Fashion-only categories.
+- **Tests:** `tests/fashion-world.test.js` (component behaviour) and `tests/fashion-store.test.js`
+  (full-page boot with a stubbed Supabase: routing, gender filtering, size flow, scoped search).

@@ -495,6 +495,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
       <h3 id="pFormTitle">Add Product</h3>
       <div class="fld"><label>Product Photos</label><div id="pPicker"></div></div>
       <label class="rmbgToggle"><input type="checkbox" id="pRmBg"> Remove background from new photos</label>
+      <div class="ad-hint" style="margin:4px 0 8px">Turned on automatically for <b>Beauty</b> categories — the main photo is cut out with the store's secure server pipeline (your original photo is kept).</div>
       <div class="progWrap" id="pImgProg"><div class="progBar" id="pImgProgBar"></div></div>
       <div class="fld"><label>Product Name</label><input id="pName" placeholder="e.g. Colorblock Zip-Up Jacket"></div>
       <div id="pAI"></div>
@@ -1145,6 +1146,39 @@ async function removeImageBackground(file) {
   return _removeBgFn(file);
 }
 
+/* ── Beauty background removal (secure server pipeline) ─────────────────
+   Beauty products: the main photo is cut out server-side (remove.bg via
+   /api/remove-bg.js with the Vercel env-var key — never in this page) and
+   cached in Storage, so the same photo is never processed twice. The
+   original photo is always kept; Beauty surfaces use beauty_image_url. */
+let pRmBgTouched = false;
+let editProdImgUrl = null;
+function isBeautyCategory() {
+  const id = catPicker.getValue();
+  if (id == null || !catTree) return false;
+  const root = catTree.bySlug && catTree.bySlug['beauty'];
+  if (!root || root.active === false) return false;
+  const ids = (catTree.descendantIds && catTree.descendantIds(root.id)) || [];
+  return Number(id) === root.id || ids.includes(Number(id));
+}
+async function removeBgServer(url) {
+  try {
+    const res = await fetch('/api/remove-bg', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data && data.url ? data.url : null;
+  } catch (e) { return null; }
+}
+function syncRmBgAutoCheck() {
+  if (!pRmBgTouched) document.getElementById('pRmBg').checked = isBeautyCategory();
+}
+document.getElementById('pRmBg').addEventListener('change', () => { pRmBgTouched = true; });
+document.getElementById('pCat').addEventListener('change', syncRmBgAutoCheck);
+
 const pPicker = new Pcx.MultiImagePicker(document.getElementById('pPicker'), { max: 8, label: 'Add photos' });
 const sLogoPicker = new Pcx.MultiImagePicker(document.getElementById('sLogoPicker'), { max: 1, label: 'Upload logo' });
 const pAttrs = new Pcx.ProductAttributes(document.getElementById('pAttrs'));
@@ -1258,6 +1292,8 @@ window.editProduct = async (id) => {
   const { data: p } = await sb.from('products').select('*').eq('id', id).single();
   if (!p) return;
   editProdId = id;
+  editProdImgUrl = p.image_url || null;
+  pRmBgTouched = false;
   document.getElementById('pFormTitle').textContent = 'Edit Product';
   document.getElementById('pName').value = p.name || '';
   brandPicker.setByProduct(p.brand_id, p.brand);
@@ -1269,6 +1305,7 @@ window.editProduct = async (id) => {
     if (m.length === 1) catId = m[0].id;
   }
   catPicker.setValue(catId);
+  syncRmBgAutoCheck();
   document.getElementById('pStock').value = p.stock || 0;
   document.getElementById('pDesc').value = p.description || '';
   pPicker.setImages(Array.isArray(p.images) && p.images.length ? p.images : (p.image_url ? [p.image_url] : []));
@@ -1302,6 +1339,8 @@ function resetProdForm() {
   document.getElementById('pStock').value = '';
   document.getElementById('pDesc').value = '';
   document.getElementById('pRmBg').checked = false;
+  pRmBgTouched = false;
+  editProdImgUrl = null;
   pPicker.clear();
   pAttrs.clear();
   pBlocks.clear();
@@ -1324,9 +1363,14 @@ document.getElementById('pSaveBtn').onclick = async () => {
   showLoad('Saving product...');
   try {
     const removeBg = document.getElementById('pRmBg').checked;
+    const beautyCat = isBeautyCategory();
+    let beautyCutout = null;
     const urls = await pPicker.resolve(async (file) => {
       let f = file, transparent = false;
-      if (removeBg) {
+      /* Beauty products: the main photo is cut out server-side AFTER upload
+         (remove.bg via /api/remove-bg.js) so the API key never reaches the
+         browser. Other categories keep the in-browser removal. */
+      if (removeBg && !beautyCat) {
         showLoad('Removing background...');
         try { f = await removeImageBackground(file); transparent = true; }
         catch (e) { toast('Background removal failed -- using original photo', true); }
@@ -1334,6 +1378,13 @@ document.getElementById('pSaveBtn').onclick = async () => {
       }
       return uploadImage(f, 'vendor-products', transparent);
     });
+
+    if (removeBg && beautyCat && urls.length) {
+      showLoad('Removing background...');
+      beautyCutout = await removeBgServer(urls[0]);
+      if (!beautyCutout) toast('Background removal unavailable — using the original photo', true);
+      showLoad('Saving product...');
+    }
 
     const description_blocks = await pBlocks.resolve(f => uploadImage(f, 'vendor-products', false));
 
@@ -1360,6 +1411,12 @@ document.getElementById('pSaveBtn').onclick = async () => {
       images: urls,
       vendor_id: session.user.id
     };
+    /* Beauty: transparent main photo (server-side cutout). The original photo in
+       image_url is always kept; Beauty surfaces show beauty_image_url when present. */
+    if (beautyCat) {
+      if (beautyCutout) prod.beauty_image_url = beautyCutout;
+      else if (editProdId && urls[0] && urls[0] !== editProdImgUrl) prod.beauty_image_url = null; /* main photo changed, no fresh cutout */
+    }
 
     const write = p => editProdId
       ? sb.from('products').update(p).eq('id', editProdId).eq('vendor_id', session.user.id)
@@ -1370,8 +1427,8 @@ document.getElementById('pSaveBtn').onclick = async () => {
       const { brand_id, ...noBrandId } = prod;
       ({ error } = await write(noBrandId));
     }
-    if (error && /images|brand/i.test(error.message)) {   // columns not added yet: save the main photo anyway
-      const { images, brand, brand_id, ...rest } = prod;
+    if (error && /images|brand|category_id|beauty_image_url/i.test(error.message)) {   // columns not added yet: save the main photo anyway
+      const { images, brand, brand_id, category_id, beauty_image_url, ...rest } = prod;
       ({ error } = await write(rest));
       legacy = !error;
     }

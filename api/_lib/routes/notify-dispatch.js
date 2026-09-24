@@ -9,10 +9,10 @@
 // Environment: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_CONTACT_EMAIL (push),
 // RESEND_API_KEY + EMAIL_FROM (email), SITE_URL (links + logo in emails; defaults to the request host), CRON_SECRET (optional).
 
-const { getAdmin, siteUrlFrom } = require('./_lib/db');
-const { createPush } = require('./_lib/push');
-const { createEmail } = require('./_lib/email/send');
-const { dispatch } = require('./_lib/dispatch');
+const { getAdmin, siteUrlFrom } = require('../db');
+const { createPush } = require('../push');
+const { createEmail } = require('../email/send');
+const { dispatch } = require('../dispatch');
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST' && req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });

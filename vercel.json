@@ -1,12 +1,99 @@
 {
   "functions": {
-    "api/assistant.js": { "maxDuration": 30 },
-    "api/assistant-ticket.js": { "maxDuration": 15 },
-    "api/ai-product.js": { "maxDuration": 45 },
-    "api/wallet-delivery.js": { "maxDuration": 30 }
+    "api/ai.js": {
+      "maxDuration": 45
+    },
+    "api/remove-bg.js": {
+      "maxDuration": 60
+    },
+    "api/wallet-delivery.js": {
+      "maxDuration": 30
+    }
   },
   "rewrites": [
-    { "source": "/store/:slug", "destination": "/store/index.html" },
-    { "source": "/store/:slug/", "destination": "/store/index.html" }
+    {
+      "source": "/api/checkout",
+      "destination": "/api/pay?fn=checkout"
+    },
+    {
+      "source": "/api/payment-methods",
+      "destination": "/api/pay?fn=payment-methods"
+    },
+    {
+      "source": "/api/payment-verify",
+      "destination": "/api/pay?fn=payment-verify"
+    },
+    {
+      "source": "/api/order-status",
+      "destination": "/api/pay?fn=order-status"
+    },
+    {
+      "source": "/api/banks",
+      "destination": "/api/pay?fn=banks"
+    },
+    {
+      "source": "/api/mock-pay",
+      "destination": "/api/pay?fn=mock-pay"
+    },
+    {
+      "source": "/api/assistant",
+      "destination": "/api/ai?fn=assistant"
+    },
+    {
+      "source": "/api/assistant-ticket",
+      "destination": "/api/ai?fn=assistant-ticket"
+    },
+    {
+      "source": "/api/ai-product",
+      "destination": "/api/ai?fn=ai-product"
+    },
+    {
+      "source": "/api/admin-payments",
+      "destination": "/api/admin?fn=admin-payments"
+    },
+    {
+      "source": "/api/admin-vendors",
+      "destination": "/api/admin?fn=admin-vendors"
+    },
+    {
+      "source": "/api/notify-order",
+      "destination": "/api/notify?fn=notify-order"
+    },
+    {
+      "source": "/api/notify-dispatch",
+      "destination": "/api/notify?fn=notify-dispatch"
+    },
+    {
+      "source": "/api/notify-broadcast",
+      "destination": "/api/notify?fn=notify-broadcast"
+    },
+    {
+      "source": "/api/check-slug",
+      "destination": "/api/vendor?fn=check-slug"
+    },
+    {
+      "source": "/api/verify-identity",
+      "destination": "/api/vendor?fn=verify-identity"
+    },
+    {
+      "source": "/api/verify-bank",
+      "destination": "/api/vendor?fn=verify-bank"
+    },
+    {
+      "source": "/api/brand-search",
+      "destination": "/api/lookup?fn=brand-search"
+    },
+    {
+      "source": "/api/geocode",
+      "destination": "/api/lookup?fn=geocode"
+    },
+    {
+      "source": "/store/:slug",
+      "destination": "/store/index.html"
+    },
+    {
+      "source": "/store/:slug/",
+      "destination": "/store/index.html"
+    }
   ]
 }

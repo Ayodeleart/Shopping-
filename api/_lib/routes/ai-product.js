@@ -1,10 +1,10 @@
 // POST /api/ai-product  — AI-assisted product draft for approved vendors and admins.
 // Auth: Authorization: Bearer <supabase access token>. The Groq key stays on the server.
 // Returns a DRAFT only; the vendor reviews, edits and saves through the normal product form.
-const { getAdmin } = require('./_lib/db');
-const { getUser, isVendorOrAdmin, clientIp, rateLimit, logUsage } = require('./_lib/ai/guard');
-const { AIError } = require('./_lib/ai/groq');
-const { generateDraft } = require('./_lib/ai/product-draft');
+const { getAdmin } = require('../db');
+const { getUser, isVendorOrAdmin, clientIp, rateLimit, logUsage } = require('../ai/guard');
+const { AIError } = require('../ai/groq');
+const { generateDraft } = require('../ai/product-draft');
 
 async function loadCategories(db) {
   try {

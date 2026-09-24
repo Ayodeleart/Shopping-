@@ -14,10 +14,10 @@
 
 const { createClient } = require('@supabase/supabase-js');
 const webpush = require('web-push');
-const { createPush } = require('./_lib/push');
-const { createEmail } = require('./_lib/email/send');
-const { dispatch } = require('./_lib/dispatch');
-const { siteUrlFrom } = require('./_lib/db');
+const { createPush } = require('../push');
+const { createEmail } = require('../email/send');
+const { dispatch } = require('../dispatch');
+const { siteUrlFrom } = require('../db');
 
 const supabaseAdmin = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
