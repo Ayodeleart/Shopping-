@@ -1,9 +1,9 @@
 // POST /api/assistant-ticket — creates the support ticket ONLY after the customer pressed "Submit" in the chat.
 // The ticket contents come from a server-signed token created by the assistant, so the browser cannot forge or alter them,
 // and the model cannot submit anything by itself.
-const { getAdmin } = require('./_lib/db');
-const { getUser, clientIp, rateLimit, logUsage } = require('./_lib/ai/guard');
-const { verifyTicket } = require('./_lib/ai/tools');
+const { getAdmin } = require('../db');
+const { getUser, clientIp, rateLimit, logUsage } = require('../ai/guard');
+const { verifyTicket } = require('../ai/tools');
 
 const used = new Set();   // per warm instance; the unique client_ref column is the real guard against replays
 

@@ -1,8 +1,8 @@
 // GET /api/payment-methods -> the payment methods the configured provider offers (the checkout page shows exactly these)
 // plus the fees the customer will be charged, so the total on screen matches what checkout creates.
-const { handler, send } = require('./_lib/http');
-const { db } = require('./_lib/db');
-const providers = require('./_lib/payments');
+const { handler, send } = require('../http');
+const { db } = require('../db');
+const providers = require('../payments');
 
 async function pricing() {
   const { data } = await db().from('platform_config').select('key, value').in('key', ['delivery_fee', 'service_fee', 'tax_rate']);

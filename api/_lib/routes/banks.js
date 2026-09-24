@@ -1,7 +1,7 @@
 // GET /api/banks -> list of banks from the payment provider (for the seller payout form)
-const { handler, send, HttpError } = require('./_lib/http');
-const { requireUser } = require('./_lib/auth');
-const providers = require('./_lib/payments');
+const { handler, send, HttpError } = require('../http');
+const { requireUser } = require('../auth');
+const providers = require('../payments');
 
 let cache = { at: 0, banks: [] };
 module.exports = handler(['GET'], async (req, res) => {

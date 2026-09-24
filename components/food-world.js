@@ -1,15 +1,21 @@
 /* Pcx.FoodWorld
- * The real #world=food experience (see components/world-page.js, which delegates to
- * this module only for the 'food' slug — every other world keeps its coming-soon page).
+ * The Food-only extras of the Explore Marcato Food world (#world=food): restaurant strip, Recommended For You, Quick
+ * Snacks, themed discovery rows and one section per restaurant. It is registered as Pcx.WorldExtensions.food, and
+ * components/world-page.js calls it for the food slug instead of the generic layout.
  *
- * Deliberately reuses, rather than re-implements:
- *   - allProds / vendorsMap / catTree (already loaded once at boot by index.html)
+ * The screen is:  search -> hero -> display categories (5 per row) -> food content.
+ * The hero and the display categories are NOT built here: they come from the same generic code every world uses
+ * (components/world-sections.js) and from the world's own configuration (Admin > Banners > Explore Marcato > Food).
+ * "Food" is decided by that configuration: a product is food when it sits in a normal category that one of the
+ * Food display categories links to (plus everything under the normal category slugged "food", if the store has one).
+ *
+ * Deliberately reuses rather than re-implements:
+ *   - the storefront's already-loaded products / vendors / category tree, handed in through `ctx` (getters, no globals:
+ *     `let` variables in the page script are not properties of `window`, which is why the old version never saw them)
  *   - cardHTML() from components/product-card.js for every product card
- *   - openStore() / openProduct() for restaurant profiles and product detail+cart+checkout
- *   - Pcx.Search (data/search.js) for the search bar
- * No network calls of its own, no new tables, no second cart.
+ *   - openStore() for restaurant profiles and Pcx.Search (data/search.js) for the search bar
  *
- *   Pcx.FoodWorld.mount(rootEl, world, { onBack });
+ *   Pcx.FoodWorld.render(bodyEl, world, config, ctx);
  */
 (function (global) {
   'use strict';
@@ -36,36 +42,30 @@
     return a;
   }
 
-  function foodRoot() {
-    var ct = global.catTree;
-    return ct && ct.bySlug ? ct.bySlug.food : null;
-  }
-
-  function foodProductsList() {
-    var ct = global.catTree, root = foodRoot();
-    if (!ct || !root) return [];
-    var match = ct.productMatcher(root.id);
-    return (global.allProds || []).filter(match);
-  }
+  var C = null;       // the ctx of the world page being drawn (a bag of getters)
+  function tree() { return C && C.tree ? C.tree() : null; }
+  function vendors() { return (C && C.vendors && C.vendors()) || {}; }
+  /* the normal marketplace category with the same slug as the world, when the store has one */
+  function legacyRoot() { var t = tree(); return t && t.bySlug ? t.bySlug.food || null : null; }
 
   function catText(p) {
-    var ct = global.catTree;
+    var ct = tree();
     if (ct && p.category_id != null && ct.byId[p.category_id]) return ct.label(p.category_id, ' ').toLowerCase();
     return String(p.category || '').toLowerCase();
   }
   function productHay(p) { return (String(p.name || '') + ' ' + catText(p) + ' ' + String(p.description || '')).toLowerCase(); }
 
-  function vendorOf(p) { return p.vendor_id ? global.vendorsMap[p.vendor_id] : null; }
+  function vendorOf(p) { return p.vendor_id ? vendors()[p.vendor_id] : null; }
 
   /* eligible restaurants: approved vendors (vendorsMap is already approved-only) with >=1 real food product */
   function eligibleRestaurants(foodProds) {
     var byVendor = {};
     foodProds.forEach(function (p) {
-      if (!p.vendor_id || !global.vendorsMap[p.vendor_id]) return;
+      if (!p.vendor_id || !vendors()[p.vendor_id]) return;
       (byVendor[p.vendor_id] = byVendor[p.vendor_id] || []).push(p);
     });
     return Object.keys(byVendor).map(function (id) {
-      return { vendor: global.vendorsMap[id], products: byVendor[id] };
+      return { vendor: vendors()[id], products: byVendor[id] };
     });
   }
 
@@ -95,7 +95,7 @@
 
   function h(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
 
-  function cardsHTML(list) { return list.map(function (p) { return '<div>' + global.cardHTML(p) + '</div>'; }).join(''); }
+  function cardsHTML(list) { return list.map(function (p) { return '<div>' + C.cardHTML(p) + '</div>'; }).join(''); }
 
   function vendorCardHTML(v) {
     var letter = esc((v.business_name || '?')[0].toUpperCase());
@@ -107,7 +107,7 @@
 
   function wireVendorCards(scope) {
     scope.querySelectorAll('[data-open-store]').forEach(function (el) {
-      el.addEventListener('click', function () { global.openStore(el.dataset.openStore); });
+      el.addEventListener('click', function () { C.openStore(el.dataset.openStore); });
     });
   }
 
@@ -159,29 +159,6 @@
     wireVendorCards(row);
   }
 
-  function renderCategories(root, foodProds) {
-    var ct = global.catTree, rootCat = foodRoot();
-    if (!ct || !rootCat) return;
-    var kids = ct.visibleChildren(rootCat.id).filter(function (c) {
-      return foodProds.some(ct.productMatcher(c.id));
-    });
-    if (!kids.length) return;
-    var grid = h('div', 'fw-cats', kids.map(function (c) {
-      var url = global.Pcx.Categories ? global.Pcx.Categories.imageUrl(c) : c.imageUrl;
-      var letter = esc((c.name || '?')[0].toUpperCase());
-      return '<div class="fw-cat" data-open-cat="' + esc(c.slug) + '">' +
-        '<div class="fw-cat-thumb">' + (url ? '<img src="' + safeUrl(url) + '" alt="" loading="lazy" onerror="this.remove()">' : '') + (!url ? letter : '') + '</div>' +
-        '<div class="fw-cat-name">' + esc(c.name) + '</div></div>';
-    }).join(''));
-    root.appendChild(grid);
-    grid.querySelectorAll('[data-open-cat]').forEach(function (el) {
-      el.addEventListener('click', function () {
-        var slug = el.dataset.openCat;
-        if (typeof global.openCategory === 'function') global.openCategory(slug);
-      });
-    });
-  }
-
   function recommendedFor(foodProds) {
     var recent = [];
     try { recent = (JSON.parse(localStorage.getItem('recent_viewed_v1')) || []).map(Number); } catch (e) {}
@@ -224,27 +201,27 @@
       '<div class="fw-sech-logo" style="background:var(--red)">' + (v.logo_url ? '<img src="' + safeUrl(v.logo_url) + '" alt="" loading="lazy" onerror="this.parentNode.textContent=\'' + letter + '\'">' : letter) + '</div>' +
       '<span class="fw-sech-ttl">' + esc(headingWord) + ' from ' + esc(v.business_name) + '</span>' +
       '<button type="button" class="fw-sech-more" data-open-store="' + esc(v.store_slug || v.id) + '">See more</button>');
-    var row = h('div', 'fw-hrow', products.map(function (p) { return '<div class="fcard-wrap">' + global.cardHTML(p) + '</div>'; }).join(''));
+    var row = h('div', 'fw-hrow', products.map(function (p) { return '<div class="fcard-wrap">' + C.cardHTML(p) + '</div>'; }).join(''));
     sec.appendChild(hdr); sec.appendChild(row);
     root.appendChild(sec);
 
-    hdr.querySelectorAll('[data-open-store]').forEach(function (el) { el.addEventListener('click', function () { global.openStore(el.dataset.openStore); }); });
+    hdr.querySelectorAll('[data-open-store]').forEach(function (el) { el.addEventListener('click', function () { C.openStore(el.dataset.openStore); }); });
     var logoEl = hdr.querySelector('.fw-sech-logo');
     logoEl.style.cursor = 'pointer';
-    logoEl.addEventListener('click', function () { global.openStore(v.store_slug || v.id); });
+    logoEl.addEventListener('click', function () { C.openStore(v.store_slug || v.id); });
 
     accentFor(v.logo_url, function (color) { if (color) logoEl.style.background = color; });
   }
 
   function renderQuickSnacks(root, foodProds) {
-    var ct = global.catTree, rc = foodRoot();
+    var ct = tree(), rc = legacyRoot();
     var snackCat = ct && rc ? ct.descendantIds(rc.id).map(function (id) { return ct.byId[id]; }).find(function (c) { return c && /snack/i.test(c.name); }) : null;
     var pool = snackCat ? foodProds.filter(ct.productMatcher(snackCat.id)) : foodProds.filter(function (p) { return /snack/i.test(productHay(p)); });
     if (pool.length < 3) return;
     var items = shuffle(pool).slice(0, 5);
     var sec = h('div', 'fw-sec',
       '<div class="fw-sech"><span class="fw-sech-ttl">Quick Snacks</span></div>' +
-      '<div class="fw-hrow">' + items.map(function (p) { return '<div class="fcard-wrap">' + global.cardHTML(p) + '</div>'; }).join('') + '</div>');
+      '<div class="fw-hrow">' + items.map(function (p) { return '<div class="fcard-wrap">' + C.cardHTML(p) + '</div>'; }).join('') + '</div>');
     root.appendChild(sec);
   }
 
@@ -268,45 +245,33 @@
     items = shuffle(items).slice(0, 10);
     var sec = h('div', 'fw-sec',
       '<div class="fw-sech"><span class="fw-sech-ttl">' + esc(theme.title) + '</span></div>' +
-      '<div class="fw-hrow">' + items.map(function (p) { return '<div class="fcard-wrap">' + global.cardHTML(p) + '</div>'; }).join('') + '</div>');
+      '<div class="fw-hrow">' + items.map(function (p) { return '<div class="fcard-wrap">' + C.cardHTML(p) + '</div>'; }).join('') + '</div>');
     root.appendChild(sec);
     return true;
   }
 
   /* ---------------------------------------------------------------- mount */
 
-  function mount(root, world, deps) {
-    root.textContent = '';
-    root.style.removeProperty('--wp-grad');
-    var wrap = h('div', 'fw-root');
+  function render(wrap, world, config, ctx) {
+    C = ctx;
+    var WS = Pcx.WorldSections;
+    var foodProds = WS.worldProducts(ctx, world, config);
 
-    var hdr = h('header', 'wp-hdr');
-    var backBtn = document.createElement('button');
-    backBtn.type = 'button'; backBtn.className = 'wp-back'; backBtn.setAttribute('aria-label', 'Back');
-    backBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
-    backBtn.addEventListener('click', function () { deps.onBack(); });
-    var ttl = document.createElement('span'); ttl.className = 'wp-hdr-ttl'; ttl.textContent = world.name || 'Food';
-    hdr.appendChild(backBtn); hdr.appendChild(ttl);
-    wrap.appendChild(hdr);
-
-    var foodProds = foodProductsList();
-
-    if (!foodRoot()) {
-      wrap.appendChild(h('div', 'fw-empty', 'Food categories haven\u2019t been set up yet. Create a category with the slug &ldquo;food&rdquo; in Admin &rsaquo; Categories to switch this on.'));
-      root.appendChild(wrap);
-      return;
-    }
-    if (!foodProds.length) {
-      wrap.appendChild(h('div', 'fw-empty', 'No food products yet. Once a restaurant lists something under Food, it\u2019ll show up here.'));
-      root.appendChild(wrap);
-      return;
-    }
-
+    /* the hero and the display categories are the world's own content: shown whether or not any food is listed yet */
     var restaurants = shuffle(eligibleRestaurants(foodProds));
+    if (foodProds.length) renderSearch(wrap, foodProds, restaurants);
+    WS.renderHero(wrap, config.heroes, ctx);
+    WS.renderDisplayCategories(wrap, config.cats, ctx);
 
-    renderSearch(wrap, foodProds, restaurants);
+    if (!foodProds.length) {
+      var noCats = !(config.cats && config.cats.length);
+      wrap.appendChild(h('div', 'fw-empty', noCats && !(config.heroes && config.heroes.length)
+        ? 'The Food world is being set up. Check back soon.'
+        : 'No food products yet. Once a restaurant lists something under Food, it\u2019ll show up here.'));
+      return;
+    }
+
     renderVendorStrip(wrap, restaurants);
-    renderCategories(wrap, foodProds);
     renderRecommended(wrap, foodProds);
 
     /* interleave: restaurant, quick snacks, then themed/restaurant alternating (spec section 9) */
@@ -328,9 +293,9 @@
       if (next) renderRestaurantSection(wrap, next, headings[ri++ % headings.length]);
       if (!theme && !next) break;
     }
-
-    root.appendChild(wrap);
   }
 
-  Pcx.FoodWorld = { mount: mount };
+  Pcx.FoodWorld = { render: render };
+  (Pcx.WorldExtensions = Pcx.WorldExtensions || {}).food = render;
+
 })(window);

@@ -1,0 +1,40 @@
+/* Admin: Explore Marcato (admin/worlds.js) */
+.wa-note{font-size:12px;color:var(--txt3);line-height:1.45;margin:-4px 0 12px}
+.wa-err{background:rgba(220,38,38,.08);color:#dc2626;border-radius:9px;padding:12px;font-size:13px;line-height:1.45;margin-bottom:12px}
+.wa-bar{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.wa-crumb{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.wa-slug{font-size:11.5px;color:var(--txt3);margin:0 0 12px}
+
+/* one editable record (world, hero slide, display category) */
+.wa-card{background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;box-shadow:var(--shadow);overflow:hidden}
+.wa-card.off .wa-hd{opacity:.6}
+.wa-hd{display:flex;align-items:center;gap:10px;padding:9px 10px;cursor:pointer}
+.wa-th{width:44px;height:44px;border-radius:10px;overflow:hidden;background:var(--bg2);border:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:var(--txt3)}
+.wa-th.round{border-radius:50%}
+.wa-th img{width:100%;height:100%;object-fit:cover;display:block}
+.wa-main{flex:1;min-width:0}
+.wa-name{font-size:13.5px;font-weight:800;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.wa-meta{font-size:11px;color:var(--txt3);margin-top:2px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.wa-pill{font-size:10px;font-weight:800;padding:2px 7px;border-radius:9px;background:rgba(22,163,74,.12);color:#15803d;text-transform:uppercase;letter-spacing:.3px}
+.wa-pill.off{background:var(--bg3);color:var(--txt3)}
+.wa-pill.warn{background:rgba(217,119,6,.14);color:#b45309}
+.wa-acts{display:flex;gap:4px;flex-shrink:0}
+.wa-acts button{min-width:30px;height:30px;padding:0 7px;border-radius:7px;background:var(--bg2);border:1px solid var(--border);font-size:12px;font-weight:700;color:var(--txt)}
+.wa-acts button:active{background:var(--bg3)}
+.wa-acts button:disabled{opacity:.35}
+.wa-body{padding:4px 12px 14px;border-top:1px solid var(--border)}
+.wa-body .fg:first-child{margin-top:10px}
+.wa-row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.wa-sec{margin:18px 0 8px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.wa-sec h3{font-size:12.5px;font-weight:900;letter-spacing:.5px;color:var(--txt2)}
+.wa-empty{padding:18px 12px;text-align:center;font-size:13px;color:var(--txt3);background:var(--card);border:1px dashed var(--border);border-radius:12px;margin-bottom:10px}
+
+/* linked normal categories */
+.wa-links{border:1.5px solid var(--border);border-radius:9px;background:var(--bg)}
+.wa-links input[type=search]{width:100%;height:38px;border:none;border-bottom:1px solid var(--border);padding:0 12px;font-size:14px;background:transparent;outline:none;border-radius:9px 9px 0 0}
+.wa-llist{max-height:210px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.wa-lrow{display:flex;align-items:center;gap:9px;padding:8px 12px;font-size:13.5px;border-bottom:1px solid var(--border)}
+.wa-lrow:last-child{border-bottom:none}
+.wa-lrow[hidden]{display:none}
+.wa-links .wa-lrow input{width:18px;height:18px;min-height:0;padding:0;border:none;flex-shrink:0;accent-color:var(--red);-webkit-appearance:checkbox;appearance:auto}
+.wa-lcount{font-size:11.5px;color:var(--txt3);margin-top:5px}

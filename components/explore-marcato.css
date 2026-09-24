@@ -32,6 +32,8 @@
 }
 
 .xmCard-img{position:absolute;inset:0;z-index:0;width:100%;height:100%;object-fit:cover}
+.xmCard-gif{opacity:0;transition:opacity .25s ease}
+.xmCard-gif.on{opacity:1}
 
 .xmCard-art{
   position:absolute;top:8px;right:8px;z-index:2;
@@ -73,5 +75,5 @@
   .xmCard-go{width:24px;height:24px;bottom:12px;right:12px}
   .xmCard-go svg{width:13px;height:13px}
 }
-@media (prefers-reduced-motion:reduce){.xmCard{transition:none}}
+@media (prefers-reduced-motion:reduce){.xmCard{transition:none}.xmCard-gif{display:none}}
 

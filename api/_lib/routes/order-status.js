@@ -1,7 +1,7 @@
 // GET /api/order-status?order_id=...&token=...   (token = the guest token returned at checkout; signed-in buyers send their session)
-const { handler, send, HttpError } = require('./_lib/http');
-const { db } = require('./_lib/db');
-const { optionalUser } = require('./_lib/auth');
+const { handler, send, HttpError } = require('../http');
+const { db } = require('../db');
+const { optionalUser } = require('../auth');
 
 module.exports = handler(['GET'], async (req, res) => {
   const url = new URL(req.url, 'http://x');
