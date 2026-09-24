@@ -3,9 +3,13 @@
  * (Food, Fashion, Beauty, Home & Decor, Gifts). Distinct from categories, brands and vendors —
  * these are whole shopping experiences, not product filters.
  *
- * Each world's name/tagline/gradient/icon come from data/worlds.js (fixed). `image_url` is
- * optional and admin-managed (Admin > Banners > Explore Marcato, see migration_worlds.sql) —
- * when set it's shown as the card's photo/GIF; otherwise the card falls back to its gradient + icon.
+ * The worlds themselves come from the `worlds` table (Admin > Banners > Explore Marcato) through
+ * Worlds.fetch() in data/worlds.js: title, description, order and on/off are all admin-managed, so this
+ * component just draws whatever list it is given (an empty list draws nothing).
+ *
+ * Card media: `image_url` is the still picture, `gif_url` an optional animated GIF. The GIF plays on top of the
+ * still (which is what shows while the GIF loads, if it fails, and for visitors who prefer reduced motion).
+ * With neither, the card falls back to its gradient + icon.
  *
  *   Pcx.ExploreMarcato.mount(document.getElementById('exploreRow'), worlds, goToWorld);
  *
@@ -22,6 +26,8 @@
     return e;
   }
 
+  function safe(u) { return global.safeHref ? global.safeHref(u) : String(u || ''); }
+
   function mount(root, worlds, onOpen) {
     root.textContent = '';
     if (!worlds || !worlds.length) return;
@@ -30,7 +36,7 @@
       var card = h('button', 'xmCard');
       card.type = 'button';
       card.style.setProperty('--xm-grad', w.gradient);
-      card.setAttribute('aria-label', w.name + ' \u2014 ' + w.tagline);
+      card.setAttribute('aria-label', w.tagline ? w.name + ' \u2014 ' + w.tagline : w.name);
       card.addEventListener('click', function () { onOpen(w.slug); });
 
       var art = h('span', 'xmCard-art');
@@ -41,18 +47,28 @@
       icon.innerHTML = w.icon;
       art.appendChild(icon);
 
-      if (w.image_url) {
+      var still = w.image_url || w.gif_url;
+      if (still) {
         var img = h('img', 'xmCard-img');
-        img.src = safeHref(w.image_url);
+        img.src = safe(still);
         img.alt = '';
         img.loading = 'lazy';
+        img.addEventListener('error', function () { img.remove(); });
         card.appendChild(img);
+      }
+      if (w.gif_url && w.image_url) {
+        var gif = h('img', 'xmCard-img xmCard-gif');
+        gif.alt = '';
+        gif.addEventListener('load', function () { gif.classList.add('on'); });
+        gif.addEventListener('error', function () { gif.remove(); });
+        gif.src = safe(w.gif_url);
+        card.appendChild(gif);
       }
       card.appendChild(art);
 
       var body = h('span', 'xmCard-body');
       var name = h('span', 'xmCard-name'); name.textContent = w.name;
-      var tag = h('span', 'xmCard-tag'); tag.textContent = w.tagline;
+      var tag = h('span', 'xmCard-tag'); tag.textContent = w.tagline || '';
       var go = h('span', 'xmCard-go'); go.innerHTML = ARROW;
       body.appendChild(name); body.appendChild(tag);
       card.appendChild(body);

@@ -11,6 +11,8 @@
  *     onBack: () => {}
  *   });
  *   page.open('fashion-clothing');  page.open('all');  page.close();
+ *   page.openList({ title, crumb, products });   // a plain results page for a given product list (an Explore world's
+ *                                               // display category): same header, same grid, same product cards
  *
  * Needs data/categories.js and components/categories.css.
  */
@@ -58,7 +60,7 @@
     });
     q('.cpg-crumbs').innerHTML = all ? '' : crumbs.join('<span>\u203a</span>');
 
-    var subs = all ? t.visibleRoots() : t.visibleChildren(cat.id);
+    var subs = all ? t.visibleRootsIn(this.d.world || null) : t.visibleChildren(cat.id);
     q('.cpg-subs').innerHTML = subs.map(function (c) {
       return '<a class="cpg-tile" data-cat="' + esc(c.slug) + '">' + Pcx.Categories.thumb(t, c) + '<span class="cpg-name">' + esc(c.name) + '</span></a>';
     }).join('');
@@ -76,6 +78,24 @@
         ? prods.map(function (p) { return '<div>' + this.d.cardHTML(p) + '</div>'; }, this).join('')
         : '<div class="cpg-empty" style="grid-column:1/-1"><h3>No products here yet</h3><p>Check back soon' + (subs.length ? ' or browse a subcategory above' : '') + '.</p></div>';
     }
+    this._show();
+  };
+
+  /* Product-results page for a list the caller already computed (no subcategories, no category lookup). */
+  P.openList = function (o) {
+    var q = function (s) { return this.root.querySelector(s); }.bind(this);
+    var prods = o.products || [];
+    q('.cpg-title').textContent = o.title || 'Products';
+    q('.cpg-crumbs').innerHTML = o.crumb ? '<span>' + esc(o.crumb) + '</span><span>\u203a</span><span>' + esc(o.title || '') + '</span>' : '';
+    q('.cpg-subs').innerHTML = '';
+    q('.cpg-subs').style.display = 'none';
+    q('.cpg-sec').style.display = '';
+    q('.pgrid-wrap').style.display = '';
+    q('.cpg-sect').textContent = 'Products';
+    q('.cpg-count').textContent = prods.length + ' item' + (prods.length === 1 ? '' : 's');
+    q('.cpg-grid').innerHTML = prods.length
+      ? prods.map(function (p) { return '<div>' + this.d.cardHTML(p) + '</div>'; }, this).join('')
+      : '<div class="cpg-empty" style="grid-column:1/-1"><h3>' + esc(o.emptyTitle || 'No products here yet') + '</h3><p>' + esc(o.emptyText || 'Check back soon.') + '</p></div>';
     this._show();
   };
 

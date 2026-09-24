@@ -298,3 +298,55 @@ On iPhone: tap Share → Add to Home Screen.
 - Cart is stored locally in the customer's browser
 - The admin session stays active until the browser tab is closed
 - Service worker caches the app shell for offline access
+
+## Explore Marcato worlds
+
+Every world (Food, Fashion, Beauty, Home, Gifts, or any you add) is data, not code: **Explore World → Hero → Display Categories → Products**.
+Admin › Explore Marcato adds, edits, hides, re-orders and deletes worlds, and inside each world manages its hero slides and its display categories
+(image + optional GIF each). A display category is a picture card that opens the products of the marketplace categories linked to it; it is not the
+marketplace category itself. Needs the Explore worlds SQL run once in the Supabase SQL editor (pasted in the chat, never stored in this repo).
+Until it is run the homepage keeps showing the original five worlds. Tests: `tests/worlds.test.js` (storefront) and `tests/worlds-admin.test.js` (admin).
+---
+
+# Fashion world (#world=fashion)
+
+The Fashion card in "Explore Marcato" now opens a real dedicated world instead of the placeholder —
+same hash routing (`#world=fashion`), same slide-up page pattern, built entirely on the existing
+architecture (product card, category tree, seller storefronts, PromotionalCarousel, storage bucket).
+
+**One-time SQL:** run `migration_fashion.sql` in the Supabase SQL editor. It adds `categories.world`
+(null = main store, `fashion` = Fashion world, `both` = both), three small tables (`fashion_genders`,
+`fashion_ads`, `fashion_sections`, public read / signed-in-admin write), and seeds the four gender
+cards plus 24 Fashion categories ("Plays!" = second-hand/used clothing). Until it is run, the store
+works exactly as before and the Fashion world shows its "being curated" state.
+
+- **Gender selector (Men / Women / Boys / Girls):** compact portrait cards under the Fashion search
+  bar. The active card shows its admin-uploaded image or GIF (transparent/background-removed GIFs are
+  perfect — artwork is shown whole with `object-fit: contain`, never cropped) plus a strong accent
+  edge; inactive cards stay white. Tapping a gender really filters the products, via
+  `products.attributes.gender` — the field the existing product forms (vendor + admin "Product
+  Details" editor, components/product-attributes.js) already save. Unisex matches every gender.
+- **Hero ads:** `fashion_ads` rows (image or GIF, optional destination) rotate automatically in the
+  existing PromotionalCarousel, with swipe.
+- **Categories:** CIRCULAR tiles, 5 per row (2 rows initially, "See all" opens `#fcats` with the
+  full responsive grid). Each is a normal `categories` row tagged `world='fashion'`, so tapping one
+  opens the existing category page with only that category's products.
+- **Discovery sections:** admin rows from `fashion_sections` (title, type: category / seller /
+  gender / new / featured / sale, limit, order, active) plus automatic rails built from real data
+  (New Fashion Finds, Trending, per-gender, top sellers with real logo + "See more" into the existing
+  storefront, per-category). A rail with no real products hides itself — nothing is invented.
+- **All Fashion grid:** the one shared product card in a 3-per-row grid or a list layout, with
+  category chips, price/discount sorting and an in-stock filter, all respecting the gender selection.
+- **Sizes:** the product page now renders size chips from the product's own attributes
+  (`sizes` / `waist` / `band` + `cups`). Products with sizes must have one picked before add-to-cart
+  (card buttons and the assistant open the product page instead); products without sizes are
+  untouched. The chosen size is stored on the cart line and shown in the cart.
+- **Search:** the Fashion search bar opens the existing full-screen search scoped to fashion
+  products and fashion categories; closing it restores the store-wide search.
+- **Admin:** a new "Fashion" tab manages gender cards, hero ads, categories (name, slug, media,
+  order, visibility, delete) and discovery sections — all persisted in Supabase, all uploads through
+  the existing storage helper (GIFs up untouched so they keep animating). The admin product form also
+  gained the same "Product Details" editor the vendor form has (sizes, colours, gender, material...),
+  and the main-store surfaces (menu, home rows, pills, search) stay free of Fashion-only categories.
+- **Tests:** `tests/fashion-world.test.js` (component behaviour) and `tests/fashion-store.test.js`
+  (full-page boot with a stubbed Supabase: routing, gender filtering, size flow, scoped search).

@@ -35,7 +35,10 @@ const tables = {
   brands: [],
   product_ratings: [{ product_id: 11, avg_rating: 4.5, review_count: 2 }],
   reviews: [{ id: 1, product_id: 11, user_id: 'u1', name: 'Ada', rating: 5, comment: 'Nice', created_at: '2026-09-01' }],
-  worlds: [{ slug: 'food', image_url: null }, { slug: 'beauty', image_url: null }],
+  worlds: [   /* after migration_explore_worlds.sql: worlds carry title / is_active / sort_order */
+    { slug: 'food', title: 'Food', description: '', image_url: null, card_gif_url: null, is_active: true, sort_order: 1 },
+    { slug: 'beauty', title: 'Beauty', description: '', image_url: null, card_gif_url: null, is_active: true, sort_order: 3 }
+  ],
   beauty_heroes: [
     { id: 1, image_url: 'https://x/h1.gif', title: 'Glow Season', subtitle: 'Real brands', cta_text: 'Shop', link_url: '#cat=lipstick', sort_order: 10, active: true, created_at: null, updated_at: null },
     { id: 2, image_url: 'https://x/h2.jpg', title: 'Skincare', subtitle: 'Daily basics', cta_text: null, link_url: null, sort_order: 20, active: true, created_at: null, updated_at: null }

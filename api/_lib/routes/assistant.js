@@ -1,9 +1,9 @@
 // POST /api/assistant — the customer shopping assistant (chat + product tools).
 // Optional auth (Authorization: Bearer <supabase token>) unlocks order lookups for that customer only.
-const { getAdmin, siteUrlFrom } = require('./_lib/db');
-const { getUser, clientIp, rateLimit, logUsage } = require('./_lib/ai/guard');
-const { AIError } = require('./_lib/ai/groq');
-const { runAssistant } = require('./_lib/ai/assistant-core');
+const { getAdmin, siteUrlFrom } = require('../db');
+const { getUser, clientIp, rateLimit, logUsage } = require('../ai/guard');
+const { AIError } = require('../ai/groq');
+const { runAssistant } = require('../ai/assistant-core');
 
 async function storeInfo(db) {
   try {

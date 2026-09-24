@@ -1,19 +1,22 @@
-/* Worlds: static config for the "Explore Marcato" destination cards on the homepage.
+/* Worlds: the "Explore Marcato" worlds (Food, Fashion, Beauty, Home, Gifts and anything the admin adds).
  *
- * A "world" is a specialized Marcato shopping experience (Food, Fashion, Beauty, Home, Gifts) —
- * distinct from categories, brands and vendors. There is no database table for these yet: the set
- * is fixed for this first version, so it lives here the same way a nav menu would.
+ * A "world" is a specialized Marcato shopping experience: a card on the homepage that opens a page with its own
+ * hero and its own display categories (see components/world-sections.js). It is NOT a marketplace category.
  *
- * Each world opens at #world=slug (see components/world-page.js), which for now shows a lightweight
- * "coming soon" placeholder. The slug is the future route for the dedicated world page.
+ * WHERE THE WORLDS COME FROM: the `worlds` table (migration_explore_worlds.sql), managed in
+ * Admin > Banners > Explore Marcato. The homepage asks for the enabled worlds ordered by sort_order, so adding,
+ * removing, hiding or re-ordering a world in the admin changes the homepage with no code change.
  *
- * The image/GIF shown on each card is admin-managed (Admin > Banners > Explore Marcato) and lives in
- * the `worlds` table (see migration_worlds.sql), keyed by slug — NOT in this file. index.html fetches
- * it and merges `image_url` onto these objects before mounting the cards. Until an image is uploaded,
- * a card just shows its gradient + icon below.
+ * WHAT IS LEFT IN THIS FILE is presentation only: a colour gradient + icon for the five original slugs, and a
+ * generated gradient + generic icon for any world the admin adds. It also holds the fallback used before the
+ * migration has been run (so the homepage never breaks): the five original worlds with any uploaded card image.
  *
- *   Worlds.list()          -> [{ slug, name, tagline, gradient, icon, viewBox }, ...]
- *   Worlds.bySlug(slug)    -> single world or null
+ *   Worlds.fetch(sb)          -> Promise<{ list, legacy }>   enabled worlds, ordered; legacy=true when the migration is missing
+ *   Worlds.present(row)       -> world object from a `worlds` row (title -> name, description -> tagline, images, gradient, icon)
+ *   Worlds.set(list)          -> makes `list` the current worlds (Worlds.list / bySlug read from it)
+ *   Worlds.list()             -> [{ slug, name, tagline, image_url, gif_url, gradient, icon, viewBox, sort_order }, ...]
+ *   Worlds.bySlug(slug)       -> single world or null
+ *   Worlds.defaults()         -> the five original worlds (fallback + admin "Restore" hints)
  */
 (function (global) {
   'use strict';
@@ -61,10 +64,67 @@
     }
   ];
 
-  var BY_SLUG = {};
-  LIST.forEach(function (w) { BY_SLUG[w.slug] = w; });
+  var DEFAULT_BY_SLUG = {};
+  LIST.forEach(function (w) { DEFAULT_BY_SLUG[w.slug] = w; });
+
+  /* gradients handed out (by a stable hash of the slug) to worlds the admin creates */
+  var PALETTE = [
+    'linear-gradient(155deg,#3D7BFF 0%,#1B2F8C 100%)',
+    'linear-gradient(155deg,#F5B83D 0%,#B5541A 100%)',
+    'linear-gradient(155deg,#34C38F 0%,#0F5C48 100%)',
+    'linear-gradient(155deg,#E0577A 0%,#7D1738 100%)',
+    'linear-gradient(155deg,#5C6BC0 0%,#1A237E 100%)',
+    'linear-gradient(155deg,#26A6C9 0%,#0B4A63 100%)'
+  ];
+  var GENERIC_ICON = '<path d="M12 2l2.9 6.9L22 10l-5.5 4.8L18.2 22 12 18.3 5.8 22l1.7-7.2L2 10l7.1-1.1z"/>';
+
+  function hash(str) { var h = 0; for (var i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0; return h; }
+  function titleCase(slug) { return String(slug).split('-').map(function (w) { return w ? w.charAt(0).toUpperCase() + w.slice(1) : ''; }).join(' '); }
+
+  /* a `worlds` row -> the object the homepage card and the world page use */
+  function present(row) {
+    var d = DEFAULT_BY_SLUG[row.slug] || null;
+    return {
+      slug: row.slug,
+      name: row.title || (d && d.name) || titleCase(row.slug),
+      tagline: row.description != null ? row.description : (d ? d.tagline : ''),
+      image_url: row.image_url || '',
+      gif_url: row.card_gif_url || '',
+      is_active: row.is_active !== false,
+      sort_order: row.sort_order || 0,
+      gradient: d ? d.gradient : PALETTE[hash(row.slug) % PALETTE.length],
+      icon: d ? d.icon : GENERIC_ICON,
+      viewBox: d ? d.viewBox : '0 0 24 24'
+    };
+  }
+
+  var current = LIST.slice();
+  function byOrder(a, b) { return (a.sort_order - b.sort_order) || String(a.slug).localeCompare(String(b.slug)); }
+
+  /* Enabled worlds, ordered. If the new columns do not exist yet (migration not run) fall back to the original
+     five worlds, with whatever card image was uploaded before — exactly how the homepage behaved until now. */
+  async function fetchWorlds(sb) {
+    var r = await sb.from('worlds')
+      .select('slug,title,description,image_url,card_gif_url,is_active,sort_order')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
+      .order('slug', { ascending: true });
+    if (!r.error) return { list: (r.data || []).map(present).sort(byOrder), legacy: false };
+
+    var old = await sb.from('worlds').select('slug,image_url');
+    var imgBySlug = {};
+    ((old && old.data) || []).forEach(function (x) { if (x.image_url) imgBySlug[x.slug] = x.image_url; });
+    return {
+      list: LIST.map(function (w, i) { return Object.assign({}, w, { image_url: imgBySlug[w.slug] || '', gif_url: '', sort_order: i + 1 }); }),
+      legacy: true
+    };
+  }
 
   (global.Worlds = global.Worlds || {});
-  global.Worlds.list = function () { return LIST.slice(); };
-  global.Worlds.bySlug = function (slug) { return BY_SLUG[slug] || null; };
+  global.Worlds.list = function () { return current.slice(); };
+  global.Worlds.bySlug = function (slug) { for (var i = 0; i < current.length; i++) if (current[i].slug === slug) return current[i]; return null; };
+  global.Worlds.set = function (list) { current = (list || []).slice(); };
+  global.Worlds.defaults = function () { return LIST.slice(); };
+  global.Worlds.present = present;
+  global.Worlds.fetch = fetchWorlds;
 })(window);

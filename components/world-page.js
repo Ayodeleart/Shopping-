@@ -1,15 +1,18 @@
 /* Pcx.WorldPage
- * Full-screen destination page opened from an "Explore Marcato" card (#world=slug).
- * This first version is a placeholder only — each slug (food, fashion, beauty, home, gifts) is
- * reserved as the future route for its own dedicated world, built in a later pass. It follows the
- * same slide-up-from-bottom pattern as components/category-page.js and components/ad-page.js so it
- * feels native to the app rather than a bolt-on screen.
+ * Full-screen destination page opened from an "Explore Marcato" card (#world=slug). It is the same page for every
+ * world: header, then the world's hero, its display categories and its products, all loaded from the world's
+ * configuration (see components/world-sections.js). A world may add extra sections of its own by registering a
+ * renderer in Pcx.WorldExtensions[slug] (the Food world does this in components/food-world.js). A world with nothing
+ * configured yet shows a plain "coming soon" page. It follows the same slide-up-from-bottom pattern as
+ * components/category-page.js and components/ad-page.js.
  *
- *   const page = new Pcx.WorldPage(document.getElementById('worldPage'), { onBack, storeName: () => storeName });
+ *   const page = new Pcx.WorldPage(document.getElementById('worldPage'), { onBack, storeName: () => storeName, ctx });
  *   page.open(world);   // world = { slug, name, tagline, gradient, icon } from data/worlds.js
  *   page.close();
  *
- * Requires: components/world-page.css, data/worlds.js
+ *   ctx = the getters described in components/world-sections.js (sb, tree, products, cardHTML, vendors, ...)
+ *
+ * Requires: components/world-page.css, components/world-sections.js/.css, data/worlds.js
  */
 (function (global) {
   'use strict';
@@ -55,16 +58,12 @@
   };
 
   P._build = function (world) {
-    var self = this, root = this.root, d = this.d;
+    var self = this, root = this.root, d = this.d, ctx = d.ctx;
+    var Pcx = global.Pcx || {}, WS = Pcx.WorldSections;
     root.textContent = '';
     root.style.setProperty('--wp-grad', world.gradient);
 
-    if (world.slug === 'food' && global.Pcx && global.Pcx.FoodWorld) {
-      global.Pcx.FoodWorld.mount(root, world, { onBack: d.onBack });
-      return;
-    }
-
-    if (world.slug === 'beauty' && global.Pcx && global.Pcx.BeautyWorld) {
+    if (world.slug === 'beauty' && global.Pcx && global.Pcx.BeautyWorld) {   /* the dedicated Beauty world (components/beauty-world.js) */
       global.Pcx.BeautyWorld.mount(root, world, { onBack: d.onBack, beauty: d.beauty && d.beauty() });
       return;
     }
@@ -72,35 +71,24 @@
     var hdr = h('header', 'wp-hdr');
     var back = h('button', 'wp-back'); back.type = 'button'; back.setAttribute('aria-label', 'Back'); back.innerHTML = BACK;
     back.addEventListener('click', function () { d.onBack(); });
-    var ttl = h('span', 'wp-hdr-ttl', world.name);
-    hdr.appendChild(back); hdr.appendChild(ttl);
+    hdr.appendChild(back); hdr.appendChild(h('span', 'wp-hdr-ttl', world.name));
     root.appendChild(hdr);
 
-    var hero = h('div', 'wp-hero');
-    if (world.image_url) {
-      var himg = h('img', 'wp-hero-img');
-      himg.src = safeHref(world.image_url); himg.alt = '';
-      hero.appendChild(himg);
-      hero.classList.add('has-img');
-    }
-    var icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    icon.setAttribute('viewBox', world.viewBox || '0 0 24 24'); icon.setAttribute('class', 'wp-hero-icon'); icon.setAttribute('aria-hidden', 'true');
-    icon.innerHTML = world.icon;
-    hero.appendChild(icon);
-    var name = h('h2', 'wp-hero-name', world.name);
-    var tag = h('p', 'wp-hero-tag', world.tagline);
-    hero.appendChild(name); hero.appendChild(tag);
-    root.appendChild(hero);
-
-    var body = h('div', 'wp-body');
-    var badge = h('span', 'wp-badge', 'Coming soon');
-    var storeName = (d.storeName && d.storeName()) || 'Marcato';
-    var msg = h('p', 'wp-msg', 'We\u2019re building a dedicated ' + world.name + ' experience. For now, browse everything ' + storeName + ' has to offer.');
-    var cta = h('button', 'wp-cta', 'Continue shopping');
-    cta.type = 'button';
-    cta.addEventListener('click', function () { d.onBack(); });
-    body.appendChild(badge); body.appendChild(msg); body.appendChild(cta);
+    var body = h('div', 'ws-root');
     root.appendChild(body);
+    body.appendChild(h('div', 'ws-loading', 'Loading\u2026'));
+
+    var token = this._tok = (this._tok || 0) + 1;      // a slow response for a world you already left must not draw over the next one
+    var extra = (Pcx.WorldExtensions || {})[world.slug];
+    function draw(config) {
+      if (token !== self._tok) return;
+      body.textContent = '';
+      if (extra) extra(body, world, config, ctx);
+      else WS.renderWorld(body, world, config, ctx);
+    }
+    WS.load(ctx.sb, world.slug)
+      .then(draw)
+      .catch(function (e) { draw({ heroes: [], cats: [], error: String((e && e.message) || e), missing: false }); });
   };
 
   (global.Pcx = global.Pcx || {}).WorldPage = WorldPage;
