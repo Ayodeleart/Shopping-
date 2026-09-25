@@ -1163,9 +1163,11 @@ function isBeautyCategory() {
 }
 async function removeBgServer(url) {
   try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) return null;   // /api/remove-bg requires an admin or approved-vendor session
     const res = await fetch('/api/remove-bg', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
       body: JSON.stringify({ url })
     });
     if (!res.ok) return null;

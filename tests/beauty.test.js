@@ -291,20 +291,34 @@ test('remove-bg api: source URL allowlist + deterministic cache path', () => {
   }
 });
 
-test('remove-bg api: rejects a call with no admin session (it can spend paid credits)', async () => {
+test('remove-bg api: rejects a call with no session, and a non-vendor signed-in user (it can spend paid credits)', async () => {
   const { setVerifier } = require('../api/_lib/auth.js');
   const handler = require('../api/remove-bg.js');
-  setVerifier(async () => null);   // no session
   const old = process.env.SUPABASE_URL;
   process.env.SUPABASE_URL = 'https://x.supabase.co';
-  let status = 0, body = null;
-  const req = { method: 'POST', headers: {}, body: { url: 'https://x.supabase.co/storage/v1/object/public/avatars/beauty-hero/a.jpg' } };
-  const res = { status(s) { status = s; return this; }, json(b) { body = b; return this; } };
+  const url = 'https://x.supabase.co/storage/v1/object/public/avatars/beauty-hero/a.jpg';
+  const res = () => { const r = { status(s) { r.code = s; return r; }, json(b) { r.body = b; return r; } }; return r; };
   try {
-    await handler(req, res);
-    assert.equal(status, 401);
-    assert.ok(body && body.error);
+    setVerifier(async () => null);   // no session at all
+    let r = res();
+    await handler({ method: 'POST', headers: {}, body: { url } }, r);
+    assert.equal(r.code, 401);
+    assert.ok(r.body && r.body.error);
+
+    setVerifier(async () => ({ id: 'random-customer', email: 'customer@example.com' }));   // signed in, but not an admin or a vendor at all
+    const { setDb } = require('../api/_lib/db.js');
+    setDb({ from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) }) }) });
+    r = res();
+    await handler({ method: 'POST', headers: { authorization: 'Bearer t' }, body: { url } }, r);
+    assert.equal(r.code, 403, 'a plain signed-in customer cannot spend remove.bg credits');
+
+    setVerifier(async () => ({ id: 'vendor-1', email: 'vendor@example.com' }));   // a real, approved vendor: allowed
+    setDb({ from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { status: 'approved' }, error: null }) }) }) }) });
+    r = res();
+    await handler({ method: 'POST', headers: { authorization: 'Bearer t' }, body: { url } }, r);
+    assert.notEqual(r.code, 401); assert.notEqual(r.code, 403);
   } finally {
+    require('../api/_lib/db.js').setDb(null);
     setVerifier(async (token) => { const { db } = require('../api/_lib/db.js'); const { data, error } = await db().auth.getUser(token); return (error || !data || !data.user) ? null : data.user; });
     if (old === undefined) delete process.env.SUPABASE_URL; else process.env.SUPABASE_URL = old;
   }

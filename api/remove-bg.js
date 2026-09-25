@@ -22,7 +22,7 @@
 
 const crypto = require('crypto');
 const { getAdmin } = require('./_lib/db');
-const { requireAdmin } = require('./_lib/auth');
+const { requireAdminOrApprovedVendor } = require('./_lib/auth');
 
 const MAX_SOURCE_BYTES = 10 * 1024 * 1024;   // 10 MB
 const TIMEOUT_MS = 45 * 1000;
@@ -51,13 +51,14 @@ function publicUrl(admin, path) {
 }
 
 const handler = async (req, res) => {
-  /* Admin-only: each call can spend a paid remove.bg credit, so anyone who could
-     call this endpoint could run up the store's bill. Require the same admin
-     session the rest of the admin dashboard requires. */
+  /* Each call can spend a paid remove.bg credit, so anyone who could call this
+     endpoint could run up the store's bill. Admins can always call it; a vendor
+     can too, but only once approved — they're generating cutouts for their own
+     Beauty products, the same as the admin dashboard does for its own catalog. */
   try {
-    await requireAdmin(req);
+    await requireAdminOrApprovedVendor(req);
   } catch (e) {
-    return res.status(e.status || 401).json({ error: e.message || 'Please sign in as an admin.' });
+    return res.status(e.status || 401).json({ error: e.message || 'Please sign in as an admin or approved vendor.' });
   }
 
   const body = (req.method === 'POST' && req.body) || {};
