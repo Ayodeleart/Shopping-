@@ -9,7 +9,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="app-icon-32.png">
-<title>Maccato</title>
+<title>Marcato</title>
 <link rel="stylesheet" href="components/promotional-carousel.css">
 <script src="data/safe.js"></script>
 <script defer src="components/drag-gesture.js"></script>
@@ -39,6 +39,8 @@
 <script defer src="components/beauty-world.js"></script>
 <link rel="stylesheet" href="components/fashion-world.css">
 <script defer src="components/fashion.js"></script>
+<link rel="stylesheet" href="components/variants.css">
+<script defer src="components/variants.js"></script>
 <script defer src="components/fashion-world.js"></script>
 <script defer src="components/ad-page.js"></script>
 <script defer src="data/ads.js"></script>
@@ -309,6 +311,9 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 }
 .pSizeChip.on{border-color:var(--txt);background:var(--txt);color:var(--bg)}
 .pSizeChip:active{transform:scale(.95)}
+.pColorChip{display:inline-flex;align-items:center;gap:7px}
+.pColorDot{width:14px;height:14px;border-radius:50%;border:1px solid rgba(0,0,0,.25);flex-shrink:0}
+.pSizeChip:focus-visible{outline:2px solid var(--red);outline-offset:2px}
 .pSizeRow.miss .pSizeLbl{color:var(--red)}
 .pQtyRow{display:flex;align-items:center;gap:10px;margin:14px 0 12px;padding-top:14px;border-top:1px solid var(--border)}
 .pQtyRow > span{font-size:17px;color:var(--txt2)}
@@ -604,7 +609,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
   </button>
   <a class="hdrHome" id="hdrHome" href="/" onclick="goHome(event)" aria-label="Home">
     <img src="store-logo.png" alt="">
-    <span id="storeLogo" class="js-store-name">Maccato</span>
+    <span id="storeLogo" class="js-store-name">Marcato</span>
   </a>
   <button class="hdr-icon" id="hdrSearchBtn" aria-label="Search" onclick="openSearch()" style="display:none">
     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="20" height="20"><path d="M11 6C13.7614 6 16 8.23858 16 11M16.6588 16.6549L21 21M19 11C19 15.4183 15.4183 19 11 19C6.58172 19 3 15.4183 3 11C3 6.58172 6.58172 3 11 3C15.4183 3 19 6.58172 19 11Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -724,7 +729,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 <footer id="siteFooter">
   <div class="ftTop">
     <div class="ftCol">
-      <div class="ftLogo"><img src="store-logo.png" alt=""><span>Maccato</span></div>
+      <div class="ftLogo"><img src="store-logo.png" alt=""><span>Marcato</span></div>
       <p class="ftTag" id="ftTagline"></p>
       <div class="ftSocial" id="ftSocial"></div>
     </div>
@@ -750,7 +755,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
     <div class="ftCol" id="ftContactCol">
       <div class="ftHead">Support</div>
       <a href="#" onclick="openWhatsAppHelp();return false">Need Help?</a>
-      <a href="/vendor/" target="_blank">Sell on Maccato</a>
+      <a href="/vendor/" target="_blank">Sell on Marcato</a>
       <a href="#" id="ftPhone" style="display:none"></a>
       <a href="#" id="ftEmail" style="display:none"></a>
       <span id="ftAddress" style="display:none"></span>
@@ -780,7 +785,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 <div id="menuOver" onclick="closeMenu()"></div>
 <nav id="menuDrawer">
   <div class="mHead">
-    <div class="mStoreName" id="mName">Maccato</div>
+    <div class="mStoreName" id="mName">Marcato</div>
     <div class="mTag" id="mTag">Fast delivery. Real deals.</div>
   </div>
   <div class="mLinks">
@@ -805,7 +810,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>Saved Items<span class="mCount" id="menuFavCount"></span>
     </a>
     <a class="mLink" href="/vendor/" target="_blank">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8L18 3H6L3 8m18 0v11a1 1 0 01-1 1H4a1 1 0 01-1-1V8m18 0H3m9 4v6"/><path d="M3 8l2.5 5H8l1-3 2 5 2-5 1 3h2.5L21 8"/></svg>Sell on Maccato
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8L18 3H6L3 8m18 0v11a1 1 0 01-1 1H4a1 1 0 01-1-1V8m18 0H3m9 4v6"/><path d="M3 8l2.5 5H8l1-3 2 5 2-5 1 3h2.5L21 8"/></svg>Sell on Marcato
     </a>
     <a class="mLink" href="#" onclick="closeMenu();openCart();return false">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7.5 18C8.32843 18 9 18.6716 9 19.5C9 20.3284 8.32843 21 7.5 21C6.67157 21 6 20.3284 6 19.5C6 18.6716 6.67157 18 7.5 18Z" stroke="currentColor" stroke-width="1.5"/><path d="M16.5 18.0001C17.3284 18.0001 18 18.6716 18 19.5001C18 20.3285 17.3284 21.0001 16.5 21.0001C15.6716 21.0001 15 20.3285 15 19.5001C15 18.6716 15.6716 18.0001 16.5 18.0001Z" stroke="currentColor" stroke-width="1.5"/><path d="M2 3L2.26121 3.09184C3.5628 3.54945 4.2136 3.77826 4.58584 4.32298C4.95808 4.86771 4.95808 5.59126 4.95808 7.03836V9.76C4.95808 12.7016 5.02132 13.6723 5.88772 14.5862C6.75412 15.5 8.14857 15.5 10.9375 15.5H12M16.2404 15.5C17.8014 15.5 18.5819 15.5 19.1336 15.0504C19.6853 14.6008 19.8429 13.8364 20.158 12.3075L20.6578 9.88275C21.0049 8.14369 21.1784 7.27417 20.7345 6.69708C20.2906 6.12 18.7738 6.12 17.0888 6.12H11.0235M4.95808 6.12H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Cart
@@ -852,7 +857,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
     <button id="pModalBack" onclick="closePModal()" aria-label="Back">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
     </button>
-    <a class="hdrHome" href="/" onclick="goHome(event)" aria-label="Home"><img src="store-logo.png" alt=""><span class="js-store-name">Maccato</span></a>
+    <a class="hdrHome" href="/" onclick="goHome(event)" aria-label="Home"><img src="store-logo.png" alt=""><span class="js-store-name">Marcato</span></a>
     <button class="hdr-icon" id="pCartBtn" aria-label="Cart" onclick="openCart()">
       <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="22" height="22"><path d="M7.5 18C8.32843 18 9 18.6716 9 19.5C9 20.3284 8.32843 21 7.5 21C6.67157 21 6 20.3284 6 19.5C6 18.6716 6.67157 18 7.5 18Z" stroke="currentColor" stroke-width="1.5"/><path d="M16.5 18.0001C17.3284 18.0001 18 18.6716 18 19.5001C18 20.3285 17.3284 21.0001 16.5 21.0001C15.6716 21.0001 15 20.3285 15 19.5001C15 18.6716 15.6716 18.0001 16.5 18.0001Z" stroke="currentColor" stroke-width="1.5"/><path d="M2 3L2.26121 3.09184C3.5628 3.54945 4.2136 3.77826 4.58584 4.32298C4.95808 4.86771 4.95808 5.59126 4.95808 7.03836V9.76C4.95808 12.7016 5.02132 13.6723 5.88772 14.5862C6.75412 15.5 8.14857 15.5 10.9375 15.5H12M16.2404 15.5C17.8014 15.5 18.5819 15.5 19.1336 15.0504C19.6853 14.6008 19.8429 13.8364 20.158 12.3075L20.6578 9.88275C21.0049 8.14369 21.1784 7.27417 20.7345 6.69708C20.2906 6.12 18.7738 6.12 17.0888 6.12H11.0235M4.95808 6.12H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       <span id="pCartDot"></span>
@@ -883,6 +888,10 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
       <div id="pRating"></div>
       <div class="pCode" id="pCode"></div>
       <div class="pStockLine" id="pStockLine"></div>
+      <div class="pSizeRow" id="pColorRow" style="display:none">
+        <span class="pSizeLbl" id="pColorLbl">Colour:</span>
+        <div class="pSizes" id="pColors" role="radiogroup" aria-labelledby="pColorLbl"></div>
+      </div>
       <div class="pSizeRow" id="pSizeRow" style="display:none">
         <span class="pSizeLbl" id="pSizeLbl">Size:</span>
         <div class="pSizes" id="pSizes"></div>
@@ -1009,7 +1018,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
       </a>
       <a href="/vendor/" target="_blank">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8L18 3H6L3 8m18 0v11a1 1 0 01-1 1H4a1 1 0 01-1-1V8m18 0H3m9 4v6"/><path d="M3 8l2.5 5H8l1-3 2 5 2-5 1 3h2.5L21 8"/></svg>
-        Sell on Maccato
+        Sell on Marcato
       </a>
       <a href="#" onclick="buyerSignOut();return false;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -1032,7 +1041,7 @@ const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 const sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
 let buyerSession = null;
 let storePhone = '';
-let storeName = 'Maccato';
+let storeName = 'Marcato';
 let brandsList = [], brandById = {}, brandBySlug = {}, vendorsMap = {}, ratingMap = {};
 let policy = { delivery: '', returns: '', warranty: '' };
 const $ = id => document.getElementById(id);
@@ -1279,18 +1288,21 @@ function syncWorldPage() {
   if (!worldPage) return;
   const slug = worldFromHash();
   if (!slug) {
+    if (Pcx.mac) Pcx.mac.setWorld(null);
     worldPage.close();
     if (fashionPage) fashionPage.close();
     return;
   }
   if (slug === 'fashion') {          /* the Fashion world is a real page; other worlds stay placeholders */
+    if (Pcx.mac) Pcx.mac.setWorld('fashion');
     worldPage.close();
     if (fashionPage) fashionPage.open();
     return;
   }
   if (fashionPage) fashionPage.close();
   const w = worldBySlug(slug);
-  if (w) worldPage.open(w); else closeWorldPage();
+  if (w) { if (Pcx.mac) Pcx.mac.setWorld(slug); worldPage.open(w); }
+  else { if (Pcx.mac) Pcx.mac.setWorld(null); closeWorldPage(); }   // world off/unknown: MAC stays its default self, same as the page
 }
 function closeWorldPage() {
   if (worldDeepLinked) {
@@ -1815,6 +1827,7 @@ function openProduct(id, isBack) {
   renderPRating();
   $('pCode').innerHTML = `Product Code: <b>${esc(p.id)}</b>`;
   $('pStockLine').textContent = p.stock > 0 ? `${p.stock} in stock` : '';
+  renderPColors(p);  /* colour chips from attributes.colors (same structure the vendor / admin form saves) */
   renderPSizes(p);   /* size chips from the product's own attributes (letter / shoe / waist / band sizes) */
 
   /* call vendor (falls back to the store number) */
@@ -1906,6 +1919,46 @@ function toggleDesc() {
 
 function pQtyChange(d) { pQty = Math.max(1, Math.min(99, pQty + d)); $('pQtyN').textContent = String(pQty); }
 
+/* ── COLOUR SELECTION (products whose attributes carry colours) ──
+   Colours come from attributes.colors via Pcx.Variants. No colours → no selector, nothing is forced. */
+let pColorList = [], pColorPick = null;
+
+function renderPColors(p) {
+  pColorList = (window.Pcx && Pcx.Variants) ? Pcx.Variants.colors(p) : [];
+  pColorPick = null;
+  const row = $('pColorRow');
+  row.classList.remove('miss');
+  if (!pColorList.length) { row.style.display = 'none'; $('pColors').innerHTML = ''; return; }
+  row.style.display = '';
+  paintPColors();
+  /* swatch dots need the colour list from product-attributes.js, which is loaded lazily */
+  ensureAttrLib().then(() => { if (pColorList.length) paintPColors(); }).catch(() => {});
+}
+function paintPColors() {
+  $('pColorLbl').textContent = pColorPick ? 'Colour: ' + pColorPick : 'Colour:';
+  $('pColors').innerHTML = pColorList.map((c, i) => {
+    const sw = Pcx.Variants.swatch(c);
+    return `<button type="button" role="radio" aria-checked="${pColorPick === c}" class="pSizeChip pColorChip${pColorPick === c ? ' on' : ''}" onclick="pickPColor(${i})">` +
+      (sw ? `<span class="pColorDot" style="background:${esc(sw)}"></span>` : '') + `${esc(c)}</button>`;
+  }).join('');
+}
+function pickPColor(i) {
+  const c = pColorList[i];
+  if (c == null) return;
+  pColorPick = pColorPick === c ? null : c;
+  $('pColorRow').classList.remove('miss');
+  paintPColors();
+  /* if the vendor/admin linked one of the product's own photos to this colour, jump the gallery to it */
+  const linked = pColorPick && window.Pcx && Pcx.Variants ? Pcx.Variants.image(pCur, pColorPick) : null;
+  if (linked && pGal) { const idx = (pGal.o.images || []).indexOf(linked); if (idx >= 0) pGal.go(idx); }
+}
+function pColorMissing() {
+  if (!pColorList.length || pColorPick) return false;
+  $('pColorRow').classList.add('miss');
+  $('pColorRow').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  return true;
+}
+
 /* ── SIZE SELECTION (fashion products whose attributes carry sizes) ──
    Groups come from Pcx.Fashion.sizeGroups: attributes.sizes ({system, values}),
    waist, or band + cup sizes. No sizes → no selector, nothing is forced. */
@@ -1956,17 +2009,20 @@ function pSizeMissing() {
 
 function pAddToCart() {
   if (!pCur) return;
+  if (pColorMissing()) { toast('Select a colour', true); return; }
   if (pSizeMissing()) { toast('Select a size', true); return; }
-  addToCart(pCur.id, pGal && pGal.currentImage(), pQty, true, pPickedSize());
+  addToCart(pCur.id, pGal && pGal.currentImage(), pQty, true, pPickedSize(), pColorPick);
   addPairingsToCart();
 }
 
 function pBuyNow() {
   if (!pCur) return;
+  if (pColorMissing()) { toast('Select a colour', true); return; }
   if (pSizeMissing()) { toast('Select a size', true); return; }
-  const size = pPickedSize();
-  const ex = cart.find(x => x.id === pCur.id && (x.size || null) === (size || null));
-  if (ex) { ex.qty = pQty; saveCart(); updateCartBadge(); } else cartAdd(pCur, pQty, size);
+  const size = pPickedSize(), color = pColorPick;
+  const key = Pcx.Variants.lineKey({ id: pCur.id, size, color });
+  const ex = cart.find(x => Pcx.Variants.lineKey(x) === key);
+  if (ex) { ex.qty = pQty; saveCart(); updateCartBadge(); } else cartAdd(pCur, pQty, size, color);
   addPairingsToCart();
   openCheckout();
 }
@@ -2128,26 +2184,33 @@ function loadCart() {
 }
 function saveCart() { localStorage.setItem('cart_v3', JSON.stringify(cart)); }
 
-function cartAdd(p, qty, size) {
-  const sizeKey = size || null;
-  const ex = cart.find(x => x.id === p.id && (x.size || null) === sizeKey);
-  if (ex) ex.qty += qty; else cart.push({id:p.id, name:p.name, price:p.price, image_url:p.image_url, vendor_id:p.vendor_id||null, qty, size:sizeKey});
+/* A cart line is product + size + colour: Black / XL and White / M are separate lines (Pcx.Variants.lineKey). */
+function cartAdd(p, qty, size, color) {
+  const sizeKey = size || null, colorKey = color || null;
+  const key = Pcx.Variants.lineKey({ id: p.id, size: sizeKey, color: colorKey });
+  const ex = cart.find(x => Pcx.Variants.lineKey(x) === key);
+  if (ex) ex.qty += qty; else cart.push({id:p.id, name:p.name, price:p.price, image_url:p.image_url, vendor_id:p.vendor_id||null, qty, size:sizeKey, color:colorKey});
   saveCart(); updateCartBadge();
 }
 /* src = the element to fly from (a card button or the product photo); note = also show the toast;
    size = the size picked on the product page (null when the product has no sizes).
-   A product WITH sizes can only be added from its page: every other entry point
-   (card button, assistant) opens the product page so a size is always chosen first. */
-function addToCart(id, src, qty, note, size) {
+   color = the colour picked there (null when the product has none).
+   A product WITH colours or sizes can only be added once each required choice is made: every other entry point
+   (card button, assistant) opens the product page instead, so nothing is ever added with a missing choice. */
+function addToCart(id, src, qty, note, size, color) {
   const p = allProds.find(x => x.id===id);
   if (!p) return;
-  if (size == null && window.Pcx && Pcx.Fashion && Pcx.Fashion.sizeGroups(p).length) {
-    openProduct(id);
-    toast('Select a size');
+  const V = window.Pcx && Pcx.Variants;
+  const needColor = V && V.colors(p).length && color == null;
+  const needSize = V && V.sizeGroups(p).length && size == null;
+  if (needColor || needSize) {
+    if (window.Pcx && Pcx.VariantSheet) {
+      Pcx.VariantSheet.open(p, { onAdd: pick => addToCart(id, src, qty, note, pick.size, pick.color) });
+    } else { openProduct(id); }    /* sheet script not yet loaded: fall back to the product page rather than fail silently */
     return;
   }
   if (src) flyToCart(src);               /* first: cartAdd() re-renders the card and detaches the tapped button */
-  cartAdd(p, qty || 1, size);
+  cartAdd(p, qty || 1, size, color);
   if (note || !src) toast('Added to cart');
 }
 function removeFromCartAt(i) { cart.splice(i,1); saveCart(); updateCartBadge(); renderCartList(); }
@@ -2186,7 +2249,7 @@ function renderCartList() {
         : `<div class="cItemImg" style="display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--txt3)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div>`}
       <div class="cItemInfo">
         <div class="cItemName">${esc(item.name)}</div>
-        ${item.size ? `<div class="cItemSize">Size: ${esc(item.size)}</div>` : ''}
+        ${(item.size || item.color) ? `<div class="cItemSize">${esc(Pcx.Variants.label(item))}</div>` : ''}
         <div class="cItemPrice">${fmt(item.price)}</div>
         <div class="cQty">
           <button class="qb" onclick="changeQtyAt(${i},-1)">-</button>
@@ -2348,8 +2411,8 @@ const LEGAL_TEXT = {
     <h4>Your rights</h4>
     <p>You can ask us to delete your account data at any time by contacting us using the details in the footer.</p>`,
   terms: `
-    <h4>Using Maccato</h4>
-    <p>Maccato is a marketplace: products are listed and sold by independent vendors, not by Maccato directly. Each vendor is responsible for the accuracy, quality and delivery of what they list.</p>
+    <h4>Using Marcato</h4>
+    <p>Marcato is a marketplace: products are listed and sold by independent vendors, not by Marcato directly. Each vendor is responsible for the accuracy, quality and delivery of what they list.</p>
     <h4>Orders</h4>
     <p>Placing an order is an offer to buy at the listed price. A vendor may cancel an order they can't fulfil; you'll be notified if that happens.</p>
     <h4>Reviews</h4>
@@ -2721,7 +2784,7 @@ async function init() {
     ]);
 
     const get = k => settings?.find(s=>s.key===k)?.value;
-    storeName  = get('storeName')  || 'Maccato';
+    storeName  = get('storeName')  || 'Marcato';
     const tagline    = get('tagline')    || 'Fast delivery. Real deals.';
     const flashEnd   = get('flashSaleEnd') ? parseInt(get('flashSaleEnd')) : null;
     const catsJSON   = get('categories');

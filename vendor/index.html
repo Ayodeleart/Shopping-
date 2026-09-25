@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#D91C2D">
 <meta name="robots" content="noindex,nofollow">
-<title>Maccato Vendor</title>
+<title>Marcato Vendor</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" sizes="32x32" href="app-icon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -220,7 +220,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 
     <!-- create account / sign in -->
     <div id="authFormView">
-      <div class="ctitle" id="authTitle">Sell on Maccato</div>
+      <div class="ctitle" id="authTitle">Sell on Marcato</div>
       <div class="csub" id="authSub">Create your seller account, then tell us about your store.</div>
       <div class="authTabs" role="tablist">
         <button type="button" id="tabSignUp" class="on" role="tab">Create account</button>
@@ -284,11 +284,11 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 
     <!-- STEP 0: STORE -->
     <div class="obStep" data-step="0">
-      <p class="obIntro">Tell us about the store you're opening on Maccato.</p>
+      <p class="obIntro">Tell us about the store you're opening on Marcato.</p>
       <div class="fld"><label>Store / Brand Name</label><input id="obStoreName" placeholder="e.g. Ada's Fashion House" oninput="obSlugFromName()"></div>
       <div class="fld">
         <label>Store URL</label>
-        <div class="obSlugRow"><span>maccato.com/store/</span><input id="obStoreSlug" placeholder="ada-fashion-house" oninput="obCheckSlug()"></div>
+        <div class="obSlugRow"><span>marcato.com/store/</span><input id="obStoreSlug" placeholder="ada-fashion-house" oninput="obCheckSlug()"></div>
         <div class="obHint" id="obSlugHint"></div>
       </div>
       <div class="fld"><label>Store Description</label><textarea id="obStoreDesc" placeholder="What do you sell? What makes your store worth following?"></textarea></div>
@@ -387,13 +387,13 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
     <div class="obStep" data-step="5" style="display:none">
       <p class="obIntro">Please review and accept the following before applying.</p>
       <div class="obTermsBox">
-        <p><b>Seller Terms.</b> You're entering a marketplace agreement with Maccato as an independent seller; you're responsible for the products you list, their accuracy, and fulfilling orders on time.</p>
+        <p><b>Seller Terms.</b> You're entering a marketplace agreement with Marcato as an independent seller; you're responsible for the products you list, their accuracy, and fulfilling orders on time.</p>
         <p><b>Marketplace Rules.</b> You'll deal with customers professionally, keep stock levels accurate, and won't manipulate reviews, pricing, or search ranking.</p>
         <p><b>Product/Listing Policies.</b> Listings must be accurate, use images you have rights to, and correctly categorised.</p>
         <p><b>Prohibited-Products Policy.</b> No counterfeit, stolen, hazardous, weapons, or items illegal to sell in Nigeria.</p>
-        <p><b>Returns/Refund Requirements.</b> You'll honour Maccato's baseline returns window and process refunds promptly for valid claims.</p>
-        <p><b>Payout/Commission Terms.</b> Maccato deducts an agreed commission per sale before payout to your verified bank account.</p>
-        <p><b>Privacy/Verification Consent.</b> You consent to Maccato verifying your identity and bank details as part of onboarding, and processing your data to run your seller account.</p>
+        <p><b>Returns/Refund Requirements.</b> You'll honour Marcato's baseline returns window and process refunds promptly for valid claims.</p>
+        <p><b>Payout/Commission Terms.</b> Marcato deducts an agreed commission per sale before payout to your verified bank account.</p>
+        <p><b>Privacy/Verification Consent.</b> You consent to Marcato verifying your identity and bank details as part of onboarding, and processing your data to run your seller account.</p>
       </div>
       <label class="obCheckRow"><input type="checkbox" class="obTermCheck" data-term="seller_terms"><span>I accept the Seller Terms</span></label>
       <label class="obCheckRow"><input type="checkbox" class="obTermCheck" data-term="marketplace_rules"><span>I accept the Marketplace Rules</span></label>
@@ -436,7 +436,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 <div id="pendingWrap" class="centerWrap" style="display:none">
   <div class="cbox">
     <div class="badge-pending"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Under review</div>
-    <div class="ctitle">Your Maccato seller application is under review</div>
+    <div class="ctitle">Your Marcato seller application is under review</div>
     <div class="csub">We'll notify you once an admin approves your store.</div>
     <div id="pendingChecklist" class="obStatusCard" style="text-align:left"></div>
     <button class="ghostBtn" id="pendingSignOut">Sign out</button>
@@ -467,7 +467,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 <!-- 5. DASHBOARD APP -->
 <div id="app">
   <div id="vhdr">
-    <h1 id="vShopName">Maccato Vendor</h1>
+    <h1 id="vShopName">Marcato Vendor</h1>
     <button class="vhbtn" id="vBellBtn" aria-label="Notifications" onclick="openNotifPanel()" style="position:relative">
       <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="18" height="18"><path d="M8.35179 20.2418C9.19288 21.311 10.5142 22 12 22C13.4858 22 14.8071 21.311 15.6482 20.2418C13.2264 20.57 10.7736 20.57 8.35179 20.2418Z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="M18.7491 9.7041V9C18.7491 5.13401 15.7274 2 12 2C8.27256 2 5.25087 5.13401 5.25087 9V9.7041C5.25087 10.5491 5.00972 11.3752 4.5578 12.0782L3.45036 13.8012C2.43882 15.3749 3.21105 17.5139 4.97036 18.0116C9.57274 19.3134 14.4273 19.3134 19.0296 18.0116C20.789 17.5139 21.5612 15.3749 20.5496 13.8012L19.4422 12.0782C18.9903 11.3752 18.7491 10.5491 18.7491 9.7041ZM12 5.25C12.4142 5.25 12.75 5.58579 12.75 6V10C12.75 10.4142 12.4142 10.75 12 10.75C11.5858 10.75 11.25 10.4142 11.25 10V6C11.25 5.58579 11.5858 5.25 12 5.25Z" fill="currentColor"/></svg>
       <span id="vBellDot" class="bellDot" style="display:none"></span>
@@ -616,7 +616,7 @@ function setAuthMode(mode) {
   const up = mode === 'signup';
   $a('tabSignUp').classList.toggle('on', up);
   $a('tabSignIn').classList.toggle('on', !up);
-  $a('authTitle').textContent = up ? 'Sell on Maccato' : 'Welcome back';
+  $a('authTitle').textContent = up ? 'Sell on Marcato' : 'Welcome back';
   $a('authSub').textContent = up ? 'Create your seller account, then tell us about your store.' : 'Sign in to manage your store, products and orders.';
   $a('authPass2Fld').style.display = up ? '' : 'none';
   $a('authSubmit').textContent = up ? 'Create account' : 'Sign in';
@@ -877,7 +877,7 @@ function obCheckSlug() {
     try {
       const res = await fetch('/api/check-slug', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug, excludeVendorId: session.user.id }) });
       const json = await res.json();
-      hint.textContent = json.available ? `maccato.com/store/${slug} is available` : 'That URL is taken — try another';
+      hint.textContent = json.available ? `marcato.com/store/${slug} is available` : 'That URL is taken — try another';
       hint.className = 'obHint ' + (json.available ? 'ok' : 'err');
     } catch (e) { hint.textContent = ''; }
   }, 400);
@@ -1005,7 +1005,7 @@ async function obVerifyBank() {
 /* ===== REVIEW ===== */
 function obRenderReview() {
   const g = id => document.getElementById(id).value;
-  document.getElementById('obRevStore').innerHTML = `<b>${esc(g('obStoreName') || '-')}</b><br>maccato.com/store/${esc(g('obStoreSlug') || '-')}<br>${esc(g('obStoreDesc') || '')}`;
+  document.getElementById('obRevStore').innerHTML = `<b>${esc(g('obStoreName') || '-')}</b><br>marcato.com/store/${esc(g('obStoreSlug') || '-')}<br>${esc(g('obStoreDesc') || '')}`;
   document.getElementById('obRevPersonal').innerHTML = `${esc(g('obTitle'))} ${esc(g('obFirstName'))} ${esc(g('obMiddleName'))} ${esc(g('obLastName'))}<br>DOB: ${esc(g('obDob') || '-')} · ${esc(g('obGender') || '-')}`;
   document.getElementById('obRevAddress').innerHTML = `${esc(g('obAddress') || '-')}<br>${esc(g('obCity') || '')}, ${esc(g('obLga') || '')}, ${esc(g('obState') || '')}<br>${esc(g('obLandmark') || '')}`;
   const idStatus = document.getElementById('obIdStatus').textContent ? 'Submitted' : 'Not started';
@@ -1179,9 +1179,9 @@ function syncRmBgAutoCheck() {
 document.getElementById('pRmBg').addEventListener('change', () => { pRmBgTouched = true; });
 document.getElementById('pCat').addEventListener('change', syncRmBgAutoCheck);
 
-const pPicker = new Pcx.MultiImagePicker(document.getElementById('pPicker'), { max: 8, label: 'Add photos' });
+const pPicker = new Pcx.MultiImagePicker(document.getElementById('pPicker'), { max: 8, label: 'Add photos', onChange: () => pAttrs.refreshColorImages() });
 const sLogoPicker = new Pcx.MultiImagePicker(document.getElementById('sLogoPicker'), { max: 1, label: 'Upload logo' });
-const pAttrs = new Pcx.ProductAttributes(document.getElementById('pAttrs'));
+const pAttrs = new Pcx.ProductAttributes(document.getElementById('pAttrs'), { getImages: () => pPicker.getImages() });
 const pBlocks = new Pcx.DescriptionBlocks(document.getElementById('pBlocks'), { onError: m => toast(m, true) });
 /* Brand: search brands already saved, then logo.dev (through /api/brand-search); a brand nobody has listed yet can be added with its own logo. */
 const brandPicker = new Pcx.BrandPicker(document.getElementById('pBrandBox'), {

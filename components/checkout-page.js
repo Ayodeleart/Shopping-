@@ -43,7 +43,7 @@
     var groups = {}, order = [];
     D.cart().forEach(function (it) {
       var k = it.vendor_id || 'store';
-      if (!groups[k]) { groups[k] = { id: k, name: k === 'store' ? 'Maccato' : D.sellerName(k), items: [], subtotal: 0 }; order.push(k); }
+      if (!groups[k]) { groups[k] = { id: k, name: k === 'store' ? 'Marcato' : D.sellerName(k), items: [], subtotal: 0 }; order.push(k); }
       groups[k].items.push(it); groups[k].subtotal += it.price * it.qty;
     });
     return order.map(function (k) { return groups[k]; });
@@ -157,7 +157,7 @@
         (S.loading ? '<div class="ck-load">Loading your details...</div>' :
           renderDelivery() + renderItems() + renderPayment() + renderSummary() +
           (S.error ? '<div class="ck-warn">' + esc(S.error) + '</div>' : '') +
-          '<div class="ck-fine">By paying you agree to Maccato\'s terms. Each seller is responsible for their own products.</div>') +
+          '<div class="ck-fine">By paying you agree to Marcato\'s terms. Each seller is responsible for their own products.</div>') +
       '</div>' +
       '<footer class="ck-bar"><div class="ck-bar__t"><span>Total</span><b>' + D.fmt(t.total) + '</b></div>' +
         '<button class="ck-pay" data-a="pay"' + (ready ? '' : ' disabled') + '>' + (S.busy ? 'Starting payment...' : 'Pay ' + D.fmt(t.total)) + '</button></footer>';
@@ -207,7 +207,7 @@
     try {
       var h = { 'Content-Type': 'application/json' }; if (token()) h.Authorization = 'Bearer ' + token();
       var r = await fetch('/api/checkout', { method: 'POST', headers: h, body: JSON.stringify({
-        items: D.cart().map(function (x) { return { product_id: x.id, qty: x.qty }; }), method: S.method,
+        items: D.cart().map(function (x) { return { product_id: x.id, qty: x.qty, size: x.size || null, color: x.color || null }; }), method: S.method,
         delivery: { name: d.name, phone: d.phone, email: d.email, line1: d.line1, city: d.city, state: d.state, lat: d.lat, lng: d.lng, display_name: d.display_name } }) });
       var j = await r.json();
       if (!r.ok) throw new Error(j.error || 'Could not start the payment');

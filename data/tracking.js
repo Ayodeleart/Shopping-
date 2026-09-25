@@ -106,7 +106,7 @@
     var r = await Promise.all([
       sb.from('orders').select('id,order_number,created_at,customer_name,phone,address,total,items,payment_status,fulfillment_status').eq('id', orderId).maybeSingle(),
       sb.from('shipments').select('*').eq('order_id', orderId).order('id'),
-      sb.from('order_items').select('id,shipment_id,product_id,name,price,qty').eq('order_id', orderId),
+      sb.from('order_items').select('*').eq('order_id', orderId),
       sb.from('tracking_events').select('*').eq('order_id', orderId).order('occurred_at').order('id'),
       sb.from('carriers').select('*').order('sort_order')
     ]);

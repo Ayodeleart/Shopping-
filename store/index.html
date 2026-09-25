@@ -9,11 +9,11 @@
      once the vendor loads. A crawler that doesn't execute JS sees this fallback
      only — true per-seller server-rendered metadata would need a server-side
      route, which this static-hosting setup doesn't have (see README). -->
-<title>Store · Maccato</title>
-<meta name="description" content="Shop this seller's products on Maccato.">
+<title>Store · Marcato</title>
+<meta name="description" content="Shop this seller's products on Marcato.">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Store · Maccato">
-<meta property="og:description" content="Shop this seller's products on Maccato.">
+<meta property="og:title" content="Store · Marcato">
+<meta property="og:description" content="Shop this seller's products on Marcato.">
 <meta property="og:image" content="/store-logo.png">
 <link rel="icon" type="image/png" sizes="32x32" href="/app-icon-32.png">
 <link rel="stylesheet" href="/components/theme-tokens.css">
@@ -24,6 +24,8 @@
 <script src="/components/product-card.js"></script>
 <script src="/components/seller-brand.js"></script>
 <script src="/components/fashion.js"></script>
+<link rel="stylesheet" href="/components/variants.css">
+<script src="/components/variants.js"></script>
 </head>
 <body data-theme="light">
 
@@ -31,7 +33,7 @@
 
 <div id="storeRoot" style="display:none">
   <div id="topBar">
-    <a id="topBack" href="/" aria-label="Back to Maccato">
+    <a id="topBack" href="/" aria-label="Back to Marcato">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
     </a>
     <div id="topStoreName">Store</div>
@@ -78,14 +80,14 @@
     <div id="loadMoreWrap" style="display:none"><button id="loadMoreBtn">Load more</button></div>
   </div>
 
-  <footer class="storeFooter">Sold on <a href="/">Maccato</a></footer>
+  <footer class="storeFooter">Sold on <a href="/">Marcato</a></footer>
 </div>
 
 <div id="stateScreen">
   <svg id="stateIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
   <div id="stateTitle">This store isn&rsquo;t available</div>
   <div id="stateMsg">It may have moved, or the seller isn&rsquo;t accepting visitors right now.</div>
-  <a id="stateHome" href="/">Go to Maccato</a>
+  <a id="stateHome" href="/">Go to Marcato</a>
 </div>
 
 <div id="toast"></div>

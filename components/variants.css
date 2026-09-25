@@ -1,0 +1,30 @@
+/* Pcx.VariantSheet — one bottom sheet, shared by every "Add to Cart" surface (Home card, search, favourites). */
+#variantSheet{position:fixed;inset:0;z-index:960;visibility:hidden;pointer-events:none}
+#variantSheet.open{visibility:visible;pointer-events:auto}
+#variantSheet .vsBg{position:absolute;inset:0;background:rgba(0,0,0,.45);opacity:0;transition:opacity .2s}
+#variantSheet.open .vsBg{opacity:1}
+#variantSheet .vsCard{
+  position:absolute;left:0;right:0;bottom:0;max-height:82vh;overflow-y:auto;
+  background:var(--card,#fff);border-radius:16px 16px 0 0;
+  padding:10px 16px calc(16px + env(safe-area-inset-bottom,0px));
+  transform:translateY(100%);transition:transform .25s cubic-bezier(.2,.9,.3,1);
+}
+#variantSheet.open .vsCard{transform:translateY(0)}
+.vsGrab{width:36px;height:4px;border-radius:2px;background:var(--border);margin:2px auto 10px}
+.vsClose{position:absolute;top:10px;right:12px;width:30px;height:30px;border-radius:50%;background:var(--bg2);color:var(--txt2);font-size:20px;line-height:1;display:flex;align-items:center;justify-content:center}
+.vsHead{display:flex;gap:12px;align-items:center;padding-bottom:12px;border-bottom:1px solid var(--border);margin-bottom:12px}
+.vsImg{width:56px;height:56px;border-radius:8px;object-fit:cover;background:var(--bg2);flex-shrink:0}
+.vsName{font-weight:700;font-size:14px;line-height:1.3;margin-bottom:3px}
+.vsPrice{font-weight:800;color:var(--red);font-size:14px}
+.vsGroup{margin-bottom:14px}
+.vsGroupLbl{font-size:12.5px;font-weight:700;color:var(--txt2);margin-bottom:8px}
+.vsChips{display:flex;flex-wrap:wrap;gap:8px}
+.vsChip{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--card);font-size:13px;font-weight:600;color:var(--txt);min-height:38px}
+.vsChip.on{border-color:var(--red);color:var(--red);background:color-mix(in srgb,var(--red) 7%,var(--card))}
+.vsChip:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+.vsDot{width:14px;height:14px;border-radius:50%;border:1px solid rgba(0,0,0,.25);flex-shrink:0}
+.vsFoot{padding-top:4px}
+.vsAdd{width:100%;padding:14px;border-radius:10px;background:var(--red);color:#fff;font-weight:700;font-size:15px;min-height:46px}
+.vsAdd:disabled{opacity:.6}
+html.vsLock{overflow:hidden}
+@media (prefers-reduced-motion:reduce){#variantSheet .vsCard,#variantSheet .vsBg{transition:none}}

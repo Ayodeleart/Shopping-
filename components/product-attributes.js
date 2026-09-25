@@ -41,9 +41,12 @@
                   '7-8 years', '9-10 years', '11-12 years', '13-14 years'];
 
   var COLORS = {
-    Black: '#111111', White: '#ffffff', Grey: '#9ca3af', Red: '#dc2626', Pink: '#ec4899', Orange: '#f97316',
-    Yellow: '#facc15', Green: '#16a34a', Blue: '#2563eb', Navy: '#1e3a5f', Purple: '#7c3aed', Brown: '#7c4a21',
-    Beige: '#d6c3a3', Cream: '#f5ecd7', Gold: '#d4af37', Silver: '#c0c0c0',
+    Black: '#111111', White: '#ffffff', Grey: '#9ca3af', 'Charcoal': '#374151', Red: '#dc2626', Maroon: '#7f1d1d',
+    Pink: '#ec4899', 'Hot Pink': '#db2777', Orange: '#f97316', Peach: '#ffcba4', Yellow: '#facc15', Mustard: '#c9a227',
+    Lime: '#84cc16', Green: '#16a34a', 'Olive': '#556b2f', Teal: '#0d9488', Turquoise: '#14b8a6', Blue: '#2563eb',
+    'Sky Blue': '#38bdf8', Navy: '#1e3a5f', Indigo: '#4338ca', Purple: '#7c3aed', Lavender: '#c4b5fd', Brown: '#7c4a21',
+    Tan: '#c19a6b', Beige: '#d6c3a3', Cream: '#f5ecd7', Khaki: '#bdb76b', Gold: '#d4af37', Silver: '#c0c0c0',
+    Bronze: '#8c5e2a', Denim: '#3b5b7a', Coral: '#ff7f50', Mint: '#98ff98', Burgundy: '#800020',
     Multicolor: 'linear-gradient(135deg,#ef4444,#facc15,#22c55e,#3b82f6)'
   };
   var COLOR_NAMES = Object.keys(COLORS);
@@ -313,6 +316,79 @@
   }
 
   /* ------------------------------------------------------------------ chips (multi-select) */
+  /* Same chip picker as chipGroup(), plus: for every selected colour, a row of the product's own already-uploaded
+     photos so the vendor/admin can say "this photo IS the Black one" — no separate colour-photo upload, no fake
+     images. cfg.colorImages is the {colourName: photoUrl} map, mutated in place (same object collect() reads). */
+  function colorGroup(cfg) {
+    var wrap = h('div');
+    var list = h('div', { class: 'pa-chips' });
+    var imgWrap = h('div', { class: 'pa-colorimgs' });
+    wrap.appendChild(list); wrap.appendChild(imgWrap);
+
+    function paintImages() {
+      imgWrap.textContent = '';
+      Object.keys(cfg.colorImages).forEach(function (c) { if (cfg.values.indexOf(c) < 0) delete cfg.colorImages[c]; }); // colour removed -> forget its photo
+      if (!cfg.values.length) return;
+      var photos = (cfg.getImages ? cfg.getImages() : []) || [];
+      cfg.values.forEach(function (c) {
+        var row = h('div', { class: 'pa-colorimg-row' });
+        var lbl = h('div', { class: 'pa-colorimg-lbl' }, [
+          h('span', { class: 'pa-dot', style: 'background:' + (cfg.swatches[c] || '#ccc') }), c + ' photo:'
+        ]);
+        row.appendChild(lbl);
+        if (!photos.length) {
+          row.appendChild(h('div', { class: 'pa-colorimg-hint' }, ['Add photos above, then tap one here to link it to ' + c]));
+        } else {
+          var thumbs = h('div', { class: 'pa-colorimg-thumbs' });
+          photos.forEach(function (url) {
+            var on = cfg.colorImages[c] === url;
+            thumbs.appendChild(h('button', {
+              type: 'button', class: 'pa-colorimg-thumb' + (on ? ' on' : ''), style: 'background-image:url(' + JSON.stringify(url).replace(/"/g, "'") + ')',
+              'aria-pressed': on ? 'true' : 'false', 'aria-label': (on ? 'Unlink' : 'Link') + ' this photo from ' + c,
+              onclick: function () { cfg.colorImages[c] = on ? null : url; if (!cfg.colorImages[c]) delete cfg.colorImages[c]; paintImages(); }
+            }));
+          });
+          row.appendChild(thumbs);
+        }
+        imgWrap.appendChild(row);
+      });
+    }
+
+    function paint() {
+      list.textContent = '';
+      var all = cfg.options.slice();
+      cfg.values.forEach(function (v) { if (all.indexOf(v) < 0) all.push(v); });
+      all.forEach(function (opt) {
+        var on = cfg.values.indexOf(opt) >= 0;
+        list.appendChild(h('button', {
+          type: 'button', class: 'pa-chip' + (on ? ' on' : ''), 'aria-pressed': on ? 'true' : 'false',
+          onclick: function () {
+            var i = cfg.values.indexOf(opt);
+            if (i >= 0) cfg.values.splice(i, 1); else cfg.values.push(opt);
+            paint(); paintImages();
+          }
+        }, [h('span', { class: 'pa-dot', style: 'background:' + cfg.swatches[opt] }), opt]));
+      });
+    }
+    paint(); paintImages();
+
+    var inp = h('input', { type: 'text', maxlength: 30, placeholder: cfg.placeholder || 'Add your own' });
+    var add = function () {
+      var v = inp.value.trim();
+      if (!v) return;
+      var lower = v.toLowerCase();
+      var existing = cfg.options.concat(cfg.values).filter(function (o) { return o.toLowerCase() === lower; })[0];
+      var val = existing || v;
+      if (cfg.values.indexOf(val) < 0) cfg.values.push(val);
+      inp.value = '';
+      paint(); paintImages();
+    };
+    inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); add(); } });
+    wrap.appendChild(h('div', { class: 'pa-add' }, [inp, h('button', { type: 'button', class: 'pa-addbtn', onclick: add }, ['Add'])]));
+    wrap.refresh = paintImages;      // called after new photos are uploaded (see refreshColorImages())
+    return wrap;
+  }
+
   function chipGroup(cfg) {
     var wrap = h('div');
     var list = h('div', { class: 'pa-chips' });
@@ -358,6 +434,9 @@
   }
 
   /* ------------------------------------------------------------------ ProductAttributes */
+  /* opts.getImages(): () => string[] — the product's own already-uploaded photos (e.g. () => pPicker.getImages()),
+     used only so the colours picker can link an existing photo to a colour. Optional: without it colours work exactly
+     as before, just with no photo-linking row. */
   function ProductAttributes(root, opts) {
     this.root = root;
     this.o = Object.assign({ templates: TEMPLATES }, opts || {});
@@ -453,13 +532,19 @@
     var self = this;
     var control;
     switch (f.type) {
-      case 'chips': case 'colors': {
+      case 'chips': {
         if (!Array.isArray(this.state[f.key])) this.state[f.key] = [];
-        control = chipGroup({
-          options: f.options || [], values: this.state[f.key], allowCustom: f.type === 'colors' || !!f.allowCustom,
-          swatches: f.type === 'colors' ? COLORS : null,
-          placeholder: f.type === 'colors' ? 'Other colour' : 'Other'
+        control = chipGroup({ options: f.options || [], values: this.state[f.key], allowCustom: !!f.allowCustom, placeholder: 'Other' });
+        break;
+      }
+      case 'colors': {
+        if (!Array.isArray(this.state[f.key])) this.state[f.key] = [];
+        if (!this.state.colorImages || typeof this.state.colorImages !== 'object') this.state.colorImages = {};
+        control = colorGroup({
+          options: f.options || [], values: this.state[f.key], colorImages: this.state.colorImages,
+          swatches: COLORS, placeholder: 'Other colour', getImages: self.o.getImages
         });
+        self._colorCtl = control;
         break;
       }
       case 'sizes': control = this._sizes(f); break;
@@ -574,8 +659,17 @@
     });
     var extra = cleanPairs(state.extra);
     if (extra.length) out.extra = extra;
+    if (state.colorImages && out.colors) {
+      var ci = {};
+      out.colors.forEach(function (c) { if (state.colorImages[c]) ci[c] = state.colorImages[c]; });
+      if (Object.keys(ci).length) out.colorImages = ci;
+    }
     return out;
   };
+
+  /* Call after the product's photos change (a photo is added/removed/reordered in the picker) so the colour ->
+     photo links stay pickable straight away, without needing to switch tabs and back. Harmless if colours aren't used. */
+  P.refreshColorImages = function () { if (this._colorCtl && this._colorCtl.refresh) this._colorCtl.refresh(); };
 
   P.validate = function () {
     var t = this.o.templates[this.type] || this.o.templates.general;
@@ -609,6 +703,7 @@
     return rows.filter(function (r) { return r.value; });
   };
 
+  ProductAttributes.COLORS = COLORS;          // name -> CSS colour; the product page uses it for swatches (Pcx.Variants.swatch)
   ProductAttributes.detect = detectType;
   ProductAttributes.TEMPLATES = TEMPLATES;
 

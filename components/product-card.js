@@ -1,5 +1,5 @@
 /* components/product-card.js
- * The one product-card renderer for every Maccato surface.
+ * The one product-card renderer for every Marcato surface.
  * Moved out of index.html's inline <script> so /store/[slug] (and any
  * future surface) can render the exact same card instead of a second
  * copy of this logic, per the "don't duplicate product-card logic"
@@ -7,7 +7,7 @@
  *
  * Host page contract (already true of index.html before this file
  * existed — nothing here changes that contract):
- *   - `cart`         array of {id, qty, ...} — current cart lines
+ *   - `cart`         array of {id, qty, size, color, ...} — current cart lines (size / color null when the product has none)
  *   - `favs`         a Set of favourited product ids
  *   - `ratingMap`    { [product_id]: {avg, n} } real rating rows only
  *   - `fmt(n)`       formats a price for display
@@ -35,8 +35,43 @@ function starsHTML(avg, px) {
 
 /* ── PRODUCT CARD (JUMIA STYLE) ───────────────────── */
 /* Add to Cart turns into a - 1 + stepper once the product is in the cart (see ctlHTML / syncCardCtls). */
+function plainLine(id) { return cart.find(x => x.id === id && !x.size && !x.color); }
+
+/* Colour swatches on a card (real colours only, from the product's own attributes.colors — see Pcx.Variants).
+   Tapping one selects it and, if the vendor/admin linked one of the product's own photos to that colour, swaps the
+   card's photo to it (Pcx.Variants.image); it never opens the product page or the cart. The "Add to Cart" button
+   still opens the shared bottom sheet to make the pick official and put it in the cart. */
+const cardColorPick = {};
+function swatchHTML(p) {
+  const cols = (window.Pcx && Pcx.Variants) ? Pcx.Variants.colors(p) : [];
+  if (!cols.length) return '';
+  const picked = cardColorPick[p.id];
+  return `<div class="pcSwatches" onclick="event.stopPropagation()">${cols.map(c => {
+    const sw = Pcx.Variants.swatch(c);
+    return `<button type="button" class="pcSwatch${picked === c ? ' on' : ''}" aria-label="${esc(c)}" aria-pressed="${picked === c}" style="${sw ? `background:${esc(sw)}` : ''}" data-pcid="${num(p.id)}" onclick="pickCardColor(${num(p.id)},'${esc(c).replace(/'/g, "\\'")}')"></button>`;
+  }).join('')}</div>`;
+}
+function pickCardColor(id, c) {
+  cardColorPick[id] = cardColorPick[id] === c ? null : c;
+  document.querySelectorAll(`.pcSwatch[data-pcid="${id}"]`).forEach(b => {
+    const on = b.getAttribute('aria-label') === cardColorPick[id];
+    b.classList.toggle('on', on); b.setAttribute('aria-pressed', on);
+  });
+  /* if the vendor/admin linked a photo to this colour, show it; otherwise stay on the product's normal photo
+     (never a fabricated one) — see attributes.colorImages, set from the upload form's colour picker.
+     Every card for this product on the page updates (a product can appear more than once, e.g. Home + search). */
+  const p = (typeof allProds !== 'undefined' ? allProds : (window.allProds || [])).find(x => x.id === id) || (window.state && window.state.byId && window.state.byId[id]);
+  const linked = p && cardColorPick[id] && window.Pcx && Pcx.Variants ? Pcx.Variants.image(p, cardColorPick[id]) : null;
+  document.querySelectorAll(`.pcCtl[data-pid="${id}"]`).forEach(ctl => {
+    const img = ctl.closest('.pcard')?.querySelector('.pcImg img');
+    if (!img) return;
+    if (!img.dataset.origSrc) img.dataset.origSrc = img.src;
+    img.src = linked || img.dataset.origSrc;
+  });
+}
+
 function ctlHTML(id) {
-  const it = cart.find(x => x.id === id);
+  const it = plainLine(id);
   if (!it) return `<button class="pcAdd" onclick="event.stopPropagation();addToCart(${num(id)},this)">Add to Cart</button>`;
   return `
     <div class="pcStep" onclick="event.stopPropagation()">
@@ -49,15 +84,15 @@ function ctlHTML(id) {
 /* every card of a product (home grid, rails, category page, storefront ...) follows the cart */
 function syncCardCtls() {
   document.querySelectorAll('.pcCtl').forEach(el => {
-    const id = Number(el.dataset.pid), it = cart.find(x => x.id === id), q = String(it ? it.qty : 0);
-    if (el.dataset.q === q) return;
+    const id = Number(el.dataset.pid), it = plainLine(id), q = String(it ? it.qty : 0);
+    if (el.dataset.q === q) return;      /* variant products never grow a "plain" line, so this stays Add to Cart */
     el.dataset.q = q;
     el.innerHTML = ctlHTML(id);
   });
 }
 
 function cardQty(id, d, src) {
-  const it = cart.find(x => x.id === id);
+  const it = plainLine(id);
   if (!it) return;
   if (d > 0 && src) flyToCart(src);      /* before the cart updates: the card controls re-render and detach this button */
   it.qty += d;
@@ -71,8 +106,7 @@ function cardHTML(p) {
   const tot = p.max_stock || (p.stock ? p.stock + 15 : 0);
   const pct = tot > 0 ? Math.min(100, Math.round(p.stock/tot*100)) : 0;
   const r = ratingMap[p.id];
-  const inCart = cart.find(x => x.id === p.id);
-  const seller = (p.vendor_id && typeof vendorsMap !== 'undefined' && vendorsMap[p.vendor_id]) ? vendorsMap[p.vendor_id] : null;
+  const inCart = plainLine(p.id);
 
   return `
     <div class="pcard" onclick="openProduct(${num(p.id)})">
@@ -81,14 +115,12 @@ function cardHTML(p) {
           ? `<img src="${safeUrl(p.image_url)}" alt="${esc(p.name)}" loading="lazy">`
           : `<div class="noImgPh"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>`}
         ${disc > 0 ? `<span class="discBadge">-${disc}%</span>` : ''}
+        <button class="favBtn${favs.has(p.id) ? ' on' : ''}" data-fav="${esc(p.id)}" aria-label="Save ${esc(p.name)} to favorites" aria-pressed="${favs.has(p.id)}" onclick="event.stopPropagation();toggleFav(${num(p.id)})">${HEART_SVG}</button>
       </div>
       <div class="pcBody">
-        ${seller ? `<div class="pcSeller">${Pcx.SellerBrand.chip(seller, { size: 14 })}</div>` : ''}
         <div class="pcName">${esc(p.name)}</div>
-        <div class="pcPriceRow">
-          <div class="pcPrice">${fmt(p.price)}</div>
-          <button class="favBtn${favs.has(p.id) ? ' on' : ''}" data-fav="${esc(p.id)}" aria-label="Save to favorites" onclick="event.stopPropagation();toggleFav(${num(p.id)})">${HEART_SVG}</button>
-        </div>
+        <div class="pcPrice">${fmt(p.price)}</div>
+        ${swatchHTML(p)}
         ${disc > 0 ? `<div class="pcWas">${fmt(p.original_price)}</div>` : ''}
         ${r && r.n > 0 ? `<div class="pcRate">${starsHTML(r.avg, 12)}<span>(${esc(r.n)})</span></div>` : ''}
         ${p.stock > 0 ? `

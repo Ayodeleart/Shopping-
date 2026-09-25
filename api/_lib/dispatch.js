@@ -28,7 +28,7 @@ const fmtDate = d => {
 };
 
 async function loadContext(db, n, settings, siteUrl) {
-  const store = settings.storeName || 'Maccato';
+  const store = settings.storeName || 'Marcato';
   const [{ data: ev }, { data: order }, { data: ships }, { data: items }, { data: carriers }] = await Promise.all([
     db.from('tracking_events').select('*').eq('id', n.tracking_event_id).maybeSingle(),
     db.from('orders').select('id,order_number,address').eq('id', n.order_id).maybeSingle(),

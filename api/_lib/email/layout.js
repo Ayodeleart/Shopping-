@@ -1,4 +1,4 @@
-// Shared building blocks for every Maccato/Marcato email. Nothing in here knows about a specific order event:
+// Shared building blocks for every Marcato/Marcato email. Nothing in here knows about a specific order event:
 // templates.js combines these pieces, so the brand (logo, colours, footer) is defined once.
 // Everything that comes from the database goes through esc(); emails are plain inline-styled tables for mail clients.
 

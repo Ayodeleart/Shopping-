@@ -239,7 +239,7 @@ test('15/16 ticket endpoint: confirm creates it once; refusing = no call = no ti
 /* ---------------- assistant loop ---------------- */
 function scripted(steps) { let i = 0; const seen = []; const fn = async o => { seen.push(o); const s = steps[Math.min(i++, steps.length - 1)]; return { message: typeof s === 'function' ? s(o) : s }; }; fn.seen = seen; return fn; }
 const call = (name, args, id) => ({ role: 'assistant', content: null, tool_calls: [{ id: id || 'c' + Math.random(), type: 'function', function: { name, arguments: JSON.stringify(args) } }] });
-const deps = (chatImpl, user) => ({ db: makeDb(tables()), user: user || null, siteUrl: 'https://shop.test', storeInfo: { storeName: 'Maccato', currency: '₦' }, chatImpl });
+const deps = (chatImpl, user) => ({ db: makeDb(tables()), user: user || null, siteUrl: 'https://shop.test', storeInfo: { storeName: 'Marcato', currency: '₦' }, chatImpl });
 const body = (text, extra) => Object.assign({ messages: [{ role: 'user', content: text }], language: 'en' }, extra || {});
 
 test('6/7 budget search end to end: cards use database values, not model text', async () => {
