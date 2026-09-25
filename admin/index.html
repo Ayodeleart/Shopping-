@@ -780,7 +780,7 @@ const brandPicker = new Pcx.BrandPicker(document.getElementById('pBrandBox'), {
   upload: file => uploadImage(file, 'products', 'pImgProgBar', 'pImgProg', true)
 });
 const catPicker = new Pcx.CategoryPicker(document.getElementById('pCat'), { onChange: () => pAttrs.setCategory(catPicker.names()) });
-const pAttrs = new Pcx.ProductAttributes(document.getElementById('pAttrs'), { getImages: () => pPicker.getImages() });
+const pAttrs = new Pcx.ProductAttributes(document.getElementById('pAttrs'), { getImages: () => pPicker.getLinkable() });
 
 /* AI listing assistant: fills a DRAFT into the form below; the admin edits it and presses Save (nothing is published automatically) */
 let editProdAttrs = null;
@@ -881,6 +881,7 @@ async function saveProduct() {
       }
       return uploadImage(f, 'products', 'pImgProgBar', 'pImgProg', transparent);
     });
+    pAttrs.remapColorImages(pPicker.getUploadRemap());
 
     if (removeBg && beautyCat && urls.length) {
       showLoad('Removing background...');

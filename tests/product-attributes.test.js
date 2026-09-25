@@ -84,3 +84,70 @@ test('load() round-trips colorImages exactly as saved, and clear() drops it', ()
   attrs.load({}, 'Dresses');
   assert.equal(attrs.collect().colorImages, undefined);
 });
+
+test('a colour can have several photos: tap order sets colorGallery order, first tap stays the primary colorImages entry', () => {
+  const photos = ['https://x/front.jpg', 'https://x/back.jpg', 'https://x/side.jpg'];
+  const { attrs } = boot(() => photos);
+  attrs.load({}, 'Dresses');
+  colourChip(attrs.root).click();                                     // select Black
+  const thumbs = () => [...attrs.root.querySelectorAll('.pa-colorimg-thumb')];
+  thumbs()[1].click();                                                // back first (becomes primary)
+  thumbs()[0].click();                                                // then front
+  assert.deepEqual(j(attrs.collect().colorGallery), { Black: [photos[1], photos[0]] }, 'gallery keeps tap order');
+  assert.equal(attrs.collect().colorImages.Black, photos[1], 'primary is the first photo tapped, for the storefront');
+  assert.ok(thumbs()[1].classList.contains('primary'), 'primary thumb is marked');
+  thumbs()[1].click();                                                // untap the primary photo
+  assert.deepEqual(j(attrs.collect().colorGallery), { Black: [photos[0]] }, 'removing a linked photo leaves the rest, re-ordered');
+  assert.equal(attrs.collect().colorImages.Black, photos[0]);
+});
+
+test('remapColorImages() moves a colour link from a photo\'s temporary preview url to its real uploaded url', () => {
+  let photos = ['blob:temp-1'];
+  const { attrs } = boot(() => photos);
+  attrs.load({}, 'Dresses');
+  colourChip(attrs.root).click();
+  attrs.root.querySelector('.pa-colorimg-thumb').click();             // link the still-local photo
+  assert.equal(attrs.collect().colorImages.Black, 'blob:temp-1');
+  photos = ['https://cdn.example/real-1.jpg'];                        // photo just finished uploading
+  attrs.remapColorImages({ 'blob:temp-1': 'https://cdn.example/real-1.jpg' });
+  assert.equal(attrs.collect().colorImages.Black, 'https://cdn.example/real-1.jpg', 'the link survived the upload');
+});
+
+test('load() migrates a legacy single-photo-per-colour save into a one-photo colorGallery', () => {
+  const { attrs } = boot(() => ['https://x/1.jpg', 'https://x/2.jpg']);
+  attrs.load({ colors: ['Black'], colorImages: { Black: 'https://x/1.jpg' } }, 'Dresses');
+  assert.deepEqual(j(attrs.collect().colorGallery), { Black: ['https://x/1.jpg'] });
+  attrs.root.querySelectorAll('.pa-colorimg-thumb')[1].click();       // add a second photo on top of the migrated one
+  assert.deepEqual(j(attrs.collect().colorGallery), { Black: ['https://x/1.jpg', 'https://x/2.jpg'] });
+  assert.equal(attrs.collect().colorImages.Black, 'https://x/1.jpg', 'primary is unchanged');
+});
+
+test('mixed / multi-colour products: a combination is stored as typed, not forced into a generic value', () => {
+  const { attrs } = boot();
+  attrs.load({}, 'Dresses');
+  const colourFld = [...attrs.root.querySelectorAll('.pa-fld')].find(f => f.querySelector('label').textContent.startsWith('Colours'));
+  const input = colourFld.querySelector('.pa-add input');
+  input.value = 'Black/White';
+  colourFld.querySelector('.pa-add .pa-addbtn').click();
+  assert.ok(attrs.collect().colors.includes('Black/White'), 'the combined colour value is preserved exactly');
+});
+
+test('materials: clothing offers a tappable, category-relevant material list (not a bare text box) and still allows a custom value', () => {
+  const { attrs } = boot();
+  attrs.load({}, 'Dresses');                                          // -> clothing template
+  const fields = [...attrs.root.querySelectorAll('.pa-fld')];
+  const materialFld = fields.find(f => f.querySelector('label').textContent.startsWith('Material'));
+  assert.ok(materialFld, 'material field is rendered');
+  const chips = [...materialFld.querySelectorAll('.pa-chip')].map(c => c.textContent);
+  assert.ok(chips.includes('Cotton') && chips.includes('Ankara') && chips.includes('Lace'), 'fashion-relevant materials are offered as chips');
+  assert.ok(materialFld.querySelector('.pa-add input'), 'a custom material can still be typed in');
+});
+
+test('materials: jeans/trousers prioritise Denim-relevant materials first', () => {
+  const { attrs } = boot();
+  attrs.load({}, 'Jeans');                                            // -> bottoms template
+  const fields = [...attrs.root.querySelectorAll('.pa-fld')];
+  const materialFld = fields.find(f => f.querySelector('label').textContent.startsWith('Material'));
+  const chips = [...materialFld.querySelectorAll('.pa-chip')].map(c => c.textContent);
+  assert.deepEqual(chips.slice(0, 4), ['Denim', 'Cotton', 'Stretch Denim', 'Polyester']);
+});

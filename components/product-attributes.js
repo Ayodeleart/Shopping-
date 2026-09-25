@@ -57,11 +57,25 @@
   /* ------------------------------------------------------------------ field shortcuts */
   var colors = function (req) {   // colours are never forced: not every product has one
     return { key: 'colors', label: 'Colours', type: 'colors', required: !!req, options: COLOR_NAMES,
-             hint: 'Tap every colour you have. Not listed? Add your own.' };
+             hint: 'Tap every colour you have. Not listed? Add your own — combinations like "Black/White" or "Multicolor" work too.' };
   };
   var gender = { key: 'gender', label: 'For', type: 'select', options: GENDER };
   var material = function (ph) { return { key: 'material', label: 'Material', type: 'text', placeholder: ph || 'e.g. Cotton' }; };
   var condition = { key: 'condition', label: 'Condition', type: 'select', options: CONDITION };
+
+  /* The full material list vendors/admins can tap instead of typing. `materialField(priority)` puts the materials
+     most relevant to a given product type first (per the type's own list), then the rest of MATERIAL_ALL after —
+     nothing is ever hidden, just reordered — and always allows a custom value via the chip picker's own "Add your
+     own" input, for materials not listed at all (e.g. a furniture or electronics material). */
+  var MATERIAL_ALL = ['Cotton', 'Denim', 'Polyester', 'Linen', 'Silk', 'Leather', 'Synthetic Leather', 'Suede', 'Wool',
+    'Nylon', 'Chiffon', 'Lace', 'Ankara', 'Satin', 'Velvet', 'Rayon', 'Canvas', 'Fleece', 'Jersey', 'Spandex', 'Mesh',
+    'Organza', 'Corduroy', 'Cashmere', 'Knit'];
+  var materialField = function (priority) {
+    priority = priority || [];
+    var opts = priority.concat(MATERIAL_ALL.filter(function (m) { return priority.indexOf(m) < 0; }));
+    return { key: 'material', label: 'Material', type: 'chips', options: opts, allowCustom: true,
+             hint: 'Tap every material used. Not listed? Add your own.' };
+  };
 
   /* ------------------------------------------------------------------ product types */
   var TEMPLATES = {
@@ -89,7 +103,14 @@
           } },
         colors(false),
         gender,
-        material('e.g. Cotton, Ankara, Lace'),
+        materialField(['Cotton', 'Lace', 'Ankara', 'Chiffon', 'Satin', 'Silk', 'Linen', 'Velvet', 'Polyester', 'Jersey', 'Organza']),
+        { key: 'pattern', label: 'Pattern', type: 'chips', allowCustom: true,
+          options: ['Plain', 'Floral', 'Striped', 'Checked', 'Printed', 'Polka Dot', 'Color Block', 'Tie-Dye', 'Animal Print'] },
+        { key: 'fit', label: 'Fit', type: 'chips', allowCustom: true, options: ['Slim', 'Regular', 'Relaxed', 'Oversized'] },
+        { key: 'clothingStyle', label: 'Style', type: 'chips', allowCustom: true,
+          options: ['Casual', 'Formal', 'Streetwear', 'Traditional', 'Sport', 'Party', 'Workwear'] },
+        { key: 'sleeve', label: 'Sleeve', type: 'chips', allowCustom: true, options: ['Sleeveless', 'Short Sleeve', 'Long Sleeve'] },
+        { key: 'neckline', label: 'Neckline', type: 'chips', allowCustom: true, options: ['Round', 'V-Neck', 'Collar', 'Turtleneck'] },
         { key: 'care', label: 'Care instructions', type: 'text', placeholder: 'e.g. Hand wash, do not bleach' }
       ]
     },
@@ -104,7 +125,7 @@
           systems: { 'Letter (XS-XXL)': LETTER, 'UK number': range(6, 30, 2), 'US number': range(0, 26, 2) } },
         colors(false),
         gender,
-        material('e.g. Denim, Linen')
+        materialField(['Denim', 'Cotton', 'Stretch Denim', 'Polyester'])
       ],
       rules: function (a) {
         if (!has(a, 'waist') && !has(a, 'sizes')) return 'Add at least one waist size, or one letter / number size';
@@ -144,7 +165,7 @@
           } },
         colors(false),
         gender,
-        material('e.g. Leather, Canvas, Rubber')
+        materialField(['Leather', 'Synthetic Leather', 'Suede', 'Canvas', 'Mesh', 'Rubber', 'Textile'])
       ]
     },
 
@@ -152,7 +173,7 @@
       label: 'Bags & wallets',
       fields: [
         colors(false),
-        material('e.g. Leather, Canvas'),
+        materialField(['Leather', 'Synthetic Leather', 'Canvas', 'Nylon', 'Polyester']),
         { key: 'dimensions', label: 'Size (L x W x H, cm)', type: 'text', placeholder: 'e.g. 30 x 20 x 10' },
         condition
       ]
@@ -317,8 +338,10 @@
 
   /* ------------------------------------------------------------------ chips (multi-select) */
   /* Same chip picker as chipGroup(), plus: for every selected colour, a row of the product's own already-uploaded
-     photos so the vendor/admin can say "this photo IS the Black one" — no separate colour-photo upload, no fake
-     images. cfg.colorImages is the {colourName: photoUrl} map, mutated in place (same object collect() reads). */
+     (or just-chosen, not-yet-uploaded — see MultiImagePicker#getLinkable) photos so the vendor/admin can say "these
+     photos ARE the Black ones" — no separate colour-photo upload, no fake images. A colour can have several photos
+     (front/back/side); tap order sets the order, and the first one tapped is that colour's main photo.
+     cfg.colorGallery is the {colourName: [photoUrl, ...]} map, mutated in place (same object collect() reads). */
   function colorGroup(cfg) {
     var wrap = h('div');
     var list = h('div', { class: 'pa-chips' });
@@ -327,28 +350,38 @@
 
     function paintImages() {
       imgWrap.textContent = '';
-      Object.keys(cfg.colorImages).forEach(function (c) { if (cfg.values.indexOf(c) < 0) delete cfg.colorImages[c]; }); // colour removed -> forget its photo
+      Object.keys(cfg.colorGallery).forEach(function (c) { if (cfg.values.indexOf(c) < 0) delete cfg.colorGallery[c]; }); // colour removed -> forget its photos
       if (!cfg.values.length) return;
       var photos = (cfg.getImages ? cfg.getImages() : []) || [];
       cfg.values.forEach(function (c) {
+        var arr = cfg.colorGallery[c] || (cfg.colorGallery[c] = []);
         var row = h('div', { class: 'pa-colorimg-row' });
         var lbl = h('div', { class: 'pa-colorimg-lbl' }, [
-          h('span', { class: 'pa-dot', style: 'background:' + (cfg.swatches[c] || '#ccc') }), c + ' photo:'
+          h('span', { class: 'pa-dot', style: 'background:' + (cfg.swatches[c] || '#ccc') }), c + ' photos:'
         ]);
         row.appendChild(lbl);
         if (!photos.length) {
           row.appendChild(h('div', { class: 'pa-colorimg-hint' }, ['Add photos above, then tap one here to link it to ' + c]));
         } else {
+          arr = arr.filter(function (u) { return photos.indexOf(u) >= 0; }); cfg.colorGallery[c] = arr;   // a linked photo removed from the picker drops out here too
           var thumbs = h('div', { class: 'pa-colorimg-thumbs' });
           photos.forEach(function (url) {
-            var on = cfg.colorImages[c] === url;
+            var idx = arr.indexOf(url);
+            var on = idx >= 0;
             thumbs.appendChild(h('button', {
-              type: 'button', class: 'pa-colorimg-thumb' + (on ? ' on' : ''), style: 'background-image:url(' + JSON.stringify(url).replace(/"/g, "'") + ')',
-              'aria-pressed': on ? 'true' : 'false', 'aria-label': (on ? 'Unlink' : 'Link') + ' this photo from ' + c,
-              onclick: function () { cfg.colorImages[c] = on ? null : url; if (!cfg.colorImages[c]) delete cfg.colorImages[c]; paintImages(); }
-            }));
+              type: 'button', class: 'pa-colorimg-thumb' + (on ? ' on' : '') + (idx === 0 ? ' primary' : ''),
+              style: 'background-image:url(' + JSON.stringify(url).replace(/"/g, "'") + ')',
+              'aria-pressed': on ? 'true' : 'false',
+              'aria-label': (on ? 'Remove this photo from ' : 'Add this photo to ') + c + (idx === 0 ? ' (main photo)' : ''),
+              onclick: function () {
+                var i = arr.indexOf(url);
+                if (i >= 0) arr.splice(i, 1); else arr.push(url);
+                paintImages();
+              }
+            }, on ? [h('span', { class: 'pa-colorimg-badge' }, [idx === 0 ? 'Main' : String(idx + 1)])] : []));
           });
           row.appendChild(thumbs);
+          if (arr.length > 1) row.appendChild(h('div', { class: 'pa-colorimg-hint' }, ['Several photos linked — the first one tapped is the main photo for ' + c + '.']));
         }
         imgWrap.appendChild(row);
       });
@@ -539,10 +572,17 @@
       }
       case 'colors': {
         if (!Array.isArray(this.state[f.key])) this.state[f.key] = [];
-        if (!this.state.colorImages || typeof this.state.colorImages !== 'object') this.state.colorImages = {};
+        if (!this.state.colorGallery || typeof this.state.colorGallery !== 'object') this.state.colorGallery = {};
+        /* migrate data saved before multi-photo colours existed: one photo per colour -> a one-photo gallery */
+        if (this.state.colorImages && typeof this.state.colorImages === 'object') {
+          var gallery = this.state.colorGallery;
+          Object.keys(this.state.colorImages).forEach(function (c) {
+            if (!gallery[c] && self.state.colorImages[c]) gallery[c] = [self.state.colorImages[c]];
+          });
+        }
         control = colorGroup({
-          options: f.options || [], values: this.state[f.key], colorImages: this.state.colorImages,
-          swatches: COLORS, placeholder: 'Other colour', getImages: self.o.getImages
+          options: f.options || [], values: this.state[f.key], colorGallery: this.state.colorGallery,
+          swatches: COLORS, placeholder: 'Other colour (or a combo like Black/White)', getImages: self.o.getImages
         });
         self._colorCtl = control;
         break;
@@ -659,10 +699,16 @@
     });
     var extra = cleanPairs(state.extra);
     if (extra.length) out.extra = extra;
-    if (state.colorImages && out.colors) {
-      var ci = {};
-      out.colors.forEach(function (c) { if (state.colorImages[c]) ci[c] = state.colorImages[c]; });
-      if (Object.keys(ci).length) out.colorImages = ci;
+    /* colorImages stays {colour: ONE url} — the main photo per colour — so the storefront (product card, product
+       page) that already reads it keeps working untouched. colorGallery is the new {colour: [url, ...]} form
+       with every linked photo, in order; the vendor/admin form is the only reader of colorGallery today. */
+    if (state.colorGallery && out.colors) {
+      var gallery = {}, primary = {};
+      out.colors.forEach(function (c) {
+        var arr = (state.colorGallery[c] || []).filter(Boolean);
+        if (arr.length) { gallery[c] = arr.slice(); primary[c] = arr[0]; }
+      });
+      if (Object.keys(gallery).length) { out.colorGallery = gallery; out.colorImages = primary; }
     }
     return out;
   };
@@ -670,6 +716,21 @@
   /* Call after the product's photos change (a photo is added/removed/reordered in the picker) so the colour ->
      photo links stay pickable straight away, without needing to switch tabs and back. Harmless if colours aren't used. */
   P.refreshColorImages = function () { if (this._colorCtl && this._colorCtl.refresh) this._colorCtl.refresh(); };
+
+  /* Call right after MultiImagePicker#resolve() uploads pending photos, passing its getUploadRemap() result, so
+     any colour linked to a photo while it was still local (a blob preview url) follows that photo to its real,
+     permanent url before the product is saved. Harmless if colours/photo-links aren't used. */
+  P.remapColorImages = function (map) {
+    if (!map || !this.state.colorGallery) return;
+    var gallery = this.state.colorGallery, changed = false;
+    Object.keys(gallery).forEach(function (c) {
+      gallery[c] = gallery[c].map(function (u) {
+        if (map[u]) { changed = true; return map[u]; }
+        return u;
+      });
+    });
+    if (changed && this._colorCtl && this._colorCtl.refresh) this._colorCtl.refresh();
+  };
 
   P.validate = function () {
     var t = this.o.templates[this.type] || this.o.templates.general;
