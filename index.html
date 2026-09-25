@@ -432,30 +432,59 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 
 /* ── FOOTER ───────────────────────────────────────── */
 /* Its own palette regardless of site theme: solid black in light mode, brand red in dark mode.
-   Both are dark backgrounds, so text stays light either way. */
+   Both are dark backgrounds, so text stays light either way. Collapsible accordion sections on
+   mobile (tap a heading to expand it — keeps the footer short until someone wants it); on desktop
+   the same sections just lay out side by side, always open, headings no longer interactive. */
 #siteFooter{
+  position:relative;
   --ft-bg:#0d0d0d;--ft-txt:#fff;--ft-txt2:rgba(255,255,255,.82);--ft-txt3:rgba(255,255,255,.56);
   --ft-border:rgba(255,255,255,.14);--ft-chip:rgba(255,255,255,.1);
-  background:var(--ft-bg);padding:32px 16px calc(24px + 66px);margin-top:20px;
+  background:var(--ft-bg);padding:32px 0 calc(24px + 66px);margin-top:20px;
 }
 [data-theme=dark] #siteFooter{--ft-bg:var(--red);--ft-border:rgba(255,255,255,.24);--ft-chip:rgba(255,255,255,.16)}
-.ftTop{display:grid;grid-template-columns:1fr 1fr;gap:24px 16px;margin-bottom:24px}
-.ftCol{display:flex;flex-direction:column;gap:9px}
-.ftCol#ftWorlds,#ftWorlds{display:flex;flex-direction:column;gap:9px}
-.ftLogo{display:flex;align-items:center;gap:8px;margin-bottom:2px}
+
+.ftBrand{padding:0 16px;text-align:center;margin-bottom:26px}
+.ftLogo{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:6px}
 .ftLogo img{height:26px;width:auto}
 .ftLogo span{font-size:17px;font-weight:900;color:var(--ft-txt)}
-.ftTag{font-size:12.5px;color:var(--ft-txt3);line-height:1.5}
-.ftHead{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--ft-txt3);margin-bottom:2px}
-.ftCol a,.ftCol span,#ftWorlds a{font-size:13.5px;color:var(--ft-txt2);text-decoration:none}
-.ftCol a:active,#ftWorlds a:active{opacity:.7}
-.ftSocial{display:flex;gap:10px;margin-top:4px}
-.ftSocial a{width:32px;height:32px;border-radius:50%;background:var(--ft-chip);display:flex;align-items:center;justify-content:center;color:var(--ft-txt2)}
-.ftBottom{border-top:1px solid var(--ft-border);padding-top:16px;display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--ft-txt3)}
+.ftTag{font-size:12.5px;color:var(--ft-txt3);line-height:1.5;margin-bottom:14px}
+.ftSocial{display:flex;gap:10px;justify-content:center}
+.ftSocial a{width:36px;height:36px;border-radius:50%;background:var(--ft-chip);display:flex;align-items:center;justify-content:center;color:var(--ft-txt2)}
+
+.ftAccordion{border-top:1px solid var(--ft-border)}
+.ftSec{border-bottom:1px solid var(--ft-border)}
+.ftSecHd{
+  width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:15px 16px;background:none;border:0;text-align:left;
+  font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--ft-txt);
+}
+.ftSecIcon{font-size:18px;font-weight:400;color:var(--ft-txt3);flex-shrink:0;line-height:1}
+.ftSecBody{display:grid;grid-template-rows:0fr;transition:grid-template-rows .25s ease}
+.ftSec.open .ftSecBody{grid-template-rows:1fr}
+.ftSecBody>div{overflow:hidden}
+.ftSecIn{display:flex;flex-direction:column;gap:11px;padding:0 16px 18px}
+.ftSecIn a,.ftSecIn span{font-size:13.5px;color:var(--ft-txt2);text-decoration:none}
+.ftSecIn a:active{opacity:.7}
+#ftWorlds{display:flex;flex-direction:column;gap:11px}
+
+.ftBottom{margin:24px 16px 0;padding-top:16px;border-top:1px solid var(--ft-border);display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--ft-txt3)}
 .ftBottom a{color:var(--ft-txt3);text-decoration:underline}
+
+.ftTopBtn{
+  display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;
+  background:var(--ft-chip);color:var(--ft-txt);margin:24px auto 0;
+}
+.ftTopBtn:active{opacity:.7}
+
 @media (min-width:720px){
-  .ftTop{grid-template-columns:1.4fr 1fr 1fr 1fr 1fr;gap:24px;max-width:1200px;margin:0 auto 28px}
-  .ftBottom{max-width:1200px;margin:0 auto}
+  .ftBrand{max-width:1200px;margin:0 auto 28px;padding:0 24px}
+  .ftAccordion{max-width:1200px;margin:0 auto;border-top:0;display:grid;grid-template-columns:repeat(4,1fr);gap:24px;padding:0 24px}
+  .ftSec{border-bottom:0}
+  .ftSecHd{padding:0 0 10px;cursor:default}
+  .ftSecIcon{display:none}
+  .ftSecBody{grid-template-rows:1fr!important}
+  .ftSecIn{padding:0}
+  .ftBottom{max-width:1200px;margin:24px auto 0;padding-left:24px;padding-right:24px}
 }
 
 
@@ -727,46 +756,58 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 
 <!-- FOOTER -->
 <footer id="siteFooter">
-  <div class="ftTop">
-    <div class="ftCol">
-      <div class="ftLogo"><img src="store-logo.png" alt=""><span>Marcato</span></div>
-      <p class="ftTag" id="ftTagline"></p>
-      <div class="ftSocial" id="ftSocial"></div>
+  <div class="ftBrand">
+    <div class="ftLogo"><img src="store-logo.png" alt=""><span>Marcato</span></div>
+    <p class="ftTag" id="ftTagline"></p>
+    <div class="ftSocial" id="ftSocial"></div>
+  </div>
+
+  <div class="ftAccordion">
+    <div class="ftSec">
+      <button type="button" class="ftSecHd" aria-expanded="false" onclick="toggleFtSec(this)">Shop<span class="ftSecIcon">+</span></button>
+      <div class="ftSecBody"><div><div class="ftSecIn">
+        <a href="#allSec">All Products</a>
+        <a href="#cat=all">All Categories</a>
+        <a href="#flashSec">Flash Sales</a>
+        <a href="#vendorSec">Vendors</a>
+      </div></div></div>
     </div>
-    <div class="ftCol">
-      <div class="ftHead">Shop</div>
-      <a href="#allSec">All Products</a>
-      <a href="#cat=all">All Categories</a>
-      <a href="#flashSec">Flash Sales</a>
-      <a href="#vendorSec">Vendors</a>
+    <div class="ftSec">
+      <button type="button" class="ftSecHd" aria-expanded="false" onclick="toggleFtSec(this)">Explore Marcato<span class="ftSecIcon">+</span></button>
+      <div class="ftSecBody"><div><div class="ftSecIn" id="ftWorlds"></div></div></div>
     </div>
-    <div class="ftCol">
-      <div class="ftHead">Explore Marcato</div>
-      <div id="ftWorlds"></div>
+    <div class="ftSec">
+      <button type="button" class="ftSecHd" aria-expanded="false" onclick="toggleFtSec(this)">Account<span class="ftSecIcon">+</span></button>
+      <div class="ftSecBody"><div><div class="ftSecIn">
+        <a href="#" onclick="openAccount();return false">My Account</a>
+        <a href="#" onclick="openAccount();setTimeout(showMyOrders,150);return false">My Orders</a>
+        <a href="#" onclick="openNotifCenter();return false">Notifications</a>
+        <a href="#" onclick="showFavorites();return false">Saved Items</a>
+        <a href="#" onclick="openCart();return false">My Cart</a>
+      </div></div></div>
     </div>
-    <div class="ftCol">
-      <div class="ftHead">Account</div>
-      <a href="#" onclick="openAccount();return false">My Account</a>
-      <a href="#" onclick="openAccount();setTimeout(showMyOrders,150);return false">My Orders</a>
-      <a href="#" onclick="openNotifCenter();return false">Notifications</a>
-      <a href="#" onclick="showFavorites();return false">Saved Items</a>
-      <a href="#" onclick="openCart();return false">My Cart</a>
-    </div>
-    <div class="ftCol" id="ftContactCol">
-      <div class="ftHead">Support</div>
-      <a href="#" onclick="openWhatsAppHelp();return false">Need Help?</a>
-      <a href="/vendor/" target="_blank">Sell on Marcato</a>
-      <a href="#" id="ftPhone" style="display:none"></a>
-      <a href="#" id="ftEmail" style="display:none"></a>
-      <span id="ftAddress" style="display:none"></span>
+    <div class="ftSec" id="ftContactCol">
+      <button type="button" class="ftSecHd" aria-expanded="false" onclick="toggleFtSec(this)">Support<span class="ftSecIcon">+</span></button>
+      <div class="ftSecBody"><div><div class="ftSecIn">
+        <a href="#" onclick="openWhatsAppHelp();return false">Need Help?</a>
+        <a href="/vendor/" target="_blank">Sell on Marcato</a>
+        <a href="#" id="ftPhone" style="display:none"></a>
+        <a href="#" id="ftEmail" style="display:none"></a>
+        <span id="ftAddress" style="display:none"></span>
+      </div></div></div>
     </div>
   </div>
+
   <div class="ftBottom">
     <span id="ftCopyright"></span>
     <a href="#" onclick="openLegal('privacy');return false">Privacy Policy</a>
     <a href="#" onclick="openLegal('terms');return false">Terms of Service</a>
     <a href="https://logo.dev" target="_blank" rel="noopener">Logos provided by Logo.dev</a>
   </div>
+
+  <button type="button" class="ftTopBtn" aria-label="Back to top" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="18 15 12 9 6 15"/></svg>
+  </button>
 </footer>
 
 <!-- LEGAL MODAL -->
@@ -2364,6 +2405,15 @@ function dismissInstall() {
 function openAccount() { if (buyerSession && window.Pcx && Pcx.Profile) { Pcx.Profile.open(); return; } document.getElementById('acctOver').classList.add('open'); document.getElementById('acctDrawer').classList.add('open'); document.body.style.overflow='hidden'; }
 /* ── COOKIE CONSENT ───────────────────────────────── */
 /* ── FOOTER + LEGAL ───────────────────────────────── */
+/* Footer accordion sections (mobile only — see the min-width:720px override in the footer CSS,
+   which forces every section open and hides the +/- icon on desktop, where toggling is a no-op). */
+function toggleFtSec(btn) {
+  const sec = btn.closest('.ftSec');
+  const open = sec.classList.toggle('open');
+  btn.setAttribute('aria-expanded', String(open));
+  btn.querySelector('.ftSecIcon').textContent = open ? '\u2212' : '+';
+}
+
 function populateFooter(storeName, tagline, phone, email, address, ig, fb, x) {
   document.getElementById('ftTagline').textContent = tagline || '';
   document.getElementById('ftCopyright').textContent = `© ${new Date().getFullYear()} ${storeName}. All rights reserved.`;
