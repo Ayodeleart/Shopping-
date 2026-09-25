@@ -1884,17 +1884,10 @@ function renderBlocks(blocks) {
 function openBlockImage(i) { openViewer(blockImgs, i, pCur ? pCur.name : ''); }
 
 /* Product Details: what the vendor filled in for this kind of product (sizes, colours, specs ...).
-   The formatter lives in components/product-attributes.js, loaded only when a product actually has details. */
-let attrLib = null;
-function ensureAttrLib() {
-  if (window.Pcx && Pcx.ProductAttributes) return Promise.resolve();
-  if (!attrLib) attrLib = new Promise((res, rej) => {
-    const sc = document.createElement('script');
-    sc.src = 'components/product-attributes.js'; sc.onload = res; sc.onerror = rej;
-    document.head.appendChild(sc);
-  });
-  return attrLib;
-}
+   The formatter lives in components/product-attributes.js, loaded only when a product actually has details.
+   Delegates to components/product-card.js's ensureProductAttributes() so the homepage's card swatches and this
+   page's own colour picker/spec renderer share one in-flight load instead of two separate script tags. */
+function ensureAttrLib() { return ensureProductAttributes(); }
 function renderSpecs(p) {
   const card = $('pSpecCard'), body = $('pSpecBody'), a = p.attributes;
   card.style.display = 'none'; body.innerHTML = '';

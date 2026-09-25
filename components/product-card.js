@@ -40,15 +40,43 @@ function plainLine(id) { return cart.find(x => x.id === id && !x.size && !x.colo
 /* Colour swatches on a card (real colours only, from the product's own attributes.colors — see Pcx.Variants).
    Tapping one selects it and, if the vendor/admin linked one of the product's own photos to that colour, swaps the
    card's photo to it (Pcx.Variants.image); it never opens the product page or the cart. The "Add to Cart" button
-   still opens the shared bottom sheet to make the pick official and put it in the cart. */
+   still opens the shared bottom sheet to make the pick official and put it in the cart.
+
+   Pcx.Variants.swatch(c) needs components/product-attributes.js for the colour-name -> CSS-colour map, but that
+   file is loaded lazily (only once a product detail page is opened — see index.html's ensureAttrLib) to keep it
+   off the homepage's initial payload. The very first card render on a fresh page load therefore has no map yet,
+   so every dot would render with no background — a plain white/default button. Cards fix this the same way the
+   product detail page's colour picker already does: render once immediately (so colours already loaded, e.g. the
+   user already opened a product this session, still show right away), then load the map and repaint every dot
+   already on the page. window.__attrLibPromise is shared with index.html's own loader so only one script tag is
+   ever injected regardless of which caller (a card, or the detail page) asks for it first. */
 const cardColorPick = {};
+function ensureProductAttributes() {
+  if (window.Pcx && Pcx.ProductAttributes) return Promise.resolve();
+  if (!window.__attrLibPromise) {
+    window.__attrLibPromise = new Promise((res, rej) => {
+      const sc = document.createElement('script');
+      sc.src = 'components/product-attributes.js'; sc.onload = res; sc.onerror = rej;
+      document.head.appendChild(sc);
+    });
+  }
+  return window.__attrLibPromise;
+}
+function repaintSwatchColors() {
+  if (!(window.Pcx && Pcx.Variants)) return;
+  document.querySelectorAll('.pcSwatch[data-color]').forEach(b => {
+    const sw = Pcx.Variants.swatch(b.getAttribute('data-color'));
+    if (sw) b.style.background = sw;
+  });
+}
 function swatchHTML(p) {
   const cols = (window.Pcx && Pcx.Variants) ? Pcx.Variants.colors(p) : [];
   if (!cols.length) return '';
+  if (!(window.Pcx && Pcx.ProductAttributes)) ensureProductAttributes().then(repaintSwatchColors);
   const picked = cardColorPick[p.id];
   return `<div class="pcSwatches" onclick="event.stopPropagation()">${cols.map(c => {
     const sw = Pcx.Variants.swatch(c);
-    return `<button type="button" class="pcSwatch${picked === c ? ' on' : ''}" aria-label="${esc(c)}" aria-pressed="${picked === c}" style="${sw ? `background:${esc(sw)}` : ''}" data-pcid="${num(p.id)}" onclick="pickCardColor(${num(p.id)},'${esc(c).replace(/'/g, "\\'")}')"></button>`;
+    return `<button type="button" class="pcSwatch${picked === c ? ' on' : ''}" aria-label="${esc(c)}" aria-pressed="${picked === c}" data-color="${esc(c)}" style="${sw ? `background:${esc(sw)}` : ''}" data-pcid="${num(p.id)}" onclick="pickCardColor(${num(p.id)},'${esc(c).replace(/'/g, "\\'")}')"></button>`;
   }).join('')}</div>`;
 }
 function pickCardColor(id, c) {
