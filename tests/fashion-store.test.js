@@ -314,3 +314,22 @@ test('bot: MAC tucks away while the page scrolls instead of covering products', 
   assert.ok(el.classList.contains('isPeek'), 'tucked while scrolling');
   assert.match(fs.readFileSync(path.join(ROOT, 'components/mac-fab.css'), 'utf8'), /\.macFab\.isPeek\s*\{[^}]*translate:/);
 });
+
+test('card: tapping a colour swatch shows the linked product photo, and clears back on deselect', async t => {
+  const tables = withVariants();
+  tables.products = tables.products.map(p => p.id === 10 ? { ...p, image_url: 'https://x/base.jpg', attributes: { colors: ['Black', 'Red'], colorImages: { Red: 'https://x/red.jpg' } } } : p);
+  const w = await boot(tables, null, t);
+  const box = w.document.createElement('div');
+  box.innerHTML = w.cardHTML(tables.products.find(p => p.id === 10));
+  w.document.body.appendChild(box);
+  const img = box.querySelector('.pcImg img');
+  assert.equal(img.src, 'https://x/base.jpg');
+  w.pickCardColor(10, 'Black');                     // no linked photo for Black -> stays on the base photo
+  assert.equal(img.src, 'https://x/base.jpg');
+  w.pickCardColor(10, 'Black');                      // deselect
+  w.pickCardColor(10, 'Red');                        // Red has a linked photo
+  assert.equal(img.src, 'https://x/red.jpg');
+  w.pickCardColor(10, 'Red');                         // deselect again -> back to base
+  assert.equal(img.src, 'https://x/base.jpg');
+  box.remove();
+});

@@ -1179,9 +1179,9 @@ function syncRmBgAutoCheck() {
 document.getElementById('pRmBg').addEventListener('change', () => { pRmBgTouched = true; });
 document.getElementById('pCat').addEventListener('change', syncRmBgAutoCheck);
 
-const pPicker = new Pcx.MultiImagePicker(document.getElementById('pPicker'), { max: 8, label: 'Add photos' });
+const pPicker = new Pcx.MultiImagePicker(document.getElementById('pPicker'), { max: 8, label: 'Add photos', onChange: () => pAttrs.refreshColorImages() });
 const sLogoPicker = new Pcx.MultiImagePicker(document.getElementById('sLogoPicker'), { max: 1, label: 'Upload logo' });
-const pAttrs = new Pcx.ProductAttributes(document.getElementById('pAttrs'));
+const pAttrs = new Pcx.ProductAttributes(document.getElementById('pAttrs'), { getImages: () => pPicker.getImages() });
 const pBlocks = new Pcx.DescriptionBlocks(document.getElementById('pBlocks'), { onError: m => toast(m, true) });
 /* Brand: search brands already saved, then logo.dev (through /api/brand-search); a brand nobody has listed yet can be added with its own logo. */
 const brandPicker = new Pcx.BrandPicker(document.getElementById('pBrandBox'), {

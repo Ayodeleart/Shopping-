@@ -57,7 +57,14 @@
     return c && c[name] ? c[name] : null;
   }
 
-  Pcx.Variants = { colors: colors, sizeGroups: sizeGroups, needsChoice: needsChoice, lineKey: lineKey, label: label, payload: payload, swatch: swatch };
+  /* the photo a vendor/admin linked to a colour (attributes.colorImages), if any — picked from the product's own
+     uploaded photos in the upload form (see colorGroup() in product-attributes.js); never a fabricated image */
+  function image(p, colorName) {
+    var ci = attrs(p).colorImages;
+    return (ci && colorName && ci[colorName]) ? ci[colorName] : null;
+  }
+
+  Pcx.Variants = { colors: colors, sizeGroups: sizeGroups, needsChoice: needsChoice, lineKey: lineKey, label: label, payload: payload, swatch: swatch, image: image };
 
   /* ------------------------------------------------------------------------------------------------------------
    * Pcx.VariantSheet — the one bottom sheet used to pick colour/size, from the Home card, search, favourites, or
@@ -101,6 +108,8 @@
   function pick(group, value) {
     if (group === 'color') sheetState.color = sheetState.color === value ? null : value;
     else sheetState.size = sheetState.size === value ? null : value;
+    var img = sheetState.color ? image(sheetState.product, sheetState.color) : null;
+    sheetEl.querySelector('.vsImg').src = img || sheetState.product.image_url || '';
     paintSheet();
   }
 

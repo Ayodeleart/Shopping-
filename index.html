@@ -1948,6 +1948,9 @@ function pickPColor(i) {
   pColorPick = pColorPick === c ? null : c;
   $('pColorRow').classList.remove('miss');
   paintPColors();
+  /* if the vendor/admin linked one of the product's own photos to this colour, jump the gallery to it */
+  const linked = pColorPick && window.Pcx && Pcx.Variants ? Pcx.Variants.image(pCur, pColorPick) : null;
+  if (linked && pGal) { const idx = (pGal.o.images || []).indexOf(linked); if (idx >= 0) pGal.go(idx); }
 }
 function pColorMissing() {
   if (!pColorList.length || pColorPick) return false;

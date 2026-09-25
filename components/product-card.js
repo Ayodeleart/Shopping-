@@ -38,9 +38,9 @@ function starsHTML(avg, px) {
 function plainLine(id) { return cart.find(x => x.id === id && !x.size && !x.color); }
 
 /* Colour swatches on a card (real colours only, from the product's own attributes.colors — see Pcx.Variants).
-   Tapping one only selects it for this card; it never opens the product page or the cart. Products only ever have
-   one photo (`image_url`), so there is no separate photo per colour to swap to: the swatch selects, the "Add to
-   Cart" button then opens the same choice in the bottom sheet so the pick actually reaches the cart. */
+   Tapping one selects it and, if the vendor/admin linked one of the product's own photos to that colour, swaps the
+   card's photo to it (Pcx.Variants.image); it never opens the product page or the cart. The "Add to Cart" button
+   still opens the shared bottom sheet to make the pick official and put it in the cart. */
 const cardColorPick = {};
 function swatchHTML(p) {
   const cols = (window.Pcx && Pcx.Variants) ? Pcx.Variants.colors(p) : [];
@@ -56,6 +56,17 @@ function pickCardColor(id, c) {
   document.querySelectorAll(`.pcSwatch[data-pcid="${id}"]`).forEach(b => {
     const on = b.getAttribute('aria-label') === cardColorPick[id];
     b.classList.toggle('on', on); b.setAttribute('aria-pressed', on);
+  });
+  /* if the vendor/admin linked a photo to this colour, show it; otherwise stay on the product's normal photo
+     (never a fabricated one) — see attributes.colorImages, set from the upload form's colour picker.
+     Every card for this product on the page updates (a product can appear more than once, e.g. Home + search). */
+  const p = (typeof allProds !== 'undefined' ? allProds : (window.allProds || [])).find(x => x.id === id) || (window.state && window.state.byId && window.state.byId[id]);
+  const linked = p && cardColorPick[id] && window.Pcx && Pcx.Variants ? Pcx.Variants.image(p, cardColorPick[id]) : null;
+  document.querySelectorAll(`.pcCtl[data-pid="${id}"]`).forEach(ctl => {
+    const img = ctl.closest('.pcard')?.querySelector('.pcImg img');
+    if (!img) return;
+    if (!img.dataset.origSrc) img.dataset.origSrc = img.src;
+    img.src = linked || img.dataset.origSrc;
   });
 }
 
