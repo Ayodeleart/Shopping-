@@ -39,6 +39,7 @@
 <script defer src="components/beauty-world.js"></script>
 <link rel="stylesheet" href="components/fashion-world.css">
 <script defer src="components/fashion.js"></script>
+<link rel="stylesheet" href="components/variants.css">
 <script defer src="components/variants.js"></script>
 <script defer src="components/fashion-world.js"></script>
 <script defer src="components/ad-page.js"></script>
@@ -2200,8 +2201,9 @@ function addToCart(id, src, qty, note, size, color) {
   const needColor = V && V.colors(p).length && color == null;
   const needSize = V && V.sizeGroups(p).length && size == null;
   if (needColor || needSize) {
-    openProduct(id);
-    toast(needColor && needSize ? 'Choose a colour and size' : needColor ? 'Select a colour' : 'Select a size');
+    if (window.Pcx && Pcx.VariantSheet) {
+      Pcx.VariantSheet.open(p, { onAdd: pick => addToCart(id, src, qty, note, pick.size, pick.color) });
+    } else { openProduct(id); }    /* sheet script not yet loaded: fall back to the product page rather than fail silently */
     return;
   }
   if (src) flyToCart(src);               /* first: cartAdd() re-renders the card and detaches the tapped button */

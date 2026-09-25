@@ -35,15 +35,31 @@ function starsHTML(avg, px) {
 
 /* ── PRODUCT CARD (JUMIA STYLE) ───────────────────── */
 /* Add to Cart turns into a - 1 + stepper once the product is in the cart (see ctlHTML / syncCardCtls). */
-/* A product with colours or sizes is never added from its card (a card cannot know which one the customer wants):
-   its button opens the product page, where the choices are made (see addToCart in index.html). `needs` = that case. */
-function cardNeedsChoice(p) {
-  return !!(p && window.Pcx && Pcx.Variants && Pcx.Variants.needsChoice(p));
-}
 function plainLine(id) { return cart.find(x => x.id === id && !x.size && !x.color); }
 
-function ctlHTML(id, needs) {
-  if (needs) return `<button class="pcAdd pcOpts" onclick="event.stopPropagation();openProduct(${num(id)})">Choose options</button>`;
+/* Colour swatches on a card (real colours only, from the product's own attributes.colors — see Pcx.Variants).
+   Tapping one only selects it for this card; it never opens the product page or the cart. Products only ever have
+   one photo (`image_url`), so there is no separate photo per colour to swap to: the swatch selects, the "Add to
+   Cart" button then opens the same choice in the bottom sheet so the pick actually reaches the cart. */
+const cardColorPick = {};
+function swatchHTML(p) {
+  const cols = (window.Pcx && Pcx.Variants) ? Pcx.Variants.colors(p) : [];
+  if (!cols.length) return '';
+  const picked = cardColorPick[p.id];
+  return `<div class="pcSwatches" onclick="event.stopPropagation()">${cols.map(c => {
+    const sw = Pcx.Variants.swatch(c);
+    return `<button type="button" class="pcSwatch${picked === c ? ' on' : ''}" aria-label="${esc(c)}" aria-pressed="${picked === c}" style="${sw ? `background:${esc(sw)}` : ''}" data-pcid="${num(p.id)}" onclick="pickCardColor(${num(p.id)},'${esc(c).replace(/'/g, "\\'")}')"></button>`;
+  }).join('')}</div>`;
+}
+function pickCardColor(id, c) {
+  cardColorPick[id] = cardColorPick[id] === c ? null : c;
+  document.querySelectorAll(`.pcSwatch[data-pcid="${id}"]`).forEach(b => {
+    const on = b.getAttribute('aria-label') === cardColorPick[id];
+    b.classList.toggle('on', on); b.setAttribute('aria-pressed', on);
+  });
+}
+
+function ctlHTML(id) {
   const it = plainLine(id);
   if (!it) return `<button class="pcAdd" onclick="event.stopPropagation();addToCart(${num(id)},this)">Add to Cart</button>`;
   return `
@@ -57,11 +73,10 @@ function ctlHTML(id, needs) {
 /* every card of a product (home grid, rails, category page, storefront ...) follows the cart */
 function syncCardCtls() {
   document.querySelectorAll('.pcCtl').forEach(el => {
-    if (el.dataset.need === '1') return;      /* "Choose options" buttons never change with the cart */
     const id = Number(el.dataset.pid), it = plainLine(id), q = String(it ? it.qty : 0);
-    if (el.dataset.q === q) return;
+    if (el.dataset.q === q) return;      /* variant products never grow a "plain" line, so this stays Add to Cart */
     el.dataset.q = q;
-    el.innerHTML = ctlHTML(id, false);
+    el.innerHTML = ctlHTML(id);
   });
 }
 
@@ -80,7 +95,6 @@ function cardHTML(p) {
   const tot = p.max_stock || (p.stock ? p.stock + 15 : 0);
   const pct = tot > 0 ? Math.min(100, Math.round(p.stock/tot*100)) : 0;
   const r = ratingMap[p.id];
-  const needs = cardNeedsChoice(p);
   const inCart = plainLine(p.id);
 
   return `
@@ -95,6 +109,7 @@ function cardHTML(p) {
       <div class="pcBody">
         <div class="pcName">${esc(p.name)}</div>
         <div class="pcPrice">${fmt(p.price)}</div>
+        ${swatchHTML(p)}
         ${disc > 0 ? `<div class="pcWas">${fmt(p.original_price)}</div>` : ''}
         ${r && r.n > 0 ? `<div class="pcRate">${starsHTML(r.avg, 12)}<span>(${esc(r.n)})</span></div>` : ''}
         ${p.stock > 0 ? `
@@ -102,7 +117,7 @@ function cardHTML(p) {
             <div class="pcBar"><div class="pcBarFill" style="width:${pct}%"></div></div>
             <span class="pcStockTxt">${esc(p.stock)} left</span>
           </div>` : ''}
-        <div class="pcCtl" data-pid="${esc(p.id)}" data-need="${needs ? 1 : 0}" data-q="${esc(inCart ? inCart.qty : 0)}">${ctlHTML(p.id, needs)}</div>
+        <div class="pcCtl" data-pid="${esc(p.id)}" data-q="${esc(inCart ? inCart.qty : 0)}">${ctlHTML(p.id)}</div>
       </div>
     </div>`;
 }

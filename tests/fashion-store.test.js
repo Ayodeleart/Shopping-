@@ -214,7 +214,7 @@ const VARIANT_PRODUCTS = [
 const withVariants = () => { const t = TABLES(); t.products = t.products.concat(VARIANT_PRODUCTS.map(p => ({ ...p }))); return t; };
 const cartLines = w => JSON.parse(w.localStorage.getItem('cart_v3') || '[]');
 
-test('card: photo fills a fixed media box, heart sits on the photo, no vendor on the card, options products say Choose options', async t => {
+test('card: photo fills a fixed media box, heart sits on the photo, no vendor on the card, button always says Add to Cart, swatches show real colours', async t => {
   const w = await boot(withVariants(), null, t);
   const box = w.document.createElement('div');
   box.innerHTML = [10, 12].map(id => w.cardHTML(VARIANT_PRODUCTS.find(p => p.id === id))).join('');
@@ -225,20 +225,35 @@ test('card: photo fills a fixed media box, heart sits on the photo, no vendor on
     assert.equal(c.querySelector('.pcSeller'), null, 'no vendor on the card');
     assert.ok(!/Ada Threads|Kano Kicks|Sold by/.test(c.textContent), 'no vendor name anywhere on the card');
     assert.ok(c.querySelector('.favBtn').getAttribute('aria-label'), 'heart is labelled');
+    assert.equal(c.querySelector('.pcAdd').textContent.trim(), 'Add to Cart', 'button always says Add to Cart, never "Choose options"');
   }
-  assert.equal(tote.querySelector('.pcCtl').dataset.need, '1');
-  assert.equal(tote.querySelector('.pcAdd').textContent.trim(), 'Choose options');
-  assert.equal(mug.querySelector('.pcAdd').textContent.trim(), 'Add to Cart');
+  assert.equal(tote.querySelectorAll('.pcSwatch').length, 2, 'Ankara Tote has 2 real colours (Black, Red)');
+  assert.equal(mug.querySelector('.pcSwatches'), null, 'no colours on a plain product, so no swatch row');
   const css = fs.readFileSync(path.join(ROOT, 'components/product-card.css'), 'utf8');
   assert.match(css, /\.pcImg img\{[^}]*object-fit:cover/, 'image fills the box');
   assert.match(css, /\.pcCtl\{margin-top:auto/, 'buttons are pinned to the card bottom');
   assert.doesNotMatch(css, /\.pcImg img\{[^}]*padding:/, 'no artificial padding around the photo');
 });
 
-test('variants: colour-only product needs a colour; card add never adds an incomplete product', async t => {
+test('variants: tapping Add to Cart on a card with colours opens the bottom sheet, not the product page', async t => {
   const w = await boot(withVariants(), null, t);
-  w.addToCart(10, null, 1, true);                             // from a card: no choices made
-  assert.equal(cartLines(w).length, 0, 'nothing added');
+  w.addToCart(10, null, 1, true);                             // from a card: no choices made yet
+  assert.equal(cartLines(w).length, 0, 'nothing added yet');
+  const sheet = w.document.getElementById('variantSheet');
+  assert.ok(sheet.classList.contains('open'), 'the sheet opened');
+  assert.equal(w.document.getElementById('pModal').classList.contains('open'), false, 'did not navigate to the product page');
+  const chip = sheet.querySelector('.vsChip[data-vs-pick="Black"]');
+  assert.ok(chip, 'colour chip is in the sheet');
+  chip.click();
+  sheet.querySelector('.vsAdd').click();
+  const l = cartLines(w);
+  assert.equal(l.length, 1);
+  assert.equal(l[0].color, 'Black');
+  assert.equal(sheet.classList.contains('open'), false, 'sheet closes after adding');
+});
+
+test('variants: colour-only product needs a colour on the product page too; add never adds an incomplete product', async t => {
+  const w = await boot(withVariants(), null, t);
   w.openProduct(10);
   assert.equal(w.document.getElementById('pColorRow').style.display, '');
   assert.equal(w.document.querySelectorAll('#pColors .pSizeChip').length, 2);

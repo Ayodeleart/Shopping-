@@ -52,16 +52,19 @@
   window.addToCart = (id, src) => {
     const p = state.byId[id];
     if (!p) return;
-    /* products with colours or sizes are bought from the product page, where the choices are made */
+    /* products with colours or sizes: the bottom sheet collects the pick, then this same function finishes the add */
     if (window.Pcx && Pcx.Variants && Pcx.Variants.needsChoice(p)) {
-      toast('Choose your options');
-      window.openProduct(id);
+      if (window.Pcx.VariantSheet) Pcx.VariantSheet.open(p, { onAdd: pick => addLine(p, src, pick.size, pick.color) });
+      else window.openProduct(id);
       return;
     }
+    addLine(p, src, null, null);
+  };
+  function addLine(p, src, size, color) {
     if (src) window.flyToCart(src);
-    const ex = window.cart.find(x => x.id === id && !x.size && !x.color);
+    const ex = window.cart.find(x => x.id === p.id && (x.size || null) === (size || null) && (x.color || null) === (color || null));
     if (ex) ex.qty += 1;
-    else window.cart.push({ id: p.id, name: p.name, price: p.price, image_url: p.image_url, vendor_id: p.vendor_id || null, qty: 1, size: null, color: null });
+    else window.cart.push({ id: p.id, name: p.name, price: p.price, image_url: p.image_url, vendor_id: p.vendor_id || null, qty: 1, size: size || null, color: color || null });
     window.saveCart(); window.updateCartBadge();
     toast('Added to cart');
   };
