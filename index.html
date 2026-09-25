@@ -1287,18 +1287,21 @@ function syncWorldPage() {
   if (!worldPage) return;
   const slug = worldFromHash();
   if (!slug) {
+    if (Pcx.mac) Pcx.mac.setWorld(null);
     worldPage.close();
     if (fashionPage) fashionPage.close();
     return;
   }
   if (slug === 'fashion') {          /* the Fashion world is a real page; other worlds stay placeholders */
+    if (Pcx.mac) Pcx.mac.setWorld('fashion');
     worldPage.close();
     if (fashionPage) fashionPage.open();
     return;
   }
   if (fashionPage) fashionPage.close();
   const w = worldBySlug(slug);
-  if (w) worldPage.open(w); else closeWorldPage();
+  if (w) { if (Pcx.mac) Pcx.mac.setWorld(slug); worldPage.open(w); }
+  else { if (Pcx.mac) Pcx.mac.setWorld(null); closeWorldPage(); }   // world off/unknown: MAC stays its default self, same as the page
 }
 function closeWorldPage() {
   if (worldDeepLinked) {
