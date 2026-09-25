@@ -31,5 +31,14 @@ async function requireAdmin(req) {
   if (!adminEmails().includes((u.email || '').toLowerCase())) throw new HttpError(403, 'Not an admin account', 'forbidden');
   return u;
 }
+/* Admin, or a vendor whose own account is approved — used by endpoints (like background
+   removal) that a vendor legitimately triggers for their own products, not only the store owner. */
+async function requireAdminOrApprovedVendor(req) {
+  const u = await requireUser(req);
+  if (adminEmails().includes((u.email || '').toLowerCase())) return u;
+  const { data, error } = await db().from('vendors').select('status').eq('id', u.id).maybeSingle();
+  if (error || !data || data.status !== 'approved') throw new HttpError(403, 'Admin or approved vendor account required', 'forbidden');
+  return u;
+}
 
-module.exports = { optionalUser, requireUser, requireAdmin, setVerifier };
+module.exports = { optionalUser, requireUser, requireAdmin, requireAdminOrApprovedVendor, setVerifier };

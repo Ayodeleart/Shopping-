@@ -261,9 +261,9 @@ test('admin > Food > Display Categories: add with name, image, GIF, linked produ
   assert.equal(ui.db.tables.world_category_links.length, 0);
 });
 
-test('admin > Fashion > Hero: add a slide (image + GIF + button), validation, edit, disable, delete; the storefront follows', async () => {
+test('admin > Food > Hero: add a slide (image + GIF + button), validation, edit, disable, delete; the storefront follows', async () => {
   const ui = await boot();
-  await ui.manage('Fashion');
+  await ui.manage('Food');
   await ui.click('[data-a="hero-toggle"]');
   await ui.click('[data-a="add-hero"]');
   let c = ui.$('.wa-card');
@@ -283,13 +283,13 @@ test('admin > Fashion > Hero: add a slide (image + GIF + button), validation, ed
   ui.type(c.querySelector('[data-f="cta_value"]'), 'fashion-clothing');
   await ui.click(c.querySelector('[data-a="save"]'));
   const row = ui.db.tables.world_heroes[0];
-  assert.deepEqual(J([row.world_slug, row.title, row.subtitle, row.cta_type, row.cta_label, String(row.cta_value), row.is_active]), ['fashion', 'New season', 'Fresh drops', 'category', 'Shop now', 'fashion-clothing', true]);
+  assert.deepEqual(J([row.world_slug, row.title, row.subtitle, row.cta_type, row.cta_label, String(row.cta_value), row.is_active]), ['food', 'New season', 'Fresh drops', 'category', 'Shop now', 'fashion-clothing', true]);
   assert.match(row.image_url, /worlds\/hero\/up1\.jpg$/);
 
   ui.db.isAdmin = false;
-  let cfg = await ui.w.Pcx.WorldSections.load(ui.sb, 'fashion');
+  let cfg = await ui.w.Pcx.WorldSections.load(ui.sb, 'food');
   assert.equal(cfg.heroes.length, 1); assert.equal(cfg.heroes[0].title, 'New season');
-  assert.equal((await ui.w.Pcx.WorldSections.load(ui.sb, 'food')).heroes.length, 0);   // another world never gets it
+  assert.equal((await ui.w.Pcx.WorldSections.load(ui.sb, 'beauty')).heroes.length, 0);   // another world never gets it
   ui.db.isAdmin = true;
 
   await ui.click('[data-a="add-hero"]');                                          // a link button must be https:// or an in-app page
@@ -307,8 +307,8 @@ test('admin > Fashion > Hero: add a slide (image + GIF + button), validation, ed
   c = await ui.openCard('New season');
   await ui.click(c.querySelector('[data-a="tgl"]')); await ui.click(ui.card('New season').querySelector('[data-a="save"]'));
   ui.db.isAdmin = false;
-  cfg = await ui.w.Pcx.WorldSections.load(ui.sb, 'fashion'); ui.w.Pcx.WorldSections.clearCache && ui.w.Pcx.WorldSections.clearCache();
-  cfg = await ui.w.Pcx.WorldSections.load(ui.sb, 'fashion');
+  cfg = await ui.w.Pcx.WorldSections.load(ui.sb, 'food'); ui.w.Pcx.WorldSections.clearCache && ui.w.Pcx.WorldSections.clearCache();
+  cfg = await ui.w.Pcx.WorldSections.load(ui.sb, 'food');
   assert.deepEqual(J(cfg.heroes.map(h => [h.title || null, !!h.gif_url])), [[null, true]]);                        // disabled slide hidden; the GIF-only slide remains
   ui.db.isAdmin = true;
 
@@ -317,4 +317,15 @@ test('admin > Fashion > Hero: add a slide (image + GIF + button), validation, ed
   await ui.click(c.querySelector('[data-a="del"]'));
   assert.equal(ui.db.tables.world_heroes.length, 1);
   assert.deepEqual(J(ui.db.storage.removed), ['worlds/hero/up1.jpg']);
+});
+
+test('admin > Fashion and Beauty have their own admin, so the generic Hero/Category manager is hidden for them', async () => {
+  const ui = await boot();
+  let c = await ui.openCard('Fashion');
+  assert.equal(c.querySelector('[data-a="manage"]'), null);
+  assert.match(c.textContent, /own dedicated admin section/);
+  c = await ui.openCard('Beauty');
+  assert.equal(c.querySelector('[data-a="manage"]'), null);
+  c = await ui.openCard('Food');
+  assert.ok(c.querySelector('[data-a="manage"]'), 'Food still uses the generic manager');
 });

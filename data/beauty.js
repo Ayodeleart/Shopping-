@@ -34,24 +34,54 @@
     return r && r.active !== false ? r : null;
   }
 
-  /* Every product whose category sits under the Beauty root, in the given order.
+  /* Category ids the Beauty tiles point at (beauty_categories.category_id). A store may file its beauty
+     products under categories such as "Makeup" or "Skincare" without a main category slugged `beauty`;
+     linking a tile to that category is what makes those real products part of the Beauty world. */
+  function linkedIds(rows) {
+    var seen = {}, out = [];
+    (rows || []).forEach(function (c) {
+      if (!c || c.active === false || c.category_id == null || c.category_id === '') return;
+      var id = Number(c.category_id);
+      if (!isNaN(id) && !seen[id]) { seen[id] = 1; out.push(id); }
+    });
+    return out;
+  }
+
+  /* The category roots that make up the Beauty world: the `beauty` main category (when it exists)
+     plus every category a Beauty tile is linked to. */
+  function scopeRoots(catTree, extraIds) {
+    if (!catTree) return [];
+    var roots = [], r = root(catTree);
+    if (r) roots.push(r);
+    (extraIds || []).forEach(function (id) {
+      var c = catTree.byId && catTree.byId[id];
+      if (c && c.active !== false && !roots.some(function (x) { return x.id === c.id; })) roots.push(c);
+    });
+    return roots;
+  }
+
+  function scopeMatcher(catTree, extraIds) {
+    var roots = scopeRoots(catTree, extraIds);
+    if (!roots.length) return null;
+    var ms = roots.map(function (r) { return catTree.productMatcher(r.id); });
+    return function (p) { return ms.some(function (m) { return m(p); }); };
+  }
+
+  /* Every product in the Beauty world, in the given order.
      Returns [] (never null) when the world has no anchor yet. */
-  function pool(catTree, products) {
-    var r = root(catTree);
-    if (!r || !products) return [];
-    var matcher = catTree.productMatcher(r.id);
-    return products.filter(function (p) { return matcher(p); });
+  function pool(catTree, products, extraIds) {
+    var m = scopeMatcher(catTree, extraIds);
+    if (!m || !products) return [];
+    return products.filter(function (p) { return m(p); });
   }
 
   /* Is this one product a Beauty product? (Used to theme the shared product page.) */
-  function isBeautyProduct(p, catTree) {
-    var r = root(catTree);
-    if (!r || !p) return false;
-    return catTree.productMatcher(r.id)(p);
+  function isBeautyProduct(p, catTree, extraIds) {
+    var m = scopeMatcher(catTree, extraIds);
+    return !!(m && p && m(p));
   }
 
   function descendantCats(catTree, rootId) {
-    var r = rootId != null ? { byId: {}, list: [] } : null;
     if (!catTree) return [];
     var ids = catTree.descendantIds(rootId) || [];
     return ids.map(function (id) { return catTree.byId[id]; }).filter(Boolean);
@@ -157,11 +187,12 @@
     kids: { slugs: ['kids', 'children', 'kid', 'kids-beauty'], re: /(^|[-_\s])(kids?|children|child)([-_\s]|$)/i }
   };
 
-  function personFilters(catTree) {
-    var r = root(catTree);
+  function personFilters(catTree, extraIds) {
+    var roots = scopeRoots(catTree, extraIds);
     var out = { man: null, woman: null, kids: null };
-    if (!r) return out;
-    var subs = descendantCats(catTree, r.id);
+    if (!roots.length) return out;
+    var subs = [];
+    roots.forEach(function (r) { subs = subs.concat(descendantCats(catTree, r.id), [r]); });
     Object.keys(PERSON_PATTERNS).forEach(function (key) {
       var pat = PERSON_PATTERNS[key];
       var hit = subs.find(function (c) {
@@ -203,6 +234,10 @@
     return settings.background_url || '';
   }
 
+  /* The built-in Beauty background (used until the admin uploads their own, or when theirs is switched off). */
+  var DEFAULT_BG = '/components/beauty-bg.jpg';
+  function backgroundOrDefault(settings) { return backgroundUrl(settings) || DEFAULT_BG; }
+
   /* beauty_heroes rows -> promo objects for the shared promotional carousel. */
   function heroPromos(rows) {
     return (rows || []).filter(function (h) { return h && h.active !== false && (h.image_url || h.title); })
@@ -221,6 +256,8 @@
     ROOT_SLUG: ROOT_SLUG,
     KIND_ALL: KIND_ALL, KIND_NEW: KIND_NEW, KIND_BEST: KIND_BEST, KIND_CAT: KIND_CAT,
     root: root,
+    linkedIds: linkedIds,
+    scopeMatcher: scopeMatcher,
     pool: pool,
     isBeautyProduct: isBeautyProduct,
     activeCats: activeCats,
@@ -232,6 +269,8 @@
     score: score,
     settingsMap: settingsMap,
     backgroundUrl: backgroundUrl,
+    DEFAULT_BG: DEFAULT_BG,
+    backgroundOrDefault: backgroundOrDefault,
     heroPromos: heroPromos
   };
 })(window);

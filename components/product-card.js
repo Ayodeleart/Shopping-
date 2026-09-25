@@ -35,15 +35,70 @@ function starsHTML(avg, px) {
 
 /* ── PRODUCT CARD (JUMIA STYLE) ───────────────────── */
 /* Add to Cart turns into a - 1 + stepper once the product is in the cart (see ctlHTML / syncCardCtls). */
-/* A product with colours or sizes is never added from its card (a card cannot know which one the customer wants):
-   its button opens the product page, where the choices are made (see addToCart in index.html). `needs` = that case. */
-function cardNeedsChoice(p) {
-  return !!(p && window.Pcx && Pcx.Variants && Pcx.Variants.needsChoice(p));
-}
 function plainLine(id) { return cart.find(x => x.id === id && !x.size && !x.color); }
 
-function ctlHTML(id, needs) {
-  if (needs) return `<button class="pcAdd pcOpts" onclick="event.stopPropagation();openProduct(${num(id)})">Choose options</button>`;
+/* Colour swatches on a card (real colours only, from the product's own attributes.colors — see Pcx.Variants).
+   Tapping one selects it and, if the vendor/admin linked one of the product's own photos to that colour, swaps the
+   card's photo to it (Pcx.Variants.image); it never opens the product page or the cart. The "Add to Cart" button
+   still opens the shared bottom sheet to make the pick official and put it in the cart.
+
+   Pcx.Variants.swatch(c) needs components/product-attributes.js for the colour-name -> CSS-colour map, but that
+   file is loaded lazily (only once a product detail page is opened — see index.html's ensureAttrLib) to keep it
+   off the homepage's initial payload. The very first card render on a fresh page load therefore has no map yet,
+   so every dot would render with no background — a plain white/default button. Cards fix this the same way the
+   product detail page's colour picker already does: render once immediately (so colours already loaded, e.g. the
+   user already opened a product this session, still show right away), then load the map and repaint every dot
+   already on the page. window.__attrLibPromise is shared with index.html's own loader so only one script tag is
+   ever injected regardless of which caller (a card, or the detail page) asks for it first. */
+const cardColorPick = {};
+function ensureProductAttributes() {
+  if (window.Pcx && Pcx.ProductAttributes) return Promise.resolve();
+  if (!window.__attrLibPromise) {
+    window.__attrLibPromise = new Promise((res, rej) => {
+      const sc = document.createElement('script');
+      sc.src = 'components/product-attributes.js'; sc.onload = res; sc.onerror = rej;
+      document.head.appendChild(sc);
+    });
+  }
+  return window.__attrLibPromise;
+}
+function repaintSwatchColors() {
+  if (!(window.Pcx && Pcx.Variants)) return;
+  document.querySelectorAll('.pcSwatch[data-color]').forEach(b => {
+    const sw = Pcx.Variants.swatch(b.getAttribute('data-color'));
+    if (sw) b.style.background = sw;
+  });
+}
+function swatchHTML(p) {
+  const cols = (window.Pcx && Pcx.Variants) ? Pcx.Variants.colors(p) : [];
+  if (!cols.length) return '';
+  if (!(window.Pcx && Pcx.ProductAttributes)) ensureProductAttributes().then(repaintSwatchColors);
+  const picked = cardColorPick[p.id];
+  return `<div class="pcSwatches" onclick="event.stopPropagation()">${cols.map(c => {
+    const sw = Pcx.Variants.swatch(c);
+    return `<button type="button" class="pcSwatch${picked === c ? ' on' : ''}" aria-label="${esc(c)}" aria-pressed="${picked === c}" data-color="${esc(c)}" style="${sw ? `background:${esc(sw)}` : ''}" data-pcid="${num(p.id)}" onclick="pickCardColor(${num(p.id)},'${esc(c).replace(/'/g, "\\'")}')"></button>`;
+  }).join('')}</div>`;
+}
+function pickCardColor(id, c) {
+  cardColorPick[id] = cardColorPick[id] === c ? null : c;
+  document.querySelectorAll(`.pcSwatch[data-pcid="${id}"]`).forEach(b => {
+    const on = b.getAttribute('aria-label') === cardColorPick[id];
+    b.classList.toggle('on', on); b.setAttribute('aria-pressed', on);
+  });
+  /* if the vendor/admin linked a photo to this colour, show it; otherwise stay on the product's normal photo
+     (never a fabricated one) — see attributes.colorImages, set from the upload form's colour picker.
+     Every card for this product on the page updates (a product can appear more than once, e.g. Home + search). */
+  const p = (typeof allProds !== 'undefined' ? allProds : (window.allProds || [])).find(x => x.id === id) || (window.state && window.state.byId && window.state.byId[id]);
+  const linked = p && cardColorPick[id] && window.Pcx && Pcx.Variants ? Pcx.Variants.image(p, cardColorPick[id]) : null;
+  document.querySelectorAll(`.pcCtl[data-pid="${id}"]`).forEach(ctl => {
+    const img = ctl.closest('.pcard')?.querySelector('.pcImg img');
+    if (!img) return;
+    if (!img.dataset.origSrc) img.dataset.origSrc = img.src;
+    img.src = linked || img.dataset.origSrc;
+  });
+}
+
+function ctlHTML(id) {
   const it = plainLine(id);
   if (!it) return `<button class="pcAdd" onclick="event.stopPropagation();addToCart(${num(id)},this)">Add to Cart</button>`;
   return `
@@ -57,11 +112,10 @@ function ctlHTML(id, needs) {
 /* every card of a product (home grid, rails, category page, storefront ...) follows the cart */
 function syncCardCtls() {
   document.querySelectorAll('.pcCtl').forEach(el => {
-    if (el.dataset.need === '1') return;      /* "Choose options" buttons never change with the cart */
     const id = Number(el.dataset.pid), it = plainLine(id), q = String(it ? it.qty : 0);
-    if (el.dataset.q === q) return;
+    if (el.dataset.q === q) return;      /* variant products never grow a "plain" line, so this stays Add to Cart */
     el.dataset.q = q;
-    el.innerHTML = ctlHTML(id, false);
+    el.innerHTML = ctlHTML(id);
   });
 }
 
@@ -80,7 +134,6 @@ function cardHTML(p) {
   const tot = p.max_stock || (p.stock ? p.stock + 15 : 0);
   const pct = tot > 0 ? Math.min(100, Math.round(p.stock/tot*100)) : 0;
   const r = ratingMap[p.id];
-  const needs = cardNeedsChoice(p);
   const inCart = plainLine(p.id);
 
   return `
@@ -95,6 +148,7 @@ function cardHTML(p) {
       <div class="pcBody">
         <div class="pcName">${esc(p.name)}</div>
         <div class="pcPrice">${fmt(p.price)}</div>
+        ${swatchHTML(p)}
         ${disc > 0 ? `<div class="pcWas">${fmt(p.original_price)}</div>` : ''}
         ${r && r.n > 0 ? `<div class="pcRate">${starsHTML(r.avg, 12)}<span>(${esc(r.n)})</span></div>` : ''}
         ${p.stock > 0 ? `
@@ -102,7 +156,7 @@ function cardHTML(p) {
             <div class="pcBar"><div class="pcBarFill" style="width:${pct}%"></div></div>
             <span class="pcStockTxt">${esc(p.stock)} left</span>
           </div>` : ''}
-        <div class="pcCtl" data-pid="${esc(p.id)}" data-need="${needs ? 1 : 0}" data-q="${esc(inCart ? inCart.qty : 0)}">${ctlHTML(p.id, needs)}</div>
+        <div class="pcCtl" data-pid="${esc(p.id)}" data-q="${esc(inCart ? inCart.qty : 0)}">${ctlHTML(p.id)}</div>
       </div>
     </div>`;
 }

@@ -1093,9 +1093,11 @@ function isBeautyCategory() {
 }
 async function removeBgServer(url) {
   try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) return null;   // /api/remove-bg requires an admin or approved-vendor session
     const res = await fetch('/api/remove-bg', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
       body: JSON.stringify({ url })
     });
     if (!res.ok) return null;
@@ -1109,9 +1111,9 @@ function syncRmBgAutoCheck() {
 document.getElementById('pRmBg').addEventListener('change', () => { pRmBgTouched = true; });
 document.getElementById('pCat').addEventListener('change', syncRmBgAutoCheck);
 
-const pPicker = new Pcx.MultiImagePicker(document.getElementById('pPicker'), { max: 8, label: 'Add photos' });
+const pPicker = new Pcx.MultiImagePicker(document.getElementById('pPicker'), { max: 8, label: 'Add photos', onChange: () => pAttrs.refreshColorImages() });
 const sLogoPicker = new Pcx.MultiImagePicker(document.getElementById('sLogoPicker'), { max: 1, label: 'Upload logo' });
-const pAttrs = new Pcx.ProductAttributes(document.getElementById('pAttrs'));
+const pAttrs = new Pcx.ProductAttributes(document.getElementById('pAttrs'), { getImages: () => pPicker.getLinkable() });
 const pBlocks = new Pcx.DescriptionBlocks(document.getElementById('pBlocks'), { onError: m => toast(m, true) });
 /* Brand: search brands already saved, then logo.dev (through /api/brand-search); a brand nobody has listed yet can be added with its own logo. */
 const brandPicker = new Pcx.BrandPicker(document.getElementById('pBrandBox'), {
@@ -1308,6 +1310,7 @@ document.getElementById('pSaveBtn').onclick = async () => {
       }
       return uploadImage(f, 'vendor-products', transparent);
     });
+    pAttrs.remapColorImages(pPicker.getUploadRemap());
 
     if (removeBg && beautyCat && urls.length) {
       showLoad('Removing background...');

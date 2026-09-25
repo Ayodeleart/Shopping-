@@ -119,15 +119,17 @@ test('real admin/index.html: Beauty sub-tab and pane boot, CRUD module loads', a
     assert.ok($('#app').classList.contains('on'), 'admin dashboard unlocked for the admin session');
     assert.ok($('#loginWrap').style.display === 'none', 'login screen hidden');
 
-    /* the Beauty sub-tab exists between Worlds and Ads */
-    const tabs = [...w.document.querySelectorAll('.bsub-tab')].map(t => t.getAttribute('data-sub'));
-    assert.ok(tabs.includes('beauty'), 'Beauty sub-tab present');
+    /* Beauty lives in the Explore tab (Worlds / Fashion / Beauty), alongside every other Explore Marcato admin screen */
+    const tabs = [...w.document.querySelectorAll('[data-esub]')].map(t => t.getAttribute('data-esub'));
+    assert.ok(tabs.includes('beauty'), 'Beauty sub-tab present under Explore');
+    assert.equal($('[data-tab="explore"]').getAttribute('aria-label'), 'Explore');
+    assert.ok(!w.document.querySelector('[data-tab="fashion"]'), 'the old standalone Fashion tab is gone');
 
     assert.ok(typeof w.BeautyAdmin === 'object' && typeof w.BeautyAdmin.open === 'function', 'BeautyAdmin module loaded');
     assert.ok($('#beautyPane'), 'beauty pane in the DOM');
 
     /* switching to the sub-tab opens the pane and the module renders its cards */
-    w.switchBannerSub('beauty');
+    w.switchExploreSub('beauty');
     await new Promise(res => setTimeout(res, 200));
     assert.ok($('#beautyPane').style.display !== 'none', 'beauty pane visible after switching');
     assert.ok($('#bwBgFile'), 'background upload input rendered');

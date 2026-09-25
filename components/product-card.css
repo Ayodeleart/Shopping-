@@ -83,8 +83,10 @@
 }
 .pcAdd:active{background:var(--red2)}
 .pcCtl{margin-top:auto;padding-top:4px}                 /* pinned to the bottom of the card so buttons line up across a row */
-.pcOpts{background:var(--card);color:var(--red);border:1.5px solid var(--red)}
-.pcOpts:active{background:color-mix(in srgb,var(--red) 10%,var(--card))}
+.pcSwatches{display:flex;gap:5px;margin-bottom:6px;flex-wrap:wrap}
+.pcSwatch{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--border);padding:0}
+.pcSwatch.on{border-color:var(--red);box-shadow:0 0 0 1.5px var(--red)}
+.pcSwatch:focus-visible{outline:2px solid var(--red);outline-offset:2px}
 /* after adding: [ - ]  1  [ + ]  (square red buttons at both ends, quantity in the middle) */
 .pcStep{display:flex;align-items:center;justify-content:space-between;height:36px}
 .pcStepB{

@@ -76,6 +76,39 @@
   var BRIDGE = rrect(194, 155, 12, 7, 2, 4, 2);
   var GLINTS = [line(160, 163, 148, 187, 4), line(170, 163, 164, 175, 3), line(240, 163, 228, 187, 4), line(250, 163, 244, 175, 3)];
 
+  /* ---- worlds: Maccato's specialised sections (Food, Fashion, Beauty, Home & Decor). One MAC, same core moves;
+     entering a world swaps its interactive head accessory (still the exact nod-on / shake-off trick sunglasses
+     use), adds that world's costume to the body, and — Food, Home — an occasional prop animation near its side.
+     `null`/'default' is the plain general-store MAC (sunglasses), unchanged. */
+  var HAT_PUFF = rrect(148, 76, 104, 58, [42, 42, 14, 14], 10, 8);       // food: chef's poof
+  var HAT_BAND = rrect(140, 126, 120, 22, 7, 8, 4);                     // food: chef's band
+  var DOME = rrect(102, 78, 196, 78, [72, 72, 10, 10], 12, 8);          // home: hard-hat dome
+  var BRIM = rrect(86, 140, 228, 15, 7, 10, 4);                         // home: hard-hat brim
+  var HELMET_STRIPE = [line(148, 103, 252, 103, 8)];                    // home: hi-vis stripe
+  var CROWN = rrect(156, 84, 88, 54, [38, 38, 28, 28], 10, 8);          // fashion: beret crown
+  var SUNHAT_BRIM = rrect(84, 128, 232, 24, 12, 12, 6);                 // fashion: floppy brim
+  var LASHES = [line(158, 168, 147, 157, 3), line(168, 166, 163, 154, 3), line(242, 168, 253, 157, 3), line(232, 166, 237, 154, 3)]; // beauty
+  var LIP = rrect(183, 200, 34, 12, [6, 6, 6, 6], 6, 4);                // beauty: lipstick mark
+  var BLUSH = [circ(151, 193, 9, 10), circ(249, 193, 9, 10)];           // beauty: blush
+
+  var WORLDS = {
+    'default': { style: 'wrap', lens: LENSES, bridge: BRIDGE, glint: GLINTS, arms: true },
+    food: { style: 'hat', lens: [HAT_PUFF], bridge: [HAT_BAND], glint: [], arms: false, outline: true,
+      lensFill: 'var(--mac-paper)', bridgeFill: '#D91C2D', costume: 'apron', color: '#D91C2D', prop: 'cutlery' },
+    fashion: { style: 'hat', lens: [CROWN], bridge: [SUNHAT_BRIM], glint: [], arms: false, outline: true,
+      lensFill: '#4B4358', bridgeFill: 'var(--mac-paper)', costume: 'outfit', color: '#4B4358' },
+    beauty: { style: 'wrap', lens: BLUSH, bridge: [LIP], glint: LASHES, arms: false, outline: false,
+      bridgeFill: '#E0457A', lensFill: '#F6A8C4', glintFill: 'var(--mac-paper)', costume: null, color: '#B4227A' },
+    home: { style: 'hat', lens: [DOME], bridge: [BRIM], glint: HELMET_STRIPE, arms: false, outline: true,
+      lensFill: '#2FB8A3', bridgeFill: 'var(--mac-paper)', glintFill: 'var(--mac-paper)', costume: 'vest', color: '#2FB8A3', prop: 'hammer' }
+  };
+  var WARDROBE = ['#4B4358', '#8B5CF6', '#C9A0DC', '#2E2A38', '#F5B301'];   // fashion: outfits it cycles through (its brand plum, plus a few complementary tones)
+
+  function pathD(pts) {
+    var d = '';
+    for (var i = 0; i < pts.length; i++) d += (i ? 'L' : 'M') + f(pts[i][0]) + ' ' + f(pts[i][1]);
+    return d + 'Z';
+  }
   var BODY_D = 'M146 320 C146 304 170 300 200 300 C230 300 254 304 254 320 C254 378 232 450 200 450 C168 450 146 378 146 320 Z';
   function bodyHW(y) { return 54 * Math.sqrt(Math.max(0, 1 - Math.pow((y - 320) / 130, 2))); }
 
@@ -100,6 +133,9 @@
             '<path data-p="lens" class="mi"/><path data-p="bridge" class="mi"/>',
             '<path data-p="glint" class="mpline" fill="none" stroke-width="5" stroke-linecap="round" opacity=".7"/>',
           '</g>',
+          '<g data-p="hat" style="display:none" opacity="0">',              // food/fashion/home: sits on the head, moves rigidly with it (no sphere-wrap — a hat isn't painted on the skull)
+            '<path data-p="hatA" stroke-width="4" style="paint-order:stroke"/><path data-p="hatB" stroke-width="4" style="paint-order:stroke"/>',
+          '</g>',
           '<path data-p="vents" class="mpline" fill="none" stroke-width="5" stroke-linecap="round"/>',
           '<ellipse data-p="headHL" cx="200" cy="180" rx="106" ry="92" fill="url(#' + u + 'h)"/>',
           '<ellipse data-p="headSH" cx="200" cy="180" rx="106" ry="92" fill="url(#' + u + 's)"/>',
@@ -108,13 +144,16 @@
           '<g data-p="earsFront"></g>',
         '</g>',
         '<g data-p="body">',
-          '<path class="mi mh" d="' + BODY_D + '"/>',
+          '<path data-p="bodyMain" class="mi mh" d="' + BODY_D + '"/>',
+          '<path data-p="costume1" fill="none"/><path data-p="costume2" fill="none"/><path data-p="costume3" fill="none"/>',
           '<text data-p="l0" class="mp macTxt" text-anchor="middle">M</text>',
           '<text data-p="l1" class="mp macTxt" text-anchor="middle">A</text>',
           '<text data-p="l2" class="mp macTxt" text-anchor="middle">C</text>',
           '<ellipse data-p="port" class="mp"/>',
           '<path data-p="grill" class="mpline" fill="none" stroke-width="4" stroke-linecap="round"/>',
           '<path d="' + BODY_D + '" fill="url(#' + u + 'h)"/><path d="' + BODY_D + '" fill="url(#' + u + 's)"/>',
+          '<g data-p="prop1" style="display:none"></g><g data-p="prop2" style="display:none"></g>',
+          '<path data-p="spark" class="mp" fill="none" opacity="0"/>',
         '</g>',
       '</g>',
       '</svg>'
@@ -147,19 +186,22 @@
       showcaseMin: 2200, showcaseMax: 4200,      // how long each move plays before MAC switches to the next
       hideWhenCovered: true,   // hide while a full-screen page/drawer is open over the store
       glassesMs: 4500,         // glasses put on by a nod come off by themselves after this long
+      world: null,             // 'food' | 'fashion' | 'beauty' | 'home' | null (the plain general-store MAC)
       greeting: 'Hi, I\u2019m MAC',
       parent: document.body,
       onTap: null, onChange: null
     };
     for (var k in opts) if (Object.prototype.hasOwnProperty.call(opts, k)) o[k] = opts[k];
 
+    this.world = (o.world && WORLDS[o.world]) ? o.world : null;
     this.on = { bounce: false, head: false, around: false, bend: false, glasses: false };
     this.s = {
       t: 0, phase: 0, lagH: 0, ampHead: 0, ampBend: 0, spinA: 0, nodN: -1, nodMode: null, autoOffT: 0,
       shakeN: -1, shakeA: 0,
       ant: { x: 0, v: 0 }, landSign: 1, gy: -110, gv: 0, gTarget: -110,
       glanceT: 0, glanceDir: 0, vx: 0, dragTilt: 0, prevYaw: 0, prevTilt: 0,
-      nextBlink: 2, blinkStart: -10, joy: false, earLayer: [null, null]
+      nextBlink: 2, blinkStart: -10, joy: false, earLayer: [null, null],
+      wardrobeI: 0, propPhase: -1, propKind: null, spark: 0, sparkX: 200, sparkY: 375
     };
     this.side = o.side === 'left' ? 'left' : 'right';
     this.fy = o.y;
@@ -173,11 +215,13 @@
 
     this._load();
     this._build();
+    this._applyWorld();
     this._place(false);
     this._bind();
     if (o.hideWhenCovered) this._watchCoverage();
     if (o.peekOnScroll) this._watchScroll();
     this._scheduleShowcase();
+    this._scheduleWorldAction();
     this._wake();
   }
   var P = MacFab.prototype;
@@ -195,6 +239,7 @@
     this.bubble = el.querySelector('.macFab-bubble');
     var parts = this.p = {}, nodes = el.querySelectorAll('[data-p]');
     for (var i = 0; i < nodes.length; i++) parts[nodes[i].getAttribute('data-p')] = nodes[i];
+    parts.spark.setAttribute('d', SPARK);
 
     /* the two ear cups are created here so they can swap between "behind the head" and "in front of it" */
     var NS = 'http://www.w3.org/2000/svg';
@@ -406,6 +451,77 @@
     this.turnAround();
   };
 
+  /* ---------- worlds ---------- */
+  var PROP_SHAPES = {
+    /* each shape is drawn around its own local (0,0); prop1/prop2 groups get positioned+rotated per frame */
+    fork: '<rect x="-4" y="0" width="8" height="30" rx="3"/><rect x="-9" y="-15" width="4" height="17" rx="2"/><rect x="-2" y="-15" width="4" height="17" rx="2"/><rect x="5" y="-15" width="4" height="17" rx="2"/>',
+    spoon: '<rect x="-4" y="0" width="8" height="30" rx="3"/><ellipse cx="0" cy="-13" rx="9" ry="12"/>',
+    hammer: '<rect x="-3.5" y="-2" width="7" height="42" rx="3"/><rect x="-15" y="-15" width="30" height="15" rx="3"/>'
+  };
+  var SPARK = 'M0,-11 L3,-3 L11,0 L3,3 L0,11 L-3,3 L-11,0 L-3,-3 Z';
+
+  /* one costume per themed world, drawn onto the body group (see costume1/2/3 in buildSVG); always visible while
+     that world is active. Food: an apron with straps. Home: a hi-vis diagonal stripe. Fashion has no separate
+     costume shape — the whole body recolours instead (see the wardrobe cycle below). */
+  P._paintCostume = function () {
+    var p = this.p, W = WORLDS[this.world] || WORLDS['default'], k = W.costume;
+    p.costume1.style.display = p.costume2.style.display = p.costume3.style.display = 'none';
+    p.bodyMain.style.fill = '';
+    if (k === 'apron') {
+      p.costume1.style.display = ''; p.costume1.style.fill = W.color;
+      p.costume1.setAttribute('d', pathD(rrect(164, 330, 72, 82, [4, 4, 18, 18], 6, 5)));
+      p.costume2.style.display = ''; p.costume2.style.fill = 'none'; p.costume2.setAttribute('stroke', W.color);
+      p.costume2.setAttribute('stroke-width', '6'); p.costume2.setAttribute('stroke-linecap', 'round');
+      p.costume2.setAttribute('d', 'M170 330 L152 305 M230 330 L248 305');
+    } else if (k === 'vest') {
+      p.costume1.style.display = ''; p.costume1.style.fill = 'none'; p.costume1.setAttribute('stroke', W.color);
+      p.costume1.setAttribute('stroke-width', '13'); p.costume1.setAttribute('stroke-linecap', 'round');
+      p.costume1.setAttribute('d', 'M168 306 L222 440 M186 306 L240 402');
+      p.costume2.style.display = ''; p.costume2.style.fill = 'none'; p.costume2.setAttribute('stroke', 'var(--mac-paper)');
+      p.costume2.setAttribute('stroke-width', '4'); p.costume2.setAttribute('stroke-linecap', 'round');
+      p.costume2.setAttribute('d', 'M172 313 L226 447 M190 313 L244 409');
+    } else if (k === 'outfit') {
+      p.bodyMain.style.fill = WARDROBE[this.s.wardrobeI % WARDROBE.length];
+    }
+  };
+
+  /* switch which world MAC represents: its head accessory, body costume and (Food/Home) prop all change;
+     everything else — bounce, turns, drag, the chat it opens — stays exactly the same. */
+  P.setWorld = function (slug) {
+    var w = (slug && WORLDS[slug]) ? slug : null;
+    if (w === this.world) return;
+    this.world = w;
+    this._applyWorld();
+  };
+  P._applyWorld = function () {
+    var W = WORLDS[this.world] || WORLDS['default'];
+    this.p.prop1.innerHTML = W.prop ? PROP_SHAPES[W.prop === 'cutlery' ? 'fork' : W.prop] : '';
+    this.p.prop2.innerHTML = W.prop === 'cutlery' ? PROP_SHAPES.spoon : '';
+    if (W.prop) { this.p.prop1.style.fill = this.p.prop2.style.fill = 'var(--mac-paper)'; }
+    this.s.wardrobeI = 0;
+    this._paintCostume();
+    this._scheduleWorldAction();
+    this._wake();
+  };
+
+  /* Food: cutlery swings in from both sides and taps together with a little spark. Home: a hammer taps down.
+     Fashion: the outfit quietly changes (with the same spark, smaller, as a "ta-da"). Runs on its own timer,
+     independent of the bounce/turn/bend shuffle, so it doesn't crowd them out. */
+  P._scheduleWorldAction = function () {
+    var self = this;
+    clearTimeout(this._worldT);
+    var W = WORLDS[this.world] || WORLDS['default'];
+    if (!W.prop && W.costume !== 'outfit') return;
+    this._worldT = setTimeout(function () {
+      if (!self.dragging) {
+        if (W.prop) { self.s.propKind = W.prop; self.s.propPhase = 1e-6; }
+        else { self.s.wardrobeI++; self._paintCostume(); self.s.spark = 1e-6; self.s.sparkX = 200; self.s.sparkY = 375; }
+        self._wake();
+      }
+      self._scheduleWorldAction();
+    }, 3800 + Math.random() * 2200);
+  };
+
   /* MAC never just sits there: it shuffles through bounce / turn head / turn around / bend neck, always exactly one
      playing, and works a nod-glasses-on / shake-glasses-off into the mix so the shades come and go too. Dragging
      pauses it (see pointerdown/_release below); a hidden or covered MAC still runs, ready the moment it reappears. */
@@ -453,7 +569,7 @@
   P.destroy = function () {
     if (this._onScroll) global.removeEventListener('scroll', this._onScroll, { capture: true });
     cancelAnimationFrame(this._raf); this._raf = 0; this.destroyed = true;
-    clearTimeout(this._showT); clearTimeout(this._lp); clearTimeout(this._bt); clearTimeout(this._snapT);
+    clearTimeout(this._showT); clearTimeout(this._lp); clearTimeout(this._bt); clearTimeout(this._snapT); clearTimeout(this._worldT);
     if (this._coverObserver) this._coverObserver.disconnect();
     global.removeEventListener('resize', this._onResize);
     global.removeEventListener('orientationchange', this._onResize);
@@ -474,7 +590,8 @@
       s.phase > 0 || s.spinA > 0 || s.nodN >= 0 || s.shakeN >= 0 || s.autoOffT > 0 || s.ampHead > 0.003 || s.ampBend > 0.003 || s.glanceT > 0 ||
       Math.abs(s.gy - s.gTarget) > 0.4 || Math.abs(s.gv) > 0.4 ||
       Math.abs(s.ant.x) > 0.25 || Math.abs(s.ant.v) > 1 || Math.abs(s.lagH) > 0.1 ||
-      Math.abs(s.dragTilt) > 0.2 || (s.t - s.blinkStart) < 0.16 || s.nextBlink <= 0;
+      Math.abs(s.dragTilt) > 0.2 || (s.t - s.blinkStart) < 0.16 || s.nextBlink <= 0 ||
+      s.propPhase >= 0 || s.spark > 0;
   };
 
   P._frame = function (now) {
@@ -644,29 +761,57 @@
     }
     setD(p.vents, vd);
 
-    /* sunglasses: sit slightly off the face, with arms that run back along the head */
+    /* head accessory: whichever one belongs to the current world (sunglasses by default), same on/off spring as
+       always. 'wrap' styles (sunglasses, beauty) sit right on the face and wrap around the head's curve like the
+       visor does; 'hat' styles (chef hat, hard hat, sun hat) sit on top and just move rigidly with the head. */
+    var W = WORLDS[this.world] || WORLDS['default'];
     s.gTarget = on.glasses ? 0 : -110;
     s.gv += (220 * (s.gTarget - s.gy) - 16 * s.gv) * dt;
     s.gy += s.gv * dt;
     var go = clamp((s.gy + 110) / 50, 0, 1);
-    if (go < 0.01 && !on.glasses) p.glasses.style.display = 'none';
-    else {
-      p.glasses.style.display = '';
+    var showHat = W.style === 'hat';
+    p.hat.style.display = (showHat && go >= 0.01) ? '' : 'none';
+    p.glasses.style.display = (!showHat && (go >= 0.01 || on.glasses)) ? '' : 'none';
+
+    if (showHat) {
+      if (go >= 0.01) {
+        p.hat.setAttribute('opacity', go.toFixed(2));
+        p.hat.setAttribute('transform', 'translate(0 ' + f(s.gy * 0.6) + ')');
+        var hatAD = '', hatBD = '';
+        for (var hi = 0; hi < W.lens.length; hi++) hatAD += pathD(W.lens[hi]);
+        for (var hj = 0; hj < W.bridge.length; hj++) hatBD += pathD(W.bridge[hj]);
+        p.hatA.setAttribute('d', hatAD); p.hatB.setAttribute('d', hatBD);
+        p.hatA.style.fill = W.lensFill || ''; p.hatB.style.fill = W.bridgeFill || '';
+        var hatOutline = W.outline ? 'var(--mac-ink)' : 'none';
+        p.hatA.style.stroke = p.hatB.style.stroke = hatOutline;
+      }
+    } else if (go >= 0.01 || on.glasses) {
       p.glasses.setAttribute('opacity', go.toFixed(2));
-      var gdy = s.gy, RG = 1.035;
-      setD(p.lens, ring(LENSES[0], RG, gdy) + ring(LENSES[1], RG, gdy));
-      setD(p.bridge, ring(BRIDGE, RG, gdy));
+      var gdy = s.gy, RG = 1.035, lensD = '';
+      for (var li = 0; li < W.lens.length; li++) lensD += ring(W.lens[li], RG, gdy);
+      var bridgeD = '';
+      for (var bi = 0; bi < W.bridge.length; bi++) bridgeD += ring(W.bridge[bi], RG, gdy);
+      setD(p.lens, lensD); setD(p.bridge, bridgeD);
+      p.lens.style.fill = W.lensFill || '';
+      p.bridge.style.fill = W.bridgeFill || '';
+      var outlineCss = W.outline ? 'var(--mac-ink)' : '';
+      p.lens.style.stroke = p.bridge.style.stroke = outlineCss;
+      p.lens.style.strokeWidth = p.bridge.style.strokeWidth = W.outline ? '4' : '';
+      p.lens.style.paintOrder = p.bridge.style.paintOrder = W.outline ? 'stroke' : '';
       var arms = '';
-      for (var sd = -1; sd <= 1; sd += 2) {
-        var run2 = false, phiA = clamp((180 - (157 + gdy)) / RY, -1.3, 1.3);
-        for (var a = 0; a <= 7; a++) {
-          var qa = proj(sd * (0.66 + a * 0.13), phiA, RG);
-          if (!qa[2]) { run2 = false; continue; }
-          arms += (run2 ? 'L' : 'M') + f(qa[0]) + ' ' + f(qa[1]); run2 = true;
+      if (W.arms) {
+        for (var sd = -1; sd <= 1; sd += 2) {
+          var run2 = false, phiA = clamp((180 - (157 + gdy)) / RY, -1.3, 1.3);
+          for (var a = 0; a <= 7; a++) {
+            var qa = proj(sd * (0.66 + a * 0.13), phiA, RG);
+            if (!qa[2]) { run2 = false; continue; }
+            arms += (run2 ? 'L' : 'M') + f(qa[0]) + ' ' + f(qa[1]); run2 = true;
+          }
         }
       }
       setD(p.arms, arms);
-      setD(p.glint, strokes(GLINTS, RG + 0.004, gdy, true));
+      setD(p.glint, strokes(W.glint, RG + 0.004, gdy, true));
+      p.glint.style.stroke = W.glintFill || '';
     }
 
     /* antenna: foreshortens as the head bows; a spring wobbles it when MAC lands, turns or is dragged */
@@ -722,6 +867,35 @@
       }
       p.grill.setAttribute('d', gd);
     } else { p.port.style.display = 'none'; p.grill.style.display = 'none'; }
+
+    /* Food/Home: the current prop swings in, meets, swings back. Fashion: a small sparkle when the outfit changes. */
+    if (s.propPhase >= 0) {
+      var prevPP = s.propPhase;
+      s.propPhase += dt / 1.1;
+      if (s.propPhase >= 1) { s.propPhase = -1; p.prop1.style.display = 'none'; p.prop2.style.display = 'none'; }
+      else {
+        var pp = s.propPhase, swing = Math.sin(pp * PI);
+        if (s.propKind === 'cutlery') {
+          p.prop1.style.display = ''; p.prop2.style.display = '';
+          p.prop1.setAttribute('transform', 'translate(' + f(130 + 45 * swing) + ' ' + f(345 - 6 * swing) + ') rotate(' + f(-70 + 50 * swing) + ')');
+          p.prop2.setAttribute('transform', 'translate(' + f(270 - 45 * swing) + ' ' + f(345 - 6 * swing) + ') rotate(' + f(70 - 50 * swing) + ')');
+          if (prevPP < 0.5 && pp >= 0.5) { s.spark = 1e-6; s.sparkX = 200; s.sparkY = 336; }
+        } else if (s.propKind === 'hammer') {
+          p.prop1.style.display = ''; p.prop2.style.display = 'none';
+          p.prop1.setAttribute('transform', 'translate(255 328) rotate(' + f(-65 + 80 * swing) + ')');
+          if (prevPP < 0.52 && pp >= 0.52) { s.spark = 1e-6; s.sparkX = 232; s.sparkY = 352; }
+        }
+      }
+    }
+    if (s.spark > 0) {
+      s.spark += dt / 0.5;
+      if (s.spark >= 1) { s.spark = 0; p.spark.setAttribute('opacity', '0'); }
+      else {
+        var sp2 = Math.sin(s.spark * PI);
+        p.spark.setAttribute('opacity', sp2.toFixed(2));
+        p.spark.setAttribute('transform', 'translate(' + f(s.sparkX) + ' ' + f(s.sparkY) + ') scale(' + (0.5 + 0.9 * sp2).toFixed(2) + ')');
+      }
+    }
 
     var joy = on.bounce || s.phase > 0;
     if (joy !== s.joy) { s.joy = joy; this.el.classList.toggle('isJoy', joy); }

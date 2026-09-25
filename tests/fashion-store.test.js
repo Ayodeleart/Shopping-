@@ -214,7 +214,7 @@ const VARIANT_PRODUCTS = [
 const withVariants = () => { const t = TABLES(); t.products = t.products.concat(VARIANT_PRODUCTS.map(p => ({ ...p }))); return t; };
 const cartLines = w => JSON.parse(w.localStorage.getItem('cart_v3') || '[]');
 
-test('card: photo fills a fixed media box, heart sits on the photo, no vendor on the card, options products say Choose options', async t => {
+test('card: photo fills a fixed media box, heart sits on the photo, no vendor on the card, button always says Add to Cart, swatches show real colours', async t => {
   const w = await boot(withVariants(), null, t);
   const box = w.document.createElement('div');
   box.innerHTML = [10, 12].map(id => w.cardHTML(VARIANT_PRODUCTS.find(p => p.id === id))).join('');
@@ -225,20 +225,35 @@ test('card: photo fills a fixed media box, heart sits on the photo, no vendor on
     assert.equal(c.querySelector('.pcSeller'), null, 'no vendor on the card');
     assert.ok(!/Ada Threads|Kano Kicks|Sold by/.test(c.textContent), 'no vendor name anywhere on the card');
     assert.ok(c.querySelector('.favBtn').getAttribute('aria-label'), 'heart is labelled');
+    assert.equal(c.querySelector('.pcAdd').textContent.trim(), 'Add to Cart', 'button always says Add to Cart, never "Choose options"');
   }
-  assert.equal(tote.querySelector('.pcCtl').dataset.need, '1');
-  assert.equal(tote.querySelector('.pcAdd').textContent.trim(), 'Choose options');
-  assert.equal(mug.querySelector('.pcAdd').textContent.trim(), 'Add to Cart');
+  assert.equal(tote.querySelectorAll('.pcSwatch').length, 2, 'Ankara Tote has 2 real colours (Black, Red)');
+  assert.equal(mug.querySelector('.pcSwatches'), null, 'no colours on a plain product, so no swatch row');
   const css = fs.readFileSync(path.join(ROOT, 'components/product-card.css'), 'utf8');
   assert.match(css, /\.pcImg img\{[^}]*object-fit:cover/, 'image fills the box');
   assert.match(css, /\.pcCtl\{margin-top:auto/, 'buttons are pinned to the card bottom');
   assert.doesNotMatch(css, /\.pcImg img\{[^}]*padding:/, 'no artificial padding around the photo');
 });
 
-test('variants: colour-only product needs a colour; card add never adds an incomplete product', async t => {
+test('variants: tapping Add to Cart on a card with colours opens the bottom sheet, not the product page', async t => {
   const w = await boot(withVariants(), null, t);
-  w.addToCart(10, null, 1, true);                             // from a card: no choices made
-  assert.equal(cartLines(w).length, 0, 'nothing added');
+  w.addToCart(10, null, 1, true);                             // from a card: no choices made yet
+  assert.equal(cartLines(w).length, 0, 'nothing added yet');
+  const sheet = w.document.getElementById('variantSheet');
+  assert.ok(sheet.classList.contains('open'), 'the sheet opened');
+  assert.equal(w.document.getElementById('pModal').classList.contains('open'), false, 'did not navigate to the product page');
+  const chip = sheet.querySelector('.vsChip[data-vs-pick="Black"]');
+  assert.ok(chip, 'colour chip is in the sheet');
+  chip.click();
+  sheet.querySelector('.vsAdd').click();
+  const l = cartLines(w);
+  assert.equal(l.length, 1);
+  assert.equal(l[0].color, 'Black');
+  assert.equal(sheet.classList.contains('open'), false, 'sheet closes after adding');
+});
+
+test('variants: colour-only product needs a colour on the product page too; add never adds an incomplete product', async t => {
+  const w = await boot(withVariants(), null, t);
   w.openProduct(10);
   assert.equal(w.document.getElementById('pColorRow').style.display, '');
   assert.equal(w.document.querySelectorAll('#pColors .pSizeChip').length, 2);
@@ -298,4 +313,49 @@ test('bot: MAC tucks away while the page scrolls instead of covering products', 
   w.document.dispatchEvent(new w.Event('scroll', { bubbles: false }));
   assert.ok(el.classList.contains('isPeek'), 'tucked while scrolling');
   assert.match(fs.readFileSync(path.join(ROOT, 'components/mac-fab.css'), 'utf8'), /\.macFab\.isPeek\s*\{[^}]*translate:/);
+});
+
+test('card: tapping a colour swatch shows the linked product photo, and clears back on deselect', async t => {
+  const tables = withVariants();
+  tables.products = tables.products.map(p => p.id === 10 ? { ...p, image_url: 'https://x/base.jpg', attributes: { colors: ['Black', 'Red'], colorImages: { Red: 'https://x/red.jpg' } } } : p);
+  const w = await boot(tables, null, t);
+  const box = w.document.createElement('div');
+  box.innerHTML = w.cardHTML(tables.products.find(p => p.id === 10));
+  w.document.body.appendChild(box);
+  const img = box.querySelector('.pcImg img');
+  assert.equal(img.src, 'https://x/base.jpg');
+  w.pickCardColor(10, 'Black');                     // no linked photo for Black -> stays on the base photo
+  assert.equal(img.src, 'https://x/base.jpg');
+  w.pickCardColor(10, 'Black');                      // deselect
+  w.pickCardColor(10, 'Red');                        // Red has a linked photo
+  assert.equal(img.src, 'https://x/red.jpg');
+  w.pickCardColor(10, 'Red');                         // deselect again -> back to base
+  assert.equal(img.src, 'https://x/base.jpg');
+  box.remove();
+});
+
+test('favourites: favouriting a product shows the confirmation sheet, and "View Favourites" opens the list', async t => {
+  const w = await boot(withVariants(), null, t);
+  w.toggleFav(12);                                              // Plain Mug: no variants, simplest case
+  const sheet = w.document.getElementById('favSheet');
+  assert.ok(sheet, 'sheet was created');
+  assert.ok(sheet.classList.contains('open'), 'sheet opened on favouriting');
+  assert.match(sheet.querySelector('.fvOk').textContent, /Saved to Favourites/);
+  assert.equal(sheet.querySelector('.vsName').textContent, 'Plain Mug');
+  const spy = t.mock.method(w, 'showFavorites');
+  sheet.querySelector('.fvView').click();
+  assert.equal(sheet.classList.contains('open'), false, 'sheet closes on View Favourites');
+  assert.equal(spy.mock.calls.length, 1, 'View Favourites opens the existing Favorites list, not a second system');
+});
+
+test('favourites: un-favouriting does not reopen the sheet; #favorites deep-links to the same list', async t => {
+  const w = await boot(withVariants(), null, t);
+  w.toggleFav(12);
+  w.Pcx.FavoriteSheet.close();
+  w.toggleFav(12);                                              // un-favourite
+  assert.equal(w.document.getElementById('favSheet').classList.contains('open'), false, 'no sheet when removing a favourite');
+  const spy = t.mock.method(w, 'showFavorites');
+  w.location.hash = '#favorites';
+  w.dispatchEvent(new w.Event('hashchange'));
+  assert.equal(spy.mock.calls.length, 1, '#favorites opens the Favorites list (works as a deep link from the storefront too)');
 });
