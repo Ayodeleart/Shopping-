@@ -74,9 +74,7 @@
   }
 
   /* the admin tab button also switches panels via its own handler; render when Fashion shows */
-  document.querySelectorAll('[data-tab="fashion"]').forEach(function (btn) {
-    btn.addEventListener('click', function () { ensureLoaded(); });
-  });
+  window.FashionAdmin = { open: ensureLoaded };
 
   /* ================================================================ GENDER CARDS */
   async function loadGenders() {
@@ -567,7 +565,7 @@
     else if (sub === 'sections') renderSections();
   }
 
-  document.getElementById('p-fashion').addEventListener('click', async function (e) {
+  document.getElementById('p-explore').addEventListener('click', async function (e) {
     var btn = e.target.closest ? e.target.closest('[data-a]') : null;
     if (!btn) return;
     var a = btn.dataset.a, id = btn.dataset.id;
@@ -604,7 +602,7 @@
   });
 
   /* toggles inside the fashion panel */
-  document.getElementById('p-fashion').addEventListener('click', function (e) {
+  document.getElementById('p-explore').addEventListener('click', function (e) {
     var tgl = e.target.closest ? e.target.closest('[data-tgl]') : null;
     if (tgl) tgl.classList.toggle('on');
   });
