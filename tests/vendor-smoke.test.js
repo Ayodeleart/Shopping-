@@ -122,6 +122,17 @@ test('real vendor/index.html: boots with the Beauty cutout wiring intact', async
     const picker = w.Pcx && w.Pcx.CategoryPicker;
     assert.ok(picker, 'category picker loaded');
     assert.equal(w.isBeautyCategory(), false, 'empty form is not a beauty category yet');
+
+    /* /api/remove-bg is admin-only now — the vendor's own request must carry its session token,
+       or a real admin session would get a 401 and the cutout would silently never happen */
+    let sentAuth = null;
+    w.fetch = async (url, opts) => {
+      if (String(url) === '/api/remove-bg') { sentAuth = opts && opts.headers && opts.headers.Authorization; return { ok: true, json: async () => ({ url: 'https://x/cut.png' }) }; }
+      throw new Error('no network in vendor smoke: ' + url);
+    };
+    const cutout = await w.removeBgServer('https://x/original.jpg');
+    assert.equal(cutout, 'https://x/cut.png');
+    assert.equal(sentAuth, 'Bearer stub-token', "removeBgServer sends the vendor's session as a bearer token");
   } finally {
     if (w) w.close();
   }

@@ -1366,7 +1366,7 @@ async function showWorldCategory(id) {
 async function loadBeautyStats() {
   try {
     if (!Pcx.BeautyData) return;
-    const pool = Pcx.BeautyData.pool(catTree, allProds);
+    const pool = Pcx.BeautyData.pool(catTree, allProds, beautyLinked());
     if (!pool.length) return;
     const { data } = await sb.from('order_items').select('product_id,qty,status');
     if (!data) return;
@@ -1491,6 +1491,8 @@ function showList(title, list, emptyMsg) {
 let activeCat = 'All', allProds = [], catPills = [];
 /* Beauty world content (see migration_beauty.sql + data/beauty.js) */
 let beautyHeroes = [], beautyCats = [], beautySettings = {}, beautyStats = {};
+/* categories a Beauty tile is linked to: products filed there belong to the Beauty world too */
+function beautyLinked() { return Pcx.BeautyData ? Pcx.BeautyData.linkedIds(beautyCats) : []; }
 
 function buildCatFilter(cats) {
   const row = document.getElementById('catFilter');
@@ -1774,12 +1776,10 @@ function openProduct(id, isBack) {
      Beauty background, the transparent cutout (beauty_image_url, made by the secure
      server pipeline) as the main photo, and a thumbnail strip when there are more
      photos. Non-Beauty products render exactly as before. */
-  const isBW = Pcx.BeautyData && Pcx.BeautyData.isBeautyProduct(p, catTree);
+  const isBW = Pcx.BeautyData && Pcx.BeautyData.isBeautyProduct(p, catTree, beautyLinked());
   if (isBW) {
     modal.classList.add('bw-theme');
-    const bwBg = Pcx.BeautyData.backgroundUrl(beautySettings);
-    if (bwBg) modal.style.setProperty('--bw-bg-img', 'url("' + bwBg + '")');
-    else modal.style.removeProperty('--bw-bg-img');
+    modal.style.setProperty('--bw-bg-img', 'url("' + Pcx.BeautyData.backgroundOrDefault(beautySettings).replace(/"/g, '%22') + '")');
   } else {
     modal.classList.remove('bw-theme');
     modal.style.removeProperty('--bw-bg-img');

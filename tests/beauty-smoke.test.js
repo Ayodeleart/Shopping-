@@ -158,14 +158,13 @@ test('real index.html: #world=beauty boots the Beauty world from real wiring', a
   assert.ok($('#worldPage') && $('#worldPage').classList.contains('open'), 'world page opened from #world=beauty');
   assert.ok($('.bw-root'), 'Beauty world mounted by the real page delegation');
   assert.ok($('.bw-searchbtn'), 'premium beauty search bar');
-  assert.equal(w.document.querySelectorAll('[data-bw-grid] .pcard').length, 1, 'only the real beauty product');
-  assert.ok(w.document.querySelector('[data-bw-grid] .pcImg img').src.includes('cut.png'), 'cutout photo on the card');
+  assert.equal(w.document.querySelectorAll('[data-bw-grid] .bw-card').length, 1, 'only the real beauty product');
+  assert.ok(w.document.querySelector('[data-bw-grid] .bw-card-img img').src.includes('cut.png'), 'cutout photo on the card');
   assert.equal(w.document.querySelectorAll('.bw-tile').length, 2, 'two active admin tiles');
-  assert.ok(w.document.querySelector('.bw-hero .pcx__slide'), 'hero carousel rendered from beauty_heroes');
-  assert.ok(w.document.querySelector('.bw-bg-img').style.backgroundImage.includes('bg.jpg'), 'admin background image applied');
-  assert.equal(w.document.querySelectorAll('.pcx__dot').length, 2, 'two admin hero slides -> two dots');
-  assert.equal(w.document.querySelectorAll('.pcx__nav').length, 2, 'multi-slide hero has prev/next controls');
-  const heroImgs = [...w.document.querySelectorAll('.bw-hero .pcx__slide .pcx__img')].map(i => i.src);
+  assert.ok(w.document.querySelector('.bw-hero .bw-slide'), 'hero carousel rendered from beauty_heroes');
+  assert.ok(w.document.querySelector('.bw-root').style.getPropertyValue('--bw-bg').includes('bg.jpg'), 'admin background image applied');
+  assert.equal(w.document.querySelectorAll('.bw-dotb').length, 2, 'two admin hero slides -> two dots');
+  const heroImgs = [...w.document.querySelectorAll('.bw-hero .bw-slide .bw-slide-img')].map(i => i.src);
   assert.ok(heroImgs.some(s => s.includes('h1.gif')), 'hero image kept as-is (GIFs animate)');
 
   // product page: themed for beauty, cutout main image, no thumbnails with 1 photo
