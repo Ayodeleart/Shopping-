@@ -73,6 +73,12 @@
     if (on) window.favs.add(id); else window.favs.delete(id);
     localStorage.setItem('favs_v1', JSON.stringify([...window.favs]));
     document.querySelectorAll(`[data-fav="${id}"]`).forEach(b => b.classList.toggle('on', on));
+    /* same confirmation sheet as the main site; the storefront has no favourites page of its own, so "View
+       Favourites" goes to the main site's (favs_v1 is the same localStorage key, so nothing is lost) */
+    if (on && window.Pcx && Pcx.FavoriteSheet) {
+      const p = state.byId[id];
+      if (p) Pcx.FavoriteSheet.open(p);
+    }
     try {
       const { data: { session } } = await sb.auth.getSession();
       if (!session) return;

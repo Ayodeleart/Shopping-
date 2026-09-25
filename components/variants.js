@@ -170,4 +170,54 @@
   }
 
   Pcx.VariantSheet = { open: openSheet, close: closeSheet, addWithSheet: addWithSheet };
+
+  /* ------------------------------------------------------------------------------------------------------------
+   * Pcx.FavoriteSheet — a small confirmation, same sheet visual language as VariantSheet, shown after tapping the
+   * heart on a card or the product page (one toggleFav() function on both, see index.html). It doesn't manage
+   * favourites itself: it only confirms what just happened and links to the existing Favorites list — there is one
+   * favourites list in this app, not several, so this does not pretend a multi-list system exists.
+   * ------------------------------------------------------------------------------------------------------------ */
+  var favEl = null;
+  function ensureFavEl() {
+    if (favEl) return favEl;
+    favEl = document.createElement('div');
+    favEl.id = 'favSheet';
+    favEl.innerHTML =
+      '<div class="vsBg" data-fv-close></div>' +
+      '<div class="vsCard fvCard" role="dialog" aria-modal="true" aria-label="Added to Favourites">' +
+        '<div class="vsGrab"></div>' +
+        '<button class="vsClose" data-fv-close aria-label="Close">&times;</button>' +
+        '<div class="fvHead">' +
+          '<img class="vsImg" alt="">' +
+          '<div class="vsHeadTxt"><div class="fvOk">&#10003; Saved to Favourites</div><div class="vsName"></div><div class="vsPrice"></div></div>' +
+        '</div>' +
+        '<div class="vsFoot"><button class="vsAdd fvView" type="button">View Favourites</button></div>' +
+      '</div>';
+    document.body.appendChild(favEl);
+    favEl.addEventListener('click', function (e) {
+      if (e.target.closest('[data-fv-close]')) closeFavSheet();
+      if (e.target.closest('.fvView')) {
+        closeFavSheet();
+        if (global.showFavorites) global.showFavorites();          // main site: open the list in place
+        else location.href = '/#favorites';                        // storefront: no favourites page of its own
+      }
+    });
+    return favEl;
+  }
+  var favTimer = null;
+  function openFavSheet(product) {
+    ensureFavEl();
+    favEl.querySelector('.vsImg').src = product.image_url || '';
+    favEl.querySelector('.vsName').textContent = product.name || '';
+    favEl.querySelector('.vsPrice').textContent = money(product.price);
+    favEl.classList.add('open');
+    document.documentElement.classList.add('vsLock');
+    clearTimeout(favTimer);
+    favTimer = setTimeout(closeFavSheet, 2600);      // confirms and gets out of the way; View Favourites for anyone who wants more
+  }
+  function closeFavSheet() {
+    clearTimeout(favTimer);
+    if (favEl) { favEl.classList.remove('open'); document.documentElement.classList.remove('vsLock'); }
+  }
+  Pcx.FavoriteSheet = { open: openFavSheet, close: closeFavSheet };
 })(window);

@@ -333,3 +333,29 @@ test('card: tapping a colour swatch shows the linked product photo, and clears b
   assert.equal(img.src, 'https://x/base.jpg');
   box.remove();
 });
+
+test('favourites: favouriting a product shows the confirmation sheet, and "View Favourites" opens the list', async t => {
+  const w = await boot(withVariants(), null, t);
+  w.toggleFav(12);                                              // Plain Mug: no variants, simplest case
+  const sheet = w.document.getElementById('favSheet');
+  assert.ok(sheet, 'sheet was created');
+  assert.ok(sheet.classList.contains('open'), 'sheet opened on favouriting');
+  assert.match(sheet.querySelector('.fvOk').textContent, /Saved to Favourites/);
+  assert.equal(sheet.querySelector('.vsName').textContent, 'Plain Mug');
+  const spy = t.mock.method(w, 'showFavorites');
+  sheet.querySelector('.fvView').click();
+  assert.equal(sheet.classList.contains('open'), false, 'sheet closes on View Favourites');
+  assert.equal(spy.mock.calls.length, 1, 'View Favourites opens the existing Favorites list, not a second system');
+});
+
+test('favourites: un-favouriting does not reopen the sheet; #favorites deep-links to the same list', async t => {
+  const w = await boot(withVariants(), null, t);
+  w.toggleFav(12);
+  w.Pcx.FavoriteSheet.close();
+  w.toggleFav(12);                                              // un-favourite
+  assert.equal(w.document.getElementById('favSheet').classList.contains('open'), false, 'no sheet when removing a favourite');
+  const spy = t.mock.method(w, 'showFavorites');
+  w.location.hash = '#favorites';
+  w.dispatchEvent(new w.Event('hashchange'));
+  assert.equal(spy.mock.calls.length, 1, '#favorites opens the Favorites list (works as a deep link from the storefront too)');
+});

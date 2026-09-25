@@ -1300,6 +1300,10 @@ function initCategoryPage() {
   });
   catDeepLinked = !!catFromHash() || !!wcatFromHash();
   window.addEventListener('hashchange', syncCatPage);
+  /* #favorites: a real, working destination for "View Favourites" links (the favourites confirmation sheet,
+     deep links from the storefront) — not a full route, just opens the existing Favourites list. */
+  function syncFavHash() { if (location.hash === '#favorites') showFavorites(); }
+  window.addEventListener('hashchange', syncFavHash);
 }
 
 /* Real seller storefronts live at /store/[slug] (see /store/). */
@@ -1615,6 +1619,12 @@ async function toggleFav(id) {
     b.classList.toggle('on', on);
     b.classList.remove('pop'); void b.offsetWidth; if (on) b.classList.add('pop');
   });
+  /* same confirmation sheet from every "add to favourites" spot (Home card, search, product page) — one heart,
+     one behaviour, per Pcx.VariantSheet's sibling Pcx.FavoriteSheet */
+  if (on && window.Pcx && Pcx.FavoriteSheet) {
+    const p = allProds.find(x => x.id === id);
+    if (p) Pcx.FavoriteSheet.open(p);
+  }
   if (!buyerSession) return;
   try {
     if (on) await sb.from('favorites').upsert([{ user_id: buyerSession.user.id, product_id: id }], { onConflict: 'user_id,product_id' });
@@ -2928,6 +2938,7 @@ async function init() {
     syncFavsFromServer();
     const sharedId = Number(new URLSearchParams(location.search).get('p'));   /* shared link: /?p=ID */
     if (sharedId) openProduct(sharedId);
+    if (location.hash === '#favorites') showFavorites();   /* e.g. "View Favourites" from the favourites sheet, or the storefront */
 
   } catch(err) {
     console.error(err);

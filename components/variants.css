@@ -28,3 +28,19 @@
 .vsAdd:disabled{opacity:.6}
 html.vsLock{overflow:hidden}
 @media (prefers-reduced-motion:reduce){#variantSheet .vsCard,#variantSheet .vsBg{transition:none}}
+
+/* Pcx.FavoriteSheet — same sheet mechanics as #variantSheet, shorter card, auto-dismisses */
+#favSheet{position:fixed;inset:0;z-index:961;visibility:hidden;pointer-events:none}
+#favSheet.open{visibility:visible;pointer-events:auto}
+#favSheet .vsBg{position:absolute;inset:0;background:rgba(0,0,0,.45);opacity:0;transition:opacity .2s}
+#favSheet.open .vsBg{opacity:1}
+#favSheet .vsCard{
+  position:absolute;left:0;right:0;bottom:0;overflow-y:auto;
+  background:var(--card,#fff);border-radius:16px 16px 0 0;
+  padding:10px 16px calc(16px + env(safe-area-inset-bottom,0px));
+  transform:translateY(100%);transition:transform .25s cubic-bezier(.2,.9,.3,1);
+}
+#favSheet.open .vsCard{transform:translateY(0)}
+.fvHead{display:flex;gap:12px;align-items:center;padding:2px 0 14px}
+.fvOk{font-size:12.5px;font-weight:700;color:var(--red);margin-bottom:3px;display:flex;align-items:center;gap:5px}
+@media (prefers-reduced-motion:reduce){#favSheet .vsCard,#favSheet .vsBg{transition:none}}
