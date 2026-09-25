@@ -9,8 +9,8 @@ async function storeInfo(db) {
   try {
     const { data } = await db.from('store_settings').select('key,value').in('key', ['storeName', 'currency']);
     const get = k => ((data || []).find(x => x.key === k) || {}).value;
-    return { storeName: String(get('storeName') || 'Maccato').slice(0, 60), currency: String(get('currency') || '₦').slice(0, 5) };
-  } catch { return { storeName: 'Maccato', currency: '₦' }; }
+    return { storeName: String(get('storeName') || 'Marcato').slice(0, 60), currency: String(get('currency') || '₦').slice(0, 5) };
+  } catch { return { storeName: 'Marcato', currency: '₦' }; }
 }
 
 module.exports = async (req, res) => {

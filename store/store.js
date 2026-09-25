@@ -52,16 +52,16 @@
   window.addToCart = (id, src) => {
     const p = state.byId[id];
     if (!p) return;
-    /* fashion products with sizes are bought from the product page, where a size is picked */
-    if (window.Pcx && Pcx.Fashion && Pcx.Fashion.sizeGroups(p).length) {
-      toast('Select a size');
+    /* products with colours or sizes are bought from the product page, where the choices are made */
+    if (window.Pcx && Pcx.Variants && Pcx.Variants.needsChoice(p)) {
+      toast('Choose your options');
       window.openProduct(id);
       return;
     }
     if (src) window.flyToCart(src);
-    const ex = window.cart.find(x => x.id === id);
+    const ex = window.cart.find(x => x.id === id && !x.size && !x.color);
     if (ex) ex.qty += 1;
-    else window.cart.push({ id: p.id, name: p.name, price: p.price, image_url: p.image_url, vendor_id: p.vendor_id || null, qty: 1 });
+    else window.cart.push({ id: p.id, name: p.name, price: p.price, image_url: p.image_url, vendor_id: p.vendor_id || null, qty: 1, size: null, color: null });
     window.saveCart(); window.updateCartBadge();
     toast('Added to cart');
   };
@@ -89,7 +89,7 @@
   /* ── PAGE STATE ────────────────────────────────────────────────── */
   const state = {
     vendor: null,
-    storeName: 'Maccato',
+    storeName: 'Marcato',
     activeCategory: 'All',
     search: '',
     sort: 'featured',
@@ -134,7 +134,7 @@
     try {
       const { data } = await sb.from('store_settings').select('key,value').in('key', ['storeName', 'currency']);
       const get = k => data?.find(s => s.key === k)?.value;
-      state.storeName = get('storeName') || 'Maccato';
+      state.storeName = get('storeName') || 'Marcato';
       window.currency = get('currency') || '₦';
     } catch (e) { /* settings are optional; defaults above still work */ }
   }

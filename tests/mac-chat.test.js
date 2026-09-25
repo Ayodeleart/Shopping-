@@ -16,7 +16,7 @@ function boot(fetchImpl, extra) {
   return w;
 }
 const json = (status, body) => Promise.resolve({ ok: status < 400, status, json: async () => body });
-const mk = (w, o) => new w.Pcx.MacChat(Object.assign({ getSession: () => null, getStoreName: () => 'Maccato', openProduct: () => {}, openOrder: () => {}, openSignIn: () => {}, addToCart: () => {} }, o || {}));
+const mk = (w, o) => new w.Pcx.MacChat(Object.assign({ getSession: () => null, getStoreName: () => 'Marcato', openProduct: () => {}, openOrder: () => {}, openSignIn: () => {}, addToCart: () => {} }, o || {}));
 const tick = () => new Promise(r => setTimeout(r, 15));
 
 /* ---------------- mac-theme.js ---------------- */

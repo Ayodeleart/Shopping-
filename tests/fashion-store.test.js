@@ -52,7 +52,7 @@ const LOCAL_SCRIPTS = [
   'data/worlds.js', 'components/explore-marcato.js', 'components/world-page.js',
   'components/food-world.js', 'data/food-pairings.js', 'components/food-pairing-ui.js',
   'data/beauty.js', 'components/beauty-world.js',
-  'components/fashion.js', 'components/fashion-world.js', 'components/ad-page.js', 'data/ads.js',
+  'components/fashion.js', 'components/variants.js', 'components/fashion-world.js', 'components/ad-page.js', 'data/ads.js',
   'data/categories.js', 'components/category-page.js', 'data/search.js', 'components/search-page.js',
   'data/tracking.js', 'components/order-tracking.js', 'components/notification-center.js',
   'components/mac-theme.js', 'components/mac-fab.js', 'components/mac-chat.js',
@@ -109,7 +109,7 @@ const PRODUCTS = [
 const TABLES = () => ({
   products: PRODUCTS.map(p => ({ ...p })),
   banners: [], shortcuts: [],
-  store_settings: [{ key: 'storeName', value: 'Maccato' }, { key: 'currency', value: '\u20a6' }],
+  store_settings: [{ key: 'storeName', value: 'Marcato' }, { key: 'currency', value: '\u20a6' }],
   vendors: [
     { id: 'v1', business_name: 'Ada Threads', status: 'approved', store_slug: 'ada-threads', logo_url: '' },
     { id: 'v2', business_name: 'Kano Kicks', status: 'approved', store_slug: 'kano-kicks' }
@@ -200,4 +200,102 @@ test('size selection: chips render, add-to-cart is blocked until a size is picke
   assert.equal(lines[1].size, null);
   w.openProduct(3);
   assert.equal(w.document.getElementById('pSizeRow').style.display, 'none');
+});
+
+/* ------------------------------------------------------------------ colours + variants, card, bot (this change) */
+const VARIANT_PRODUCTS = [
+  { id: 10, name: 'Ankara Tote', price: 3000, stock: 4, category_id: 100, category: 'Plays!', vendor_id: 'v1', image_url: 'https://x/10.jpg',
+    attributes: { colors: ['Black', 'Red'] }, created_at: '2026-01-06' },
+  { id: 11, name: 'Classic Tee', price: 4500, stock: 9, category_id: 100, category: 'Plays!', vendor_id: 'v1', image_url: 'https://x/11.jpg',
+    attributes: { colors: ['Black', 'White'], sizes: { system: 'Letter (XS-XXL)', values: ['M', 'XL'] } }, created_at: '2026-01-07' },
+  { id: 12, name: 'Plain Mug', price: 1200, stock: 20, category_id: 102, category: 'Electronics', vendor_id: 'v2', image_url: 'https://x/12.jpg',
+    attributes: {}, created_at: '2026-01-08' }
+];
+const withVariants = () => { const t = TABLES(); t.products = t.products.concat(VARIANT_PRODUCTS.map(p => ({ ...p }))); return t; };
+const cartLines = w => JSON.parse(w.localStorage.getItem('cart_v3') || '[]');
+
+test('card: photo fills a fixed media box, heart sits on the photo, no vendor on the card, options products say Choose options', async t => {
+  const w = await boot(withVariants(), null, t);
+  const box = w.document.createElement('div');
+  box.innerHTML = [10, 12].map(id => w.cardHTML(VARIANT_PRODUCTS.find(p => p.id === id))).join('');
+  const [tote, mug] = box.querySelectorAll('.pcard');
+  for (const c of [tote, mug]) {
+    assert.ok(c.querySelector('.pcImg .favBtn'), 'heart is inside the image box');
+    assert.equal(c.querySelector('.pcBody .favBtn'), null, 'heart is not in the text area');
+    assert.equal(c.querySelector('.pcSeller'), null, 'no vendor on the card');
+    assert.ok(!/Ada Threads|Kano Kicks|Sold by/.test(c.textContent), 'no vendor name anywhere on the card');
+    assert.ok(c.querySelector('.favBtn').getAttribute('aria-label'), 'heart is labelled');
+  }
+  assert.equal(tote.querySelector('.pcCtl').dataset.need, '1');
+  assert.equal(tote.querySelector('.pcAdd').textContent.trim(), 'Choose options');
+  assert.equal(mug.querySelector('.pcAdd').textContent.trim(), 'Add to Cart');
+  const css = fs.readFileSync(path.join(ROOT, 'components/product-card.css'), 'utf8');
+  assert.match(css, /\.pcImg img\{[^}]*object-fit:cover/, 'image fills the box');
+  assert.match(css, /\.pcCtl\{margin-top:auto/, 'buttons are pinned to the card bottom');
+  assert.doesNotMatch(css, /\.pcImg img\{[^}]*padding:/, 'no artificial padding around the photo');
+});
+
+test('variants: colour-only product needs a colour; card add never adds an incomplete product', async t => {
+  const w = await boot(withVariants(), null, t);
+  w.addToCart(10, null, 1, true);                             // from a card: no choices made
+  assert.equal(cartLines(w).length, 0, 'nothing added');
+  w.openProduct(10);
+  assert.equal(w.document.getElementById('pColorRow').style.display, '');
+  assert.equal(w.document.querySelectorAll('#pColors .pSizeChip').length, 2);
+  assert.equal(w.document.getElementById('pSizeRow').style.display, 'none', 'no size selector on a colour-only product');
+  w.pAddToCart();
+  assert.equal(cartLines(w).length, 0, 'blocked until a colour is picked');
+  assert.ok(w.document.getElementById('pColorRow').classList.contains('miss'));
+  w.pickPColor(0);
+  assert.equal(w.document.querySelector('#pColors .pSizeChip.on').textContent.trim(), 'Black');
+  w.pAddToCart();
+  const l = cartLines(w);
+  assert.equal(l.length, 1);
+  assert.equal(l[0].color, 'Black');
+  assert.equal(l[0].size, null);
+});
+
+test('variants: colour + size are both required, and different variants are separate cart lines', async t => {
+  const w = await boot(withVariants(), null, t);
+  w.openProduct(11);
+  w.pickPColor(0);                                            // Black, no size yet
+  w.pAddToCart();
+  assert.equal(cartLines(w).length, 0, 'size still missing');
+  w.pickPSize(0, 1);                                          // XL
+  w.pAddToCart();                                             // Black / XL
+  w.pickPColor(0); w.pickPColor(1);                           // switch to White
+  w.pickPSize(0, 1); w.pickPSize(0, 0);                       // switch to M
+  w.pAddToCart();                                             // White / M
+  w.pickPColor(1); w.pickPColor(0);                           // back to Black
+  w.pickPSize(0, 0); w.pickPSize(0, 1);                       // back to XL
+  w.pAddToCart();                                             // Black / XL again: merges
+  const l = cartLines(w);
+  assert.equal(l.length, 2, 'Black/XL and White/M stay separate');
+  const bx = l.find(x => x.color === 'Black' && x.size === 'XL'), wm = l.find(x => x.color === 'White' && x.size === 'M');
+  assert.equal(bx.qty, 2);
+  assert.equal(wm.qty, 1);
+  w.openCart();
+  const shown = w.document.getElementById('cartItems').textContent;
+  assert.match(shown, /Colour: Black \u00b7 Size: XL/);
+  assert.match(shown, /Colour: White \u00b7 Size: M/);
+});
+
+test('variants: products without options add straight away and show no selectors', async t => {
+  const w = await boot(withVariants(), null, t);
+  w.addToCart(12, null, 1, true);
+  const l = cartLines(w);
+  assert.equal(l.length, 1);
+  assert.equal(l[0].color, null); assert.equal(l[0].size, null);
+  w.openProduct(12);
+  assert.equal(w.document.getElementById('pColorRow').style.display, 'none');
+  assert.equal(w.document.getElementById('pSizeRow').style.display, 'none');
+});
+
+test('bot: MAC tucks away while the page scrolls instead of covering products', async t => {
+  const w = await boot(withVariants(), null, t);
+  const el = w.document.querySelector('.macFab');
+  assert.ok(el, 'MAC is still mounted');
+  w.document.dispatchEvent(new w.Event('scroll', { bubbles: false }));
+  assert.ok(el.classList.contains('isPeek'), 'tucked while scrolling');
+  assert.match(fs.readFileSync(path.join(ROOT, 'components/mac-fab.css'), 'utf8'), /\.macFab\.isPeek\s*\{[^}]*translate:/);
 });

@@ -29,7 +29,7 @@
     var ids = orders.map(function (x) { return x.id; });
     var r = await Promise.all([
       ids.length ? sb.from('shipments').select('*').in('order_id', ids) : { data: [] },
-      ids.length ? sb.from('order_items').select('id,shipment_id,order_id,name,price,qty').in('order_id', ids) : { data: [] },
+      ids.length ? sb.from('order_items').select('*').in('order_id', ids) : { data: [] },
       sb.from('vendors').select('id,business_name'),
       sb.from('carriers').select('*').order('sort_order')
     ]);
@@ -84,7 +84,7 @@
     var carrier = s.carrier_name || (carriers.filter(function (c) { return c.code === s.carrier_code; })[0] || {}).name;
     return '<div class="oship" data-ship="' + esc(s.id) + '" style="border:1px solid var(--border);border-radius:10px;padding:10px;margin-top:10px">' +
       '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="font-size:13px">' + esc(sellerName(s)) + '</b><span class="tk-pill ' + esc(T.tone(s.status)) + '">' + esc(T.LABEL[s.status] || s.status) + '</span></div>' +
-      '<div class="oitems" style="margin-top:6px">' + its.map(function (i) { return esc(i.name) + ' &times; ' + esc(i.qty); }).join(', ') + '</div>' +
+      '<div class="oitems" style="margin-top:6px">' + its.map(function (i) { return esc(i.name) + (i.variants && typeof i.variants === 'object' ? ' (' + Object.keys(i.variants).map(function (k) { return esc(k) + ': ' + esc(i.variants[k]); }).join(', ') + ')' : '') + ' &times; ' + esc(i.qty); }).join(', ') + '</div>' +
       (carrier || s.tracking_number ? '<div class="tk-box">' + (carrier ? '<div class="tk-kv"><span>Carrier</span><span>' + esc(carrier) + '</span></div>' : '') +
         (s.tracking_number ? '<div class="tk-kv"><span>Tracking number</span><span>' + esc(s.tracking_number) + '</span></div>' : '') +
         (s.estimated_delivery ? '<div class="tk-kv"><span>Estimated delivery</span><span>' + esc(T.fmtDay(s.estimated_delivery)) + '</span></div>' : '') + '</div>' : '') +

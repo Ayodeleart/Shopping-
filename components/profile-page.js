@@ -107,7 +107,7 @@
     '<div class="pf-sec"><div class="pf-sec__h"><h3>My Orders</h3><button data-a="orders" data-f="all">View all</button></div><div class="pf-status">' +
       STATUS_TABS.map(function (t) { var n = oc[t[0]] || 0; return '<button data-a="orders" data-f="' + t[0] + '"><span class="pf-ic">' + I[t[2]] + (n ? '<em>' + n + '</em>' : '') + '</span><span>' + t[1] + '</span></button>'; }).join('') + '</div></div>' +
     '<div class="pf-sec"><div class="pf-sec__h"><h3>Services</h3></div><div class="pf-svc">' +
-      [['history', 'Browsing history', 'history'], ['addresses', 'Address book', 'pin'], ['support', 'Support', 'support'], ['notify', 'Notifications', 'bell'], ['sell', 'Sell on Maccato', 'shop']].map(function (s) {
+      [['history', 'Browsing history', 'history'], ['addresses', 'Address book', 'pin'], ['support', 'Support', 'support'], ['notify', 'Notifications', 'bell'], ['sell', 'Sell on Marcato', 'shop']].map(function (s) {
         return '<button data-a="' + s[0] + '"><span class="pf-ic pf-ic--s">' + I[s[2]] + '</span><span>' + s[1] + '</span></button>'; }).join('') + '</div></div>';
   }
 
@@ -180,7 +180,7 @@
         (o.is_test ? '<div class="pf-test">Test payment: no real money moved.</div>' : '') +
         '<div class="pf-mute">Placed ' + new Date(o.created_at).toLocaleString('en-NG') + '</div></div>' +
       (subs.length ? subs.map(function (s) {
-        return '<div class="pf-card"><div class="pf-card__h"><b>Sold by ' + esc((s.vendors && s.vendors.business_name) || 'Maccato') + '</b><i class="st-' + esc(s.status) + '">' + esc(s.status) + '</i></div>' +
+        return '<div class="pf-card"><div class="pf-card__h"><b>Sold by ' + esc((s.vendors && s.vendors.business_name) || 'Marcato') + '</b><i class="st-' + esc(s.status) + '">' + esc(s.status) + '</i></div>' +
           (s.order_items || []).map(function (i) { return '<div class="pf-line"><span>' + esc(i.name) + ' &times; ' + i.qty + '</span><span>' + D.fmt(i.line_total || i.price * i.qty) + '</span></div>'; }).join('') +
           (s.tracking_number ? '<div class="pf-mute">Tracking: ' + esc(s.tracking_number) + (s.carrier_name ? ' (' + esc(s.carrier_name) + ')' : '') + '</div>' : '') + '</div>';
       }).join('') : '<div class="pf-card"><div class="pf-card__h"><b>Items</b></div>' + (o.items || []).map(function (i) { return '<div class="pf-line"><span>' + esc(i.name) + ' &times; ' + i.qty + '</span><span>' + D.fmt(i.price * i.qty) + '</span></div>'; }).join('') + '</div>') +
