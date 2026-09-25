@@ -42,6 +42,7 @@ function bootWindow() {
   const w = dom.window;
   w.matchMedia = q => ({ matches: false, addListener() {}, addEventListener() {}, removeEventListener() {} });
   w.HTMLElement.prototype.scrollIntoView = function () {};
+  w.HTMLElement.prototype.scrollTo = function () {};
   w.eval(R('data/safe.js'));
   w.eval(R('data/categories.js'));
   w.eval(R('data/search.js'));
@@ -60,12 +61,12 @@ function mountWorld(w, opts) {
   w.brandsList = [];
   w.brandById = {};
   w.ratingMap = {};
+  w.favs = new Set();
+  w.cart = [];
   w.currency = 'N';
   w.fmt = n => 'N' + Number(n);
-  w.cardHTML = p => '<div class="pcard" onclick="void 0">' +
-    '<div class="pcImg"><img src="' + (p.beauty_image_url || p.image_url || '') + '" alt=""></div>' +
-    '<div class="pcName">' + p.name + '</div>' +
-    '<div class="pcCtl" data-pid="' + p.id + '"></div></div>';
+  w.toggleFav = id => { w.favs.has(id) ? w.favs.delete(id) : w.favs.add(id); };
+  w.ctlHTML = id => '<button type="button" class="pcAdd" data-add="' + id + '">Add to Cart</button>';
   w.openProduct = id => { w.__opened = id; };
   w.openStore = () => {};
   w.openCart = () => { w.__cart = true; };
@@ -74,7 +75,10 @@ function mountWorld(w, opts) {
   const world = { slug: 'beauty', name: 'Beauty', gradient: 'linear-gradient(#333,#111)' };
   const inst = w.Pcx.BeautyWorld.mount(w.document.getElementById('wp'), world, {
     onBack: () => { w.__back = true; },
-    beauty: { heroes: o.heroes, cats: o.cats, settings: Object.entries(o.settings).map(([key, value]) => ({ key, value })), stats: o.stats }
+    beauty: {
+      heroes: o.heroes, cats: o.cats, settings: Object.entries(o.settings).map(([key, value]) => ({ key, value })), stats: o.stats,
+      catTree: w.catTree, products: w.allProds, vendors: w.vendorsMap, brands: w.brandsList, brandById: w.brandById, ratings: w.ratingMap, fmt: w.fmt
+    }
   });
   return inst;
 }
@@ -164,10 +168,10 @@ test('beauty world: page structure, no bottom nav, real grid + counts', () => {
   assert.ok($('[data-bw="search"]'), 'search icon in header');
   assert.ok($('[data-bw="favs"]') && $('[data-bw="cart"]') && $('[data-bw="profile"]'), 'existing fav/cart/profile actions');
   assert.equal($$('.bw-tile').length, 4, 'active tiles only');
-  assert.equal($$('.bw-chip').length, 5, 'All/Newest/Popular/Man/Kids (no Woman — no such category)');
-  assert.ok($('[data-bw-count]').textContent === '3 products', 'real count');
-  assert.equal(el.querySelectorAll('[data-bw-grid] .pcard').length, 3, 'only real Beauty products in the grid');
-  assert.equal($$('.pcard').length, 6, 'grid (3) + New In rail (3) — the same real products');
+  assert.equal($$('[data-bw-chips-inline] .bw-chip').length, 5, 'All/Newest/Popular/Man/Kids (no Woman — no such category)');
+  assert.equal($('[data-bw-count]').textContent, '3 products', 'real count');
+  assert.equal($$('[data-bw-grid] .bw-card').length, 3, 'only real Beauty products in the grid');
+  assert.equal($$('.bw-card').length, 6, 'grid (3) + New In rail (3) — the same real products');
   assert.ok(!el.textContent.includes('iPhone 15'), 'non-Beauty products stay out');
   /* no bottom navigation: nothing visible is pinned to the bottom edge */
   $$('*').forEach(node => {
@@ -184,25 +188,24 @@ test('beauty world: category tile + filters change the grid', () => {
   const el = w.document.getElementById('wp');
   const inst = mountWorld(w);
   const $ = s => el.querySelector(s);
-  const $$ = s => [...el.querySelectorAll(s)];
 
-  const gcard = s => el.querySelector('[data-bw-grid] ' + (s || '.pcard'));
-  const gcards = () => el.querySelectorAll('[data-bw-grid] .pcard');
+  const gname = () => el.querySelector('[data-bw-grid] .bw-card-name').textContent;
+  const gcards = () => el.querySelectorAll('[data-bw-grid] .bw-card');
 
-  $$('.bw-tile').find(t => t.textContent.includes('Makeup')).click();
-  assert.equal(gcards().length, 1, 'tile shows only that category\'s real products');
-  assert.ok($('[data-bw-count]').textContent === '1 product');
+  [...el.querySelectorAll('.bw-tile')].find(t => t.textContent.includes('Makeup')).click();
+  assert.equal(gcards().length, 1, "tile shows only that category's real products");
+  assert.equal($('[data-bw-count]').textContent, 'Clear 1 product');
 
   $('[data-bw-filter="new"]').click();
   assert.equal(gcards().length, 3);
-  assert.equal(gcard('.pcName').textContent, 'Viva Glam Lipstick', 'newest first (real created_at)');
+  assert.equal(gname(), 'Viva Glam Lipstick', 'newest first (real created_at)');
 
   $('[data-bw-filter="best"]').click();
-  assert.equal(gcard('.pcName').textContent, 'Viva Glam Lipstick', 'no real stats -> falls back to newest, never faked');
+  assert.equal(gname(), 'Viva Glam Lipstick', 'no real stats -> falls back to newest, never faked');
 
   $('[data-bw-filter="man"]').click();
   assert.equal(gcards().length, 1);
-  assert.equal(gcard('.pcName').textContent, 'Men Beard Oil');
+  assert.equal(gname(), 'Men Beard Oil');
   inst.destroy();
 });
 
@@ -212,7 +215,7 @@ test('beauty world: popularity ranks real sales first', () => {
   mountWorld(w, { stats: { 13: { sold: 5, reviews: 0 }, 14: { sold: 0, reviews: 1 } } });
   const $ = s => el.querySelector(s);
   $('[data-bw-filter="best"]').click();
-  const names = [...el.querySelectorAll('[data-bw-grid] .pcard .pcName')].map(n => n.textContent);
+  const names = [...el.querySelectorAll('[data-bw-grid] .bw-card-name')].map(n => n.textContent);
   assert.deepEqual(names, ['Men Beard Oil', 'Kids Shampoo', 'Viva Glam Lipstick']);
 });
 
@@ -227,9 +230,9 @@ test('beauty world: search overlay finds real beauty products only', () => {
   const input = $('.bw-sp-input');
   input.value = 'lipstick';
   input.dispatchEvent(new w.Event('input', { bubbles: true }));
-  /* the suggest is debounced 100ms */
+  /* the suggest is debounced */
   return new Promise(res => setTimeout(() => {
-    const items = [...el.querySelectorAll('[data-bw-spage] [data-bw-prod]')];
+    const items = [...el.querySelectorAll('[data-bw-spage] .bw-sp-item')];
     assert.equal(items.length, 1);
     assert.ok(items[0].textContent.includes('Viva Glam Lipstick'));
     assert.ok(!el.textContent.includes('iPhone'));
@@ -237,7 +240,7 @@ test('beauty world: search overlay finds real beauty products only', () => {
     assert.equal(w.__opened, 11, 'opens the existing product page');
     inst.destroy();
     res();
-  }, 160));
+  }, 200));
 });
 
 test('beauty world: cutout photo used on cards when present; empty state when no products', () => {
@@ -245,7 +248,7 @@ test('beauty world: cutout photo used on cards when present; empty state when no
   const el = w.document.getElementById('wp');
   prods[0].beauty_image_url = 'https://x/cutout.png';
   const inst1 = mountWorld(w);
-  assert.equal(el.querySelector('[data-bw-grid] .pcard .pcImg img').getAttribute('src'), 'https://x/cutout.png');
+  assert.equal(el.querySelector('[data-bw-grid] .bw-card-img img').getAttribute('src'), 'https://x/cutout.png');
   delete prods[0].beauty_image_url;
   inst1.destroy();
 
@@ -255,9 +258,12 @@ test('beauty world: cutout photo used on cards when present; empty state when no
   const el2 = w2.document.getElementById('wp');
   const inst2 = w2.Pcx.BeautyWorld.mount(el2, { slug: 'beauty', name: 'Beauty', gradient: '' }, {
     onBack: () => {},
-    beauty: { heroes: [], cats: beautyCats, settings: { background_url: '', background_enabled: '1' }, stats: {} }
+    beauty: {
+      heroes: [], cats: beautyCats, settings: { background_url: '', background_enabled: '1' }, stats: {},
+      catTree: new w2.Pcx.Categories.Tree(catRows), products: [], vendors: {}, brands: [], brandById: {}, ratings: {}, fmt: n => 'N' + n
+    }
   });
-  assert.equal(el2.querySelectorAll('.pcard').length, 0);
+  assert.equal(el2.querySelectorAll('.bw-card').length, 0);
   assert.ok(el2.textContent.includes('No beauty products yet'));
   inst2.destroy();
 });
@@ -281,6 +287,25 @@ test('remove-bg api: source URL allowlist + deterministic cache path', () => {
     assert.ok(a.startsWith(t.CUTOUT_DIR + '/'));
     assert.notEqual(a, t.cachePath('https://x/other.png'));
   } finally {
+    if (old === undefined) delete process.env.SUPABASE_URL; else process.env.SUPABASE_URL = old;
+  }
+});
+
+test('remove-bg api: rejects a call with no admin session (it can spend paid credits)', async () => {
+  const { setVerifier } = require('../api/_lib/auth.js');
+  const handler = require('../api/remove-bg.js');
+  setVerifier(async () => null);   // no session
+  const old = process.env.SUPABASE_URL;
+  process.env.SUPABASE_URL = 'https://x.supabase.co';
+  let status = 0, body = null;
+  const req = { method: 'POST', headers: {}, body: { url: 'https://x.supabase.co/storage/v1/object/public/avatars/beauty-hero/a.jpg' } };
+  const res = { status(s) { status = s; return this; }, json(b) { body = b; return this; } };
+  try {
+    await handler(req, res);
+    assert.equal(status, 401);
+    assert.ok(body && body.error);
+  } finally {
+    setVerifier(async (token) => { const { db } = require('../api/_lib/db.js'); const { data, error } = await db().auth.getUser(token); return (error || !data || !data.user) ? null : data.user; });
     if (old === undefined) delete process.env.SUPABASE_URL; else process.env.SUPABASE_URL = old;
   }
 });

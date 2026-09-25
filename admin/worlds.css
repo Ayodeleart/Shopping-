@@ -38,3 +38,4 @@
 .wa-lrow[hidden]{display:none}
 .wa-links .wa-lrow input{width:18px;height:18px;min-height:0;padding:0;border:none;flex-shrink:0;accent-color:var(--red);-webkit-appearance:checkbox;appearance:auto}
 .wa-lcount{font-size:11.5px;color:var(--txt3);margin-top:5px}
+.wa-hint{margin:6px 0 0;font-size:12.5px;color:var(--muted,#8a8a92);font-style:italic}
