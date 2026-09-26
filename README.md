@@ -1,6 +1,6 @@
 # AI features (Groq): listing assistant + shopping assistant
 
-**Environment variables (Vercel)**: `GROQ_API_KEY` (server only), `GROQ_TEXT_MODEL` (default `openai/gpt-oss-120b`, chat + tool calling), `GROQ_VISION_MODEL` (default `qwen/qwen3.6-27b`, product photos).
+**Environment variables (Vercel)**: `GROQ_API_KEY` (server only), `GROQ_TEXT_MODEL` (default `openai/gpt-oss-120b`, chat + tool calling), `GROQ_VISION_MODEL` (default `qwen/qwen3.8-27b`, product photos).
 Optional: `GROQ_REASONING_EFFORT`, `AI_SIGNING_SECRET`. Groq retires models regularly, so check https://console.groq.com/docs/deprecations and change the two model variables, not the code.
 The support-ticket button needs the `support_tickets` table (SQL is pasted in the chat, never stored here). Without it the chat still works and the ticket step says support is not available online.
 

@@ -32,6 +32,16 @@ function logoUrl(domain) {
   return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128`;
 }
 
+/* logo.dev's own search index has real gaps (major brands sometimes just aren't in it).
+ * Its image endpoint is far more reliable and only needs a domain, so for anything not found
+ * by search we also hand back a best-guess "{name}.com" domain + logo. The client already
+ * falls back to a letter avatar if this image 404s, so this is free upside with no downside. */
+function guessDomain(q) {
+  const slug = q.toLowerCase().replace(/[^a-z0-9]+/g, '');
+  if (!slug) return null;
+  return slug + '.com';
+}
+
 async function isAllowed(user) {
   if (getAdminEmails().includes((user.email || '').toLowerCase())) return true;
   const { data } = await supabaseAdmin.from('vendors').select('status').eq('id', user.id).maybeSingle();
@@ -57,12 +67,16 @@ module.exports = async (req, res) => {
 
     const key = q.toLowerCase();
     const hit = cache.get(key);
-    if (hit && Date.now() - hit.t < CACHE_MS) return res.status(200).json({ results: hit.results });
+    if (hit && Date.now() - hit.t < CACHE_MS) return res.status(200).json({ results: hit.results, guess: hit.guess });
 
     const r = await fetch(`https://api.logo.dev/search?q=${encodeURIComponent(q)}`, {
       headers: { Authorization: `Bearer ${secret}` }
     });
-    if (!r.ok) return res.status(502).json({ error: `Brand lookup failed (${r.status})` });
+    if (!r.ok) {
+      const gd = guessDomain(q);
+      const guess = gd ? { domain: gd, logo_url: logoUrl(gd) } : null;
+      return res.status(200).json({ results: [], guess, warning: `Brand lookup returned ${r.status}` });
+    }
 
     const rows = await r.json();
     const seen = new Set();
@@ -72,9 +86,13 @@ module.exports = async (req, res) => {
       .slice(0, 10)
       .map(x => ({ name: String(x.name), domain: String(x.domain).toLowerCase(), logo_url: logoUrl(String(x.domain).toLowerCase()) }));
 
+    let guess = null;
+    const gd = guessDomain(q);
+    if (gd && !results.some(x => x.domain === gd)) guess = { domain: gd, logo_url: logoUrl(gd) };
+
     if (cache.size > 500) cache.clear();
-    cache.set(key, { t: Date.now(), results });
-    return res.status(200).json({ results });
+    cache.set(key, { t: Date.now(), results, guess });
+    return res.status(200).json({ results, guess });
   } catch (e) {
     console.error(e);
     return res.status(500).json({ error: e.message || 'Server error' });
