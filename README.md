@@ -58,9 +58,13 @@ shared helpers `data/tracking.js`, vendor fulfilment `vendor/orders.js`, admin o
 - **Sign in / sign up** (`components/auth-screen.css`, liquid-glass design): the storefront's profile icon opens a full-screen
   **Sign Up / Sign In** screen — Google (works), Facebook (shows "coming soon"), and email + password with Remember me,
   Forgot password, and a required Terms of Service / Privacy Policy checkbox on sign-up. `/vendor/` and `/admin/` share the same
-  design but are **sign-in only** (no self-service sign-up): a new seller's account is created the moment they tap Google, and the
-  existing registration wizard is what onboards them; `/vendor/` also accepts email + password for anyone who has set one
-  (Vendor > Settings, or once via Forgot password). `/admin/` stays Google-only, gated by the `ADMIN_EMAILS` allow-list.
+  design but are **sign-in only**: no self-service sign-up, and Google can never create a new account there either — a
+  vendor/index.html check compares the session's `created_at` and `last_sign_in_at` and immediately signs out + rejects
+  anyone whose account was just created (i.e. would-be sign-up via Google). To sell, someone must already have a Maccato
+  account (create one on the storefront first), sign in with it here, then go through the existing registration wizard.
+  `/vendor/` also accepts email + password for anyone who has set one (Vendor > Settings, or once via Forgot password).
+  `/admin/` stays Google-only, gated by the `ADMIN_EMAILS` allow-list (which already rejects any account, new or old,
+  that isn't on the list).
   Turn on *Confirm email* in Supabase (Authentication > Providers > Email) for the storefront's email sign-up, and add
   `https://YOUR-DOMAIN/`, `https://YOUR-DOMAIN/vendor/` and `https://YOUR-DOMAIN/admin/` to Authentication > URL Configuration > Redirect URLs.
 

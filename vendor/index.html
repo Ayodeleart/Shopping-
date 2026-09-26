@@ -222,7 +222,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
       </form>
       <div class="as-err" id="authErr"></div>
       <div class="as-info" id="authInfo"></div>
-      <div class="as-note">New seller? Tap <b>Google</b> above to create your account and start your application.<br>Used Google before and want a password too? Tap <b>Forgot password</b> once to set one.</div>
+      <div class="as-note">Don't have a Maccato account yet? Create one on the main site first, then come back here to start selling.<br>Already have one and want a password too? Tap <b>Forgot password</b> once to set one.</div>
     </div>
 
     <!-- new password (after the reset-password email link) -->
@@ -596,7 +596,7 @@ document.querySelectorAll('.as-eye').forEach(btn => {
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 function friendlyAuthError(e) {
   const m = String((e && e.message) || e || '');
-  if (/invalid login credentials/i.test(m)) return 'Wrong email or password. New here? Use the Google button above.';
+  if (/invalid login credentials/i.test(m)) return 'Wrong email or password.';
   if (/email not confirmed/i.test(m)) return 'Please confirm your email first (check the link we sent when you signed up), then sign in again.';
   if (/rate limit|too many|seconds/i.test(m)) return 'Too many attempts. Please wait a minute and try again.';
   if (/password.*(weak|short|least)/i.test(m)) return 'Choose a stronger password (at least 8 characters).';
@@ -605,6 +605,14 @@ function friendlyAuthError(e) {
 }
 
 $a('authGoogleBtn').onclick = () => sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: AUTH_REDIRECT } });
+
+/* Google sign-in auto-creates a brand-new account for anyone who has none yet — that is a sign-up,
+   which this page must never do. If the account we land on was created within the last few seconds
+   (i.e. this was its very first sign-in ever), reject it here rather than let it through. */
+function isBrandNewAccount(user) {
+  if (!user || !user.created_at || !user.last_sign_in_at) return false;
+  return Math.abs(new Date(user.last_sign_in_at) - new Date(user.created_at)) < 10000;
+}
 $a('authFacebookBtn').onclick = () => toast('Facebook sign-in is coming soon. Please use Google or email for now.');
 
 $a('authForm').onsubmit = async ev => {
@@ -662,6 +670,14 @@ async function boot() {
   const { data: { session: s } } = await sb.auth.getSession();
   session = s;
   if (RECOVERY && session) { hideLoad(); showScreen('authWrap'); authView('reset'); return; }
+
+  if (session && isBrandNewAccount(session.user)) {
+    await sb.auth.signOut();
+    session = null;
+    hideLoad(); showScreen('authWrap'); authView('form');
+    authMsg('No Maccato account was found for that Google account. Create your Maccato account first (the profile icon on the main site), then come back here to start selling.');
+    return;
+  }
   if (!session) { hideLoad(); showScreen('authWrap'); authView('form'); authMsg('', ''); return; }
 
   const { data: v } = await sb.from('vendors').select('*').eq('id', session.user.id).maybeSingle();
