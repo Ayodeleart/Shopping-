@@ -225,8 +225,8 @@
     this._showRows(base.concat(canOnline ? [{ kind: 'msg', text: 'Searching online…' }] : []), q);
     if (!canOnline) return;
 
-    var remote = { list: [], err: null };
-    try { remote = await this._remote(q); } catch (e) { remote = { list: [], err: e.message || 'offline' }; }
+    var remote = { list: [], guess: null, err: null };
+    try { remote = await this._remote(q); } catch (e) { remote = { list: [], guess: null, err: e.message || 'offline' }; }
     if (seq !== this.seq) return;
 
     var haveDomain = {}, haveName = {};
@@ -234,7 +234,7 @@
     var online = remote.list.filter(function (r) { return !haveDomain[r.domain] && !haveName[slugOf(r.name)]; });
     var rows = base.concat(online.map(function (r) { return { kind: 'remote', brand: r }; }));
     if (remote.err && !local.length) rows.push({ kind: 'msg', text: 'Online search is unavailable right now. You can still add the brand below.' });
-    this._showRows(rows, q);
+    this._showRows(rows, q, remote.guess);
   };
 
   P._local = async function (q) {
@@ -247,18 +247,18 @@
 
   P._remote = async function (q) {
     var token = await this.o.getToken();
-    if (!token) return { list: [], err: 'not signed in' };
+    if (!token) return { list: [], guess: null, err: 'not signed in' };
     var r = await fetch(this.o.searchUrl + '?q=' + encodeURIComponent(q), { headers: { Authorization: 'Bearer ' + token } });
     if (!r.ok) {
       var msg = '';
       try { msg = (await r.json()).error; } catch (_) {}
-      return { list: [], err: msg || ('HTTP ' + r.status) };
+      return { list: [], guess: null, err: msg || ('HTTP ' + r.status) };
     }
     var j = await r.json();
-    return { list: Array.isArray(j.results) ? j.results : [], err: null };
+    return { list: Array.isArray(j.results) ? j.results : [], guess: j.guess || null, err: null };
   };
 
-  P._showRows = function (rows, q) {
+  P._showRows = function (rows, q, guess) {
     var self = this;
     if (!this.list) return;
     this.list.textContent = '';
@@ -283,13 +283,20 @@
     if (typed && !exact) {
       var add = h('button', 'bp__row bp__row--add'); add.type = 'button';
       if (!rows.some(function (r) { return r.brand; })) add.dataset.pick = '1';   // Enter adds it when nothing else matched
-      var ic = h('span', 'bp__logo is-add'); ic.innerHTML = PLUS_ICON;
+      // logo.dev's search index has gaps even for well-known brands (e.g. Adidas) — rather than
+      // fall straight to a letter avatar, try its far more reliable image-by-domain lookup as a
+      // best guess. logoTile() already falls back to a letter if this particular guess 404s.
+      var guessDomain = guess && guess.domain, guessLogo = guess && guess.logo_url;
+      var ic = guessDomain ? logoTile(typed, guessLogo) : h('span', 'bp__logo is-add');
+      if (!guessDomain) ic.innerHTML = PLUS_ICON;
       add.appendChild(ic);
       var ai = h('span', 'bp__info');
       ai.appendChild(h('span', 'bp__name', 'Add "' + typed + '" as a new brand'));
-      ai.appendChild(h('span', 'bp__sub', 'Not listed? Add it yourself'));
+      ai.appendChild(h('span', 'bp__sub', guessDomain ? ('Logo guessed from ' + guessDomain + ' — you can fix this') : 'Not listed? Add it yourself'));
       add.appendChild(ai);
-      add.addEventListener('click', function () { self.setValue({ id: null, name: typed, source: 'custom' }); });
+      add.addEventListener('click', function () {
+        self.setValue({ id: null, name: typed, domain: guessDomain || null, logo_url: guessLogo || null, source: guessDomain ? 'logo.dev' : 'custom' });
+      });
       this.list.appendChild(add);
     }
     this.list.hidden = false;
