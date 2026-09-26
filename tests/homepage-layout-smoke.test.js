@@ -54,6 +54,7 @@ const tables = {
   vendors: [],
   ads: [
     { id: 501, name: 'Test Sponsor', brand: 'Sponsor Co', active: true, after_rows: 2, sort_order: 1,
+      placement: 'section_gap', scope: 'home', category_id: null,
       accent: '#111', logo_url: '', feed_image: 'https://x/ad.jpg', feed_title: 'Sponsored Deal',
       feed_sub: 'Limited time', feed_cta: 'Shop now', page: {} }
   ],

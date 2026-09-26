@@ -5,8 +5,12 @@
 .cat-thumb.fill{width:100%;height:100%;aspect-ratio:auto;border-radius:0}
 .cat-thumb.s40{width:40px;height:40px;aspect-ratio:auto;font-size:9px;border-radius:8px}
 .cat-thumb.s56{width:56px;height:56px;aspect-ratio:auto;font-size:12px;border-radius:10px}
+.cat-thumb.round{border-radius:50%}                    /* circular variant — same media, different shape/clip; nothing distorts since the image is object-fit:cover on a 1:1 box */
 .cat-thumb-ph{font-size:2em;line-height:1;font-weight:800;color:rgba(0,0,0,.55)}
 .cat-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cat-thumb-gif{opacity:0;transition:opacity .25s ease}
+.cat-thumb-gif.on{opacity:1}
+@media (prefers-reduced-motion:reduce){.cat-thumb-gif{display:none}}
 
 /* ---- picker (vendor + admin product forms) ---- */
 .cp{display:flex;flex-direction:column;gap:8px}
@@ -29,15 +33,40 @@
 .cpg-home img{height:26px;width:auto;object-fit:contain}
 .cpg-home:active{opacity:.6}
 .cpg-title{flex:1;font-size:15px;font-weight:800;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+
+/* Sticky bar of every top-level category — tapping one switches the whole page in place (goal: stay-in-place
+   browsing). Sits right under the header so it's always reachable while scrolling a category's content. */
+.cpg-catbar{position:sticky;top:52px;z-index:4;display:flex;gap:8px;overflow-x:auto;padding:10px 12px;background:var(--bg);border-bottom:1px solid var(--border);scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.cpg-catbar::-webkit-scrollbar{display:none}
+.cpg-cbtn{flex:0 0 auto;padding:7px 14px;border-radius:16px;background:var(--bg2);color:var(--txt2);font-size:12.5px;font-weight:700;white-space:nowrap;cursor:pointer}
+.cpg-cbtn.on{background:var(--red);color:#fff}
+.cpg-cbtn:active{opacity:.8}
+
 .cpg-crumbs{display:flex;flex-wrap:wrap;gap:2px 6px;align-items:center;padding:10px 14px 0;font-size:12px;color:var(--txt3)}
 .cpg-crumbs a{color:var(--txt2);font-weight:600;cursor:pointer}
 .cpg-crumbs a:active{color:var(--red)}
-.cpg-subs{display:grid;grid-template-columns:repeat(3,1fr);gap:12px 10px;padding:14px}
-@media (min-width:520px){.cpg-subs{grid-template-columns:repeat(5,1fr)}}
-.cpg-tile{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;min-width:0}
+
+/* Subcategory tiles: a horizontally scrollable row of compact, circular tiles (not a wrapping grid) so it
+   never eats vertical space and behaves like screenshot 3's category icons, on mobile or wider screens. */
+.cpg-subs{display:flex;gap:14px;overflow-x:auto;padding:14px 12px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.cpg-subs::-webkit-scrollbar{display:none}
+.cpg-tile{flex:0 0 auto;width:64px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;min-width:0}
 .cpg-tile:active .cat-thumb{transform:scale(.96)}
-.cpg-tile .cat-thumb{transition:transform .15s}
-.cpg-tile span.cpg-name{font-size:12px;font-weight:600;text-align:center;line-height:1.25;max-width:100%;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.cpg-tile .cat-thumb{transition:transform .15s;width:60px;height:60px}
+.cpg-tile span.cpg-name{font-size:11.5px;font-weight:600;text-align:center;line-height:1.25;max-width:100%;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+
+.cpg-adgap{padding:2px 12px 4px}
+
+/* Merchandising rails (Trending/Popular/Hot Deals/Brand Deals/...): each gets its own accent colour on the
+   header so sections read as visually distinct rather than identical, while staying in the same red-based
+   brand family by default. Compact cards only (see cardHTML(p,{compact:true})). */
+.cpg-msec{margin:10px 0}
+.cpg-msec-hd{margin:0 12px 8px;padding:8px 12px;border-radius:10px;background:color-mix(in srgb, var(--msec-accent, var(--red)) 12%, transparent);border-left:4px solid var(--msec-accent, var(--red))}
+.cpg-msec-ttl{font-size:13.5px;font-weight:800;color:var(--msec-accent, var(--red))}
+.cpg-msec-scroll{display:flex;gap:10px;overflow-x:auto;padding:0 12px 4px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.cpg-msec-scroll::-webkit-scrollbar{display:none}
+.cpg-msec-scroll .fcard-wrap{flex:0 0 auto;width:132px;padding:0}
+
 .cpg-sec{display:flex;align-items:center;justify-content:space-between;padding:6px 14px 10px;border-top:6px solid var(--bg2)}
 .cpg-sec b{font-size:14px;font-weight:800}
 .cpg-sec span{font-size:12px;color:var(--txt3)}

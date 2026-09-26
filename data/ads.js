@@ -46,6 +46,13 @@
       sortOrder: parseInt(r.sort_order, 10) || 1,
       accent: r.accent || '#3f4468',
       logo: r.logo_url || '',
+      /* Where the admin placed this ad — see migration_ad_placement_category_tiles.sql.
+         placement: 'feed' (interleaved in a product grid, existing after_rows behaviour)
+                    or 'section_gap' (once, between curated sections).
+         scope: 'home', 'category' (categoryId only), or 'all' (everywhere). */
+      placement: r.placement === 'section_gap' ? 'section_gap' : 'feed',
+      scope: r.scope === 'category' || r.scope === 'all' ? r.scope : 'home',
+      categoryId: r.category_id != null ? Number(r.category_id) : null,
       feed: { image: r.feed_image || '', title: r.feed_title || '', sub: r.feed_sub || '', cta: r.feed_cta || '' },
       page: {
         hero: Array.isArray(page.hero) ? page.hero.filter(function (h) { return h && h.image; }) : [],
@@ -59,6 +66,21 @@
     return (rows || []).map(fromRow).sort(function (a, b) {
       return a.afterRows - b.afterRows || a.sortOrder - b.sortOrder;
     });
+  }
+
+  /* Ads eligible for one placement + one page (home, or a given category id), in the admin's own order
+   * (sort_order). Shared by the homepage (index.html) and the category page (components/category-page.js)
+   * so "where an ad is eligible" is decided in exactly one place. */
+  function forSlot(ads, opts) {
+    opts = opts || {};
+    var placement = opts.placement === 'section_gap' ? 'section_gap' : 'feed';
+    var categoryId = opts.categoryId != null ? Number(opts.categoryId) : null;
+    return (ads || []).filter(function (a) {
+      if (a.placement !== placement) return false;
+      if (a.scope === 'all') return true;
+      if (categoryId != null) return a.scope === 'category' && a.categoryId === categoryId;
+      return a.scope === 'home';
+    }).sort(function (a, b) { return a.sortOrder - b.sortOrder; });
   }
 
   /* The card shown inside the home feed (rendered with PromotionalCarousel in single-card mode). */
@@ -224,7 +246,7 @@
 
   global.Ads = {
     fromRow: fromRow, list: list, feedPromo: feedPromo, interleave: interleave, productImages: productImages,
-    productsFor: productsFor, matchRule: matchRule, discountOf: discountOf,
+    productsFor: productsFor, matchRule: matchRule, discountOf: discountOf, forSlot: forSlot,
     bannerTarget: bannerTarget, bannerHref: bannerHref, campaignFromBanner: campaignFromBanner,
     targetOf: targetOf, targetHref: targetHref, campaignFromTarget: campaignFromTarget, tileList: tileList,
     setCategoryResolver: setCategoryResolver

@@ -751,12 +751,18 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
   </section>
   <div id="flashGap" class="sgap" style="display:none"></div>
 
+  <!-- HOME AD SLOT C: between Flash Sales and Featured. -->
+  <div id="homeAdSlotC" class="homeAdSlot" style="display:none"></div>
+
   <!-- FEATURED -->
   <section id="featSec" style="display:none">
     <div class="secHd"><span class="secTtl">Featured</span><a class="secAll" href="#allSec">See All</a></div>
     <div class="pgrid-wrap"><div class="pgrid" id="featGrid"></div></div>
   </section>
   <div id="featGap" class="sgap" style="display:none"></div>
+
+  <!-- HOME AD SLOT D: between Featured and Discover More. -->
+  <div id="homeAdSlotD" class="homeAdSlot" style="display:none"></div>
 
   <!-- DISCOVER MORE (full catalogue, was "All Products"): the scalable bottom feed. Loads in batches —
        see renderGrid()/appendDiscoverBatch() — so the homepage never has to paint the whole catalogue at once. -->
@@ -1386,7 +1392,7 @@ function buildCategoryRowsTree(prods) {
           <a class="secAll" href="#" onclick="openCategory('${hs(root.slug)}');return false">See All</a>
         </div>
         <div class="catRowScroll">
-          ${matches.slice(0, CAT_ROW_PRODUCT_CAP).map(p => `<div class="fcard-wrap au">${cardHTML(p)}</div>`).join('')}
+          ${matches.slice(0, CAT_ROW_PRODUCT_CAP).map(p => `<div class="fcard-wrap au">${cardHTML(p, { compact: true })}</div>`).join('')}
         </div>
       </div>`;
   }).join('');
@@ -1416,10 +1422,44 @@ function closeCatPage() {
     catPage.close();
   } else history.back();
 }
+/* Merchandising rails for a category page (Trending/Popular/Hot Deals/Brand Deals — see goal 5 in the task):
+   every one of these uses a real, already-loaded signal (flash_sale, a real discount, ratingMap, a resolvable
+   brand) — nothing invented. A rail that has no eligible products for this category is left out entirely, and
+   a product already used higher up on the page is not repeated lower down. Distinct accent colours per rail
+   so sections read as visually different, while staying in the same red-based brand palette. */
+const MERCH_RAIL_CAP = 10;
+function categoryMerchSections(cat) {
+  const match = catTree.productMatcher(cat.id);
+  const inCat = allProds.filter(match);
+  const used = new Set();
+  const take = list => { const out = list.filter(p => !used.has(p.id)).slice(0, MERCH_RAIL_CAP); out.forEach(p => used.add(p.id)); return out; };
+  const discountPct = p => (p.original_price && p.original_price > p.price) ? (1 - p.price/p.original_price) : 0;
+
+  const sections = [];
+  const flash = take(inCat.filter(p => p.flash_sale).sort((a,b) => discountPct(b) - discountPct(a)));
+  if (flash.length) sections.push({ key: 'flash', title: `Flash Deals in ${cat.name}`, color: '#D91C2D', products: flash });
+
+  const popular = take(inCat.filter(p => ratingMap[p.id] && ratingMap[p.id].n > 0)
+    .sort((a,b) => (ratingMap[b.id].avg - ratingMap[a.id].avg) || (ratingMap[b.id].n - ratingMap[a.id].n)));
+  if (popular.length) sections.push({ key: 'popular', title: `Popular in ${cat.name}`, color: '#B8860B', products: popular });
+
+  /* Brand Deals is more specific than Hot Deals, so it gets first claim on a branded, discounted product;
+     Hot Deals is the general catch-all for whatever discounted stock is left (branded or not). */
+  const brandDeals = take(inCat.filter(p => discountPct(p) > 0 && brandOf(p)).sort((a,b) => discountPct(b) - discountPct(a)));
+  if (brandDeals.length) sections.push({ key: 'brand', title: 'Brand Deals', color: '#1E7A46', products: brandDeals });
+
+  const hot = take(inCat.filter(p => discountPct(p) > 0).sort((a,b) => discountPct(b) - discountPct(a)));
+  if (hot.length) sections.push({ key: 'hot', title: 'Hot Deals', color: '#8E2DE2', products: hot });
+
+  return sections;
+}
+
 function initCategoryPage() {
   catPage = new Pcx.CategoryPage(document.getElementById('catPage'), {
     tree: () => catTree, products: () => allProds, cardHTML, go: openCategory, onBack: closeCatPage, onHome: goHome,
-    world: null   /* the main store's "All categories" page: Fashion-world categories live in the Fashion world */
+    world: null,   /* the main store's "All categories" page: Fashion-world categories live in the Fashion world */
+    merchSections: categoryMerchSections,
+    ads: () => adsList, mountAds: mountFeedAds, observeAllEls: observeAll
   });
   catDeepLinked = !!catFromHash() || !!wcatFromHash();
   window.addEventListener('hashchange', syncCatPage);
@@ -1847,7 +1887,7 @@ function flyToCart(src) {
 function buildFlash(prods) {
   const el = document.getElementById('flashScroll');
   el.innerHTML = prods.map(p =>
-    `<div class="fcard-wrap au">${cardHTML(p)}</div>`
+    `<div class="fcard-wrap au">${cardHTML(p, { compact: true })}</div>`
   ).join('');
   observeAll(el.querySelectorAll('.au'));
 }
@@ -1869,7 +1909,7 @@ function buildCategoryRows(shortcuts, prods) {
           <a class="secAll" href="#" onclick="catNavGo('${esc(sc.title)}');return false">See All</a>
         </div>
         <div class="catRowScroll">
-          ${matches.slice(0, CAT_ROW_PRODUCT_CAP).map(p => `<div class="fcard-wrap au">${cardHTML(p)}</div>`).join('')}
+          ${matches.slice(0, CAT_ROW_PRODUCT_CAP).map(p => `<div class="fcard-wrap au">${cardHTML(p, { compact: true })}</div>`).join('')}
         </div>
       </div>`;
   }).join('');
@@ -1883,7 +1923,7 @@ function buildCategoryRows(shortcuts, prods) {
 let discoverCells = [], discoverShown = 0;
 const DISCOVER_BATCH = 20;
 
-function renderGrid(prods, id, withAds, emptyMsg) {
+function renderGrid(prods, id, withAds, emptyMsg, compact) {
   const el = document.getElementById(id);
   if (!prods.length) {
     el.innerHTML = `<div class="empty"><h3>No products here</h3><p>${esc(emptyMsg || 'Check back soon.')}</p></div>`;
@@ -1891,7 +1931,7 @@ function renderGrid(prods, id, withAds, emptyMsg) {
     return;
   }
   let cells = prods.map((p,i) =>
-    `<div class="au d${Math.min(i%4,3)}">${cardHTML(p)}</div>`);
+    `<div class="au d${Math.min(i%4,3)}">${cardHTML(p, { compact: !!compact })}</div>`);
   const slots = withAds ? feedSlots() : [];
   if (slots.length) cells = Ads.interleave(cells, slots, 2);
 
@@ -3030,19 +3070,26 @@ function feedSlots() {
   const tileSlots = Object.keys(feedTileGroups()).map(n => ({
     afterRows: +n, order: -1, html: `<div class="tileslot au" data-rows="${esc(n)}" style="grid-column:1/-1"></div>`
   }));
-  const feedAds = adsList.filter(a => homeAdIds.indexOf(a.id) === -1);
+  /* Ads the admin placed IN the feed for the homepage (placement:'feed', scope 'home' or 'all') — see
+     data/ads.js Ads.forSlot / admin/ads.js. Ads placed 'between sections' (homeAdIds) are handled by
+     buildHomeAdSlots() below and excluded here so a configured ad is never shown twice for no reason. */
+  const feedAds = Ads.forSlot(adsList, { placement: 'feed', categoryId: null }).filter(a => homeAdIds.indexOf(a.id) === -1);
   return feedAds.concat(tileSlots);
 }
 
-/* Ads shown between curated homepage sections (Categories -> Shop by Brand -> Flash/Featured), reusing the
-   exact same `ads` table, admin controls (active toggle, sort_order) and feed-card rendering (data/ads.js,
-   admin/ads.js, PromotionalCarousel) as the Discover feed's own ad slots below — just a different placement.
-   Lowest sort_order first, capped at 2 so ads never crowd the curated part of the page; the rest of the
-   admin's active ads keep appearing inside the Discover feed exactly as before (see feedSlots above). */
+/* Ads shown between curated homepage sections (Categories -> Shop by Brand -> Flash -> Featured -> Discover
+   More), reusing the exact same `ads` table, admin controls (placement/scope/category, active, sort_order)
+   and feed-card rendering (data/ads.js, admin/ads.js, PromotionalCarousel) as the in-feed ad slots above —
+   just a different placement. Every ad the admin marked "between curated sections" for the homepage
+   (placement:'section_gap', scope 'home' or 'all') gets a slot, in the admin's own sort_order — nothing is
+   picked or capped by this code. There are 4 physical seams on the homepage today (see the homeAdSlotA-D
+   markup); an admin who configures more than 4 such ads will simply not see the extras until either fewer
+   are active or a future seam is added — that's a layout limit, not a selection made by this function. */
 function buildHomeAdSlots() {
-  const picks = adsList.slice(0, 2);
+  const picks = Ads.forSlot(adsList, { placement: 'section_gap', categoryId: null });
   homeAdIds = picks.map(a => a.id);
-  [document.getElementById('homeAdSlotA'), document.getElementById('homeAdSlotB')].forEach((wrap, i) => {
+  ['homeAdSlotA', 'homeAdSlotB', 'homeAdSlotC', 'homeAdSlotD'].forEach((id, i) => {
+    const wrap = document.getElementById(id);
     if (!wrap) return;
     const ad = picks[i];
     if (!ad) { wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
@@ -3264,7 +3311,7 @@ async function init() {
     if (featured.length) {
       document.getElementById('featSec').style.display = '';
       document.getElementById('featGap').style.display = '';
-      renderGrid(featured, 'featGrid');
+      renderGrid(featured, 'featGrid', false, undefined, true);
     }
 
     renderGrid(allProds, 'allGrid', true);

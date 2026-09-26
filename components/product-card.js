@@ -128,7 +128,37 @@ function cardQty(id, d, src) {
   saveCart(); updateCartBadge();
 }
 
-function cardHTML(p) {
+/* cardHTML(p) — the standard shopping card (Add to Cart, swatches, stock bar): main two-column grids
+   (Discover More, category page listing). cardHTML(p, {compact:true}) — the merchandising card used in
+   curated rails (Trending/Popular/Hot Deals/Brand Deals/Flash Sales/home category rows/Featured): no Add
+   to Cart, a prominent image at a consistent ratio, name + price(+original price), favorite and discount
+   indicators only. Both share the same data, ids and click-to-open behaviour — see cardHTML below. */
+function compactCardHTML(p) {
+  const disc = p.original_price && p.original_price > p.price
+    ? Math.round((1 - p.price/p.original_price)*100) : 0;
+  const r = ratingMap[p.id];
+  return `
+    <div class="pcard pcard-compact" onclick="openProduct(${num(p.id)})">
+      <div class="pcImg">
+        ${p.image_url
+          ? `<img src="${safeUrl(p.image_url)}" alt="${esc(p.name)}" loading="lazy">`
+          : `<div class="noImgPh"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>`}
+        ${disc > 0 ? `<span class="discBadge">-${disc}%</span>` : ''}
+        <button class="favBtn${favs.has(p.id) ? ' on' : ''}" data-fav="${esc(p.id)}" aria-label="Save ${esc(p.name)} to favorites" aria-pressed="${favs.has(p.id)}" onclick="event.stopPropagation();toggleFav(${num(p.id)})">${HEART_SVG}</button>
+      </div>
+      <div class="pcBody pcBody-compact">
+        <div class="pcName">${esc(p.name)}</div>
+        <div class="pcPriceRow">
+          <span class="pcPrice">${fmt(p.price)}</span>
+          ${disc > 0 ? `<span class="pcWas">${fmt(p.original_price)}</span>` : ''}
+        </div>
+        ${r && r.n > 0 ? `<div class="pcRate">${starsHTML(r.avg, 11)}<span>(${esc(r.n)})</span></div>` : ''}
+      </div>
+    </div>`;
+}
+
+function cardHTML(p, opts) {
+  if (opts && opts.compact) return compactCardHTML(p);
   const disc = p.original_price && p.original_price > p.price
     ? Math.round((1 - p.price/p.original_price)*100) : 0;
   const tot = p.max_stock || (p.stock ? p.stock + 15 : 0);

@@ -14,7 +14,7 @@
 
   var C = Pcx.Categories, esc = C.esc;
   var rows = [], tree = null, expanded = {}, query = '', editing = null, loadError = '';
-  var parentPicker = null, pendingFile = null, removeImage = false;
+  var parentPicker = null, pendingFile = null, removeImage = false, pendingGifFile = null, removeGif = false;
 
   var root = function () { return document.getElementById('catAdmin'); };
   var $ = function (id) { return document.getElementById(id); };
@@ -101,8 +101,8 @@
   function renderList() { var l = $('catList'); if (l) l.innerHTML = listHTML(); }
 
   /* ------------------------------------------------------------------ form */
-  function openForm(state) { editing = state; pendingFile = null; removeImage = false; render(); $('catFormSlot').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
-  function closeForm() { editing = null; pendingFile = null; removeImage = false; var s = $('catFormSlot'); if (s) s.innerHTML = ''; }
+  function openForm(state) { editing = state; pendingFile = null; removeImage = false; pendingGifFile = null; removeGif = false; render(); $('catFormSlot').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  function closeForm() { editing = null; pendingFile = null; removeImage = false; pendingGifFile = null; removeGif = false; var s = $('catFormSlot'); if (s) s.innerHTML = ''; }
 
   function renderForm() {
     var e = editing, c = e.id ? tree.byId[e.id] : null;
@@ -119,6 +119,9 @@
       '<div class="fg"><label>Thumbnail</label><div class="cat-imgrow"><div id="cfPrev" style="width:64px;flex-shrink:0">' + C.thumb(tree, previewCat, 's56') + '</div>' +
         '<div class="cat-imgbtns"><input id="cfFile" type="file" accept="image/*"><button type="button" class="btn-e" data-act="rmimg">Remove image</button></div></div>' +
         '<div class="ad-hint">No image? The first letter on the tile colour is shown instead, so nothing looks broken.</div></div>' +
+      '<div class="fg"><label>Animated GIF (optional, layers over the thumbnail above)</label><div class="cat-imgrow">' +
+        '<div class="cat-imgbtns"><input id="cfGifFile" type="file" accept="image/gif"><button type="button" class="btn-e" data-act="rmgif">Remove GIF</button></div></div>' +
+        '<div class="ad-hint">Used for the subcategory tile row on the category browsing page; uploaded as-is so the animation is kept.</div></div>' +
       '<label class="cat-chk"><input id="cfActive" type="checkbox"' + (e.active === false ? '' : ' checked') + '> Visible in the store</label>' +
       '<div class="form-btns"><button type="button" class="btn-p" data-act="save">' + (c ? 'Save changes' : 'Add category') + '</button>' +
         '<button type="button" class="btn-s" data-act="cancel">Cancel</button>' +
@@ -132,6 +135,11 @@
     $('cfFile').addEventListener('change', function () {
       pendingFile = this.files[0] || null; removeImage = false;
       if (pendingFile) $('cfPrev').innerHTML = '<div class="cat-thumb s56"><img src="' + safeUrl(URL.createObjectURL(pendingFile)) + '" alt=""></div>';
+    });
+    $('cfGifFile').addEventListener('change', function () {
+      var f = this.files[0] || null;
+      if (f && f.type !== 'image/gif') { toast('Choose a GIF file', true); this.value = ''; return; }
+      pendingGifFile = f; removeGif = false;
     });
     $('cfName').addEventListener('input', function () {   // slug follows the name until it is edited by hand or already saved
       if (!editing.id && !editing.slugTouched) $('cfSlug').value = C.slugify(this.value);
@@ -161,8 +169,11 @@
       var image_url = c ? (c.imageUrl || null) : null;
       if (removeImage) image_url = null;
       if (pendingFile) image_url = await uploadThumb(pendingFile);
+      var gif_url = c ? (c.gifUrl || null) : null;
+      if (removeGif) gif_url = null;
+      if (pendingGifFile) gif_url = await uploadImage(pendingGifFile, 'categories', null, null, true);
 
-      var row = { name: f.name, slug: f.slug, parent_id: f.parentId, color: f.color, image_url: image_url, is_active: f.active };
+      var row = { name: f.name, slug: f.slug, parent_id: f.parentId, color: f.color, image_url: image_url, gif_url: gif_url, is_active: f.active };
       var parentChanged = !c || (c.parentId == null ? null : c.parentId) !== (f.parentId == null ? null : f.parentId);
       if (parentChanged) {                                 // new, or moved: put it last among its new siblings
         var sibs = f.parentId == null ? tree.roots : tree.children(f.parentId);
@@ -284,6 +295,8 @@
     else if (act === 'del') remove();
     else if (act === 'rmimg') { removeImage = true; pendingFile = null; $('cfFile').value = ''; var c2 = editing.id ? tree.byId[editing.id] : null;
       $('cfPrev').innerHTML = C.thumb(tree, c2 ? Object.assign({}, c2, { imageUrl: '', placeholderPath: '' }) : { id: -1, name: '?', icon: '', color: '', imageUrl: '', placeholderPath: '' }, 's56'); }
+    else if (act === 'rmgif') { removeGif = true; pendingGifFile = null; $('cfGifFile').value = ''; var c3 = editing.id ? tree.byId[editing.id] : null;
+      $('cfPrev').innerHTML = C.thumb(tree, c3 ? Object.assign({}, c3, { gifUrl: '' }) : { id: -1, name: '?', icon: '', color: '', imageUrl: '', placeholderPath: '' }, 's56'); }
     else if (act === 'colorclear') { editing.colorCleared = true; $('cfColor').value = '#f0efeb'; }
     else if (act === 'export') exportCSV();
   });

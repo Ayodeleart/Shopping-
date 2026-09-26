@@ -120,3 +120,19 @@
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 .au{opacity:0}.au.v{animation:fadeUp .3s ease-out forwards}
 .d0{animation-delay:0ms}.d1{animation-delay:40ms}.d2{animation-delay:80ms}.d3{animation-delay:120ms}
+
+/* ── COMPACT MERCHANDISING CARD ──────────────────────────────────
+ * Used in curated/promotional rails (Trending, Popular, Hot Deals, Brand Deals,
+ * Flash Sales, home category rows, Featured): no Add to Cart, a shorter,
+ * consistent image box, tighter body. Same .pcard base as the standard card
+ * (rounded corners, border, tap feedback) — see cardHTML(p, {compact:true}). */
+.pcard-compact .pcImg{padding-top:100%}                 /* square media box: shorter than the standard 4:5, less "tall and cluttered" */
+.pcard-compact .pcBody-compact{padding:7px 8px 9px}
+.pcard-compact .pcName{font-size:12px;margin-bottom:4px;min-height:2.3em}
+.pcard-compact .pcPriceRow{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.pcard-compact .pcPrice{font-size:14px;margin-bottom:0}
+.pcard-compact .pcWas{font-size:11px;margin-bottom:0}
+.pcard-compact .pcRate{margin-bottom:0;margin-top:3px}
+.pcard-compact .pcImg .favBtn{width:28px;height:28px}
+.pcard-compact .pcImg .favBtn svg{width:16px;height:16px}
+.pcard-compact .discBadge{width:32px;height:32px;font-size:10px}

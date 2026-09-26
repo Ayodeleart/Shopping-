@@ -28,6 +28,7 @@
   function blank() {
     return {
       id: null, name: '', brand: '', active: true, after_rows: 5, sort_order: 1, accent: '#3f4468',
+      placement: 'feed', scope: 'home', category_id: '',
       feed_image: '', feed_title: '', feed_sub: '', feed_cta: '', logo_url: '',
       page: { hero: [], contact: { email: '', phone: '' }, sections: [] }
     };
@@ -37,6 +38,9 @@
     var d = Object.assign(blank(), clone(r));
     var pg = typeof r.page === 'string' ? JSON.parse(r.page || '{}') : (r.page || {});
     d.page = { hero: pg.hero || [], contact: Object.assign({ email: '', phone: '' }, pg.contact || {}), sections: pg.sections || [] };
+    d.placement = r.placement === 'section_gap' ? 'section_gap' : 'feed';
+    d.scope = r.scope === 'category' || r.scope === 'all' ? r.scope : 'home';
+    d.category_id = r.category_id != null ? String(r.category_id) : '';
     ['brand', 'feed_image', 'feed_title', 'feed_sub', 'feed_cta', 'logo_url'].forEach(function (k) { if (d[k] == null) d[k] = ''; });
     return d;
   }
@@ -68,12 +72,20 @@
 
   /* ── list ── */
 
+  function placementLabel(a) {
+    var where = a.scope === 'all' ? 'Home + all categories' : a.scope === 'category'
+      ? 'Category: ' + (window.DestPicker && DestPicker.data.catLabel[a.category_id] || ('#' + a.category_id))
+      : 'Home only';
+    var slot = a.placement === 'section_gap' ? 'between sections' : 'in feed, after ' + esc(a.after_rows) + ' row' + (a.after_rows == 1 ? '' : 's');
+    return where + ' &middot; ' + slot;
+  }
+
   function itemHTML(a) {
     var live = a.active;
     return '<div class="aditem">' +
       '<div class="aditem-img">' + (a.feed_image ? '<img src="' + safeUrl(a.feed_image) + '" alt="">' : '') + '</div>' +
       '<div class="aditem-body"><div class="aditem-name">' + esc(a.name) + '<span class="pill' + (live ? ' live' : '') + '">' + (live ? 'Live' : 'Paused') + '</span></div>' +
-      '<div class="aditem-meta">' + esc(a.brand || 'No brand') + ' &middot; after ' + esc(a.after_rows) + ' row' + (a.after_rows == 1 ? '' : 's') + '</div></div>' +
+      '<div class="aditem-meta">' + esc(a.brand || 'No brand') + ' &middot; ' + placementLabel(a) + '</div></div>' +
       '<div class="aditem-acts">' +
         '<button class="abtn" data-a="edit" data-id="' + esc(a.id) + '">Edit</button>' +
         '<button class="abtn" data-a="preview" data-id="' + esc(a.id) + '">Preview</button>' +
@@ -108,10 +120,31 @@
         '<div class="ad-match" id="adMatch"></div>' +
         '<div class="ad-hint">Products whose brand or name contains this word fill the brand page automatically.</div></div>' +
       '<div class="row2">' +
-        '<div class="fg"><label>Show after (rows)</label><input type="number" min="1" data-f="after_rows" value="' + esc(c.after_rows) + '"></div>' +
+        '<div class="fg"><label>Show after (rows)</label><input type="number" min="1" data-f="after_rows" value="' + esc(c.after_rows) + '"' + (c.placement === 'section_gap' ? ' disabled' : '') + '></div>' +
         '<div class="fg"><label>Order</label><input type="number" min="1" data-f="sort_order" value="' + esc(c.sort_order) + '"></div>' +
       '</div>' +
       '<div class="ad-hint" style="margin:-4px 0 12px">The home feed shows 2 products per row, so 5 means the ad appears after 10 products. Ads on the same row are ordered by Order.</div>' +
+
+      '<div class="row2">' +
+        '<div class="fg"><label>Placement</label><select data-f="placement" data-re="1">' +
+          '<option value="feed"' + (c.placement === 'feed' ? ' selected' : '') + '>In a product feed (existing "after rows" behaviour)</option>' +
+          '<option value="section_gap"' + (c.placement === 'section_gap' ? ' selected' : '') + '>Between curated sections</option>' +
+        '</select></div>' +
+        '<div class="fg"><label>Where</label><select data-f="scope" data-re="1">' +
+          '<option value="home"' + (c.scope === 'home' ? ' selected' : '') + '>Homepage only</option>' +
+          '<option value="category"' + (c.scope === 'category' ? ' selected' : '') + '>One category page</option>' +
+          '<option value="all"' + (c.scope === 'all' ? ' selected' : '') + '>Homepage + every category page</option>' +
+        '</select></div>' +
+      '</div>' +
+      (c.scope === 'category'
+        ? '<div class="fg"><label>Category</label><select data-f="category_id">' +
+            '<option value="">Choose a category&hellip;</option>' +
+            (window.DestPicker ? DestPicker.data.cats : []).map(function (cc) {
+              return '<option value="' + esc(cc.id) + '"' + (String(c.category_id) === String(cc.id) ? ' selected' : '') + '>' + esc(cc.label) + '</option>';
+            }).join('') +
+          '</select></div>'
+        : '') +
+      '<div class="ad-hint" style="margin:-4px 0 12px">"Between curated sections" shows once, in Order among other section-gap ads for the same page. "In a product feed" repeats every N rows as before. Ads never appear in a placement/page they are not configured for.</div>' +
       '<div class="fg"><label>Accent color (bands on the brand page)</label><input type="color" data-f="accent" value="' + esc(c.accent) + '" style="width:100%;height:38px;border:1.5px solid var(--border);border-radius:8px;background:var(--bg)"></div>' +
       '<div style="background:var(--bg2);border-radius:10px;padding:2px 10px;margin-bottom:6px"><div class="tgl-row"><label>Active (visible to shoppers)</label><div class="tgl' + (c.active ? ' on' : '') + '" data-tgl="active"><div class="tgl-k"></div></div></div></div>' +
 
@@ -203,10 +236,14 @@
     var row = {
       name: cur.name.trim(), brand: (cur.brand || '').trim() || null, active: !!cur.active,
       after_rows: Math.max(1, parseInt(cur.after_rows, 10) || 5), sort_order: parseInt(cur.sort_order, 10) || 1,
+      placement: cur.placement === 'section_gap' ? 'section_gap' : 'feed',
+      scope: cur.scope === 'category' || cur.scope === 'all' ? cur.scope : 'home',
+      category_id: cur.scope === 'category' && cur.category_id ? Number(cur.category_id) : null,
       accent: cur.accent || '#3f4468', feed_image: cur.feed_image || null, feed_title: (cur.feed_title || '').trim() || null,
       feed_sub: (cur.feed_sub || '').trim() || null, feed_cta: (cur.feed_cta || '').trim() || null,
       logo_url: cur.logo_url || null, page: cleanPage(cur.page)
     };
+    if (cur.scope === 'category' && !row.category_id) { toast('Choose a category for this ad', true); return; }
     showLoad('Saving ad...');
     var q = cur.id ? sb.from('ads').update(row).eq('id', cur.id) : sb.from('ads').insert([row]);
     var res = await q;

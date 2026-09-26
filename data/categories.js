@@ -47,6 +47,7 @@
       icon: '',
       color: r.color || '',
       imageUrl: r.image_url || '',
+      gifUrl: r.gif_url || '',
       placeholderPath: r.placeholder_path || '',
       sortOrder: r.sort_order || 0,
       active: r.is_active !== false,
@@ -163,13 +164,17 @@
   }
 
   /* Emoji (or first letter) on the category colour sits underneath; the image, when there is one, covers it.
-     If the image 404s (placeholder not uploaded yet) it removes itself and the emoji tile shows. */
+     If the image 404s (placeholder not uploaded yet) it removes itself and the emoji tile shows. An optional
+     GIF (cat.gifUrl) layers over the still image and fades in once loaded — same pattern as the Explore
+     worlds' card media (components/world-sections.js mediaInto); a GIF with no still image just shows alone. */
   function thumb(tree, cat, cls) {
     var url = imageUrl(cat);
+    var gif = cat.gifUrl || '';
     var ph = String(cat.name || '?').charAt(0).toUpperCase();
     return '<div class="cat-thumb ' + esc(cls || '') + '" style="background:' + (cssColor(tree.color(cat)) || FALLBACK_COLOR) + '">' +
       '<span class="cat-thumb-ph">' + esc(ph) + '</span>' +
-      (url ? '<img src="' + safeUrl(url) + '" alt="" loading="lazy" onerror="this.remove()">' : '') +
+      (url ? '<img src="' + safeUrl(url) + '" alt="" loading="lazy" onerror="this.remove()">' : (gif ? '<img src="' + safeUrl(gif) + '" alt="" loading="lazy" onerror="this.remove()">' : '')) +
+      (url && gif ? '<img class="cat-thumb-gif" src="' + safeUrl(gif) + '" alt="" loading="lazy" onload="this.classList.add(\'on\')" onerror="this.remove()">' : '') +
       '</div>';
   }
 
