@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#D91C2D">
 <meta name="robots" content="noindex,nofollow">
-<title>Maccato Vendor</title>
+<title>Marcato Vendor</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" sizes="32x32" href="app-icon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -30,22 +30,6 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 @keyframes llogoSpin{to{transform:rotate(360deg)}}
 .ctitle{font-size:26px;font-weight:800;color:#fff;margin-bottom:6px}
 .csub{font-size:13px;color:#8a93a3;line-height:1.5;margin-bottom:28px}
-.gBtn{width:100%;height:52px;background:#fff;border:none;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:10px;font-size:15px;font-weight:700;color:#111;transition:transform .15s,opacity .15s}
-.gBtn:active{transform:scale(.98);opacity:.9}
-.authTabs{display:flex;background:#161a20;border:1px solid #262b33;border-radius:12px;padding:4px;margin-bottom:18px}
-.authTabs button{flex:1;height:38px;border-radius:9px;font-size:13px;font-weight:700;color:#8a93a3}
-.authTabs button.on{background:#262b33;color:#fff}
-.passWrap{position:relative}
-.passWrap input{padding-right:66px!important}
-.passToggle{position:absolute;right:6px;top:6px;height:36px;padding:0 10px;font-size:12px;font-weight:700;color:#8a93a3}
-.authBtn{width:100%;height:52px;margin-top:6px;background:var(--red);color:#fff;border-radius:14px;font-size:15px;font-weight:800;transition:transform .15s,opacity .15s}
-.authBtn:active{transform:scale(.98);opacity:.9}
-.authBtn:disabled{opacity:.55}
-.authBtn.ghost{background:transparent;border:1.5px solid #262b33;color:#fff}
-.authLink{display:block;width:100%;margin-top:14px;font-size:13px;font-weight:700;color:#8a93a3}
-.okMsg{color:#4ade80;font-size:13px;margin-top:10px;min-height:0;line-height:1.5}
-.okMsg:empty{display:none}
-.authNote{margin-top:22px;font-size:12px;color:#6b7280;line-height:1.6}
 .badge-pending{display:inline-flex;align-items:center;gap:6px;background:rgba(217,119,6,.15);color:#fbbf24;font-size:12px;font-weight:800;padding:6px 12px;border-radius:20px;margin-bottom:14px}
 .badge-suspended{display:inline-flex;align-items:center;gap:6px;background:rgba(248,113,113,.15);color:#f87171;font-size:12px;font-weight:800;padding:6px 12px;border-radius:20px;margin-bottom:14px}
 .centerWrap .fld{margin-bottom:12px;text-align:left}
@@ -206,6 +190,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 <link rel="stylesheet" href="../components/ai-product.css">
 <link rel="stylesheet" href="../components/order-tracking.css">
 <link rel="stylesheet" href="../components/brand-picker.css">
+<link rel="stylesheet" href="../components/auth-screen.css">
 <script src="../components/sw-register.js"></script>
 </head>
 <body>
@@ -215,55 +200,44 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 
 <!-- 1. SIGN UP / SIGN IN -->
 <div id="authWrap" class="centerWrap" style="display:none">
-  <div class="cbox">
-    <div class="clogo"><img src="app-icon-maskable-192.png" alt=""></div>
+  <div class="cbox authScreen">
 
-    <!-- create account / sign in -->
+    <!-- sign in (no self-service sign-up here: Google creates the account, or use a password set via Forgot password) -->
     <div id="authFormView">
-      <div class="ctitle" id="authTitle">Sell on Maccato</div>
-      <div class="csub" id="authSub">Create your seller account, then tell us about your store.</div>
-      <div class="authTabs" role="tablist">
-        <button type="button" id="tabSignUp" class="on" role="tab">Create account</button>
-        <button type="button" id="tabSignIn" role="tab">Sign in</button>
+      <div class="as-brand"><img src="app-icon-maskable-192.png" alt=""><span>Maccato</span></div>
+      <div class="as-title">Sell on Maccato<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.8 5.3L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.7L12 2z"/><path d="M19 14.5l.9 2.6L22.5 18l-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9.9-2.6z"/></svg></div>
+      <div class="as-sub">Sign in to start or continue your seller application.</div>
+
+      <div class="as-social">
+        <button type="button" class="as-social-btn" id="authGoogleBtn"><svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.9 32.7 29.4 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.6 18.9 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 16.3 4 9.6 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.5 0 10.4-1.9 14.2-5.1l-6.5-5.5C29.6 35.3 27 36 24 36c-5.4 0-9.9-3.3-11.4-7.9l-6.6 5.1C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.7l6.5 5.5C41.5 36.4 44 30.7 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>Google</button>
+        <button type="button" class="as-social-btn soon" id="authFacebookBtn"><svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><circle cx="24" cy="24" r="20" fill="#1877F2"/><path fill="#fff" d="M27 24.5h3.5l.6-4H27v-2.3c0-1.4.4-2.4 2.4-2.4H31V12c-.4-.1-1.7-.2-3.2-.2-3.2 0-5.4 2-5.4 5.6V20.5H19v4h3.4V35h4.6z"/></svg>Facebook<span class="as-soon-badge">Soon</span></button>
       </div>
+      <div class="as-divider"><span>Or continue with email</span></div>
+
       <form id="authForm" novalidate>
-        <div class="fld"><label for="authEmail">Email</label>
-          <input id="authEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="you@example.com"></div>
-        <div class="fld"><label for="authPass">Password</label>
-          <div class="passWrap"><input id="authPass" type="password" autocomplete="new-password" placeholder="At least 8 characters"><button type="button" class="passToggle" data-for="authPass">Show</button></div></div>
-        <div class="fld" id="authPass2Fld"><label for="authPass2">Confirm password</label>
-          <div class="passWrap"><input id="authPass2" type="password" autocomplete="new-password" placeholder="Type it again"></div></div>
-        <button type="submit" class="authBtn" id="authSubmit">Create account</button>
-        <button type="button" class="authLink" id="authForgot" style="display:none">Forgot password?</button>
+        <div class="as-field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 6 10-6"/></svg><input id="authEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="Email address"></div>
+        <div class="as-field pass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg><input id="authPass" type="password" autocomplete="current-password" placeholder="Password"><button type="button" class="as-eye" data-for="authPass">Show</button></div>
+        <div class="as-row"><span></span><button type="button" class="as-link" id="authForgot">Forgot password?</button></div>
+        <button type="submit" class="as-cta" id="authSubmit">Log In</button>
       </form>
-      <div class="errMsg" id="authErr"></div>
-      <div class="okMsg" id="authInfo"></div>
-      <div class="authNote" id="authNote">Already selling with us? Tap <b>Sign in</b>. If you joined with Google before, use <b>Forgot password</b> once to set a password.</div>
+      <div class="as-err" id="authErr"></div>
+      <div class="as-info" id="authInfo"></div>
+      <div class="as-note">New seller? Tap <b>Google</b> above to create your account and start your application.<br>Used Google before and want a password too? Tap <b>Forgot password</b> once to set one.</div>
     </div>
 
-    <!-- check your inbox -->
-    <div id="authConfirmView" style="display:none">
-      <div class="ctitle">Check your email</div>
-      <div class="csub">We sent a confirmation link to<br><b id="authConfirmEmail" style="color:#fff"></b><br>Open it on this phone and you will land straight in your seller application.</div>
-      <button type="button" class="authBtn ghost" id="authResend">Resend email</button>
-      <button type="button" class="authLink" id="authConfirmBack">Use a different email</button>
-      <div class="errMsg" id="authConfirmErr"></div>
-      <div class="okMsg" id="authConfirmInfo"></div>
-    </div>
-
-    <!-- new password (after the reset link) -->
+    <!-- new password (after the reset-password email link) -->
     <div id="authResetView" style="display:none">
+      <div class="as-brand"><img src="app-icon-maskable-192.png" alt=""><span>Maccato</span></div>
       <div class="ctitle">Set a new password</div>
       <div class="csub">Choose a password with at least 8 characters.</div>
       <form id="authResetForm" novalidate>
-        <div class="fld"><label for="authNewPass">New password</label>
-          <div class="passWrap"><input id="authNewPass" type="password" autocomplete="new-password" placeholder="At least 8 characters"><button type="button" class="passToggle" data-for="authNewPass">Show</button></div></div>
-        <div class="fld"><label for="authNewPass2">Confirm password</label>
-          <div class="passWrap"><input id="authNewPass2" type="password" autocomplete="new-password" placeholder="Type it again"></div></div>
-        <button type="submit" class="authBtn" id="authResetSubmit">Save password</button>
+        <div class="as-field pass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg><input id="authNewPass" type="password" autocomplete="new-password" placeholder="New password"><button type="button" class="as-eye" data-for="authNewPass">Show</button></div>
+        <div class="as-field pass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg><input id="authNewPass2" type="password" autocomplete="new-password" placeholder="Confirm new password"></div>
+        <button type="submit" class="as-cta" id="authResetSubmit">Save password</button>
       </form>
-      <div class="errMsg" id="authResetErr"></div>
+      <div class="as-err" id="authResetErr"></div>
     </div>
+
   </div>
 </div>
 
@@ -284,11 +258,11 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 
     <!-- STEP 0: STORE -->
     <div class="obStep" data-step="0">
-      <p class="obIntro">Tell us about the store you're opening on Maccato.</p>
+      <p class="obIntro">Tell us about the store you're opening on Marcato.</p>
       <div class="fld"><label>Store / Brand Name</label><input id="obStoreName" placeholder="e.g. Ada's Fashion House" oninput="obSlugFromName()"></div>
       <div class="fld">
         <label>Store URL</label>
-        <div class="obSlugRow"><span>maccato.com/store/</span><input id="obStoreSlug" placeholder="ada-fashion-house" oninput="obCheckSlug()"></div>
+        <div class="obSlugRow"><span>marcato.com/store/</span><input id="obStoreSlug" placeholder="ada-fashion-house" oninput="obCheckSlug()"></div>
         <div class="obHint" id="obSlugHint"></div>
       </div>
       <div class="fld"><label>Store Description</label><textarea id="obStoreDesc" placeholder="What do you sell? What makes your store worth following?"></textarea></div>
@@ -387,13 +361,13 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
     <div class="obStep" data-step="5" style="display:none">
       <p class="obIntro">Please review and accept the following before applying.</p>
       <div class="obTermsBox">
-        <p><b>Seller Terms.</b> You're entering a marketplace agreement with Maccato as an independent seller; you're responsible for the products you list, their accuracy, and fulfilling orders on time.</p>
+        <p><b>Seller Terms.</b> You're entering a marketplace agreement with Marcato as an independent seller; you're responsible for the products you list, their accuracy, and fulfilling orders on time.</p>
         <p><b>Marketplace Rules.</b> You'll deal with customers professionally, keep stock levels accurate, and won't manipulate reviews, pricing, or search ranking.</p>
         <p><b>Product/Listing Policies.</b> Listings must be accurate, use images you have rights to, and correctly categorised.</p>
         <p><b>Prohibited-Products Policy.</b> No counterfeit, stolen, hazardous, weapons, or items illegal to sell in Nigeria.</p>
-        <p><b>Returns/Refund Requirements.</b> You'll honour Maccato's baseline returns window and process refunds promptly for valid claims.</p>
-        <p><b>Payout/Commission Terms.</b> Maccato deducts an agreed commission per sale before payout to your verified bank account.</p>
-        <p><b>Privacy/Verification Consent.</b> You consent to Maccato verifying your identity and bank details as part of onboarding, and processing your data to run your seller account.</p>
+        <p><b>Returns/Refund Requirements.</b> You'll honour Marcato's baseline returns window and process refunds promptly for valid claims.</p>
+        <p><b>Payout/Commission Terms.</b> Marcato deducts an agreed commission per sale before payout to your verified bank account.</p>
+        <p><b>Privacy/Verification Consent.</b> You consent to Marcato verifying your identity and bank details as part of onboarding, and processing your data to run your seller account.</p>
       </div>
       <label class="obCheckRow"><input type="checkbox" class="obTermCheck" data-term="seller_terms"><span>I accept the Seller Terms</span></label>
       <label class="obCheckRow"><input type="checkbox" class="obTermCheck" data-term="marketplace_rules"><span>I accept the Marketplace Rules</span></label>
@@ -436,7 +410,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 <div id="pendingWrap" class="centerWrap" style="display:none">
   <div class="cbox">
     <div class="badge-pending"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Under review</div>
-    <div class="ctitle">Your Maccato seller application is under review</div>
+    <div class="ctitle">Your Marcato seller application is under review</div>
     <div class="csub">We'll notify you once an admin approves your store.</div>
     <div id="pendingChecklist" class="obStatusCard" style="text-align:left"></div>
     <button class="ghostBtn" id="pendingSignOut">Sign out</button>
@@ -467,7 +441,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 <!-- 5. DASHBOARD APP -->
 <div id="app">
   <div id="vhdr">
-    <h1 id="vShopName">Maccato Vendor</h1>
+    <h1 id="vShopName">Marcato Vendor</h1>
     <button class="vhbtn" id="vBellBtn" aria-label="Notifications" onclick="openNotifPanel()" style="position:relative">
       <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="18" height="18"><path d="M8.35179 20.2418C9.19288 21.311 10.5142 22 12 22C13.4858 22 14.8071 21.311 15.6482 20.2418C13.2264 20.57 10.7736 20.57 8.35179 20.2418Z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="M18.7491 9.7041V9C18.7491 5.13401 15.7274 2 12 2C8.27256 2 5.25087 5.13401 5.25087 9V9.7041C5.25087 10.5491 5.00972 11.3752 4.5578 12.0782L3.45036 13.8012C2.43882 15.3749 3.21105 17.5139 4.97036 18.0116C9.57274 19.3134 14.4273 19.3134 19.0296 18.0116C20.789 17.5139 21.5612 15.3749 20.5496 13.8012L19.4422 12.0782C18.9903 11.3752 18.7491 10.5491 18.7491 9.7041ZM12 5.25C12.4142 5.25 12.75 5.58579 12.75 6V10C12.75 10.4142 12.4142 10.75 12 10.75C11.5858 10.75 11.25 10.4142 11.25 10V6C11.25 5.58579 11.5858 5.25 12 5.25Z" fill="currentColor"/></svg>
       <span id="vBellDot" class="bellDot" style="display:none"></span>
@@ -599,56 +573,39 @@ function showScreen(id) {
   });
 }
 
-/* ===== AUTH: create a seller account (email + password) or sign in ===== */
+/* ===== AUTH: sign in only. A new seller's account is created the moment they tap Google
+   (signInWithOAuth registers automatically); email + password sign-in is for anyone who has
+   already set a password (Vendor > Settings, or once via Forgot password below). ===== */
 const $a = id => document.getElementById(id);
-let authMode = 'signup';
 const AUTH_REDIRECT = location.origin + '/vendor/';
 
 function authView(v) {
   $a('authFormView').style.display = v === 'form' ? '' : 'none';
-  $a('authConfirmView').style.display = v === 'confirm' ? '' : 'none';
   $a('authResetView').style.display = v === 'reset' ? '' : 'none';
 }
 function authMsg(err, info) { $a('authErr').textContent = err || ''; $a('authInfo').textContent = info || ''; }
 
-function setAuthMode(mode) {
-  authMode = mode;
-  const up = mode === 'signup';
-  $a('tabSignUp').classList.toggle('on', up);
-  $a('tabSignIn').classList.toggle('on', !up);
-  $a('authTitle').textContent = up ? 'Sell on Maccato' : 'Welcome back';
-  $a('authSub').textContent = up ? 'Create your seller account, then tell us about your store.' : 'Sign in to manage your store, products and orders.';
-  $a('authPass2Fld').style.display = up ? '' : 'none';
-  $a('authSubmit').textContent = up ? 'Create account' : 'Sign in';
-  $a('authForgot').style.display = up ? 'none' : '';
-  $a('authNote').style.display = up ? '' : 'none';
-  $a('authPass').autocomplete = up ? 'new-password' : 'current-password';
-  $a('authPass').placeholder = up ? 'At least 8 characters' : 'Your password';
-  authMsg('', '');
-}
-$a('tabSignUp').onclick = () => setAuthMode('signup');
-$a('tabSignIn').onclick = () => setAuthMode('signin');
-
-document.querySelectorAll('.passToggle').forEach(btn => {
+document.querySelectorAll('.as-eye').forEach(btn => {
   btn.onclick = () => {
     const inp = $a(btn.dataset.for), show = inp.type === 'password';
     inp.type = show ? 'text' : 'password';
     btn.textContent = show ? 'Hide' : 'Show';
-    if (btn.dataset.for === 'authPass' && authMode === 'signup') $a('authPass2').type = inp.type;
   };
 });
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 function friendlyAuthError(e) {
   const m = String((e && e.message) || e || '');
-  if (/invalid login credentials/i.test(m)) return 'Wrong email or password.';
-  if (/already registered|already exists/i.test(m)) return 'An account with this email already exists. Tap Sign in instead.';
-  if (/email not confirmed/i.test(m)) return 'Please confirm your email first. Check your inbox for the link we sent.';
+  if (/invalid login credentials/i.test(m)) return 'Wrong email or password. New here? Use the Google button above.';
+  if (/email not confirmed/i.test(m)) return 'Please confirm your email first (check the link we sent when you signed up), then sign in again.';
   if (/rate limit|too many|seconds/i.test(m)) return 'Too many attempts. Please wait a minute and try again.';
   if (/password.*(weak|short|least)/i.test(m)) return 'Choose a stronger password (at least 8 characters).';
   if (/failed to fetch|network/i.test(m)) return 'No internet connection. Please try again.';
   return m || 'Something went wrong. Please try again.';
 }
+
+$a('authGoogleBtn').onclick = () => sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: AUTH_REDIRECT } });
+$a('authFacebookBtn').onclick = () => toast('Facebook sign-in is coming soon. Please use Google or email for now.');
 
 $a('authForm').onsubmit = async ev => {
   ev.preventDefault();
@@ -656,32 +613,14 @@ $a('authForm').onsubmit = async ev => {
   const pass = $a('authPass').value;
   authMsg('', '');
   if (!EMAIL_RE.test(email)) { authMsg('Enter a valid email address.'); return; }
-  if (pass.length < 8) { authMsg('Your password needs at least 8 characters.'); return; }
-  if (authMode === 'signup' && pass !== $a('authPass2').value) { authMsg('The two passwords do not match.'); return; }
+  if (!pass) { authMsg('Enter your password.'); return; }
 
   const btn = $a('authSubmit');
   btn.disabled = true;
   try {
-    if (authMode === 'signup') {
-      const { data, error } = await sb.auth.signUp({ email, password: pass, options: { emailRedirectTo: AUTH_REDIRECT } });
-      if (error) throw error;
-      // an existing email comes back as a user with no identities (Supabase hides which emails exist)
-      if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
-        setAuthMode('signin'); $a('authEmail').value = email;
-        authMsg('An account with this email already exists. Sign in below.');
-        return;
-      }
-      if (data.session) { await boot(); return; }              // email confirmation is off: straight in
-      $a('authConfirmEmail').textContent = email;                // confirmation on: wait for the link
-      authView('confirm');
-    } else {
-      const { error } = await sb.auth.signInWithPassword({ email, password: pass });
-      if (error) {
-        if (/email not confirmed/i.test(error.message)) { $a('authConfirmEmail').textContent = email; authView('confirm'); return; }
-        throw error;
-      }
-      await boot();
-    }
+    const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+    if (error) throw error;
+    await boot();
   } catch (e) {
     authMsg(friendlyAuthError(e));
   } finally {
@@ -697,15 +636,6 @@ $a('authForgot').onclick = async () => {
   if (error) authMsg(friendlyAuthError(error));
   else authMsg('', 'If an account exists for ' + email + ', a reset link is on its way. Check your inbox and spam folder.');
 };
-
-$a('authResend').onclick = async () => {
-  const email = $a('authConfirmEmail').textContent;
-  $a('authConfirmErr').textContent = ''; $a('authConfirmInfo').textContent = '';
-  const { error } = await sb.auth.resend({ type: 'signup', email, options: { emailRedirectTo: AUTH_REDIRECT } });
-  if (error) $a('authConfirmErr').textContent = friendlyAuthError(error);
-  else $a('authConfirmInfo').textContent = 'Sent again. Check your inbox and spam folder.';
-};
-$a('authConfirmBack').onclick = () => { authView('form'); setAuthMode('signup'); };
 
 $a('authResetForm').onsubmit = async ev => {
   ev.preventDefault();
@@ -732,7 +662,7 @@ async function boot() {
   const { data: { session: s } } = await sb.auth.getSession();
   session = s;
   if (RECOVERY && session) { hideLoad(); showScreen('authWrap'); authView('reset'); return; }
-  if (!session) { hideLoad(); showScreen('authWrap'); authView('form'); setAuthMode(authMode); return; }
+  if (!session) { hideLoad(); showScreen('authWrap'); authView('form'); authMsg('', ''); return; }
 
   const { data: v } = await sb.from('vendors').select('*').eq('id', session.user.id).maybeSingle();
   vendorRow = v;
@@ -877,7 +807,7 @@ function obCheckSlug() {
     try {
       const res = await fetch('/api/check-slug', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug, excludeVendorId: session.user.id }) });
       const json = await res.json();
-      hint.textContent = json.available ? `maccato.com/store/${slug} is available` : 'That URL is taken — try another';
+      hint.textContent = json.available ? `marcato.com/store/${slug} is available` : 'That URL is taken — try another';
       hint.className = 'obHint ' + (json.available ? 'ok' : 'err');
     } catch (e) { hint.textContent = ''; }
   }, 400);
@@ -1005,7 +935,7 @@ async function obVerifyBank() {
 /* ===== REVIEW ===== */
 function obRenderReview() {
   const g = id => document.getElementById(id).value;
-  document.getElementById('obRevStore').innerHTML = `<b>${esc(g('obStoreName') || '-')}</b><br>maccato.com/store/${esc(g('obStoreSlug') || '-')}<br>${esc(g('obStoreDesc') || '')}`;
+  document.getElementById('obRevStore').innerHTML = `<b>${esc(g('obStoreName') || '-')}</b><br>marcato.com/store/${esc(g('obStoreSlug') || '-')}<br>${esc(g('obStoreDesc') || '')}`;
   document.getElementById('obRevPersonal').innerHTML = `${esc(g('obTitle'))} ${esc(g('obFirstName'))} ${esc(g('obMiddleName'))} ${esc(g('obLastName'))}<br>DOB: ${esc(g('obDob') || '-')} · ${esc(g('obGender') || '-')}`;
   document.getElementById('obRevAddress').innerHTML = `${esc(g('obAddress') || '-')}<br>${esc(g('obCity') || '')}, ${esc(g('obLga') || '')}, ${esc(g('obState') || '')}<br>${esc(g('obLandmark') || '')}`;
   const idStatus = document.getElementById('obIdStatus').textContent ? 'Submitted' : 'Not started';
@@ -1163,9 +1093,11 @@ function isBeautyCategory() {
 }
 async function removeBgServer(url) {
   try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) return null;   // /api/remove-bg requires an admin or approved-vendor session
     const res = await fetch('/api/remove-bg', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
       body: JSON.stringify({ url })
     });
     if (!res.ok) return null;
@@ -1179,9 +1111,9 @@ function syncRmBgAutoCheck() {
 document.getElementById('pRmBg').addEventListener('change', () => { pRmBgTouched = true; });
 document.getElementById('pCat').addEventListener('change', syncRmBgAutoCheck);
 
-const pPicker = new Pcx.MultiImagePicker(document.getElementById('pPicker'), { max: 8, label: 'Add photos' });
+const pPicker = new Pcx.MultiImagePicker(document.getElementById('pPicker'), { max: 8, label: 'Add photos', onChange: () => pAttrs.refreshColorImages() });
 const sLogoPicker = new Pcx.MultiImagePicker(document.getElementById('sLogoPicker'), { max: 1, label: 'Upload logo' });
-const pAttrs = new Pcx.ProductAttributes(document.getElementById('pAttrs'));
+const pAttrs = new Pcx.ProductAttributes(document.getElementById('pAttrs'), { getImages: () => pPicker.getLinkable() });
 const pBlocks = new Pcx.DescriptionBlocks(document.getElementById('pBlocks'), { onError: m => toast(m, true) });
 /* Brand: search brands already saved, then logo.dev (through /api/brand-search); a brand nobody has listed yet can be added with its own logo. */
 const brandPicker = new Pcx.BrandPicker(document.getElementById('pBrandBox'), {
@@ -1378,6 +1310,7 @@ document.getElementById('pSaveBtn').onclick = async () => {
       }
       return uploadImage(f, 'vendor-products', transparent);
     });
+    pAttrs.remapColorImages(pPicker.getUploadRemap());
 
     if (removeBg && beautyCat && urls.length) {
       showLoad('Removing background...');

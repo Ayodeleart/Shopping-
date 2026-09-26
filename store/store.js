@@ -52,16 +52,19 @@
   window.addToCart = (id, src) => {
     const p = state.byId[id];
     if (!p) return;
-    /* fashion products with sizes are bought from the product page, where a size is picked */
-    if (window.Pcx && Pcx.Fashion && Pcx.Fashion.sizeGroups(p).length) {
-      toast('Select a size');
-      window.openProduct(id);
+    /* products with colours or sizes: the bottom sheet collects the pick, then this same function finishes the add */
+    if (window.Pcx && Pcx.Variants && Pcx.Variants.needsChoice(p)) {
+      if (window.Pcx.VariantSheet) Pcx.VariantSheet.open(p, { onAdd: pick => addLine(p, src, pick.size, pick.color) });
+      else window.openProduct(id);
       return;
     }
+    addLine(p, src, null, null);
+  };
+  function addLine(p, src, size, color) {
     if (src) window.flyToCart(src);
-    const ex = window.cart.find(x => x.id === id);
+    const ex = window.cart.find(x => x.id === p.id && (x.size || null) === (size || null) && (x.color || null) === (color || null));
     if (ex) ex.qty += 1;
-    else window.cart.push({ id: p.id, name: p.name, price: p.price, image_url: p.image_url, vendor_id: p.vendor_id || null, qty: 1 });
+    else window.cart.push({ id: p.id, name: p.name, price: p.price, image_url: p.image_url, vendor_id: p.vendor_id || null, qty: 1, size: size || null, color: color || null });
     window.saveCart(); window.updateCartBadge();
     toast('Added to cart');
   };
@@ -70,6 +73,12 @@
     if (on) window.favs.add(id); else window.favs.delete(id);
     localStorage.setItem('favs_v1', JSON.stringify([...window.favs]));
     document.querySelectorAll(`[data-fav="${id}"]`).forEach(b => b.classList.toggle('on', on));
+    /* same confirmation sheet as the main site; the storefront has no favourites page of its own, so "View
+       Favourites" goes to the main site's (favs_v1 is the same localStorage key, so nothing is lost) */
+    if (on && window.Pcx && Pcx.FavoriteSheet) {
+      const p = state.byId[id];
+      if (p) Pcx.FavoriteSheet.open(p);
+    }
     try {
       const { data: { session } } = await sb.auth.getSession();
       if (!session) return;
@@ -89,7 +98,7 @@
   /* ── PAGE STATE ────────────────────────────────────────────────── */
   const state = {
     vendor: null,
-    storeName: 'Maccato',
+    storeName: 'Marcato',
     activeCategory: 'All',
     search: '',
     sort: 'featured',
@@ -134,7 +143,7 @@
     try {
       const { data } = await sb.from('store_settings').select('key,value').in('key', ['storeName', 'currency']);
       const get = k => data?.find(s => s.key === k)?.value;
-      state.storeName = get('storeName') || 'Maccato';
+      state.storeName = get('storeName') || 'Marcato';
       window.currency = get('currency') || '₦';
     } catch (e) { /* settings are optional; defaults above still work */ }
   }

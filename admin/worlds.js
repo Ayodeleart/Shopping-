@@ -316,7 +316,11 @@
     }
     out += progress(it);
     out += '<div class="form-btns"><button type="button" class="btn-p" data-a="save">' + (saved ? 'Save' : 'Add') + '</button>';
-    if (it.kind === 'world' && saved) out += '<button type="button" class="btn-s" data-a="manage">Hero &amp; display categories</button>';
+    /* Fashion and Beauty have their own dedicated admin (admin/worlds no longer manages their hero/categories);
+       every other world (Food, Home, Gifts, and anything new) uses this generic hero + display-category manager. */
+    var hasOwnAdmin = it.kind === 'world' && (d.slug === 'fashion' || d.slug === 'beauty');
+    if (it.kind === 'world' && saved && !hasOwnAdmin) out += '<button type="button" class="btn-s" data-a="manage">Hero &amp; display categories</button>';
+    if (hasOwnAdmin) out += '<p class="wa-hint">' + esc((d.title || d.slug || '')) + ' has its own dedicated admin section — manage its hero and categories there.</p>';
     out += '<button type="button" class="btn-d" data-a="del">' + (saved ? 'Delete' : 'Cancel') + '</button></div>';
     return '<div class="wa-body">' + out + '</div>';
   }

@@ -55,8 +55,14 @@ shared helpers `data/tracking.js`, vendor fulfilment `vendor/orders.js`, admin o
   when the network takes over 4 s), never touch Supabase, `/api/` or other origins, and serve images cache-first. A new version reloads the app
   once by itself (`components/sw-register.js`: right away if just opened, otherwise when the app goes to the background).
 - **Admin**: a splash shows while the session is checked, so a signed-in admin never sees the login page flash by.
-- **Sell on Maccato** (`/vendor/`): opens on **Create account** (email + password), with a Sign in tab, Forgot password and a confirm-email screen. No Google button.
-  Turn on *Confirm email* in Supabase (Authentication > Providers > Email) and add `https://YOUR-DOMAIN/vendor/` to Authentication > URL Configuration > Redirect URLs.
+- **Sign in / sign up** (`components/auth-screen.css`, liquid-glass design): the storefront's profile icon opens a full-screen
+  **Sign Up / Sign In** screen — Google (works), Facebook (shows "coming soon"), and email + password with Remember me,
+  Forgot password, and a required Terms of Service / Privacy Policy checkbox on sign-up. `/vendor/` and `/admin/` share the same
+  design but are **sign-in only** (no self-service sign-up): a new seller's account is created the moment they tap Google, and the
+  existing registration wizard is what onboards them; `/vendor/` also accepts email + password for anyone who has set one
+  (Vendor > Settings, or once via Forgot password). `/admin/` stays Google-only, gated by the `ADMIN_EMAILS` allow-list.
+  Turn on *Confirm email* in Supabase (Authentication > Providers > Email) for the storefront's email sign-up, and add
+  `https://YOUR-DOMAIN/`, `https://YOUR-DOMAIN/vendor/` and `https://YOUR-DOMAIN/admin/` to Authentication > URL Configuration > Redirect URLs.
 
 ## Storefront v2: brands with logos, favorites, search, new product page
 

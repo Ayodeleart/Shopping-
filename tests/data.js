@@ -9,7 +9,7 @@ const tables = () => ({
   products: prods.map(p => ({ ...p })),
   vendors: [{ id: 'v1', business_name: 'Lagos Gadgets', status: 'approved' }, { id: 'v2', business_name: 'Kano Kicks', status: 'approved' }],
   categories: [{ id: 1, name: 'Electronics', slug: 'electronics', parent_id: null, is_active: true }, { id: 10, name: 'Phones', slug: 'phones', parent_id: 1, is_active: true }, { id: 11, name: 'Shoes', slug: 'shoes', parent_id: null, is_active: true }],
-  store_settings: [{ key: 'storeName', value: 'Maccato' }, { key: 'currency', value: '₦' }, { key: 'deliveryInfo', value: 'Delivery in 2-5 working days within Lagos.' }, { key: 'phone', value: '+2348000000000' }],
+  store_settings: [{ key: 'storeName', value: 'Marcato' }, { key: 'currency', value: '₦' }, { key: 'deliveryInfo', value: 'Delivery in 2-5 working days within Lagos.' }, { key: 'phone', value: '+2348000000000' }],
   orders: [
     { id: 1, order_number: '1001', user_id: 'u1', created_at: '2026-09-10', total: 185000, status: 'pending', payment_status: 'paid', fulfillment_status: 'shipped', items: [{}] },
     { id: 2, order_number: '1002', user_id: 'u2', created_at: '2026-09-11', total: 45000, status: 'pending', payment_status: 'paid', fulfillment_status: 'processing', items: [{}] }

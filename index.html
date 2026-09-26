@@ -9,7 +9,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="app-icon-32.png">
-<title>Maccato</title>
+<title>Marcato</title>
 <link rel="stylesheet" href="components/promotional-carousel.css">
 <script src="data/safe.js"></script>
 <script defer src="components/drag-gesture.js"></script>
@@ -39,6 +39,8 @@
 <script defer src="components/beauty-world.js"></script>
 <link rel="stylesheet" href="components/fashion-world.css">
 <script defer src="components/fashion.js"></script>
+<link rel="stylesheet" href="components/variants.css">
+<script defer src="components/variants.js"></script>
 <script defer src="components/fashion-world.js"></script>
 <script defer src="components/ad-page.js"></script>
 <script defer src="data/ads.js"></script>
@@ -46,6 +48,7 @@
 <script defer src="data/categories.js"></script>
 <script defer src="components/category-page.js"></script>
 <script src="components/sw-register.js"></script>
+<link rel="stylesheet" href="components/auth-screen.css">
 <link rel="stylesheet" href="components/search-page.css">
 <script defer src="data/search.js"></script>
 <script defer src="components/search-page.js"></script>
@@ -309,6 +312,9 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 }
 .pSizeChip.on{border-color:var(--txt);background:var(--txt);color:var(--bg)}
 .pSizeChip:active{transform:scale(.95)}
+.pColorChip{display:inline-flex;align-items:center;gap:7px}
+.pColorDot{width:14px;height:14px;border-radius:50%;border:1px solid rgba(0,0,0,.25);flex-shrink:0}
+.pSizeChip:focus-visible{outline:2px solid var(--red);outline-offset:2px}
 .pSizeRow.miss .pSizeLbl{color:var(--red)}
 .pQtyRow{display:flex;align-items:center;gap:10px;margin:14px 0 12px;padding-top:14px;border-top:1px solid var(--border)}
 .pQtyRow > span{font-size:17px;color:var(--txt2)}
@@ -391,15 +397,12 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
   padding:24px;position:relative;
 }
 #acctSignedOut .acctBack{position:absolute;top:calc(env(safe-area-inset-top,0) + 16px);left:16px;color:#fff}
-#acctSignedOut .acctLogo{width:88px;height:88px;border-radius:50%;overflow:hidden;margin:0 auto 22px;box-shadow:0 0 0 1px rgba(255,255,255,.1)}
-#acctSignedOut .acctLogo img{width:100%;height:100%;object-fit:cover;display:block}
-#acctSignedOut .ctitle{font-size:26px;font-weight:800;color:#fff;margin-bottom:6px}
-#acctSignedOut .csub{font-size:13px;color:#8a93a3;line-height:1.5;margin-bottom:28px;max-width:300px}
-#acctSignedOut #acctGoogleBtn{width:100%;max-width:320px;height:52px;background:#fff;border:none;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:10px;font-size:15px;font-weight:700;color:#111}
+#acctSignedOut .as-content{width:100%;max-width:340px}
+#acctSignedOut .ctitle{font-size:22px;font-weight:800;color:#fff;margin-bottom:6px}
+#acctSignedOut .csub{font-size:13px;color:#8a93a3;line-height:1.5;margin-bottom:24px;max-width:300px;margin-left:auto;margin-right:auto}
 .acctIcon{width:60px;height:60px;border-radius:50%;background:var(--bg2);color:var(--txt3);display:flex;align-items:center;justify-content:center;margin:4px auto 14px}
 .acctMsg{font-size:14px;color:var(--txt2);margin-bottom:18px;line-height:1.5}
 #acctEmail{font-weight:700;color:var(--txt)}
-#acctGoogleBtn{width:100%;height:50px;background:#fff;border:1.5px solid var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;gap:10px;font-size:15px;font-weight:700;color:#111}
 .acctLinks{display:flex;flex-direction:column;gap:2px;text-align:left;margin-top:6px}
 .acctLinks a{display:flex;align-items:center;gap:12px;padding:13px 4px;color:var(--txt);text-decoration:none;font-size:14px;font-weight:600;border-bottom:1px solid var(--bg2)}
 .acctLinks a svg{color:var(--txt3);flex-shrink:0}
@@ -427,30 +430,59 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 
 /* ── FOOTER ───────────────────────────────────────── */
 /* Its own palette regardless of site theme: solid black in light mode, brand red in dark mode.
-   Both are dark backgrounds, so text stays light either way. */
+   Both are dark backgrounds, so text stays light either way. Collapsible accordion sections on
+   mobile (tap a heading to expand it — keeps the footer short until someone wants it); on desktop
+   the same sections just lay out side by side, always open, headings no longer interactive. */
 #siteFooter{
+  position:relative;
   --ft-bg:#0d0d0d;--ft-txt:#fff;--ft-txt2:rgba(255,255,255,.82);--ft-txt3:rgba(255,255,255,.56);
   --ft-border:rgba(255,255,255,.14);--ft-chip:rgba(255,255,255,.1);
-  background:var(--ft-bg);padding:32px 16px calc(24px + 66px);margin-top:20px;
+  background:var(--ft-bg);padding:32px 0 calc(24px + 66px);margin-top:20px;
 }
 [data-theme=dark] #siteFooter{--ft-bg:var(--red);--ft-border:rgba(255,255,255,.24);--ft-chip:rgba(255,255,255,.16)}
-.ftTop{display:grid;grid-template-columns:1fr 1fr;gap:24px 16px;margin-bottom:24px}
-.ftCol{display:flex;flex-direction:column;gap:9px}
-.ftCol#ftWorlds,#ftWorlds{display:flex;flex-direction:column;gap:9px}
-.ftLogo{display:flex;align-items:center;gap:8px;margin-bottom:2px}
+
+.ftBrand{padding:0 16px;text-align:center;margin-bottom:26px}
+.ftLogo{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:6px}
 .ftLogo img{height:26px;width:auto}
 .ftLogo span{font-size:17px;font-weight:900;color:var(--ft-txt)}
-.ftTag{font-size:12.5px;color:var(--ft-txt3);line-height:1.5}
-.ftHead{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--ft-txt3);margin-bottom:2px}
-.ftCol a,.ftCol span,#ftWorlds a{font-size:13.5px;color:var(--ft-txt2);text-decoration:none}
-.ftCol a:active,#ftWorlds a:active{opacity:.7}
-.ftSocial{display:flex;gap:10px;margin-top:4px}
-.ftSocial a{width:32px;height:32px;border-radius:50%;background:var(--ft-chip);display:flex;align-items:center;justify-content:center;color:var(--ft-txt2)}
-.ftBottom{border-top:1px solid var(--ft-border);padding-top:16px;display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--ft-txt3)}
+.ftTag{font-size:12.5px;color:var(--ft-txt3);line-height:1.5;margin-bottom:14px}
+.ftSocial{display:flex;gap:10px;justify-content:center}
+.ftSocial a{width:36px;height:36px;border-radius:50%;background:var(--ft-chip);display:flex;align-items:center;justify-content:center;color:var(--ft-txt2)}
+
+.ftAccordion{border-top:1px solid var(--ft-border)}
+.ftSec{border-bottom:1px solid var(--ft-border)}
+.ftSecHd{
+  width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:15px 16px;background:none;border:0;text-align:left;
+  font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--ft-txt);
+}
+.ftSecIcon{font-size:18px;font-weight:400;color:var(--ft-txt3);flex-shrink:0;line-height:1}
+.ftSecBody{display:grid;grid-template-rows:0fr;transition:grid-template-rows .25s ease}
+.ftSec.open .ftSecBody{grid-template-rows:1fr}
+.ftSecBody>div{overflow:hidden}
+.ftSecIn{display:flex;flex-direction:column;gap:11px;padding:0 16px 18px}
+.ftSecIn a,.ftSecIn span{font-size:13.5px;color:var(--ft-txt2);text-decoration:none}
+.ftSecIn a:active{opacity:.7}
+#ftWorlds{display:flex;flex-direction:column;gap:11px}
+
+.ftBottom{margin:24px 16px 0;padding-top:16px;border-top:1px solid var(--ft-border);display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--ft-txt3)}
 .ftBottom a{color:var(--ft-txt3);text-decoration:underline}
+
+.ftTopBtn{
+  display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;
+  background:var(--ft-chip);color:var(--ft-txt);margin:24px auto 0;
+}
+.ftTopBtn:active{opacity:.7}
+
 @media (min-width:720px){
-  .ftTop{grid-template-columns:1.4fr 1fr 1fr 1fr 1fr;gap:24px;max-width:1200px;margin:0 auto 28px}
-  .ftBottom{max-width:1200px;margin:0 auto}
+  .ftBrand{max-width:1200px;margin:0 auto 28px;padding:0 24px}
+  .ftAccordion{max-width:1200px;margin:0 auto;border-top:0;display:grid;grid-template-columns:repeat(4,1fr);gap:24px;padding:0 24px}
+  .ftSec{border-bottom:0}
+  .ftSecHd{padding:0 0 10px;cursor:default}
+  .ftSecIcon{display:none}
+  .ftSecBody{grid-template-rows:1fr!important}
+  .ftSecIn{padding:0}
+  .ftBottom{max-width:1200px;margin:24px auto 0;padding-left:24px;padding-right:24px}
 }
 
 
@@ -465,10 +497,10 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 .catRowScroll .fcard-wrap{flex-shrink:0}
 
 /* ── LEGAL MODAL ──────────────────────────────────── */
-#legalOver{position:fixed;inset:0;z-index:250;background:rgba(0,0,0,0);pointer-events:none;transition:background .28s}
+#legalOver{position:fixed;inset:0;z-index:270;background:rgba(0,0,0,0);pointer-events:none;transition:background .28s}
 #legalOver.open{background:rgba(0,0,0,.5);pointer-events:all}
 #legalDrawer{
-  position:fixed;inset:0;z-index:260;background:var(--bg);
+  position:fixed;inset:0;z-index:271;background:var(--bg);
   display:flex;flex-direction:column;overflow-y:auto;
   transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
 }
@@ -604,7 +636,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
   </button>
   <a class="hdrHome" id="hdrHome" href="/" onclick="goHome(event)" aria-label="Home">
     <img src="store-logo.png" alt="">
-    <span id="storeLogo" class="js-store-name">Maccato</span>
+    <span id="storeLogo" class="js-store-name">Marcato</span>
   </a>
   <button class="hdr-icon" id="hdrSearchBtn" aria-label="Search" onclick="openSearch()" style="display:none">
     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="20" height="20"><path d="M11 6C13.7614 6 16 8.23858 16 11M16.6588 16.6549L21 21M19 11C19 15.4183 15.4183 19 11 19C6.58172 19 3 15.4183 3 11C3 6.58172 6.58172 3 11 3C15.4183 3 19 6.58172 19 11Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -722,46 +754,58 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 
 <!-- FOOTER -->
 <footer id="siteFooter">
-  <div class="ftTop">
-    <div class="ftCol">
-      <div class="ftLogo"><img src="store-logo.png" alt=""><span>Maccato</span></div>
-      <p class="ftTag" id="ftTagline"></p>
-      <div class="ftSocial" id="ftSocial"></div>
+  <div class="ftBrand">
+    <div class="ftLogo"><img src="store-logo.png" alt=""><span>Marcato</span></div>
+    <p class="ftTag" id="ftTagline"></p>
+    <div class="ftSocial" id="ftSocial"></div>
+  </div>
+
+  <div class="ftAccordion">
+    <div class="ftSec">
+      <button type="button" class="ftSecHd" aria-expanded="false" onclick="toggleFtSec(this)">Shop<span class="ftSecIcon">+</span></button>
+      <div class="ftSecBody"><div><div class="ftSecIn">
+        <a href="#allSec">All Products</a>
+        <a href="#cat=all">All Categories</a>
+        <a href="#flashSec">Flash Sales</a>
+        <a href="#vendorSec">Vendors</a>
+      </div></div></div>
     </div>
-    <div class="ftCol">
-      <div class="ftHead">Shop</div>
-      <a href="#allSec">All Products</a>
-      <a href="#cat=all">All Categories</a>
-      <a href="#flashSec">Flash Sales</a>
-      <a href="#vendorSec">Vendors</a>
+    <div class="ftSec">
+      <button type="button" class="ftSecHd" aria-expanded="false" onclick="toggleFtSec(this)">Explore Marcato<span class="ftSecIcon">+</span></button>
+      <div class="ftSecBody"><div><div class="ftSecIn" id="ftWorlds"></div></div></div>
     </div>
-    <div class="ftCol">
-      <div class="ftHead">Explore Marcato</div>
-      <div id="ftWorlds"></div>
+    <div class="ftSec">
+      <button type="button" class="ftSecHd" aria-expanded="false" onclick="toggleFtSec(this)">Account<span class="ftSecIcon">+</span></button>
+      <div class="ftSecBody"><div><div class="ftSecIn">
+        <a href="#" onclick="openAccount();return false">My Account</a>
+        <a href="#" onclick="openAccount();setTimeout(showMyOrders,150);return false">My Orders</a>
+        <a href="#" onclick="openNotifCenter();return false">Notifications</a>
+        <a href="#" onclick="showFavorites();return false">Saved Items</a>
+        <a href="#" onclick="openCart();return false">My Cart</a>
+      </div></div></div>
     </div>
-    <div class="ftCol">
-      <div class="ftHead">Account</div>
-      <a href="#" onclick="openAccount();return false">My Account</a>
-      <a href="#" onclick="openAccount();setTimeout(showMyOrders,150);return false">My Orders</a>
-      <a href="#" onclick="openNotifCenter();return false">Notifications</a>
-      <a href="#" onclick="showFavorites();return false">Saved Items</a>
-      <a href="#" onclick="openCart();return false">My Cart</a>
-    </div>
-    <div class="ftCol" id="ftContactCol">
-      <div class="ftHead">Support</div>
-      <a href="#" onclick="openWhatsAppHelp();return false">Need Help?</a>
-      <a href="/vendor/" target="_blank">Sell on Maccato</a>
-      <a href="#" id="ftPhone" style="display:none"></a>
-      <a href="#" id="ftEmail" style="display:none"></a>
-      <span id="ftAddress" style="display:none"></span>
+    <div class="ftSec" id="ftContactCol">
+      <button type="button" class="ftSecHd" aria-expanded="false" onclick="toggleFtSec(this)">Support<span class="ftSecIcon">+</span></button>
+      <div class="ftSecBody"><div><div class="ftSecIn">
+        <a href="#" onclick="openWhatsAppHelp();return false">Need Help?</a>
+        <a href="/vendor/" target="_blank">Sell on Marcato</a>
+        <a href="#" id="ftPhone" style="display:none"></a>
+        <a href="#" id="ftEmail" style="display:none"></a>
+        <span id="ftAddress" style="display:none"></span>
+      </div></div></div>
     </div>
   </div>
+
   <div class="ftBottom">
     <span id="ftCopyright"></span>
     <a href="#" onclick="openLegal('privacy');return false">Privacy Policy</a>
     <a href="#" onclick="openLegal('terms');return false">Terms of Service</a>
     <a href="https://logo.dev" target="_blank" rel="noopener">Logos provided by Logo.dev</a>
   </div>
+
+  <button type="button" class="ftTopBtn" aria-label="Back to top" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="18 15 12 9 6 15"/></svg>
+  </button>
 </footer>
 
 <!-- LEGAL MODAL -->
@@ -780,7 +824,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 <div id="menuOver" onclick="closeMenu()"></div>
 <nav id="menuDrawer">
   <div class="mHead">
-    <div class="mStoreName" id="mName">Maccato</div>
+    <div class="mStoreName" id="mName">Marcato</div>
     <div class="mTag" id="mTag">Fast delivery. Real deals.</div>
   </div>
   <div class="mLinks">
@@ -805,7 +849,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>Saved Items<span class="mCount" id="menuFavCount"></span>
     </a>
     <a class="mLink" href="/vendor/" target="_blank">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8L18 3H6L3 8m18 0v11a1 1 0 01-1 1H4a1 1 0 01-1-1V8m18 0H3m9 4v6"/><path d="M3 8l2.5 5H8l1-3 2 5 2-5 1 3h2.5L21 8"/></svg>Sell on Maccato
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8L18 3H6L3 8m18 0v11a1 1 0 01-1 1H4a1 1 0 01-1-1V8m18 0H3m9 4v6"/><path d="M3 8l2.5 5H8l1-3 2 5 2-5 1 3h2.5L21 8"/></svg>Sell on Marcato
     </a>
     <a class="mLink" href="#" onclick="closeMenu();openCart();return false">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7.5 18C8.32843 18 9 18.6716 9 19.5C9 20.3284 8.32843 21 7.5 21C6.67157 21 6 20.3284 6 19.5C6 18.6716 6.67157 18 7.5 18Z" stroke="currentColor" stroke-width="1.5"/><path d="M16.5 18.0001C17.3284 18.0001 18 18.6716 18 19.5001C18 20.3285 17.3284 21.0001 16.5 21.0001C15.6716 21.0001 15 20.3285 15 19.5001C15 18.6716 15.6716 18.0001 16.5 18.0001Z" stroke="currentColor" stroke-width="1.5"/><path d="M2 3L2.26121 3.09184C3.5628 3.54945 4.2136 3.77826 4.58584 4.32298C4.95808 4.86771 4.95808 5.59126 4.95808 7.03836V9.76C4.95808 12.7016 5.02132 13.6723 5.88772 14.5862C6.75412 15.5 8.14857 15.5 10.9375 15.5H12M16.2404 15.5C17.8014 15.5 18.5819 15.5 19.1336 15.0504C19.6853 14.6008 19.8429 13.8364 20.158 12.3075L20.6578 9.88275C21.0049 8.14369 21.1784 7.27417 20.7345 6.69708C20.2906 6.12 18.7738 6.12 17.0888 6.12H11.0235M4.95808 6.12H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Cart
@@ -852,7 +896,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
     <button id="pModalBack" onclick="closePModal()" aria-label="Back">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
     </button>
-    <a class="hdrHome" href="/" onclick="goHome(event)" aria-label="Home"><img src="store-logo.png" alt=""><span class="js-store-name">Maccato</span></a>
+    <a class="hdrHome" href="/" onclick="goHome(event)" aria-label="Home"><img src="store-logo.png" alt=""><span class="js-store-name">Marcato</span></a>
     <button class="hdr-icon" id="pCartBtn" aria-label="Cart" onclick="openCart()">
       <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="22" height="22"><path d="M7.5 18C8.32843 18 9 18.6716 9 19.5C9 20.3284 8.32843 21 7.5 21C6.67157 21 6 20.3284 6 19.5C6 18.6716 6.67157 18 7.5 18Z" stroke="currentColor" stroke-width="1.5"/><path d="M16.5 18.0001C17.3284 18.0001 18 18.6716 18 19.5001C18 20.3285 17.3284 21.0001 16.5 21.0001C15.6716 21.0001 15 20.3285 15 19.5001C15 18.6716 15.6716 18.0001 16.5 18.0001Z" stroke="currentColor" stroke-width="1.5"/><path d="M2 3L2.26121 3.09184C3.5628 3.54945 4.2136 3.77826 4.58584 4.32298C4.95808 4.86771 4.95808 5.59126 4.95808 7.03836V9.76C4.95808 12.7016 5.02132 13.6723 5.88772 14.5862C6.75412 15.5 8.14857 15.5 10.9375 15.5H12M16.2404 15.5C17.8014 15.5 18.5819 15.5 19.1336 15.0504C19.6853 14.6008 19.8429 13.8364 20.158 12.3075L20.6578 9.88275C21.0049 8.14369 21.1784 7.27417 20.7345 6.69708C20.2906 6.12 18.7738 6.12 17.0888 6.12H11.0235M4.95808 6.12H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       <span id="pCartDot"></span>
@@ -883,6 +927,10 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
       <div id="pRating"></div>
       <div class="pCode" id="pCode"></div>
       <div class="pStockLine" id="pStockLine"></div>
+      <div class="pSizeRow" id="pColorRow" style="display:none">
+        <span class="pSizeLbl" id="pColorLbl">Colour:</span>
+        <div class="pSizes" id="pColors" role="radiogroup" aria-labelledby="pColorLbl"></div>
+      </div>
       <div class="pSizeRow" id="pSizeRow" style="display:none">
         <span class="pSizeLbl" id="pSizeLbl">Size:</span>
         <div class="pSizes" id="pSizes"></div>
@@ -960,17 +1008,84 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 <!-- ACCOUNT DRAWER -->
 <div id="acctOver" onclick="closeAccount()"></div>
 <div id="acctDrawer">
-  <div id="acctSignedOut" class="acctPane">
+  <div id="acctSignedOut" class="acctPane authScreen">
     <button class="acctBack" onclick="closeAccount()" aria-label="Back">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
     </button>
-    <div class="acctLogo" onclick="goHome(event)" style="cursor:pointer"><img src="app-icon-192.png" alt="Home"></div>
-    <div class="ctitle">Login</div>
-    <div class="csub">Sign in to track orders, save items and leave reviews.</div>
-    <button id="acctGoogleBtn">
-      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.9 32.7 29.4 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.6 18.9 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 16.3 4 9.6 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.5 0 10.4-1.9 14.2-5.1l-6.5-5.5C29.6 35.3 27 36 24 36c-5.4 0-9.9-3.3-11.4-7.9l-6.6 5.1C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.7l6.5 5.5C41.5 36.4 44 30.7 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>
-      Continue with Google
-    </button>
+
+    <!-- SIGN IN -->
+    <div id="authFormView" class="as-content">
+      <div class="as-brand"><img src="app-icon-192.png" alt=""><span>Maccato</span></div>
+      <div class="as-title">Log in to your account<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.8 5.3L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.7L12 2z"/><path d="M19 14.5l.9 2.6L22.5 18l-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9.9-2.6z"/></svg></div>
+      <div class="as-sub">Welcome back! Please enter your details.</div>
+
+      <div class="as-social">
+        <button type="button" class="as-social-btn" id="authGoogleBtn"><svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.9 32.7 29.4 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.6 18.9 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 16.3 4 9.6 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.5 0 10.4-1.9 14.2-5.1l-6.5-5.5C29.6 35.3 27 36 24 36c-5.4 0-9.9-3.3-11.4-7.9l-6.6 5.1C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.7l6.5 5.5C41.5 36.4 44 30.7 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>Google</button>
+        <button type="button" class="as-social-btn soon" id="authFacebookBtn"><svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><circle cx="24" cy="24" r="20" fill="#1877F2"/><path fill="#fff" d="M27 24.5h3.5l.6-4H27v-2.3c0-1.4.4-2.4 2.4-2.4H31V12c-.4-.1-1.7-.2-3.2-.2-3.2 0-5.4 2-5.4 5.6V20.5H19v4h3.4V35h4.6z"/></svg>Facebook<span class="as-soon-badge">Soon</span></button>
+      </div>
+      <div class="as-divider"><span>Or continue with email</span></div>
+
+      <form id="authForm" novalidate>
+        <div class="as-field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 6 10-6"/></svg><input id="authEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="Email address"></div>
+        <div class="as-field pass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg><input id="authPass" type="password" autocomplete="current-password" placeholder="Password"><button type="button" class="as-eye" data-for="authPass">Show</button></div>
+        <div class="as-row">
+          <label class="as-remember"><input type="checkbox" id="authRemember">Remember me</label>
+          <button type="button" class="as-link" id="authForgot">Forgot password?</button>
+        </div>
+        <button type="submit" class="as-cta" id="authSubmit">Log In</button>
+      </form>
+      <div class="as-err" id="authErr"></div>
+      <div class="as-info" id="authInfo"></div>
+      <div class="as-switch">Don't have an account? <button type="button" id="authGoSignUp">Sign Up</button></div>
+    </div>
+
+    <!-- SIGN UP -->
+    <div id="authSignUpView" class="as-content" style="display:none">
+      <div class="as-brand"><img src="app-icon-192.png" alt=""><span>Maccato</span></div>
+      <div class="as-title">Create your account<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.8 5.3L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.7L12 2z"/><path d="M19 14.5l.9 2.6L22.5 18l-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9.9-2.6z"/></svg></div>
+      <div class="as-sub">Join Maccato to track orders, save items and leave reviews.</div>
+
+      <div class="as-social">
+        <button type="button" class="as-social-btn" id="authGoogleBtn2"><svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.9 32.7 29.4 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.6 18.9 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 16.3 4 9.6 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.5 0 10.4-1.9 14.2-5.1l-6.5-5.5C29.6 35.3 27 36 24 36c-5.4 0-9.9-3.3-11.4-7.9l-6.6 5.1C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.7l6.5 5.5C41.5 36.4 44 30.7 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>Google</button>
+        <button type="button" class="as-social-btn soon" id="authFacebookBtn2"><svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><circle cx="24" cy="24" r="20" fill="#1877F2"/><path fill="#fff" d="M27 24.5h3.5l.6-4H27v-2.3c0-1.4.4-2.4 2.4-2.4H31V12c-.4-.1-1.7-.2-3.2-.2-3.2 0-5.4 2-5.4 5.6V20.5H19v4h3.4V35h4.6z"/></svg>Facebook<span class="as-soon-badge">Soon</span></button>
+      </div>
+      <div class="as-divider"><span>Or continue with email</span></div>
+
+      <form id="authSignUpForm" novalidate>
+        <div class="as-field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 6 10-6"/></svg><input id="authSuEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="Email address"></div>
+        <div class="as-field pass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg><input id="authSuPass" type="password" autocomplete="new-password" placeholder="Password (at least 8 characters)"><button type="button" class="as-eye" data-for="authSuPass">Show</button></div>
+        <div class="as-field pass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg><input id="authSuPass2" type="password" autocomplete="new-password" placeholder="Confirm password"></div>
+        <label class="as-terms"><input type="checkbox" id="authTerms">I agree to Maccato's <a href="#" class="as-link" onclick="openLegal('terms');return false">Terms of Service</a> and <a href="#" class="as-link" onclick="openLegal('privacy');return false">Privacy Policy</a></label>
+        <button type="submit" class="as-cta" id="authSuSubmit">Sign Up</button>
+      </form>
+      <div class="as-err" id="authSuErr"></div>
+      <div class="as-info" id="authSuInfo"></div>
+      <div class="as-switch">Already have an account? <button type="button" id="authGoSignIn">Log in</button></div>
+    </div>
+
+    <!-- CHECK YOUR EMAIL (only shown if the store requires confirming a new sign-up) -->
+    <div id="authConfirmView" class="as-content" style="display:none">
+      <div class="as-brand"><img src="app-icon-192.png" alt=""><span>Maccato</span></div>
+      <div class="ctitle">Check your email</div>
+      <div class="csub">We sent a confirmation link to<br><b id="authConfirmEmail" style="color:#fff"></b><br>Open it on this phone and you'll be signed in.</div>
+      <button type="button" class="as-cta" id="authResend" style="background:transparent;border:1.5px solid rgba(255,255,255,.22);box-shadow:none">Resend email</button>
+      <div class="as-switch"><button type="button" id="authConfirmBack">Use a different email</button></div>
+      <div class="as-err" id="authConfirmErr"></div>
+      <div class="as-info" id="authConfirmInfo"></div>
+    </div>
+
+    <!-- SET NEW PASSWORD (after the reset-password email link) -->
+    <div id="authResetView" class="as-content" style="display:none">
+      <div class="as-brand"><img src="app-icon-192.png" alt=""><span>Maccato</span></div>
+      <div class="ctitle">Set a new password</div>
+      <div class="csub">Choose a password with at least 8 characters.</div>
+      <form id="authResetForm" novalidate>
+        <div class="as-field pass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg><input id="authNewPass" type="password" autocomplete="new-password" placeholder="New password"><button type="button" class="as-eye" data-for="authNewPass">Show</button></div>
+        <div class="as-field pass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg><input id="authNewPass2" type="password" autocomplete="new-password" placeholder="Confirm new password"></div>
+        <button type="submit" class="as-cta" id="authResetSubmit">Save password</button>
+      </form>
+      <div class="as-err" id="authResetErr"></div>
+    </div>
   </div>
 
   <div id="acctSignedIn" style="display:none">
@@ -1009,7 +1124,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
       </a>
       <a href="/vendor/" target="_blank">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8L18 3H6L3 8m18 0v11a1 1 0 01-1 1H4a1 1 0 01-1-1V8m18 0H3m9 4v6"/><path d="M3 8l2.5 5H8l1-3 2 5 2-5 1 3h2.5L21 8"/></svg>
-        Sell on Maccato
+        Sell on Marcato
       </a>
       <a href="#" onclick="buyerSignOut();return false;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -1029,10 +1144,24 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 /* ── SUPABASE ─────────────────────────────────────── */
 const SB_URL = 'https://qmwlphribvncdtgzbixt.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtd2xwaHJpYnZuY2R0Z3piaXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMDkwMjcsImV4cCI6MjA5NTg4NTAyN30.kmXKSrnQxG6n8RdK6ppNvn05vi7Xl68LKUNW5f7CQCU';
-const sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
+
+/* "Remember me": when it's off, the session lives in sessionStorage (gone once the browser fully closes)
+   instead of localStorage. Set BEFORE signing in — see authForm / the Google buttons below. */
+const rememberAwareStorage = {
+  getItem: k => { try { return localStorage.getItem(k) ?? sessionStorage.getItem(k); } catch (e) { return null; } },
+  setItem: (k, v) => {
+    try {
+      if (localStorage.getItem('maccato_remember') === '0') { sessionStorage.setItem(k, v); localStorage.removeItem(k); }
+      else { localStorage.setItem(k, v); sessionStorage.removeItem(k); }
+    } catch (e) { /* private mode */ }
+  },
+  removeItem: k => { try { localStorage.removeItem(k); sessionStorage.removeItem(k); } catch (e) {} }
+};
+const sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, storage: rememberAwareStorage } });
 let buyerSession = null;
+let RECOVERY = /[#&]type=recovery/.test(location.hash);      /* opened from a "reset password" email link */
 let storePhone = '';
-let storeName = 'Maccato';
+let storeName = 'Marcato';
 let brandsList = [], brandById = {}, brandBySlug = {}, vendorsMap = {}, ratingMap = {};
 let policy = { delivery: '', returns: '', warranty: '' };
 const $ = id => document.getElementById(id);
@@ -1250,6 +1379,10 @@ function initCategoryPage() {
   });
   catDeepLinked = !!catFromHash() || !!wcatFromHash();
   window.addEventListener('hashchange', syncCatPage);
+  /* #favorites: a real, working destination for "View Favourites" links (the favourites confirmation sheet,
+     deep links from the storefront) — not a full route, just opens the existing Favourites list. */
+  function syncFavHash() { if (location.hash === '#favorites') showFavorites(); }
+  window.addEventListener('hashchange', syncFavHash);
 }
 
 /* Real seller storefronts live at /store/[slug] (see /store/). */
@@ -1279,18 +1412,21 @@ function syncWorldPage() {
   if (!worldPage) return;
   const slug = worldFromHash();
   if (!slug) {
+    if (Pcx.mac) Pcx.mac.setWorld(null);
     worldPage.close();
     if (fashionPage) fashionPage.close();
     return;
   }
   if (slug === 'fashion') {          /* the Fashion world is a real page; other worlds stay placeholders */
+    if (Pcx.mac) Pcx.mac.setWorld('fashion');
     worldPage.close();
     if (fashionPage) fashionPage.open();
     return;
   }
   if (fashionPage) fashionPage.close();
   const w = worldBySlug(slug);
-  if (w) worldPage.open(w); else closeWorldPage();
+  if (w) { if (Pcx.mac) Pcx.mac.setWorld(slug); worldPage.open(w); }
+  else { if (Pcx.mac) Pcx.mac.setWorld(null); closeWorldPage(); }   // world off/unknown: MAC stays its default self, same as the page
 }
 function closeWorldPage() {
   if (worldDeepLinked) {
@@ -1354,7 +1490,7 @@ async function showWorldCategory(id) {
 async function loadBeautyStats() {
   try {
     if (!Pcx.BeautyData) return;
-    const pool = Pcx.BeautyData.pool(catTree, allProds);
+    const pool = Pcx.BeautyData.pool(catTree, allProds, beautyLinked());
     if (!pool.length) return;
     const { data } = await sb.from('order_items').select('product_id,qty,status');
     if (!data) return;
@@ -1479,6 +1615,8 @@ function showList(title, list, emptyMsg) {
 let activeCat = 'All', allProds = [], catPills = [];
 /* Beauty world content (see migration_beauty.sql + data/beauty.js) */
 let beautyHeroes = [], beautyCats = [], beautySettings = {}, beautyStats = {};
+/* categories a Beauty tile is linked to: products filed there belong to the Beauty world too */
+function beautyLinked() { return Pcx.BeautyData ? Pcx.BeautyData.linkedIds(beautyCats) : []; }
 
 function buildCatFilter(cats) {
   const row = document.getElementById('catFilter');
@@ -1560,6 +1698,12 @@ async function toggleFav(id) {
     b.classList.toggle('on', on);
     b.classList.remove('pop'); void b.offsetWidth; if (on) b.classList.add('pop');
   });
+  /* same confirmation sheet from every "add to favourites" spot (Home card, search, product page) — one heart,
+     one behaviour, per Pcx.VariantSheet's sibling Pcx.FavoriteSheet */
+  if (on && window.Pcx && Pcx.FavoriteSheet) {
+    const p = allProds.find(x => x.id === id);
+    if (p) Pcx.FavoriteSheet.open(p);
+  }
   if (!buyerSession) return;
   try {
     if (on) await sb.from('favorites').upsert([{ user_id: buyerSession.user.id, product_id: id }], { onConflict: 'user_id,product_id' });
@@ -1762,12 +1906,10 @@ function openProduct(id, isBack) {
      Beauty background, the transparent cutout (beauty_image_url, made by the secure
      server pipeline) as the main photo, and a thumbnail strip when there are more
      photos. Non-Beauty products render exactly as before. */
-  const isBW = Pcx.BeautyData && Pcx.BeautyData.isBeautyProduct(p, catTree);
+  const isBW = Pcx.BeautyData && Pcx.BeautyData.isBeautyProduct(p, catTree, beautyLinked());
   if (isBW) {
     modal.classList.add('bw-theme');
-    const bwBg = Pcx.BeautyData.backgroundUrl(beautySettings);
-    if (bwBg) modal.style.setProperty('--bw-bg-img', 'url("' + bwBg + '")');
-    else modal.style.removeProperty('--bw-bg-img');
+    modal.style.setProperty('--bw-bg-img', 'url("' + Pcx.BeautyData.backgroundOrDefault(beautySettings).replace(/"/g, '%22') + '")');
   } else {
     modal.classList.remove('bw-theme');
     modal.style.removeProperty('--bw-bg-img');
@@ -1815,6 +1957,7 @@ function openProduct(id, isBack) {
   renderPRating();
   $('pCode').innerHTML = `Product Code: <b>${esc(p.id)}</b>`;
   $('pStockLine').textContent = p.stock > 0 ? `${p.stock} in stock` : '';
+  renderPColors(p);  /* colour chips from attributes.colors (same structure the vendor / admin form saves) */
   renderPSizes(p);   /* size chips from the product's own attributes (letter / shoe / waist / band sizes) */
 
   /* call vendor (falls back to the store number) */
@@ -1871,17 +2014,10 @@ function renderBlocks(blocks) {
 function openBlockImage(i) { openViewer(blockImgs, i, pCur ? pCur.name : ''); }
 
 /* Product Details: what the vendor filled in for this kind of product (sizes, colours, specs ...).
-   The formatter lives in components/product-attributes.js, loaded only when a product actually has details. */
-let attrLib = null;
-function ensureAttrLib() {
-  if (window.Pcx && Pcx.ProductAttributes) return Promise.resolve();
-  if (!attrLib) attrLib = new Promise((res, rej) => {
-    const sc = document.createElement('script');
-    sc.src = 'components/product-attributes.js'; sc.onload = res; sc.onerror = rej;
-    document.head.appendChild(sc);
-  });
-  return attrLib;
-}
+   The formatter lives in components/product-attributes.js, loaded only when a product actually has details.
+   Delegates to components/product-card.js's ensureProductAttributes() so the homepage's card swatches and this
+   page's own colour picker/spec renderer share one in-flight load instead of two separate script tags. */
+function ensureAttrLib() { return ensureProductAttributes(); }
 function renderSpecs(p) {
   const card = $('pSpecCard'), body = $('pSpecBody'), a = p.attributes;
   card.style.display = 'none'; body.innerHTML = '';
@@ -1905,6 +2041,46 @@ function toggleDesc() {
 }
 
 function pQtyChange(d) { pQty = Math.max(1, Math.min(99, pQty + d)); $('pQtyN').textContent = String(pQty); }
+
+/* ── COLOUR SELECTION (products whose attributes carry colours) ──
+   Colours come from attributes.colors via Pcx.Variants. No colours → no selector, nothing is forced. */
+let pColorList = [], pColorPick = null;
+
+function renderPColors(p) {
+  pColorList = (window.Pcx && Pcx.Variants) ? Pcx.Variants.colors(p) : [];
+  pColorPick = null;
+  const row = $('pColorRow');
+  row.classList.remove('miss');
+  if (!pColorList.length) { row.style.display = 'none'; $('pColors').innerHTML = ''; return; }
+  row.style.display = '';
+  paintPColors();
+  /* swatch dots need the colour list from product-attributes.js, which is loaded lazily */
+  ensureAttrLib().then(() => { if (pColorList.length) paintPColors(); }).catch(() => {});
+}
+function paintPColors() {
+  $('pColorLbl').textContent = pColorPick ? 'Colour: ' + pColorPick : 'Colour:';
+  $('pColors').innerHTML = pColorList.map((c, i) => {
+    const sw = Pcx.Variants.swatch(c);
+    return `<button type="button" role="radio" aria-checked="${pColorPick === c}" class="pSizeChip pColorChip${pColorPick === c ? ' on' : ''}" onclick="pickPColor(${i})">` +
+      (sw ? `<span class="pColorDot" style="background:${esc(sw)}"></span>` : '') + `${esc(c)}</button>`;
+  }).join('');
+}
+function pickPColor(i) {
+  const c = pColorList[i];
+  if (c == null) return;
+  pColorPick = pColorPick === c ? null : c;
+  $('pColorRow').classList.remove('miss');
+  paintPColors();
+  /* if the vendor/admin linked one of the product's own photos to this colour, jump the gallery to it */
+  const linked = pColorPick && window.Pcx && Pcx.Variants ? Pcx.Variants.image(pCur, pColorPick) : null;
+  if (linked && pGal) { const idx = (pGal.o.images || []).indexOf(linked); if (idx >= 0) pGal.go(idx); }
+}
+function pColorMissing() {
+  if (!pColorList.length || pColorPick) return false;
+  $('pColorRow').classList.add('miss');
+  $('pColorRow').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  return true;
+}
 
 /* ── SIZE SELECTION (fashion products whose attributes carry sizes) ──
    Groups come from Pcx.Fashion.sizeGroups: attributes.sizes ({system, values}),
@@ -1956,17 +2132,20 @@ function pSizeMissing() {
 
 function pAddToCart() {
   if (!pCur) return;
+  if (pColorMissing()) { toast('Select a colour', true); return; }
   if (pSizeMissing()) { toast('Select a size', true); return; }
-  addToCart(pCur.id, pGal && pGal.currentImage(), pQty, true, pPickedSize());
+  addToCart(pCur.id, pGal && pGal.currentImage(), pQty, true, pPickedSize(), pColorPick);
   addPairingsToCart();
 }
 
 function pBuyNow() {
   if (!pCur) return;
+  if (pColorMissing()) { toast('Select a colour', true); return; }
   if (pSizeMissing()) { toast('Select a size', true); return; }
-  const size = pPickedSize();
-  const ex = cart.find(x => x.id === pCur.id && (x.size || null) === (size || null));
-  if (ex) { ex.qty = pQty; saveCart(); updateCartBadge(); } else cartAdd(pCur, pQty, size);
+  const size = pPickedSize(), color = pColorPick;
+  const key = Pcx.Variants.lineKey({ id: pCur.id, size, color });
+  const ex = cart.find(x => Pcx.Variants.lineKey(x) === key);
+  if (ex) { ex.qty = pQty; saveCart(); updateCartBadge(); } else cartAdd(pCur, pQty, size, color);
   addPairingsToCart();
   openCheckout();
 }
@@ -2128,26 +2307,33 @@ function loadCart() {
 }
 function saveCart() { localStorage.setItem('cart_v3', JSON.stringify(cart)); }
 
-function cartAdd(p, qty, size) {
-  const sizeKey = size || null;
-  const ex = cart.find(x => x.id === p.id && (x.size || null) === sizeKey);
-  if (ex) ex.qty += qty; else cart.push({id:p.id, name:p.name, price:p.price, image_url:p.image_url, vendor_id:p.vendor_id||null, qty, size:sizeKey});
+/* A cart line is product + size + colour: Black / XL and White / M are separate lines (Pcx.Variants.lineKey). */
+function cartAdd(p, qty, size, color) {
+  const sizeKey = size || null, colorKey = color || null;
+  const key = Pcx.Variants.lineKey({ id: p.id, size: sizeKey, color: colorKey });
+  const ex = cart.find(x => Pcx.Variants.lineKey(x) === key);
+  if (ex) ex.qty += qty; else cart.push({id:p.id, name:p.name, price:p.price, image_url:p.image_url, vendor_id:p.vendor_id||null, qty, size:sizeKey, color:colorKey});
   saveCart(); updateCartBadge();
 }
 /* src = the element to fly from (a card button or the product photo); note = also show the toast;
    size = the size picked on the product page (null when the product has no sizes).
-   A product WITH sizes can only be added from its page: every other entry point
-   (card button, assistant) opens the product page so a size is always chosen first. */
-function addToCart(id, src, qty, note, size) {
+   color = the colour picked there (null when the product has none).
+   A product WITH colours or sizes can only be added once each required choice is made: every other entry point
+   (card button, assistant) opens the product page instead, so nothing is ever added with a missing choice. */
+function addToCart(id, src, qty, note, size, color) {
   const p = allProds.find(x => x.id===id);
   if (!p) return;
-  if (size == null && window.Pcx && Pcx.Fashion && Pcx.Fashion.sizeGroups(p).length) {
-    openProduct(id);
-    toast('Select a size');
+  const V = window.Pcx && Pcx.Variants;
+  const needColor = V && V.colors(p).length && color == null;
+  const needSize = V && V.sizeGroups(p).length && size == null;
+  if (needColor || needSize) {
+    if (window.Pcx && Pcx.VariantSheet) {
+      Pcx.VariantSheet.open(p, { onAdd: pick => addToCart(id, src, qty, note, pick.size, pick.color) });
+    } else { openProduct(id); }    /* sheet script not yet loaded: fall back to the product page rather than fail silently */
     return;
   }
   if (src) flyToCart(src);               /* first: cartAdd() re-renders the card and detaches the tapped button */
-  cartAdd(p, qty || 1, size);
+  cartAdd(p, qty || 1, size, color);
   if (note || !src) toast('Added to cart');
 }
 function removeFromCartAt(i) { cart.splice(i,1); saveCart(); updateCartBadge(); renderCartList(); }
@@ -2186,7 +2372,7 @@ function renderCartList() {
         : `<div class="cItemImg" style="display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--txt3)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div>`}
       <div class="cItemInfo">
         <div class="cItemName">${esc(item.name)}</div>
-        ${item.size ? `<div class="cItemSize">Size: ${esc(item.size)}</div>` : ''}
+        ${(item.size || item.color) ? `<div class="cItemSize">${esc(Pcx.Variants.label(item))}</div>` : ''}
         <div class="cItemPrice">${fmt(item.price)}</div>
         <div class="cQty">
           <button class="qb" onclick="changeQtyAt(${i},-1)">-</button>
@@ -2305,9 +2491,24 @@ function dismissInstall() {
 
 /* ── INIT ─────────────────────────────────────────── */
 /* ── BUYER ACCOUNT ────────────────────────────────── */
-function openAccount() { if (buyerSession && window.Pcx && Pcx.Profile) { Pcx.Profile.open(); return; } document.getElementById('acctOver').classList.add('open'); document.getElementById('acctDrawer').classList.add('open'); document.body.style.overflow='hidden'; }
+function openAccount() {
+  if (buyerSession && !RECOVERY && window.Pcx && Pcx.Profile) { Pcx.Profile.open(); return; }   // a recovery link still needs the reset-password screen below, not the profile page
+  document.getElementById('acctOver').classList.add('open');
+  document.getElementById('acctDrawer').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  if (!buyerSession && !RECOVERY) authView('signin');   // always start at the login screen, not wherever it was left last time
+}
 /* ── COOKIE CONSENT ───────────────────────────────── */
 /* ── FOOTER + LEGAL ───────────────────────────────── */
+/* Footer accordion sections (mobile only — see the min-width:720px override in the footer CSS,
+   which forces every section open and hides the +/- icon on desktop, where toggling is a no-op). */
+function toggleFtSec(btn) {
+  const sec = btn.closest('.ftSec');
+  const open = sec.classList.toggle('open');
+  btn.setAttribute('aria-expanded', String(open));
+  btn.querySelector('.ftSecIcon').textContent = open ? '\u2212' : '+';
+}
+
 function populateFooter(storeName, tagline, phone, email, address, ig, fb, x) {
   document.getElementById('ftTagline').textContent = tagline || '';
   document.getElementById('ftCopyright').textContent = `© ${new Date().getFullYear()} ${storeName}. All rights reserved.`;
@@ -2348,8 +2549,8 @@ const LEGAL_TEXT = {
     <h4>Your rights</h4>
     <p>You can ask us to delete your account data at any time by contacting us using the details in the footer.</p>`,
   terms: `
-    <h4>Using Maccato</h4>
-    <p>Maccato is a marketplace: products are listed and sold by independent vendors, not by Maccato directly. Each vendor is responsible for the accuracy, quality and delivery of what they list.</p>
+    <h4>Using Marcato</h4>
+    <p>Marcato is a marketplace: products are listed and sold by independent vendors, not by Marcato directly. Each vendor is responsible for the accuracy, quality and delivery of what they list.</p>
     <h4>Orders</h4>
     <p>Placing an order is an offer to buy at the listed price. A vendor may cancel an order they can't fulfil; you'll be notified if that happens.</p>
     <h4>Reviews</h4>
@@ -2401,10 +2602,12 @@ document.getElementById('acctOver').onclick = closeAccount;
 async function checkBuyerSession() {
   const { data: { session } } = await sb.auth.getSession();
   buyerSession = session;
+  if (RECOVERY && session) { openAccount(); authView('reset'); return; }
   document.getElementById('acctSignedOut').style.display = session ? 'none' : '';
   document.getElementById('acctSignedIn').style.display = session ? '' : 'none';
   document.getElementById('menuLogoutLink').style.display = session ? '' : 'none';
   if (session) { document.getElementById('acctEmail').textContent = session.user.email; loadWallet(); }
+  if (!session) authView('signin');
 }
 
 /* ── WALLET ───────────────────────────────────────── */
@@ -2463,8 +2666,138 @@ async function maybePromptDeliveryConfirmation() {
   }
 }
 
-document.getElementById('acctGoogleBtn').onclick = async () => {
-  await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
+/* ── AUTH: sign up / sign in with Google (works now), Facebook (coming soon) or email + password ── */
+const $a = id => document.getElementById(id);
+const AUTH_REDIRECT = window.location.origin + window.location.pathname;
+
+function authView(v) {
+  $a('authFormView').style.display = v === 'signin' ? '' : 'none';
+  $a('authSignUpView').style.display = v === 'signup' ? '' : 'none';
+  $a('authConfirmView').style.display = v === 'confirm' ? '' : 'none';
+  $a('authResetView').style.display = v === 'reset' ? '' : 'none';
+}
+function authMsg(err, info) { $a('authErr').textContent = err || ''; $a('authInfo').textContent = info || ''; }
+function authSuMsg(err, info) { $a('authSuErr').textContent = err || ''; $a('authSuInfo').textContent = info || ''; }
+
+$a('authGoSignUp').onclick = () => { authMsg('', ''); authView('signup'); };
+$a('authGoSignIn').onclick = () => { authSuMsg('', ''); authView('signin'); };
+
+document.querySelectorAll('.as-eye').forEach(btn => {
+  btn.onclick = () => {
+    const inp = $a(btn.dataset.for), show = inp.type === 'password';
+    inp.type = show ? 'text' : 'password';
+    btn.textContent = show ? 'Hide' : 'Show';
+  };
+});
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+function friendlyAuthError(e) {
+  const m = String((e && e.message) || e || '');
+  if (/invalid login credentials/i.test(m)) return 'Wrong email or password.';
+  if (/already registered|already exists/i.test(m)) return 'An account with this email already exists. Tap Log in instead.';
+  if (/email not confirmed/i.test(m)) return 'Please confirm your email first. Check your inbox for the link we sent.';
+  if (/rate limit|too many|seconds/i.test(m)) return 'Too many attempts. Please wait a minute and try again.';
+  if (/password.*(weak|short|least)/i.test(m)) return 'Choose a stronger password (at least 8 characters).';
+  if (/failed to fetch|network/i.test(m)) return 'No internet connection. Please try again.';
+  return m || 'Something went wrong. Please try again.';
+}
+
+function setRemember(on) { try { localStorage.setItem('maccato_remember', on ? '1' : '0'); } catch (e) {} }
+
+async function authGoogle() {
+  setRemember(true);
+  await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: AUTH_REDIRECT } });
+}
+function authFacebookSoon() { toast('Facebook sign-in is coming soon. Please use Google or email for now.'); }
+$a('authGoogleBtn').onclick = authGoogle;
+$a('authGoogleBtn2').onclick = authGoogle;
+$a('authFacebookBtn').onclick = authFacebookSoon;
+$a('authFacebookBtn2').onclick = authFacebookSoon;
+
+$a('authForm').onsubmit = async ev => {
+  ev.preventDefault();
+  const email = $a('authEmail').value.trim().toLowerCase();
+  const pass = $a('authPass').value;
+  authMsg('', '');
+  if (!EMAIL_RE.test(email)) { authMsg('Enter a valid email address.'); return; }
+  if (!pass) { authMsg('Enter your password.'); return; }
+  const btn = $a('authSubmit');
+  btn.disabled = true;
+  try {
+    setRemember($a('authRemember').checked);
+    const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+    if (error) throw error;
+    await checkBuyerSession();
+    await syncFavsFromServer();
+  } catch (e) {
+    authMsg(friendlyAuthError(e));
+  } finally {
+    btn.disabled = false;
+  }
+};
+
+$a('authForgot').onclick = async () => {
+  const email = $a('authEmail').value.trim().toLowerCase();
+  if (!EMAIL_RE.test(email)) { authMsg('Type your email above first, then tap Forgot password.'); return; }
+  authMsg('', '');
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: AUTH_REDIRECT });
+  if (error) authMsg(friendlyAuthError(error));
+  else authMsg('', 'If an account exists for ' + email + ', a reset link is on its way. Check your inbox and spam folder.');
+};
+
+$a('authSignUpForm').onsubmit = async ev => {
+  ev.preventDefault();
+  const email = $a('authSuEmail').value.trim().toLowerCase();
+  const pass = $a('authSuPass').value;
+  authSuMsg('', '');
+  if (!EMAIL_RE.test(email)) { authSuMsg('Enter a valid email address.'); return; }
+  if (pass.length < 8) { authSuMsg('Your password needs at least 8 characters.'); return; }
+  if (pass !== $a('authSuPass2').value) { authSuMsg('The two passwords do not match.'); return; }
+  if (!$a('authTerms').checked) { authSuMsg('Please accept the Terms of Service and Privacy Policy to continue.'); return; }
+
+  const btn = $a('authSuSubmit');
+  btn.disabled = true;
+  try {
+    setRemember(true);
+    const { data, error } = await sb.auth.signUp({ email, password: pass, options: { emailRedirectTo: AUTH_REDIRECT } });
+    if (error) throw error;
+    if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      authView('signin'); $a('authEmail').value = email;
+      authMsg('An account with this email already exists. Log in below.');
+      return;
+    }
+    if (data.session) { await checkBuyerSession(); await syncFavsFromServer(); return; }   // no confirmation required: straight in
+    $a('authConfirmEmail').textContent = email;
+    authView('confirm');
+  } catch (e) {
+    authSuMsg(friendlyAuthError(e));
+  } finally {
+    btn.disabled = false;
+  }
+};
+
+$a('authResend').onclick = async () => {
+  const email = $a('authConfirmEmail').textContent;
+  $a('authConfirmErr').textContent = ''; $a('authConfirmInfo').textContent = '';
+  const { error } = await sb.auth.resend({ type: 'signup', email, options: { emailRedirectTo: AUTH_REDIRECT } });
+  if (error) $a('authConfirmErr').textContent = friendlyAuthError(error);
+  else $a('authConfirmInfo').textContent = 'Sent again. Check your inbox and spam folder.';
+};
+$a('authConfirmBack').onclick = () => authView('signup');
+
+$a('authResetForm').onsubmit = async ev => {
+  ev.preventDefault();
+  const p1 = $a('authNewPass').value, p2 = $a('authNewPass2').value;
+  $a('authResetErr').textContent = '';
+  if (p1.length < 8) { $a('authResetErr').textContent = 'Your password needs at least 8 characters.'; return; }
+  if (p1 !== p2) { $a('authResetErr').textContent = 'The two passwords do not match.'; return; }
+  const btn = $a('authResetSubmit'); btn.disabled = true;
+  const { error } = await sb.auth.updateUser({ password: p1 });
+  btn.disabled = false;
+  if (error) { $a('authResetErr').textContent = friendlyAuthError(error); return; }
+  history.replaceState(null, '', location.pathname);
+  RECOVERY = false;
+  await checkBuyerSession();
 };
 
 const VAPID_PUBLIC_KEY = 'BC73tPCUnIe2lzYWl_cpB3hp2R4CN5F3PM9Z6_kRIX7gC91pxowUlxdijQCM7X1mTxo7qrA9h32Rw3XgwBFWvjc';
@@ -2721,7 +3054,7 @@ async function init() {
     ]);
 
     const get = k => settings?.find(s=>s.key===k)?.value;
-    storeName  = get('storeName')  || 'Maccato';
+    storeName  = get('storeName')  || 'Marcato';
     const tagline    = get('tagline')    || 'Fast delivery. Real deals.';
     const flashEnd   = get('flashSaleEnd') ? parseInt(get('flashSaleEnd')) : null;
     const catsJSON   = get('categories');
@@ -2822,6 +3155,7 @@ async function init() {
     syncFavsFromServer();
     const sharedId = Number(new URLSearchParams(location.search).get('p'));   /* shared link: /?p=ID */
     if (sharedId) openProduct(sharedId);
+    if (location.hash === '#favorites') showFavorites();   /* e.g. "View Favourites" from the favourites sheet, or the storefront */
 
   } catch(err) {
     console.error(err);

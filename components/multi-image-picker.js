@@ -43,6 +43,24 @@
     return this.items.filter(function (i) { return i.url; }).map(function (i) { return i.url; });
   };
 
+  /* Every photo the vendor/admin can currently SEE in this picker, uploaded or not: an already-uploaded photo by
+     its real url, a just-chosen (not yet uploaded) photo by its local preview url. Lets colour-photo linking
+     (see product-attributes.js colorGroup) work in the SAME session a product is being created, before Save —
+     not only after reopening a saved product. Order matches the picker. */
+  P.getLinkable = function () {
+    return this.items.map(function (i) { return i.url || i.preview; }).filter(Boolean);
+  };
+
+  /* After resolve() uploads pending photos, any colour-photo link recorded against a photo's temporary preview
+     url needs to move to its real, permanent url. This returns {previewUrl: realUrl} for every photo uploaded
+     this call, so the caller can pass it to ProductAttributes#remapColorImages() right after resolve(). Photos
+     that were already uploaded (loaded via setImages) never had a preview url, so they're never remapped. */
+  P.getUploadRemap = function () {
+    var m = {};
+    this.items.forEach(function (i) { if (i.preview && i.url) m[i.preview] = i.url; });
+    return m;
+  };
+
   /* every photo as { file } (chosen, not uploaded yet) or { url } (already stored): used by the AI listing assistant */
   P.getSources = function () {
     return this.items.map(function (i) { return i.file && !i.url ? { file: i.file } : { url: i.url }; }).filter(function (i) { return i.file || i.url; });

@@ -52,7 +52,7 @@ const LOCAL_SCRIPTS = [
   'data/worlds.js', 'components/explore-marcato.js', 'components/world-page.js',
   'components/food-world.js', 'data/food-pairings.js', 'components/food-pairing-ui.js',
   'data/beauty.js', 'components/beauty-world.js',
-  'components/fashion.js', 'components/fashion-world.js', 'components/ad-page.js', 'data/ads.js',
+  'components/fashion.js', 'components/variants.js', 'components/fashion-world.js', 'components/ad-page.js', 'data/ads.js',
   'data/categories.js', 'components/category-page.js', 'data/search.js', 'components/search-page.js',
   'data/tracking.js', 'components/order-tracking.js', 'components/notification-center.js',
   'components/mac-theme.js', 'components/mac-fab.js', 'components/mac-chat.js',
@@ -109,7 +109,7 @@ const PRODUCTS = [
 const TABLES = () => ({
   products: PRODUCTS.map(p => ({ ...p })),
   banners: [], shortcuts: [],
-  store_settings: [{ key: 'storeName', value: 'Maccato' }, { key: 'currency', value: '\u20a6' }],
+  store_settings: [{ key: 'storeName', value: 'Marcato' }, { key: 'currency', value: '\u20a6' }],
   vendors: [
     { id: 'v1', business_name: 'Ada Threads', status: 'approved', store_slug: 'ada-threads', logo_url: '' },
     { id: 'v2', business_name: 'Kano Kicks', status: 'approved', store_slug: 'kano-kicks' }
@@ -200,4 +200,162 @@ test('size selection: chips render, add-to-cart is blocked until a size is picke
   assert.equal(lines[1].size, null);
   w.openProduct(3);
   assert.equal(w.document.getElementById('pSizeRow').style.display, 'none');
+});
+
+/* ------------------------------------------------------------------ colours + variants, card, bot (this change) */
+const VARIANT_PRODUCTS = [
+  { id: 10, name: 'Ankara Tote', price: 3000, stock: 4, category_id: 100, category: 'Plays!', vendor_id: 'v1', image_url: 'https://x/10.jpg',
+    attributes: { colors: ['Black', 'Red'] }, created_at: '2026-01-06' },
+  { id: 11, name: 'Classic Tee', price: 4500, stock: 9, category_id: 100, category: 'Plays!', vendor_id: 'v1', image_url: 'https://x/11.jpg',
+    attributes: { colors: ['Black', 'White'], sizes: { system: 'Letter (XS-XXL)', values: ['M', 'XL'] } }, created_at: '2026-01-07' },
+  { id: 12, name: 'Plain Mug', price: 1200, stock: 20, category_id: 102, category: 'Electronics', vendor_id: 'v2', image_url: 'https://x/12.jpg',
+    attributes: {}, created_at: '2026-01-08' }
+];
+const withVariants = () => { const t = TABLES(); t.products = t.products.concat(VARIANT_PRODUCTS.map(p => ({ ...p }))); return t; };
+const cartLines = w => JSON.parse(w.localStorage.getItem('cart_v3') || '[]');
+
+test('card: photo fills a fixed media box, heart sits on the photo, no vendor on the card, button always says Add to Cart, swatches show real colours', async t => {
+  const w = await boot(withVariants(), null, t);
+  const box = w.document.createElement('div');
+  box.innerHTML = [10, 12].map(id => w.cardHTML(VARIANT_PRODUCTS.find(p => p.id === id))).join('');
+  const [tote, mug] = box.querySelectorAll('.pcard');
+  for (const c of [tote, mug]) {
+    assert.ok(c.querySelector('.pcImg .favBtn'), 'heart is inside the image box');
+    assert.equal(c.querySelector('.pcBody .favBtn'), null, 'heart is not in the text area');
+    assert.equal(c.querySelector('.pcSeller'), null, 'no vendor on the card');
+    assert.ok(!/Ada Threads|Kano Kicks|Sold by/.test(c.textContent), 'no vendor name anywhere on the card');
+    assert.ok(c.querySelector('.favBtn').getAttribute('aria-label'), 'heart is labelled');
+    assert.equal(c.querySelector('.pcAdd').textContent.trim(), 'Add to Cart', 'button always says Add to Cart, never "Choose options"');
+  }
+  assert.equal(tote.querySelectorAll('.pcSwatch').length, 2, 'Ankara Tote has 2 real colours (Black, Red)');
+  assert.equal(mug.querySelector('.pcSwatches'), null, 'no colours on a plain product, so no swatch row');
+  const css = fs.readFileSync(path.join(ROOT, 'components/product-card.css'), 'utf8');
+  assert.match(css, /\.pcImg img\{[^}]*object-fit:cover/, 'image fills the box');
+  assert.match(css, /\.pcCtl\{margin-top:auto/, 'buttons are pinned to the card bottom');
+  assert.doesNotMatch(css, /\.pcImg img\{[^}]*padding:/, 'no artificial padding around the photo');
+});
+
+test('variants: tapping Add to Cart on a card with colours opens the bottom sheet, not the product page', async t => {
+  const w = await boot(withVariants(), null, t);
+  w.addToCart(10, null, 1, true);                             // from a card: no choices made yet
+  assert.equal(cartLines(w).length, 0, 'nothing added yet');
+  const sheet = w.document.getElementById('variantSheet');
+  assert.ok(sheet.classList.contains('open'), 'the sheet opened');
+  assert.equal(w.document.getElementById('pModal').classList.contains('open'), false, 'did not navigate to the product page');
+  const chip = sheet.querySelector('.vsChip[data-vs-pick="Black"]');
+  assert.ok(chip, 'colour chip is in the sheet');
+  chip.click();
+  sheet.querySelector('.vsAdd').click();
+  const l = cartLines(w);
+  assert.equal(l.length, 1);
+  assert.equal(l[0].color, 'Black');
+  assert.equal(sheet.classList.contains('open'), false, 'sheet closes after adding');
+});
+
+test('variants: colour-only product needs a colour on the product page too; add never adds an incomplete product', async t => {
+  const w = await boot(withVariants(), null, t);
+  w.openProduct(10);
+  assert.equal(w.document.getElementById('pColorRow').style.display, '');
+  assert.equal(w.document.querySelectorAll('#pColors .pSizeChip').length, 2);
+  assert.equal(w.document.getElementById('pSizeRow').style.display, 'none', 'no size selector on a colour-only product');
+  w.pAddToCart();
+  assert.equal(cartLines(w).length, 0, 'blocked until a colour is picked');
+  assert.ok(w.document.getElementById('pColorRow').classList.contains('miss'));
+  w.pickPColor(0);
+  assert.equal(w.document.querySelector('#pColors .pSizeChip.on').textContent.trim(), 'Black');
+  w.pAddToCart();
+  const l = cartLines(w);
+  assert.equal(l.length, 1);
+  assert.equal(l[0].color, 'Black');
+  assert.equal(l[0].size, null);
+});
+
+test('variants: colour + size are both required, and different variants are separate cart lines', async t => {
+  const w = await boot(withVariants(), null, t);
+  w.openProduct(11);
+  w.pickPColor(0);                                            // Black, no size yet
+  w.pAddToCart();
+  assert.equal(cartLines(w).length, 0, 'size still missing');
+  w.pickPSize(0, 1);                                          // XL
+  w.pAddToCart();                                             // Black / XL
+  w.pickPColor(0); w.pickPColor(1);                           // switch to White
+  w.pickPSize(0, 1); w.pickPSize(0, 0);                       // switch to M
+  w.pAddToCart();                                             // White / M
+  w.pickPColor(1); w.pickPColor(0);                           // back to Black
+  w.pickPSize(0, 0); w.pickPSize(0, 1);                       // back to XL
+  w.pAddToCart();                                             // Black / XL again: merges
+  const l = cartLines(w);
+  assert.equal(l.length, 2, 'Black/XL and White/M stay separate');
+  const bx = l.find(x => x.color === 'Black' && x.size === 'XL'), wm = l.find(x => x.color === 'White' && x.size === 'M');
+  assert.equal(bx.qty, 2);
+  assert.equal(wm.qty, 1);
+  w.openCart();
+  const shown = w.document.getElementById('cartItems').textContent;
+  assert.match(shown, /Colour: Black \u00b7 Size: XL/);
+  assert.match(shown, /Colour: White \u00b7 Size: M/);
+});
+
+test('variants: products without options add straight away and show no selectors', async t => {
+  const w = await boot(withVariants(), null, t);
+  w.addToCart(12, null, 1, true);
+  const l = cartLines(w);
+  assert.equal(l.length, 1);
+  assert.equal(l[0].color, null); assert.equal(l[0].size, null);
+  w.openProduct(12);
+  assert.equal(w.document.getElementById('pColorRow').style.display, 'none');
+  assert.equal(w.document.getElementById('pSizeRow').style.display, 'none');
+});
+
+test('bot: MAC tucks away while the page scrolls instead of covering products', async t => {
+  const w = await boot(withVariants(), null, t);
+  const el = w.document.querySelector('.macFab');
+  assert.ok(el, 'MAC is still mounted');
+  w.document.dispatchEvent(new w.Event('scroll', { bubbles: false }));
+  assert.ok(el.classList.contains('isPeek'), 'tucked while scrolling');
+  assert.match(fs.readFileSync(path.join(ROOT, 'components/mac-fab.css'), 'utf8'), /\.macFab\.isPeek\s*\{[^}]*translate:/);
+});
+
+test('card: tapping a colour swatch shows the linked product photo, and clears back on deselect', async t => {
+  const tables = withVariants();
+  tables.products = tables.products.map(p => p.id === 10 ? { ...p, image_url: 'https://x/base.jpg', attributes: { colors: ['Black', 'Red'], colorImages: { Red: 'https://x/red.jpg' } } } : p);
+  const w = await boot(tables, null, t);
+  const box = w.document.createElement('div');
+  box.innerHTML = w.cardHTML(tables.products.find(p => p.id === 10));
+  w.document.body.appendChild(box);
+  const img = box.querySelector('.pcImg img');
+  assert.equal(img.src, 'https://x/base.jpg');
+  w.pickCardColor(10, 'Black');                     // no linked photo for Black -> stays on the base photo
+  assert.equal(img.src, 'https://x/base.jpg');
+  w.pickCardColor(10, 'Black');                      // deselect
+  w.pickCardColor(10, 'Red');                        // Red has a linked photo
+  assert.equal(img.src, 'https://x/red.jpg');
+  w.pickCardColor(10, 'Red');                         // deselect again -> back to base
+  assert.equal(img.src, 'https://x/base.jpg');
+  box.remove();
+});
+
+test('favourites: favouriting a product shows the confirmation sheet, and "View Favourites" opens the list', async t => {
+  const w = await boot(withVariants(), null, t);
+  w.toggleFav(12);                                              // Plain Mug: no variants, simplest case
+  const sheet = w.document.getElementById('favSheet');
+  assert.ok(sheet, 'sheet was created');
+  assert.ok(sheet.classList.contains('open'), 'sheet opened on favouriting');
+  assert.match(sheet.querySelector('.fvOk').textContent, /Saved to Favourites/);
+  assert.equal(sheet.querySelector('.vsName').textContent, 'Plain Mug');
+  const spy = t.mock.method(w, 'showFavorites');
+  sheet.querySelector('.fvView').click();
+  assert.equal(sheet.classList.contains('open'), false, 'sheet closes on View Favourites');
+  assert.equal(spy.mock.calls.length, 1, 'View Favourites opens the existing Favorites list, not a second system');
+});
+
+test('favourites: un-favouriting does not reopen the sheet; #favorites deep-links to the same list', async t => {
+  const w = await boot(withVariants(), null, t);
+  w.toggleFav(12);
+  w.Pcx.FavoriteSheet.close();
+  w.toggleFav(12);                                              // un-favourite
+  assert.equal(w.document.getElementById('favSheet').classList.contains('open'), false, 'no sheet when removing a favourite');
+  const spy = t.mock.method(w, 'showFavorites');
+  w.location.hash = '#favorites';
+  w.dispatchEvent(new w.Event('hashchange'));
+  assert.equal(spy.mock.calls.length, 1, '#favorites opens the Favorites list (works as a deep link from the storefront too)');
 });
