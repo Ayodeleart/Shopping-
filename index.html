@@ -175,25 +175,40 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 .cnTab.on{color:var(--red);font-weight:800}
 .cnTab.on::after{content:'';position:absolute;left:10px;right:10px;bottom:0;height:3px;border-radius:3px 3px 0 0;background:var(--red)}
 
-/* ── SHOP BY BRAND (logo tiles) ───────────────────── */
-#brandRow{display:flex;gap:12px;overflow-x:auto;padding:2px 13px 14px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
-#brandRow::-webkit-scrollbar{display:none}
-.bcard{flex:0 0 auto;width:84px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
-.bcard:active .bcard-tile{transform:scale(.95)}
+/* ── SHOP BY BRAND (vertical list, not a horizontal carousel) ───── */
+#brandRow{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;padding:2px 13px 14px;
+}
+.bcard{
+  display:flex;align-items:center;gap:10px;text-align:left;padding:8px;border-radius:12px;
+  background:var(--bg2);border:1px solid var(--border);min-width:0;
+}
+.bcard:active{opacity:.8}
 .bcard-tile{
-  position:relative;width:84px;height:84px;border-radius:14px;overflow:hidden;background:#1d1d1f;
-  display:flex;align-items:center;justify-content:center;transition:transform .15s;
+  position:relative;width:44px;height:44px;border-radius:10px;overflow:hidden;background:#1d1d1f;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
 }
 .bcard-tile::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.28),rgba(0,0,0,.55))}
 .bcard-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.55}
 .bcard-logo{
-  position:relative;z-index:1;width:58px;height:58px;border-radius:13px;background:#fff;overflow:hidden;
+  position:relative;z-index:1;width:44px;height:44px;border-radius:10px;background:#fff;overflow:hidden;
   display:flex;align-items:center;justify-content:center;
-  box-shadow:0 2px 10px rgba(0,0,0,.4);font-size:22px;font-weight:900;color:#666;
+  font-size:15px;font-weight:900;color:#666;
 }
-.bcard-logo img{width:100%;height:100%;object-fit:contain;padding:6px}
+.bcard-logo img{width:100%;height:100%;object-fit:contain;padding:4px}
 .bcard-logo.nologo::after{content:attr(data-l)}
-.bcard-name{font-size:11.5px;font-weight:600;color:var(--txt2);width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bcard-name{font-size:13px;font-weight:700;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+.bcard-count{font-size:11.5px;color:var(--txt3);flex-shrink:0}
+
+/* ── HOME AD SLOTS (between curated sections) ─────── */
+.homeAdSlot{padding:8px 13px 4px}
+
+/* ── DISCOVER MORE: LOAD MORE ─────────────────────── */
+.loadMoreBtn{
+  height:42px;padding:0 26px;border-radius:22px;border:1.5px solid var(--border);background:var(--bg2);
+  color:var(--txt);font-size:13.5px;font-weight:800;cursor:pointer;
+}
+.loadMoreBtn:active{opacity:.75}
 
 /* ── SIDE MENU: CATEGORY TILES ────────────────────── */
 .mSec{padding:12px 15px 6px;font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3)}
@@ -492,6 +507,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 .catRowBar{width:5px;height:19px;border-radius:3px;flex-shrink:0}
 .catRowName{font-size:15px;font-weight:800;color:var(--txt)}
 .catRowCount{font-size:12px;color:var(--txt3);margin-left:auto}
+.catRowHd .secAll{flex-shrink:0}
 .catRowScroll{display:flex;gap:10px;overflow-x:auto;padding:0 13px 6px;scrollbar-width:none}
 .catRowScroll::-webkit-scrollbar{display:none}
 .catRowScroll .fcard-wrap{flex-shrink:0}
@@ -697,11 +713,23 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
     <div id="exploreRow" class="xmRow"></div>
   </section>
 
-  <!-- SHOP BY BRAND -->
+  <!-- CURATED CATEGORY ROWS (a manageable number of real products per category — see buildCategoryRowsTree /
+       buildCategoryRows). Placed right after Explore Marcato so the homepage opens with curated shopping,
+       not the full catalogue (see allSec / #discoverSec further down for that). -->
+  <div id="catRows"></div>
+
+  <!-- HOME AD SLOT A: between the category rows and Shop by Brand. Reuses the same `ads` table / admin
+       controls as the Discover feed ads (data/ads.js, admin/ads.js) — see buildHomeAdSlots(). -->
+  <div id="homeAdSlotA" class="homeAdSlot" style="display:none"></div>
+
+  <!-- SHOP BY BRAND (vertical list — see buildBrandRow(); real brands/products only) -->
   <section id="brandSec" style="display:none">
     <div class="secHd"><span class="secTtl">Shop by Brand</span></div>
     <div id="brandRow"></div>
   </section>
+
+  <!-- HOME AD SLOT B: between Shop by Brand and Flash Sales / Featured. -->
+  <div id="homeAdSlotB" class="homeAdSlot" style="display:none"></div>
 
   <!-- FLASH SALE -->
   <section id="flashSec" style="display:none">
@@ -730,20 +758,23 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
   </section>
   <div id="featGap" class="sgap" style="display:none"></div>
 
-  <!-- ALL PRODUCTS -->
+  <!-- DISCOVER MORE (full catalogue, was "All Products"): the scalable bottom feed. Loads in batches —
+       see renderGrid()/appendDiscoverBatch() — so the homepage never has to paint the whole catalogue at once. -->
   <section id="allSec">
     <div class="secHd">
-      <span class="secTtl" id="allSecTitle">All Products</span>
+      <span class="secTtl" id="allSecTitle">Discover More</span>
       <span id="pCount" style="font-size:12px;color:var(--txt3)"></span>
     </div>
     <!-- CATEGORY FILTER (compact pills, below title) -->
     <div id="catFilter" style="display:flex;gap:7px;overflow-x:auto;padding:0 13px 10px;scrollbar-width:none"></div>
     <div class="pgrid-wrap"><div class="pgrid" id="allGrid"></div></div>
+    <div id="discoverMoreWrap" style="display:none;text-align:center;padding:6px 13px 22px">
+      <button id="loadMoreBtn" type="button" class="loadMoreBtn" onclick="appendDiscoverBatch()">Load More</button>
+    </div>
+    <div id="discoverSentinel" aria-hidden="true" style="height:1px"></div>
   </section>
 
-  <div id="catRows"></div>
-
-  <!-- VENDORS: moved further down the homepage now that "Explore Marcato" occupies the early slot.
+  <!-- VENDORS: kept near the bottom, after Discover More, so the curated sections up top stay uncluttered.
        Functionality is unchanged; vendor discovery is also used inside the specialized worlds later. -->
   <section id="vendorSec" style="display:none">
     <div class="secHd"><span class="secTtl">Vendors</span></div>
@@ -1289,12 +1320,17 @@ function brandOf(p) {
   return n ? (brandBySlug[n] || null) : null;
 }
 
+/* Vertical list (not a carousel): a manageable, curated slice of real brands (the ones with products),
+   busiest brands first. The full set is still reachable — tapping a brand opens all of its products via
+   the existing filterByBrand/showList path, same as before. */
+const BRAND_ROW_CAP = 12;
 function buildBrandRow() {
   const sec = $('brandSec'), row = $('brandRow');
   const items = brandsList
     .map(b => ({ b, prods: allProds.filter(p => { const pb = brandOf(p); return pb && pb.id === b.id; }) }))
     .filter(x => x.prods.length)
-    .sort((x, y) => y.prods.length - x.prods.length || x.b.name.localeCompare(y.b.name));
+    .sort((x, y) => y.prods.length - x.prods.length || x.b.name.localeCompare(y.b.name))
+    .slice(0, BRAND_ROW_CAP);
   if (!items.length) { sec.style.display = 'none'; return; }
   sec.style.display = '';
   row.innerHTML = items.map(({ b, prods }) => {
@@ -1309,6 +1345,7 @@ function buildBrandRow() {
             : ''}</span>
         </span>
         <span class="bcard-name">${esc(b.name)}</span>
+        <span class="bcard-count">${prods.length}</span>
       </button>`;
   }).join('');
 }
@@ -1328,21 +1365,28 @@ function buildCategoryTiles() {
   setNavItems(catTree.visibleRootsIn(null).map(c => ({ title: c.name, slug: c.slug, thumb: Pcx.Categories.thumb(catTree, c, 'fill') })));
 }
 
+/* Curated homepage rows: a manageable number of categories (only ones with eligible products), each
+   showing a manageable number of products — not the whole catalogue. Everything else stays reachable
+   through "See All" (the real category page, #cat=slug) or the Discover More feed further down. */
+const CAT_ROW_CAP = 6, CAT_ROW_PRODUCT_CAP = 12;
 function buildCategoryRowsTree(prods) {
   const wrap = document.getElementById('catRows');
   const esc = Pcx.Categories.esc;
   wrap.innerHTML = catTree.visibleRootsIn(null).map(root => {
     const matches = prods.filter(catTree.productMatcher(root.id));
-    if (!matches.length) return '';
+    if (!matches.length) return null;
+    return { root, matches };
+  }).filter(Boolean).slice(0, CAT_ROW_CAP).map(({ root, matches }) => {
     return `
       <div class="catRowSec">
         <div class="catRowHd">
           <span class="catRowBar" style="background:var(--red)"></span>
           <span class="catRowName" style="color:var(--red)" onclick="openCategory('${hs(root.slug)}')">${esc(root.name)}</span>
           <span class="catRowCount">${matches.length} item${matches.length!==1?'s':''}</span>
+          <a class="secAll" href="#" onclick="openCategory('${hs(root.slug)}');return false">See All</a>
         </div>
         <div class="catRowScroll">
-          ${matches.slice(0, 12).map(p => `<div class="fcard-wrap au">${cardHTML(p)}</div>`).join('')}
+          ${matches.slice(0, CAT_ROW_PRODUCT_CAP).map(p => `<div class="fcard-wrap au">${cardHTML(p)}</div>`).join('')}
         </div>
       </div>`;
   }).join('');
@@ -1636,7 +1680,7 @@ function buildCatFilter(cats) {
 
 function filterCat(cat) {
   activeCat = cat;
-  $('allSecTitle').textContent = cat === 'All' ? 'All Products' : cat;
+  $('allSecTitle').textContent = cat === 'All' ? 'Discover More' : cat;
   renderCatNav();
   let filtered = allProds;
   if (cat !== 'All') {
@@ -1812,17 +1856,20 @@ function buildCategoryRows(shortcuts, prods) {
   const wrap = document.getElementById('catRows');
   const rows = (shortcuts || []).map(sc => {
     const matches = prods.filter(p => (p.category || '').trim().toLowerCase() === (sc.title || '').trim().toLowerCase());
-    if (!matches.length) return '';
+    if (!matches.length) return null;
+    return { sc, matches };
+  }).filter(Boolean).slice(0, CAT_ROW_CAP).map(({ sc, matches }) => {
     const color = cssColor(sc.bg_color) || '#D91C2D';
     return `
       <div class="catRowSec">
         <div class="catRowHd">
           <span class="catRowBar" style="background:${color}"></span>
-          <span class="catRowName" style="color:${color}">${esc(sc.title)}</span>
+          <span class="catRowName" style="color:${color}" onclick="catNavGo('${esc(sc.title)}')">${esc(sc.title)}</span>
           <span class="catRowCount">${matches.length} item${matches.length!==1?'s':''}</span>
+          <a class="secAll" href="#" onclick="catNavGo('${esc(sc.title)}');return false">See All</a>
         </div>
         <div class="catRowScroll">
-          ${matches.slice(0, 12).map(p => `<div class="fcard-wrap au">${cardHTML(p)}</div>`).join('')}
+          ${matches.slice(0, CAT_ROW_PRODUCT_CAP).map(p => `<div class="fcard-wrap au">${cardHTML(p)}</div>`).join('')}
         </div>
       </div>`;
   }).join('');
@@ -1830,19 +1877,73 @@ function buildCategoryRows(shortcuts, prods) {
   observeAll(wrap.querySelectorAll('.au'));
 }
 
+/* Discover More (the #allGrid feed): loaded in batches instead of painting the whole catalogue in one
+   go (see appendDiscoverBatch / ensureDiscoverIO below). Every other grid on the page (featured rail,
+   a brand/vendor/favorites list opened elsewhere, etc.) still renders in one shot as before. */
+let discoverCells = [], discoverShown = 0;
+const DISCOVER_BATCH = 20;
+
 function renderGrid(prods, id, withAds, emptyMsg) {
   const el = document.getElementById(id);
   if (!prods.length) {
     el.innerHTML = `<div class="empty"><h3>No products here</h3><p>${esc(emptyMsg || 'Check back soon.')}</p></div>`;
+    if (id === 'allGrid') { discoverCells = []; discoverShown = 0; updateDiscoverMoreUI(); }
     return;
   }
   let cells = prods.map((p,i) =>
     `<div class="au d${Math.min(i%4,3)}">${cardHTML(p)}</div>`);
   const slots = withAds ? feedSlots() : [];
   if (slots.length) cells = Ads.interleave(cells, slots, 2);
-  el.innerHTML = cells.join('');
-  if (slots.length) { mountFeedAds(el); mountFeedTiles(el); }
-  observeAll(el.querySelectorAll('.au'));
+
+  if (id !== 'allGrid') {
+    el.innerHTML = cells.join('');
+    if (slots.length) { mountFeedAds(el); mountFeedTiles(el); }
+    observeAll(el.querySelectorAll('.au'));
+    return;
+  }
+
+  /* the full set of cells (products + interleaved ads/tiles) is computed once, same as before — only how
+     much of it hits the DOM at a time changes, so ad/tile positions and product order are unaffected */
+  discoverCells = cells;
+  discoverShown = 0;
+  el.innerHTML = '';
+  appendDiscoverBatch();
+}
+
+/* Appends the next batch of the already-computed Discover cells to #allGrid — used by both the "Load More"
+   button and the near-bottom auto-load (ensureDiscoverIO). Never re-renders what's already on screen, so
+   favorites/cart/variant state on existing cards is untouched and nothing can be duplicated. */
+function appendDiscoverBatch() {
+  const el = document.getElementById('allGrid');
+  if (!el) return;
+  const startIdx = el.children.length;
+  const next = discoverCells.slice(discoverShown, discoverShown + DISCOVER_BATCH);
+  if (next.length) {
+    el.insertAdjacentHTML('beforeend', next.join(''));
+    discoverShown += next.length;
+    const added = Array.prototype.slice.call(el.children, startIdx);
+    mountFeedAds(el); mountFeedTiles(el);
+    observeAll(added);
+  }
+  updateDiscoverMoreUI();
+}
+
+function updateDiscoverMoreUI() {
+  const wrap = document.getElementById('discoverMoreWrap');
+  if (!wrap) return;
+  wrap.style.display = discoverCells.length > discoverShown ? '' : 'none';
+}
+
+/* Auto-load as the shopper scrolls near the bottom of the page, in addition to the explicit Load More tap. */
+let discoverIO = null;
+function ensureDiscoverIO() {
+  if (discoverIO || typeof IntersectionObserver === 'undefined') return;
+  const sentinel = document.getElementById('discoverSentinel');
+  if (!sentinel) return;
+  discoverIO = new IntersectionObserver(entries => entries.forEach(e => {
+    if (e.isIntersecting && discoverCells.length > discoverShown) appendDiscoverBatch();
+  }), { rootMargin: '600px 0px' });
+  discoverIO.observe(sentinel);
 }
 
 /* ── PRODUCT PAGE ─────────────────────────────────── */
@@ -2908,6 +3009,7 @@ function initBuyerUI() {
    Pages: components/ad-page.js, opened through #ad=ID (an ad) or #promo=ID (a hero banner that opens a filtered
    product page) so the back button closes them. */
 let adsList = [], promoList = [], tilesList = [], adPage = null, adDeepLinked = false;
+let homeAdIds = [];   // ads placed between curated homepage sections (see buildHomeAdSlots) — excluded from feedSlots() below so a configured ad isn't repeated for no reason
 
 function mountFeedAds(root) {
   root.querySelectorAll('.adslot:not([data-ready])').forEach(slot => {
@@ -2928,7 +3030,27 @@ function feedSlots() {
   const tileSlots = Object.keys(feedTileGroups()).map(n => ({
     afterRows: +n, order: -1, html: `<div class="tileslot au" data-rows="${esc(n)}" style="grid-column:1/-1"></div>`
   }));
-  return adsList.concat(tileSlots);
+  const feedAds = adsList.filter(a => homeAdIds.indexOf(a.id) === -1);
+  return feedAds.concat(tileSlots);
+}
+
+/* Ads shown between curated homepage sections (Categories -> Shop by Brand -> Flash/Featured), reusing the
+   exact same `ads` table, admin controls (active toggle, sort_order) and feed-card rendering (data/ads.js,
+   admin/ads.js, PromotionalCarousel) as the Discover feed's own ad slots below — just a different placement.
+   Lowest sort_order first, capped at 2 so ads never crowd the curated part of the page; the rest of the
+   admin's active ads keep appearing inside the Discover feed exactly as before (see feedSlots above). */
+function buildHomeAdSlots() {
+  const picks = adsList.slice(0, 2);
+  homeAdIds = picks.map(a => a.id);
+  [document.getElementById('homeAdSlotA'), document.getElementById('homeAdSlotB')].forEach((wrap, i) => {
+    if (!wrap) return;
+    const ad = picks[i];
+    if (!ad) { wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
+    wrap.style.display = '';
+    wrap.innerHTML = `<div class="adslot au" data-ad="${esc(ad.id)}"></div>`;
+    mountFeedAds(wrap);
+    observeAll(wrap.querySelectorAll('.au'));
+  });
 }
 function mountFeedTiles(root) {
   const groups = feedTileGroups();
@@ -3095,6 +3217,7 @@ async function init() {
     buildCarousel(banners || []);
     buildVendorRow(vendors || []);
     buildBrandRow();
+    buildHomeAdSlots();
     setWorlds(worldsResult.list);
 
     /* Categories come from the `categories` table. If it is empty or not created yet, fall back to the old shortcut cards. */
@@ -3145,6 +3268,7 @@ async function init() {
     }
 
     renderGrid(allProds, 'allGrid', true);
+    ensureDiscoverIO();
     syncAdPage();
     syncCatPage();
     syncTrackingPages();
