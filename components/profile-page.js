@@ -95,12 +95,12 @@
   function viewHome() {
     var c = ST.counts || { wishlist: 0, coupons: 0 }, pts = (ST.profile && ST.profile.points) || 0, oc = ST.orderCounts || {};
     var av = avatarUrl();
-    var cover = ST.profile && ST.profile.cover_url ? ' style="background-image:url(\'' + esc(ST.profile.cover_url) + '\')"' : '';
+    var cover = ST.profile && ST.profile.cover_url ? ' style="background-image:url(\'' + safeUrl(ST.profile.cover_url) + '\')"' : '';
     return '<div class="pf-cover' + (cover ? ' has-img' : '') + '"' + cover + '>' +
       '<div class="pf-cover__shade"></div>' +
       '<div class="pf-cover__top"><button class="pf-round" data-a="back" aria-label="Back">' + I.back + '</button><span style="flex:1"></span>' +
         '<button class="pf-round" data-a="cover" aria-label="Change cover photo">' + I.cam + '</button><button class="pf-round" data-a="settings" aria-label="Settings">' + I.gear + '</button></div>' +
-      '<div class="pf-who"><button class="pf-avatar" data-a="avatar" aria-label="Change profile photo">' + (av ? '<img src="' + esc(av) + '" alt="">' : '<span>' + esc(initials(displayName())) + '</span>') + '<i>' + I.cam + '</i></button>' +
+      '<div class="pf-who"><button class="pf-avatar" data-a="avatar" aria-label="Change profile photo">' + (av ? '<img src="' + safeUrl(av) + '" alt="">' : '<span>' + esc(initials(displayName())) + '</span>') + '<i>' + I.cam + '</i></button>' +
         '<div class="pf-who__t"><h1>' + esc(displayName()) + '</h1><span class="pf-chip">' + esc(user() ? user().email : '') + '</span></div></div>' +
       '<div class="pf-stats"><button data-a="wishlist"><b>' + c.wishlist + '</b><span>Wishlist</span></button><button data-a="coupons"><b>' + c.coupons + '</b><span>Coupons</span></button><button data-a="points"><b>' + pts + '</b><span>Points</span></button></div>' +
     '</div>' +
@@ -124,8 +124,8 @@
   function viewAccount() {
     var p = ST.profile || {}, av = avatarUrl();
     return head('Account Settings') + '<div class="pf-pad">' +
-      '<div class="pf-photos"><button class="pf-photo pf-photo--a" data-a="avatar">' + (av ? '<img src="' + esc(av) + '" alt="">' : '<span>' + esc(initials(displayName())) + '</span>') + '<i>' + I.cam + '</i></button>' +
-        '<button class="pf-photo pf-photo--c"' + (p.cover_url ? ' style="background-image:url(\'' + esc(p.cover_url) + '\')"' : '') + ' data-a="cover"><i>' + I.cam + ' Change cover</i></button></div>' +
+      '<div class="pf-photos"><button class="pf-photo pf-photo--a" data-a="avatar">' + (av ? '<img src="' + safeUrl(av) + '" alt="">' : '<span>' + esc(initials(displayName())) + '</span>') + '<i>' + I.cam + '</i></button>' +
+        '<button class="pf-photo pf-photo--c"' + (p.cover_url ? ' style="background-image:url(\'' + safeUrl(p.cover_url) + '\')"' : '') + ' data-a="cover"><i>' + I.cam + ' Change cover</i></button></div>' +
       '<label class="pf-f"><span>Full name</span><input data-f="full_name" value="' + esc(p.full_name || displayName()) + '"></label>' +
       '<label class="pf-f"><span>Phone number</span><input data-f="phone" type="tel" value="' + esc(p.phone || '') + '"></label>' +
       '<label class="pf-f"><span>Email</span><input value="' + esc(user() ? user().email : '') + '" disabled></label>' +
@@ -139,7 +139,7 @@
     return head('Address Book') + '<div class="pf-pad">' + (list.length ? list.map(function (a) {
       return '<div class="pf-addr"><div class="pf-addr__h"><b>' + esc(a.label) + '</b>' + (a.is_default ? '<em>Default</em>' : '') + '</div>' +
         '<div class="pf-addr__n">' + esc([a.full_name, a.phone].filter(Boolean).join(' · ')) + '</div><div class="pf-addr__l">' + esc(addrLine(a)) + '</div>' +
-        '<div class="pf-addr__a">' + (a.is_default ? '' : '<button data-a="addr-default" data-id="' + a.id + '">Set as default</button>') + '<button data-a="addr-edit" data-id="' + a.id + '">Edit</button><button data-a="addr-del" data-id="' + a.id + '" class="is-danger">Delete</button></div></div>';
+        '<div class="pf-addr__a">' + (a.is_default ? '' : '<button data-a="addr-default" data-id="' + num(a.id) + '">Set as default</button>') + '<button data-a="addr-edit" data-id="' + num(a.id) + '">Edit</button><button data-a="addr-del" data-id="' + num(a.id) + '" class="is-danger">Delete</button></div></div>';
     }).join('') : '<div class="pf-empty">No saved addresses yet. Add one and checkout will use it automatically.</div>') +
       '<button class="pf-save" data-a="addr-new">+ Add new address</button></div>';
   }
@@ -162,10 +162,10 @@
       : ST.orders.filter(function (o) { return f === 'all' || Buyer.bucket(o) === f; }).map(function (o) {
         var subs = o.shipments || [], legacyCount = (o.items || []).length, count = subs.length ? subs.reduce(function (n, s) { return n + (s.order_items || []).reduce(function (m, i) { return m + i.qty; }, 0); }, 0) : legacyCount;
         var unpaid = o.payment_reference && ['pending', 'failed', 'cancelled', 'processing'].indexOf(o.payment_status) !== -1 && o.status !== 'cancelled';
-        return '<div class="pf-ord"><div class="pf-ord__h"><b>Order #' + o.id + '</b><span>' + new Date(o.created_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' }) + '</span></div>' +
+        return '<div class="pf-ord"><div class="pf-ord__h"><b>Order #' + num(o.id) + '</b><span>' + new Date(o.created_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' }) + '</span></div>' +
           '<div class="pf-pills"><i class="st-' + esc(o.status) + '">' + esc(o.status) + '</i>' + (o.payment_reference ? '<i class="pay-' + esc(o.payment_status) + '">' + esc(PAY_LABEL[o.payment_status] || o.payment_status) + '</i>' : '') + (o.is_test ? '<i class="pay-test">Test</i>' : '') + '</div>' +
           '<div class="pf-ord__t">' + count + ' item' + (count === 1 ? '' : 's') + (subs.length > 1 ? ' from ' + subs.length + ' sellers' : '') + ' <b>' + D.fmt(o.total) + '</b></div>' +
-          '<div class="pf-ord__a">' + (unpaid ? '<button class="pf-mini is-red" data-a="pay-now" data-id="' + o.id + '">Pay now</button>' : '') + '<button class="pf-mini" data-a="order" data-id="' + o.id + '">Details</button></div></div>';
+          '<div class="pf-ord__a">' + (unpaid ? '<button class="pf-mini is-red" data-a="pay-now" data-id="' + num(o.id) + '">Pay now</button>' : '') + '<button class="pf-mini" data-a="order" data-id="' + num(o.id) + '">Details</button></div></div>';
       }).join('') || '<div class="pf-empty">Nothing here yet.</div>';
     return head('My Orders') + '<div class="pf-tabs">' + tabs.map(function (t) { return '<button data-a="orders" data-f="' + t[0] + '" class="' + (t[0] === f ? 'is-on' : '') + '">' + t[1] + '</button>'; }).join('') + '</div><div class="pf-pad">' + rows + '</div>';
   }
@@ -175,15 +175,15 @@
     if (!o) return head('Order') + '<div class="pf-pad"><div class="pf-empty">Order not found.</div></div>';
     var subs = o.shipments || [], d = o.delivery || {};
     var row = function (l, v, b) { return '<div class="pf-kv' + (b ? ' is-b' : '') + '"><span>' + l + '</span><span>' + v + '</span></div>'; };
-    return head('Order #' + o.id) + '<div class="pf-pad">' +
+    return head('Order #' + num(o.id)) + '<div class="pf-pad">' +
       '<div class="pf-card"><div class="pf-pills"><i class="st-' + esc(o.status) + '">' + esc(o.status) + '</i>' + (o.payment_reference ? '<i class="pay-' + esc(o.payment_status) + '">' + esc(PAY_LABEL[o.payment_status] || o.payment_status) + '</i>' : '') + '</div>' +
         (o.is_test ? '<div class="pf-test">Test payment: no real money moved.</div>' : '') +
         '<div class="pf-mute">Placed ' + new Date(o.created_at).toLocaleString('en-NG') + '</div></div>' +
       (subs.length ? subs.map(function (s) {
         return '<div class="pf-card"><div class="pf-card__h"><b>Sold by ' + esc((s.vendors && s.vendors.business_name) || 'Maccato') + '</b><i class="st-' + esc(s.status) + '">' + esc(s.status) + '</i></div>' +
-          (s.order_items || []).map(function (i) { return '<div class="pf-line"><span>' + esc(i.name) + ' &times; ' + i.qty + '</span><span>' + D.fmt(i.line_total || i.price * i.qty) + '</span></div>'; }).join('') +
+          (s.order_items || []).map(function (i) { return '<div class="pf-line"><span>' + esc(i.name) + ' &times; ' + num(i.qty) + '</span><span>' + D.fmt(i.line_total || i.price * i.qty) + '</span></div>'; }).join('') +
           (s.tracking_number ? '<div class="pf-mute">Tracking: ' + esc(s.tracking_number) + (s.carrier_name ? ' (' + esc(s.carrier_name) + ')' : '') + '</div>' : '') + '</div>';
-      }).join('') : '<div class="pf-card"><div class="pf-card__h"><b>Items</b></div>' + (o.items || []).map(function (i) { return '<div class="pf-line"><span>' + esc(i.name) + ' &times; ' + i.qty + '</span><span>' + D.fmt(i.price * i.qty) + '</span></div>'; }).join('') + '</div>') +
+      }).join('') : '<div class="pf-card"><div class="pf-card__h"><b>Items</b></div>' + (o.items || []).map(function (i) { return '<div class="pf-line"><span>' + esc(i.name) + ' &times; ' + num(i.qty) + '</span><span>' + D.fmt(i.price * i.qty) + '</span></div>'; }).join('') + '</div>') +
       '<div class="pf-card">' + (o.subtotal != null ? row('Items', D.fmt(o.subtotal)) + row('Delivery', Number(o.delivery_fee) ? D.fmt(o.delivery_fee) : 'Free') + (Number(o.service_fee) ? row('Service fee', D.fmt(o.service_fee)) : '') + (Number(o.tax) ? row('Tax', D.fmt(o.tax)) : '') : '') +
         row('Total', D.fmt(o.total), true) + (Number(o.refunded_amount) ? row('Refunded', D.fmt(o.refunded_amount)) : '') + '</div>' +
       '<div class="pf-card"><div class="pf-card__h"><b>Delivery</b></div><div class="pf-mute" style="color:var(--txt2)">' + esc(o.customer_name || d.name || '') + '<br>' + esc(o.phone || d.phone || '') + '<br>' + esc(o.address || '') + '</div>' +
@@ -226,7 +226,7 @@
     var j = await r.json();
     if (!r.ok) { D.toast(j.error || 'Could not start the payment'); return; }
     try { localStorage.setItem('mct_pending_v1', JSON.stringify({ reference: j.reference, order_id: j.order_id, guest_token: null, at: Date.now() })); } catch (_) {}
-    global.location.href = j.authorization_url;
+    global.location.href = safeHref(j.authorization_url);
   }
 
   async function onClick(e) {
