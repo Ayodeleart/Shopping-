@@ -142,9 +142,10 @@ system — it is a liquid-glass view over the existing store data:
   existing `/store/...` page.
 - **Background removal (server-side)**: for Beauty products the "Remove background" toggle is turned on
   automatically and the main photo is cut out by `/api/remove-bg.js` (remove.bg, key in the Vercel env var
-  `REMOVE_BG_API_KEY`, never in the browser). The transparent PNG is cached in Storage
-  (`avatars/beauty-cutouts/<hash>.png`) so the same photo is never processed twice; on any failure the
-  original photo is used and the page never breaks. The original photo is always kept (`image_url`).
+  `REMOVE_BG_API_KEY`, never in the browser). The transparent PNG plus silhouette-derived contact shadow is
+  cached in Storage (`avatars/product-cutouts-v2/<hash>.png`) so the same photo is never sent to remove.bg
+  twice; an older `beauty-cutouts` result is upgraded locally when available. On any failure the original
+  photo is used and the page never breaks. The original photo is always kept (`image_url`).
 - **Admin > Banners > Beauty**: set the Beauty background (upload/replace/remove/enable), manage the hero
   slides (add, image/GIF, title, subtitle, CTA, destination, reorder, pause, delete) and the category tiles
   (add, rename, link to a real existing category or keyword-match, image/GIF, reorder, hide, delete).
@@ -316,6 +317,27 @@ Admin › Explore Marcato adds, edits, hides, re-orders and deletes worlds, and 
 (image + optional GIF each). A display category is a picture card that opens the products of the marketplace categories linked to it; it is not the
 marketplace category itself. Needs the Explore worlds SQL run once in the Supabase SQL editor (pasted in the chat, never stored in this repo).
 Until it is run the homepage keeps showing the original five worlds. Tests: `tests/worlds.test.js` (storefront) and `tests/worlds-admin.test.js` (admin).
+
+## Home & Decor world (`#world=home`)
+
+Home & Decor is a dedicated presentation over the same world/category/product graph — it does not create a
+second catalogue. It adapts the Ola Wood full-bleed fading hero, editorial collection tiles, compact featured
+cards and vertical-to-horizontal collection rails. The final responsive grid uses Marcato's standard shared
+product card, including Add to Cart, stock, discounts, colour swatches and favourites; curated rails use that
+card's existing compact mode without Add to Cart. Product taps open Marcato's existing product detail page.
+The fixed Marcato header remains visible with search, profile and cart, and there is no bottom navigation.
+
+Admin › Explore Marcato › Home & Decor already manages the hero images/GIFs, title/subtitle, CTA destination,
+slide order, collection tiles, tile order and the real marketplace categories each collection includes. Products
+from those linked category subtrees (or the conventional Home root) appear automatically, including future
+approved-vendor products. Empty collections remain honest and no product data is hardcoded.
+
+Furniture categories use the same `/api/remove-bg.js` service as Beauty. The untouched upload remains
+`products.image_url`; the cached processed URL is stored in the product's existing `attributes._home_image_url`
+(no schema change), then shown on a warm neutral surface. The contact shadow compositor is adapted from
+`Wood/app/api/admin/upload/route.js` and never resizes or recolours the furniture pixels. Tests:
+`tests/home-decor-world.test.js`.
+
 ---
 
 # Fashion world (#world=fashion)

@@ -469,7 +469,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
       <h3 id="pFormTitle">Add Product</h3>
       <div class="fld"><label>Product Photos</label><div id="pPicker"></div></div>
       <label class="rmbgToggle"><input type="checkbox" id="pRmBg"> Remove background from new photos</label>
-      <div class="ad-hint" style="margin:4px 0 8px">Turned on automatically for <b>Beauty</b> categories — the main photo is cut out with the store's secure server pipeline (your original photo is kept).</div>
+      <div class="ad-hint" style="margin:4px 0 8px">Turned on automatically for <b>Beauty</b> and categories connected to <b>Home &amp; Decor</b>. The secure server pipeline keeps your original, caches the cutout and adds a soft contact shadow.</div>
       <div class="progWrap" id="pImgProg"><div class="progBar" id="pImgProgBar"></div></div>
       <div class="fld"><label>Product Name</label><input id="pName" placeholder="e.g. Colorblock Zip-Up Jacket"></div>
       <div id="pAI"></div>
@@ -531,6 +531,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 <script src="../components/product-attributes.js"></script>
 <script src="../components/ai-product.js"></script>
 <script src="../data/categories.js"></script>
+<script src="../data/home-decor.js"></script>
 <script src="../data/food-pairings.js"></script>
 <script src="../data/tracking.js"></script>
 <script src="orders.js"></script>
@@ -549,6 +550,7 @@ const sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession
 let session = null;
 let vendorRow = null;
 let editProdId = null;
+let editProdAttrs = null;
 
 /* ===== THEME ===== */
 /* Theme is fixed (no user-facing toggle) */
@@ -732,12 +734,15 @@ function obReopenForEdit() {
 
 /* ===== CATEGORIES (table `categories`, managed by the admin; the product form picks from it) ===== */
 let catTree = null;
+let homeDecorLinkedCategoryIds = [];
 async function loadCategories() {
   Pcx.Categories.init(sb);
   const { rows, error } = await Pcx.Categories.fetchAll(sb);
   if (error) toast('Could not load categories: ' + error.message, true);
   catTree = new Pcx.Categories.Tree(rows);
   catPicker.setTree(catTree);
+  homeDecorLinkedCategoryIds = (window.Pcx && Pcx.HomeDecor)
+    ? await Pcx.HomeDecor.linkedCategoryIds(sb) : [];
 }
 
 /* ===== ONBOARDING WIZARD ===== */
@@ -1092,11 +1097,11 @@ async function removeImageBackground(file) {
   return _removeBgFn(file);
 }
 
-/* ── Beauty background removal (secure server pipeline) ─────────────────
-   Beauty products: the main photo is cut out server-side (remove.bg via
-   /api/remove-bg.js with the Vercel env-var key — never in this page) and
-   cached in Storage, so the same photo is never processed twice. The
-   original photo is always kept; Beauty surfaces use beauty_image_url. */
+/* ── Secure Beauty + Home & Decor image pipeline ────────────────────────
+   The main original is uploaded first. /api/remove-bg.js then makes one
+   cached transparent cutout with a contact shadow; the remove.bg key never
+   reaches this page. Beauty keeps its existing column, while furniture stores
+   its processed URL inside the existing generic attributes JSON. */
 let pRmBgTouched = false;
 let editProdImgUrl = null;
 function isBeautyCategory() {
@@ -1106,6 +1111,10 @@ function isBeautyCategory() {
   if (!root || root.active === false) return false;
   const ids = (catTree.descendantIds && catTree.descendantIds(root.id)) || [];
   return Number(id) === root.id || ids.includes(Number(id));
+}
+function isHomeDecorCategory() {
+  const id = catPicker.getValue();
+  return !!(window.Pcx && Pcx.HomeDecor && Pcx.HomeDecor.isCategory(catTree, id, homeDecorLinkedCategoryIds));
 }
 async function removeBgServer(url) {
   try {
@@ -1122,7 +1131,7 @@ async function removeBgServer(url) {
   } catch (e) { return null; }
 }
 function syncRmBgAutoCheck() {
-  if (!pRmBgTouched) document.getElementById('pRmBg').checked = isBeautyCategory();
+  if (!pRmBgTouched) document.getElementById('pRmBg').checked = isBeautyCategory() || isHomeDecorCategory();
 }
 document.getElementById('pRmBg').addEventListener('change', () => { pRmBgTouched = true; });
 document.getElementById('pCat').addEventListener('change', syncRmBgAutoCheck);
@@ -1258,6 +1267,7 @@ window.editProduct = async (id) => {
   document.getElementById('pDesc').value = p.description || '';
   pPicker.setImages(Array.isArray(p.images) && p.images.length ? p.images : (p.image_url ? [p.image_url] : []));
   pAttrs.load(p.attributes, catPicker.names().length ? catPicker.names() : p.category);
+  editProdAttrs = p.attributes && typeof p.attributes === 'object' ? p.attributes : {};
   pBlocks.setBlocks(p.description_blocks);
   aiProd.reset(); aiProd.setExisting(p.attributes);
   loadPairPicker(p);
@@ -1278,6 +1288,7 @@ window.deleteProduct = (id) => {
 document.getElementById('pCancelBtn').onclick = resetProdForm;
 function resetProdForm() {
   editProdId = null;
+  editProdAttrs = null;
   document.getElementById('pFormTitle').textContent = 'Add Product';
   document.getElementById('pName').value = '';
   brandPicker.clear();
@@ -1312,13 +1323,14 @@ document.getElementById('pSaveBtn').onclick = async () => {
   try {
     const removeBg = document.getElementById('pRmBg').checked;
     const beautyCat = isBeautyCategory();
-    let beautyCutout = null;
+    const homeDecorCat = isHomeDecorCategory();
+    const secureCutout = beautyCat || homeDecorCat;
+    let beautyCutout = null, homeDecorCutout = null;
     const urls = await pPicker.resolve(async (file) => {
       let f = file, transparent = false;
-      /* Beauty products: the main photo is cut out server-side AFTER upload
-         (remove.bg via /api/remove-bg.js) so the API key never reaches the
-         browser. Other categories keep the in-browser removal. */
-      if (removeBg && !beautyCat) {
+      /* Beauty and furniture keep the original upload and use the secure server
+         pipeline. Other categories retain Marcato's optional browser cutout. */
+      if (removeBg && !secureCutout) {
         showLoad('Removing background...');
         try { f = await removeImageBackground(file); transparent = true; }
         catch (e) { toast('Background removal failed -- using original photo', true); }
@@ -1328,10 +1340,12 @@ document.getElementById('pSaveBtn').onclick = async () => {
     });
     pAttrs.remapColorImages(pPicker.getUploadRemap());
 
-    if (removeBg && beautyCat && urls.length) {
-      showLoad('Removing background...');
-      beautyCutout = await removeBgServer(urls[0]);
-      if (!beautyCutout) toast('Background removal unavailable — using the original photo', true);
+    if (removeBg && secureCutout && urls.length) {
+      showLoad('Removing background and adding shadow...');
+      const cutout = await removeBgServer(urls[0]);
+      if (beautyCat) beautyCutout = cutout;
+      if (homeDecorCat) homeDecorCutout = cutout;
+      if (!cutout) toast('Background removal unavailable — using the original photo', true);
       showLoad('Saving product...');
     }
 
@@ -1345,9 +1359,15 @@ document.getElementById('pSaveBtn').onclick = async () => {
       catch (e) { console.warn('Brand not added to the brand list:', e); }
     }
 
+    let mergedAttrs = Object.assign({}, editProdAttrs || {}, pAttrs.collect(), aiProd.extras() || {});
+    if (homeDecorCat) {
+      if (homeDecorCutout) mergedAttrs = Pcx.HomeDecor.withProcessedImage(mergedAttrs, homeDecorCutout);
+      else if (editProdId && urls[0] && urls[0] !== editProdImgUrl) mergedAttrs = Pcx.HomeDecor.withProcessedImage(mergedAttrs, null);
+    } else if (Pcx.HomeDecor) mergedAttrs = Pcx.HomeDecor.withProcessedImage(mergedAttrs, null);
+
     const prod = {
       name, price,
-      attributes: Object.assign({}, pAttrs.collect(), aiProd.extras() || {}),
+      attributes: mergedAttrs,
       description_blocks,
       brand: brandPick ? brandPick.name : null,
       brand_id: brandRow ? brandRow.id : null,

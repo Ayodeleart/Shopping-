@@ -30,7 +30,10 @@
 <script defer src="components/explore-marcato.js"></script>
 <link rel="stylesheet" href="components/world-page.css">
 <link rel="stylesheet" href="components/world-sections.css">
+<link rel="stylesheet" href="components/home-decor-world.css">
 <script defer src="components/world-sections.js"></script>
+<script defer src="data/home-decor.js"></script>
+<script defer src="components/home-decor-world.js"></script>
 <script defer src="components/world-page.js"></script>
 <link rel="stylesheet" href="components/food-world.css">
 <script defer src="components/food-world.js"></script>
@@ -1526,7 +1529,9 @@ const worldCtx = {
   tree: () => catTree,
   products: () => allProds,
   vendors: () => vendorsMap,
+  storeName: () => storeName,
   cardHTML,
+  openProduct,
   openStore,
   openCategory,
   openWorldCategory: id => { location.hash = 'wcat=' + id; },
@@ -2055,10 +2060,14 @@ function openProduct(id, isBack) {
     modal.classList.remove('bw-theme');
     modal.style.removeProperty('--bw-bg-img');
   }
-  const imgs = (isBW && p.beauty_image_url && Ads.productImages(p).length)
-    ? Ads.productImages(p).map((u, i) => (i === 0 ? p.beauty_image_url : u))
+  const homeCutout = Pcx.HomeDecor && Pcx.HomeDecor.processedImage(p);
+  modal.classList.toggle('hd-furniture', !!homeCutout);
+  const displayCutout = isBW && p.beauty_image_url ? p.beauty_image_url : homeCutout;
+  const imgs = (displayCutout && Ads.productImages(p).length)
+    ? Ads.productImages(p).map((u, i) => (i === 0 ? displayCutout : u))
     : Ads.productImages(p);
   pGal = new Pcx.ProductGallery($('pGal'), { images: imgs, alt: p.name, thumbnails: !!isBW, onOpen: i => openViewer(imgs, i, p.name) });
+  if (homeCutout && pGal.slides && pGal.slides[0]) pGal.slides[0].classList.add('hd-cutout-slide');
 
   /* favorite */
   const fb = $('pFavBtn');
@@ -2138,8 +2147,9 @@ function closePModal(force) {
   const m = $('pModal');
   m.classList.remove('open');
   m.classList.remove('bw-theme');          /* drop the Beauty glass theme with the page */
+  m.classList.remove('hd-furniture');
   m.style.removeProperty('--bw-bg-img');
-  document.body.style.overflow = '';
+  document.body.style.overflow = (worldPage && worldPage.isOpen()) || (fashionPage && fashionPage.isOpen()) ? 'hidden' : '';
 }
 
 let blockImgs = [];
@@ -2527,7 +2537,12 @@ function renderCartList() {
     </div>`).join('');
 }
 function openCart()  { renderCartList(); renderRecentRail($('cartRecent'), 0); document.getElementById('cartDrawer').classList.add('open'); document.getElementById('cartOver').classList.add('open'); document.body.style.overflow='hidden'; }
-function closeCart() { document.getElementById('cartDrawer').classList.remove('open'); document.getElementById('cartOver').classList.remove('open'); document.body.style.overflow = $('pModal').classList.contains('open') ? 'hidden' : ''; }
+function closeCart() {
+  document.getElementById('cartDrawer').classList.remove('open');
+  document.getElementById('cartOver').classList.remove('open');
+  document.body.style.overflow = $('pModal').classList.contains('open') ||
+    (worldPage && worldPage.isOpen()) || (fashionPage && fashionPage.isOpen()) ? 'hidden' : '';
+}
 
 /* -- CHECKOUT -------------------------------------- */
 /* The full-screen checkout page lives in components/checkout-page.js. It never sets prices or marks anything paid:
