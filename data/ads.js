@@ -42,6 +42,7 @@
       id: r.id,
       name: r.name || r.brand || 'Sponsored',
       brand: (r.brand || '').trim(),
+      brandId: r.brand_id != null ? Number(r.brand_id) : null,
       afterRows: Math.max(1, parseInt(r.after_rows, 10) || 5),
       sortOrder: parseInt(r.sort_order, 10) || 1,
       accent: r.accent || '#3f4468',
@@ -178,7 +179,7 @@
       return lim > 0 ? picked.slice(0, lim) : picked;
     }
     return matchRule(all, {
-      brand: ad.brand, brandId: section.brandId, categoryId: section.categoryId, category: section.category, keyword: section.keyword, discountMin: section.discountMin,
+      brand: ad.brand, brandId: section.brandId != null ? section.brandId : ad.brandId, categoryId: section.categoryId, category: section.category, keyword: section.keyword, discountMin: section.discountMin,
       priceMax: section.priceMax, flag: section.flag, sort: section.sort, limit: section.limit
     });
   }

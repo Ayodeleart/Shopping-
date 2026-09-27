@@ -27,7 +27,7 @@
 
   function blank() {
     return {
-      id: null, name: '', brand: '', active: true, after_rows: 5, sort_order: 1, accent: '#3f4468',
+      id: null, name: '', brand: '', brand_id: null, active: true, after_rows: 5, sort_order: 1, accent: '#3f4468',
       placement: 'feed', scope: 'home', category_id: '',
       feed_image: '', feed_title: '', feed_sub: '', feed_cta: '', logo_url: '',
       page: { hero: [], contact: { email: '', phone: '' }, sections: [] }
@@ -41,6 +41,7 @@
     d.placement = r.placement === 'section_gap' ? 'section_gap' : 'feed';
     d.scope = r.scope === 'category' || r.scope === 'all' ? r.scope : 'home';
     d.category_id = r.category_id != null ? String(r.category_id) : '';
+    d.brand_id = r.brand_id != null ? r.brand_id : null;
     ['brand', 'feed_image', 'feed_title', 'feed_sub', 'feed_cta', 'logo_url'].forEach(function (k) { if (d[k] == null) d[k] = ''; });
     return d;
   }
@@ -96,6 +97,7 @@
 
   function renderList() {
     cur = null;
+    if (brandPicker) { brandPicker.destroy(); brandPicker = null; }
     pane().innerHTML =
       '<div class="ph"><span class="pt">Ads</span><button class="abtn solid" data-a="new">+ New Ad</button></div>' +
       (tableMissing ? '<div class="ad-empty">The ads table is not set up yet. Run <b>the ads and storage SQL</b> in the Supabase SQL editor, then reopen this tab.</div>' : '') +
@@ -116,9 +118,9 @@
 
       '<div class="adgrp">Basics</div>' +
       fieldInput('Ad name *', 'name', 'type="text" placeholder="e.g. Oraimo Gadgets"') +
-      '<div class="fg"><label>Brand keyword</label><input data-f="brand" value="' + esc(c.brand) + '" placeholder="e.g. Oraimo">' +
+      '<div class="fg"><label>Brand</label><div data-brandpk></div>' +
         '<div class="ad-match" id="adMatch"></div>' +
-        '<div class="ad-hint">Products whose brand or name contains this word fill the brand page automatically.</div></div>' +
+        '<div class="ad-hint">Pick the real brand from your product catalogue (or add one that is missing). Products with this brand, or whose name contains it, fill the brand page automatically.</div></div>' +
       '<div class="row2">' +
         '<div class="fg"><label>Show after (rows)</label><input type="number" min="1" data-f="after_rows" value="' + esc(c.after_rows) + '"' + (c.placement === 'section_gap' ? ' disabled' : '') + '></div>' +
         '<div class="fg"><label>Order</label><input type="number" min="1" data-f="sort_order" value="' + esc(c.sort_order) + '"></div>' +
@@ -170,7 +172,29 @@
       '<div class="uprog" id="adProg"><div class="uprog-bar" id="adProgBar" style="width:0%"></div></div>' +
       '</div>';
     mountPickers();
+    mountBrandPicker();
     updateMatch();
+  }
+
+  var brandPicker = null;
+
+  function mountBrandPicker() {
+    var el = pane().querySelector('[data-brandpk]');
+    if (!el) return;
+    if (brandPicker) brandPicker.destroy();
+    brandPicker = new Pcx.BrandPicker(el, {
+      sb: sb,
+      searchUrl: '/api/brand-search',
+      getToken: async function () { var s = (await sb.auth.getSession()).data.session; return s ? s.access_token : null; },
+      getUserId: function () { return null; },
+      placeholder: 'Search a brand, e.g. Oraimo',
+      onChange: function (v) {
+        cur.brand_id = v ? v.id : null;
+        cur.brand = v ? v.name : '';
+        updateMatch();
+      }
+    });
+    brandPicker.setByProduct(cur.brand_id, cur.brand);
   }
 
   function mountPickers() {
@@ -196,11 +220,8 @@
   function updateMatch() {
     var el = document.getElementById('adMatch');
     if (!el) return;
-    var b = (cur.brand || '').trim().toLowerCase();
-    if (!b) { el.textContent = ''; return; }
-    var n = products.filter(function (p) {
-      return (p.brand || '').toLowerCase() === b || (p.name || '').toLowerCase().indexOf(b) !== -1;
-    }).length;
+    if (!cur.brand_id && !(cur.brand || '').trim()) { el.textContent = ''; return; }
+    var n = (window.Ads ? Ads.matchRule(products, { brandId: cur.brand_id, brand: cur.brand }) : []).length;
     el.textContent = n + ' product' + (n === 1 ? '' : 's') + ' match' + (n === 1 ? 'es' : '') + ' this brand';
     el.className = 'ad-match' + (n ? '' : ' none');
   }
@@ -233,8 +254,15 @@
   async function save() {
     if (!cur.name.trim()) { toast('Ad name required', true); return; }
     if (uploading) { toast('Wait for the image uploads to finish', true); return; }
+    /* make sure a brand typed by hand (not yet in the brands table) gets saved there first */
+    if (brandPicker && brandPicker.getValue() && !brandPicker.getValue().id) {
+      try {
+        var committed = await brandPicker.commit();
+        if (committed) { cur.brand_id = committed.id; cur.brand = committed.name; }
+      } catch (e) { console.warn('Brand not added to the brand list:', e); }
+    }
     var row = {
-      name: cur.name.trim(), brand: (cur.brand || '').trim() || null, active: !!cur.active,
+      name: cur.name.trim(), brand: (cur.brand || '').trim() || null, brand_id: cur.brand_id || null, active: !!cur.active,
       after_rows: Math.max(1, parseInt(cur.after_rows, 10) || 5), sort_order: parseInt(cur.sort_order, 10) || 1,
       placement: cur.placement === 'section_gap' ? 'section_gap' : 'feed',
       scope: cur.scope === 'category' || cur.scope === 'all' ? cur.scope : 'home',
@@ -245,10 +273,17 @@
     };
     if (cur.scope === 'category' && !row.category_id) { toast('Choose a category for this ad', true); return; }
     showLoad('Saving ad...');
-    var q = cur.id ? sb.from('ads').update(row).eq('id', cur.id) : sb.from('ads').insert([row]);
-    var res = await q;
+    var write = function (r) { return cur.id ? sb.from('ads').update(r).eq('id', cur.id) : sb.from('ads').insert([r]); };
+    var res = await write(row);
+    var legacy = false;
+    if (res.error && /brand_id/i.test(res.error.message)) {   // ads.brand_id not added yet: keep the brand name only
+      var noBrandId = clone(row); delete noBrandId.brand_id;
+      res = await write(noBrandId);
+      legacy = !res.error;
+    }
     hideLoad();
     if (res.error) { toast('Save failed: ' + explain(res.error.message), true); console.error(res.error); return; }
+    if (legacy) toast('Saved, but the brand link needs the latest SQL run in Supabase to stick.', true);
     toast(cur.id ? 'Ad updated' : 'Ad created');
     await load();
     renderList();
@@ -299,7 +334,6 @@
     var el = e.target, f = el.dataset && el.dataset.f;
     if (!f || !cur) return;
     setp(cur, f, readValue(el));
-    if (f === 'brand') updateMatch();
     if (el.dataset.sum) { var s = el.closest('.sec-card'); var t = s && s.querySelector('.sec-sum'); if (t) t.textContent = el.value || 'Untitled'; }
   }
 
