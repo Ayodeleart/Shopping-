@@ -132,7 +132,7 @@
       '<button class="pf-save" data-a="save-account">Save changes</button></div>';
   }
 
-  function addrLine(a) { return [a.line1, a.city, a.state].filter(Boolean).join(', '); }
+  function addrLine(a) { return [a.house_number, a.line1, a.city, a.lga, a.state].filter(Boolean).join(', '); }
 
   function viewAddresses() {
     var list = ST.addresses || [];
@@ -149,8 +149,12 @@
     return head(a.id ? 'Edit address' : 'New address') + '<div class="pf-pad">' +
       '<div class="pf-sub">Find your address</div><div data-as></div><div class="pf-sub">Details</div>' +
       '<div class="pf-chips">' + ['Home', 'Work', 'Other'].map(function (l) { return '<button data-a="addr-label" data-l="' + l + '" class="' + ((a.label || 'Home') === l ? 'is-on' : '') + '">' + l + '</button>'; }).join('') + '</div>' +
-      [['full_name', 'Full name', a.full_name || displayName()], ['phone', 'Phone number', a.phone || (ST.profile && ST.profile.phone) || ''], ['line1', 'Street address', a.line1 || ''], ['city', 'City / area', a.city || ''], ['state', 'State', a.state || '']].map(function (f) {
-        return '<label class="pf-f"><span>' + f[1] + '</span><input data-f="' + f[0] + '" value="' + esc(f[2]) + '"' + (f[0] === 'phone' ? ' type="tel"' : '') + '></label>'; }).join('') +
+      [['full_name', 'Full name', a.full_name || displayName()], ['phone', 'Phone number', a.phone || (ST.profile && ST.profile.phone) || ''], ['line1', 'Street address', a.line1 || ''], ['city', 'Town / city / area', a.city || '']].map(function (f) {
+        return '<label class="pf-f"><span>' + f[1] + '</span><input data-f="' + f[0] + '" value="' + esc(f[2]) + '" autocomplete="' + (f[0] === 'full_name' ? 'name' : f[0] === 'phone' ? 'tel' : f[0] === 'line1' ? 'street-address' : 'address-level-2') + '"' + (f[0] === 'phone' ? ' type="tel"' : '') + '></label>'; }).join('') +
+      '<label class="pf-f"><span>State</span><select data-f="state" autocomplete="address-level-1"><option value="">Select state</option>' + (global.NigeriaAddress ? global.NigeriaAddress.stateNames : []).map(function (x) { return '<option value="' + esc(x) + '"' + (a.state === x ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') + '</select></label>' +
+      '<label class="pf-f"><span>LGA</span><select data-f="lga"><option value="">Select LGA (optional)</option>' + ((global.NigeriaAddress && a.state) ? global.NigeriaAddress.lgas(a.state) : []).map(function (x) { return '<option value="' + esc(x) + '"' + (a.lga === x ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') + '</select></label>' +
+      '<label class="pf-f"><span>Landmark (optional)</span><input data-f="landmark" value="' + esc(a.landmark || '') + '"></label>' +
+      '<label class="pf-f"><span>Delivery instructions (optional)</span><input data-f="delivery_instructions" value="' + esc(a.delivery_instructions || '') + '"></label>' +
       '<label class="pf-check"><input type="checkbox" data-f="is_default"' + (a.is_default || !(ST.addresses || []).length ? ' checked' : '') + '><span>Use as my default address</span></label>' +
       '<button class="pf-save" data-a="addr-save">Save address</button></div>';
   }
@@ -208,6 +212,8 @@
       ST.editAddr = Object.assign(ST.editAddr || {}, { line1: a.line1, city: a.city || a.area, state: a.state, lat: a.lat, lng: a.lon, display_name: a.display_name });
       ['line1', 'city', 'state'].forEach(function (k) { var el = root.querySelector('[data-f="' + k + '"]'); if (el) el.value = ST.editAddr[k] || ''; });
     } });
+    var stateSelect = root.querySelector('[data-f="state"]');
+    if (stateSelect) stateSelect.addEventListener('change', function () { ST.editAddr = Object.assign(ST.editAddr || {}, formValues(), { state: this.value, lga: '' }); render(); });
   }
   function go(view) { ST.stack.push(view); render(); root.scrollTop = 0; var s = root.querySelector('.pf-scroll'); if (s) s.scrollTop = 0; }
   function back() { if (ST.stack.length > 1) { ST.stack.pop(); render(); } else close(); }
@@ -226,6 +232,7 @@
     var j = await r.json();
     if (!r.ok) { D.toast(j.error || 'Could not start the payment'); return; }
     try { localStorage.setItem('mct_pending_v1', JSON.stringify({ reference: j.reference, order_id: j.order_id, guest_token: null, at: Date.now() })); } catch (_) {}
+    if (Pcx.Checkout && Pcx.Checkout.resumePayment) return Pcx.Checkout.resumePayment(j).catch(function (e) { D.toast(e.message || 'Could not open payment'); });
     global.location.href = safeHref(j.authorization_url);
   }
 
@@ -251,7 +258,7 @@
         case 'addr-label': ST.editAddr = Object.assign(ST.editAddr || {}, formValues(), { label: b.dataset.l }); return render();
         case 'addr-save': {
           var f = formValues(), cur = ST.editAddr || {};
-          await Buyer.saveAddress(D.sb, user().id, { id: cur.id, label: cur.label || 'Home', full_name: f.full_name, phone: f.phone, line1: f.line1, city: f.city, state: f.state, lat: cur.lat, lng: cur.lng, display_name: cur.display_name, is_default: f.is_default });
+          await Buyer.saveAddress(D.sb, user().id, { id: cur.id, label: cur.label || 'Home', full_name: f.full_name, phone: f.phone, line1: f.line1, city: f.city, state: f.state, lga: f.lga, landmark: f.landmark, delivery_instructions: f.delivery_instructions, lat: cur.lat, lng: cur.lng, display_name: cur.display_name, is_default: f.is_default });
           await refreshAddresses(); D.toast('Address saved'); ST.stack.pop(); return render();
         }
         case 'addr-default': await Buyer.setDefault(D.sb, user().id, Number(b.dataset.id)); await refreshAddresses(); return render();

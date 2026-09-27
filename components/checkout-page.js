@@ -91,7 +91,8 @@
       var d = S.delivery;
       return '<section class="ck-card"><div class="ck-h"><span>' + ICON.pin + 'Delivery address</span><button class="ck-link" data-a="edit">Change</button></div>' +
         '<div class="ck-addr"><b>' + esc(d.name) + '</b> <span class="ck-dot">&middot;</span> ' + esc(d.phone) + '</div>' +
-        '<div class="ck-addr2">' + esc([d.line1, d.city, d.state].filter(Boolean).join(', ')) + '</div>' +
+        '<div class="ck-addr2">' + esc([d.house_number, d.line1, d.city, d.lga, d.state].filter(Boolean).join(', ')) + '</div>' +
+        (d.landmark ? '<div class="ck-mute">Landmark: ' + esc(d.landmark) + '</div>' : '') +
         '<div class="ck-mute">' + esc(d.email) + '</div></section>';
     }
     var f = S.form || {};
@@ -105,8 +106,12 @@
       '<div class="ck-sub">Find your address</div><div data-as></div>' +
       '<div class="ck-sub">Or type it in</div>' +
       '<label class="ck-f"><span>Street address</span><input data-f="line1" autocomplete="street-address" value="' + esc(f.line1) + '"></label>' +
-      '<div class="ck-grid"><label class="ck-f"><span>City / area</span><input data-f="city" value="' + esc(f.city) + '"></label>' +
-      '<label class="ck-f"><span>State</span><input data-f="state" value="' + esc(f.state) + '"></label></div>' +
+      '<div class="ck-grid"><label class="ck-f"><span>Town / city / area</span><input data-f="city" autocomplete="address-level-2" value="' + esc(f.city) + '"></label>' +
+      '<label class="ck-f"><span>State</span><select data-f="state" autocomplete="address-level-1"><option value="">Select state</option>' + (global.NigeriaAddress ? global.NigeriaAddress.stateNames : []).map(function (x) { return '<option value="' + esc(x) + '"' + (f.state === x ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') + '</select></label></div>' +
+      '<label class="ck-f"><span>LGA</span><select data-f="lga"><option value="">Select LGA (optional)</option>' + ((global.NigeriaAddress && f.state) ? global.NigeriaAddress.lgas(f.state) : []).map(function (x) { return '<option value="' + esc(x) + '"' + (f.lga === x ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') + '</select></label>' +
+      '<div class="ck-grid"><label class="ck-f"><span>Landmark (optional)</span><input data-f="landmark" value="' + esc(f.landmark) + '"></label>' +
+      '<label class="ck-f"><span>House / building (optional)</span><input data-f="house_number" autocomplete="address-line2" value="' + esc(f.house_number) + '"></label></div>' +
+      '<label class="ck-f"><span>Delivery instructions (optional)</span><input data-f="delivery_instructions" value="' + esc(f.delivery_instructions) + '"></label>' +
       '<label class="ck-check"><input type="checkbox" data-a="save-flag"' + (S.saveFlag ? ' checked' : '') + '><span>' + (s ? 'Save to my address book so I am not asked again' : 'Remember these details on this device') + '</span></label>' +
       '<button class="ck-btn ck-btn--dark" data-a="save-address">Use this address</button></section>';
   }
@@ -135,7 +140,7 @@
         var on = S.method === m.id;
         return '<button class="ck-method' + (on ? ' is-on' : '') + '" data-a="method" data-id="' + esc(m.id) + '"><span class="ck-method__i">' + ICON[METHOD_ICON[m.id] || 'card'] + '</span>' +
           '<span class="ck-method__t"><b>' + esc(m.label) + '</b><em>' + esc(m.hint || '') + '</em></span><span class="ck-radio"></span></button>';
-      }).join('') + '<div class="ck-mute" style="margin-top:8px">You will finish paying on the payment provider\'s secure page.</div></section>';
+      }).join('') + '<div class="ck-mute" style="margin-top:8px">Payment opens securely inside Marcato. Your card or bank details are handled by Paystack.</div></section>';
   }
 
   function renderSummary() {
@@ -163,6 +168,10 @@
         '<button class="ck-pay" data-a="pay"' + (ready ? '' : ' disabled') + '>' + (S.busy ? 'Starting payment...' : 'Pay ' + D.fmt(t.total)) + '</button></footer>';
     var slot = root.querySelector('[data-as]');
     if (slot) Pcx.AddressSearch.mount(slot, { onPick: pickAddress });
+    var stateSelect = root.querySelector('[data-f="state"]');
+    if (stateSelect) stateSelect.addEventListener('change', function () {
+      S.form.state = this.value; S.form.lga = ''; render();
+    });
   }
 
   /* ── actions ── */
@@ -183,7 +192,8 @@
     var f = readForm();
     if (!f.name || !f.phone || !f.line1) { D.toast('Add your name, phone and street address'); return; }
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.email || '')) { D.toast('Add a valid email for your receipt'); return; }
-    S.delivery = { name: f.name, phone: f.phone, email: f.email, line1: f.line1, city: f.city || '', state: f.state || '',
+    S.delivery = { name: f.name, phone: f.phone, email: f.email, line1: f.line1, city: f.city || '', state: f.state || '', lga: f.lga || '',
+      house_number: f.house_number || '', landmark: f.landmark || '', delivery_instructions: f.delivery_instructions || '',
       lat: f.lat == null ? null : f.lat, lng: f.lng == null ? null : f.lng, display_name: f.display_name || '', address_id: null, dirty: true };
     S.editing = false; S.error = ''; render();
   }
@@ -195,9 +205,48 @@
       if (s) {
         var uid = s.user.id;
         if (!S.profile || S.profile.full_name !== d.name || S.profile.phone !== d.phone) await Buyer.saveProfile(D.sb, uid, { full_name: d.name, phone: d.phone });
-        if (d.dirty) await Buyer.saveAddress(D.sb, uid, { label: 'Home', full_name: d.name, phone: d.phone, line1: d.line1, city: d.city, state: d.state, lat: d.lat, lng: d.lng, display_name: d.display_name, is_default: !S.addresses.length });
+        if (d.dirty) await Buyer.saveAddress(D.sb, uid, { label: 'Home', full_name: d.name, phone: d.phone, line1: d.line1, city: d.city, state: d.state, lga: d.lga, house_number: d.house_number, landmark: d.landmark, delivery_instructions: d.delivery_instructions, lat: d.lat, lng: d.lng, display_name: d.display_name, is_default: !S.addresses.length });
       } else Buyer.saveGuest(d);
     } catch (_) { /* saving is a convenience; never block a payment on it */ }
+  }
+
+  function loadPaystack() {
+    if (global.PaystackPop) return Promise.resolve(global.PaystackPop);
+    return new Promise(function (resolve, reject) {
+      var existing = document.querySelector('script[data-marcato-paystack]');
+      if (existing) { existing.addEventListener('load', function () { resolve(global.PaystackPop); }); existing.addEventListener('error', reject); return; }
+      var script = document.createElement('script'); script.src = 'https://js.paystack.co/v2/inline.js'; script.async = true; script.dataset.marcatoPaystack = '1';
+      script.onload = function () { global.PaystackPop ? resolve(global.PaystackPop) : reject(new Error('Paystack checkout could not load')); };
+      script.onerror = function () { reject(new Error('Paystack checkout could not load. Check your connection and try again.')); };
+      document.head.appendChild(script);
+    });
+  }
+
+  async function verifyInline(reference, pending) {
+    var el = resultRoot(); showResult('wait', {});
+    try {
+      var r = await fetch('/api/payment-verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reference: reference }) });
+      var j = await r.json().catch(function () { return {}; });
+      if (['paid', 'partially_refunded', 'refunded'].indexOf(j.payment_status) !== -1) {
+        var os = await orderStatus(j.order_id, pending && pending.guest_token);
+        try { localStorage.removeItem(PENDING_KEY); } catch (_) {}
+        D.onPaid(); showResult('ok', os ? os.order : { id: j.order_id, total: 0 }, os && os.sellers);
+      } else if (j.payment_status === 'failed') showResult('fail', {});
+      else showResult('wait', {});
+    } catch (_) { showResult('wait', {}); }
+  }
+
+  async function openInlinePayment(j) {
+    var pending = { reference: j.reference, order_id: j.order_id, guest_token: j.guest_token || null, at: Date.now() };
+    try { localStorage.setItem(PENDING_KEY, JSON.stringify(pending)); } catch (_) {}
+    var PaystackPop = await loadPaystack();
+    var popup = new PaystackPop();
+    popup.resumeTransaction(j.access_code, {
+      onSuccess: function (transaction) { verifyInline(transaction.reference || j.reference, pending); },
+      onCancel: function () { if (S) { S.busy = false; render(); } D.toast('Payment cancelled. Your cart and details are still saved.'); },
+      onError: function (error) { if (S) { S.busy = false; render(); S.error = (error && error.message) || 'Payment could not be completed. You can try again.'; render(); } else D.toast((error && error.message) || 'Payment could not be completed.'); },
+      onBankTransferConfirmationPending: function () { if (S) { S.busy = false; render(); } verifyInline(j.reference, pending); }
+    });
   }
 
   async function pay() {
@@ -208,12 +257,16 @@
       var h = { 'Content-Type': 'application/json' }; if (token()) h.Authorization = 'Bearer ' + token();
       var r = await fetch('/api/checkout', { method: 'POST', headers: h, body: JSON.stringify({
         items: D.cart().map(function (x) { return { product_id: x.id, qty: x.qty, size: x.size || null, color: x.color || null }; }), method: S.method,
-        delivery: { name: d.name, phone: d.phone, email: d.email, line1: d.line1, city: d.city, state: d.state, lat: d.lat, lng: d.lng, display_name: d.display_name } }) });
+        delivery: { name: d.name, phone: d.phone, email: d.email, line1: d.line1, city: d.city, state: d.state, lga: d.lga, house_number: d.house_number, landmark: d.landmark, delivery_instructions: d.delivery_instructions, lat: d.lat, lng: d.lng, display_name: d.display_name } }) });
       var j = await r.json();
       if (!r.ok) throw new Error(j.error || 'Could not start the payment');
       await persistDetails();
-      try { localStorage.setItem(PENDING_KEY, JSON.stringify({ reference: j.reference, order_id: j.order_id, guest_token: j.guest_token || null, at: Date.now() })); } catch (_) {}
-      global.location.href = j.authorization_url;
+      if (j.provider === 'paystack' && j.access_code && j.public_key) {
+        await openInlinePayment(j);
+      } else {
+        try { localStorage.setItem(PENDING_KEY, JSON.stringify({ reference: j.reference, order_id: j.order_id, guest_token: j.guest_token || null, at: Date.now() })); } catch (_) {}
+        global.location.href = j.authorization_url;
+      }
     } catch (e) {
       S.busy = false; S.error = e.message; render(); D.toast(e.message);
     }
@@ -340,7 +393,13 @@
     return true;
   }
 
+  async function resumePayment(j) {
+    if (j && j.provider === 'paystack' && j.access_code && j.public_key) return openInlinePayment(j);
+    if (j && j.authorization_url) return global.location.href = j.authorization_url;
+    throw new Error('Payment session is unavailable. Please try again.');
+  }
+
   function init(deps) { D = deps; }
 
-  (global.Pcx = global.Pcx || {}).Checkout = { init: init, open: open, close: close, handleReturn: handleReturn };
+  (global.Pcx = global.Pcx || {}).Checkout = { init: init, open: open, close: close, handleReturn: handleReturn, resumePayment: resumePayment };
 })(window);

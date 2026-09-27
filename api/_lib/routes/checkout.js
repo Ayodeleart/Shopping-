@@ -82,7 +82,9 @@ const routeHandler = handler(['POST'], async (req, res) => {
     if (items.some(i => !Number.isFinite(i.product_id) || !Number.isFinite(i.qty))) throw new HttpError(400, 'Invalid cart', 'bad_cart');
     const delivery = {
       name: String(d.name || '').trim().slice(0, 120), phone: String(d.phone || '').trim().slice(0, 40), email,
-      line1: String(d.line1 || '').trim().slice(0, 240), city: String(d.city || '').trim().slice(0, 80), state: String(d.state || '').trim().slice(0, 80),
+      line1: String(d.line1 || '').trim().slice(0, 240), house_number: String(d.house_number || '').trim().slice(0, 80),
+      city: String(d.city || '').trim().slice(0, 80), state: String(d.state || '').trim().slice(0, 80), lga: String(d.lga || '').trim().slice(0, 100),
+      landmark: String(d.landmark || '').trim().slice(0, 160), delivery_instructions: String(d.delivery_instructions || '').trim().slice(0, 300),
       lat: Number.isFinite(Number(d.lat)) && d.lat !== null && d.lat !== '' ? Number(d.lat) : null,
       lng: Number.isFinite(Number(d.lng)) && d.lng !== null && d.lng !== '' ? Number(d.lng) : null,
       display_name: String(d.display_name || '').slice(0, 300)
@@ -108,6 +110,7 @@ const routeHandler = handler(['POST'], async (req, res) => {
 
   send(res, 200, {
     order_id: co.order_id, reference, provider: provider.id, is_test: !!provider.isTest, authorization_url: init.authorizationUrl,
+    access_code: init.accessCode || null, public_key: provider.id === 'paystack' ? (process.env.PAYSTACK_PUBLIC_KEY || null) : null,
     amount: co.amount, breakdown: { subtotal: co.subtotal, delivery_fee: co.delivery_fee, service_fee: co.service_fee, tax: co.tax },
     guest_token: guestToken
   });

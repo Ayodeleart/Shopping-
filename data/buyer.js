@@ -18,7 +18,8 @@
       name: clean(a.full_name) || clean(profile && profile.full_name),
       phone: clean(a.phone) || clean(profile && profile.phone),
       email: clean(email),
-      line1: clean(a.line1), city: clean(a.city), state: clean(a.state),
+      line1: clean(a.line1), city: clean(a.city), state: clean(a.state), lga: clean(a.lga),
+      house_number: clean(a.house_number), landmark: clean(a.landmark), delivery_instructions: clean(a.delivery_instructions),
       lat: a.lat == null ? null : Number(a.lat), lng: a.lng == null ? null : Number(a.lng),
       display_name: clean(a.display_name), address_id: a.id || null
     };
@@ -52,7 +53,8 @@
   async function saveAddress(sb, uid, a) {
     var row = {
       user_id: uid, label: clean(a.label) || 'Home', full_name: clean(a.full_name), phone: clean(a.phone),
-      line1: clean(a.line1), city: clean(a.city), state: clean(a.state), country: clean(a.country) || 'Nigeria',
+      line1: clean(a.line1), house_number: clean(a.house_number), city: clean(a.city), state: clean(a.state), lga: clean(a.lga), country: clean(a.country) || 'Nigeria',
+      landmark: clean(a.landmark), delivery_instructions: clean(a.delivery_instructions),
       lat: a.lat == null || a.lat === '' ? null : Number(a.lat), lng: a.lng == null || a.lng === '' ? null : Number(a.lng),
       display_name: clean(a.display_name), is_default: !!a.is_default
     };
