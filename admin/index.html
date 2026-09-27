@@ -365,7 +365,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
         <div id="pPicker"></div>
         <div class="uprog" id="pImgProg"><div class="uprog-bar" id="pImgProgBar" style="width:0%"></div></div>
         <label class="rmbgToggle"><input type="checkbox" id="pRmBg"> Remove background from new photos</label>
-        <div class="ad-hint" id="pRmBgHint" style="margin-top:4px">Turned on automatically when the category is under <b>Beauty</b> — the main photo is cut out with the secure server pipeline (original photo is kept). Other categories use in-browser removal.</div>
+        <div class="ad-hint" id="pRmBgHint" style="margin-top:4px">Turned on automatically for <b>Beauty</b> and categories connected to <b>Home &amp; Decor</b>. The secure server pipeline keeps the original, caches the cutout and adds a soft contact shadow. Other categories use in-browser removal.</div>
       </div>
       <div style="background:var(--bg2);border-radius:10px;padding:2px 10px;margin-bottom:12px">
         <div class="tgl-row"><label>Featured</label><div class="tgl" id="pFeatTgl" onclick="this.classList.toggle('on')"><div class="tgl-k"></div></div></div>
@@ -583,6 +583,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 <script src="../components/multi-image-picker.js"></script>
 <script src="../components/ai-product.js"></script>
 <script src="../data/categories.js"></script>
+<script src="../data/home-decor.js"></script>
 <script src="../data/tracking.js"></script>
 <script src="../components/category-picker.js"></script>
 <script src="../components/brand-picker.js"></script>
@@ -801,9 +802,19 @@ const aiProd = new Pcx.AIProduct(document.getElementById('pAI'), {
   },
   onApplied: () => toast('Draft applied. Review it, then press Save.')
 });
+let homeDecorLinkedCategoryIds = [];
+async function refreshHomeDecorCategoryIds() {
+  homeDecorLinkedCategoryIds = (window.Pcx && Pcx.HomeDecor)
+    ? await Pcx.HomeDecor.linkedCategoryIds(sb) : [];
+  if (typeof syncRmBgAutoCheck === 'function') syncRmBgAutoCheck();
+}
 document.addEventListener('categories:loaded', e => {
   catTree = e.detail;
   catPicker.setTree(catTree);
+  refreshHomeDecorCategoryIds();
+});
+document.addEventListener('worlds:changed', e => {
+  if (!e.detail || !e.detail.slug || e.detail.slug === 'home') refreshHomeDecorCategoryIds();
 });
 
 /* ===== CURRENCY ===== */
@@ -819,10 +830,11 @@ function selectColor(el, c) { document.querySelectorAll('.csw').forEach(s => s.c
 
 /* ===== PRODUCTS ===== */
 let editProdId = null;
-let editProdImgUrl = null;   // main photo before this edit (to detect a changed Beauty main photo)
+let editProdImgUrl = null;   // main original photo before this edit (detects a changed processed source)
 let pRmBgTouched = false;    // admin manually changed the checkbox, so stop auto-managing it
 
-/* True when the selected category is Beauty or sits under the Beauty main category. */
+/* Beauty uses its existing dedicated column. Home & Decor eligibility follows
+   the same live world-category links that feed the storefront. */
 function isBeautyCategory() {
   const id = catPicker.getValue();
   if (id == null || !catTree) return false;
@@ -830,6 +842,10 @@ function isBeautyCategory() {
   if (!root || root.active === false) return false;
   const ids = (catTree.descendantIds && catTree.descendantIds(root.id)) || [];
   return Number(id) === root.id || ids.includes(Number(id));
+}
+function isHomeDecorCategory() {
+  const id = catPicker.getValue();
+  return !!(window.Pcx && Pcx.HomeDecor && Pcx.HomeDecor.isCategory(catTree, id, homeDecorLinkedCategoryIds));
 }
 
 /* Secure server-side background removal (remove.bg via Vercel env vars — the key
@@ -853,7 +869,7 @@ async function removeBgServer(url) {
 
 /* Keep the checkbox in sync with the selected category until the admin touches it. */
 function syncRmBgAutoCheck() {
-  if (!pRmBgTouched) document.getElementById('pRmBg').checked = isBeautyCategory();
+  if (!pRmBgTouched) document.getElementById('pRmBg').checked = isBeautyCategory() || isHomeDecorCategory();
 }
 document.getElementById('pRmBg').addEventListener('change', () => { pRmBgTouched = true; });
 document.getElementById('pCat').addEventListener('change', syncRmBgAutoCheck);
@@ -870,13 +886,15 @@ async function saveProduct() {
   try {
     const removeBg = document.getElementById('pRmBg').checked;
     const beautyCat = isBeautyCategory();
-    let beautyCutout = null;
+    const homeDecorCat = isHomeDecorCategory();
+    const secureCutout = beautyCat || homeDecorCat;
+    let beautyCutout = null, homeDecorCutout = null;
     const urls = await pPicker.resolve(async (file) => {
       let f = file, transparent = false;
-      /* Beauty products use the secure server pipeline on the MAIN photo after
-         upload (remove.bg via /api/remove-bg.js, cached in Storage) so the API
-         key never reaches the browser. Other categories keep the in-browser removal. */
-      if (removeBg && !beautyCat) {
+      /* Beauty and Home & Decor upload the untouched original first, then the
+         authenticated server makes one cached cutout + contact shadow. Other
+         categories retain Marcato's existing optional in-browser removal. */
+      if (removeBg && !secureCutout) {
         showLoad('Removing background...');
         try { f = await removeImageBackground(file); transparent = true; }
         catch (e) { toast('Background removal failed -- using original photo', true); }
@@ -886,10 +904,12 @@ async function saveProduct() {
     });
     pAttrs.remapColorImages(pPicker.getUploadRemap());
 
-    if (removeBg && beautyCat && urls.length) {
-      showLoad('Removing background...');
-      beautyCutout = await removeBgServer(urls[0]);
-      if (!beautyCutout) toast('Background removal unavailable — using the original photo', true);
+    if (removeBg && secureCutout && urls.length) {
+      showLoad('Removing background and adding shadow...');
+      const cutout = await removeBgServer(urls[0]);
+      if (beautyCat) beautyCutout = cutout;
+      if (homeDecorCat) homeDecorCutout = cutout;
+      if (!cutout) toast('Background removal unavailable — using the original photo', true);
       showLoad('Saving product...');
     }
 
@@ -924,7 +944,11 @@ async function saveProduct() {
     }
     /* attributes: sizes / colours / gender etc. from the details editor, plus the reviewed AI extras, kept inside the existing column */
     const aiExtras = aiProd.extras();
-    const mergedAttrs = Object.assign({}, editProdAttrs || {}, pAttrs.collect(), aiExtras || {});
+    let mergedAttrs = Object.assign({}, editProdAttrs || {}, pAttrs.collect(), aiExtras || {});
+    if (homeDecorCat) {
+      if (homeDecorCutout) mergedAttrs = Pcx.HomeDecor.withProcessedImage(mergedAttrs, homeDecorCutout);
+      else if (editProdId && urls[0] && urls[0] !== editProdImgUrl) mergedAttrs = Pcx.HomeDecor.withProcessedImage(mergedAttrs, null);
+    } else if (Pcx.HomeDecor) mergedAttrs = Pcx.HomeDecor.withProcessedImage(mergedAttrs, null);
     if (Object.keys(mergedAttrs).length) prod.attributes = mergedAttrs;
 
     const write = p => editProdId

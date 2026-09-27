@@ -47,6 +47,7 @@
     this.root.scrollTop = 0;
     this.root.classList.add('open');
     this.root.setAttribute('aria-hidden', 'false');
+    document.body.classList.toggle('home-world-open', world.slug === 'home' || world.slug === 'home-decor');
     document.body.style.overflow = 'hidden';
   };
 
@@ -54,13 +55,17 @@
     if (!this.isOpen()) return;
     this.root.classList.remove('open');
     this.root.setAttribute('aria-hidden', 'true');
+    if (this.root._homeDecorCleanup) { this.root._homeDecorCleanup(); this.root._homeDecorCleanup = null; }
+    document.body.classList.remove('home-world-open');
     document.body.style.overflow = '';
   };
 
   P._build = function (world) {
     var self = this, root = this.root, d = this.d, ctx = d.ctx;
     var Pcx = global.Pcx || {}, WS = Pcx.WorldSections;
+    if (root._homeDecorCleanup) { root._homeDecorCleanup(); root._homeDecorCleanup = null; }
     root.textContent = '';
+    root.classList.toggle('world-home', world.slug === 'home' || world.slug === 'home-decor');
     root.style.setProperty('--wp-grad', world.gradient);
 
     if (world.slug === 'beauty' && global.Pcx && global.Pcx.BeautyWorld) {   /* the dedicated Beauty world (components/beauty-world.js) */

@@ -280,6 +280,9 @@
     matcherFor: matcherFor,
     productsForCategories: productsForCategories,
     worldProducts: worldProducts,
+    /* Dedicated world renderers (Home & Decor) reuse the exact same validated
+       CTA routing instead of growing a second link/category implementation. */
+    heroAction: ctaAction,
     renderHero: renderHero,
     renderDisplayCategories: renderDisplayCategories,
     renderWorld: renderWorld,

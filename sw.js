@@ -1,4 +1,4 @@
-const CACHE = 'store-v15';
+const CACHE = 'store-v16';
 const SCOPE_HOME = '/';
 const PRECACHE = ['/components/sw-register.js', '/data/safe.js', '/', '/index.html', '/manifest.json', '/icon.svg',
   '/components/promotional-carousel.css', '/components/promotional-carousel.js',
@@ -6,6 +6,9 @@ const PRECACHE = ['/components/sw-register.js', '/data/safe.js', '/', '/index.ht
   '/components/ad-page.css', '/components/ad-page.js', '/data/ads.js', '/components/tile-row.css', '/components/tile-row.js',
   '/components/checkout-page.css', '/components/checkout-page.js', '/components/profile-page.css', '/components/profile-page.js', '/components/address-search.js', '/data/buyer.js',
   '/components/categories.css', '/components/category-page.js', '/data/categories.js',
+  '/data/worlds.js', '/data/home-decor.js', '/components/explore-marcato.css', '/components/explore-marcato.js',
+  '/components/world-page.css', '/components/world-page.js', '/components/world-sections.css', '/components/world-sections.js',
+  '/components/home-decor-world.css', '/components/home-decor-world.js',
   '/components/product-page.css', '/components/product-gallery.js', '/components/image-viewer.js',
   '/data/search.js', '/components/search-page.js', '/components/search-page.css',
   '/data/tracking.js', '/components/order-tracking.css', '/components/order-tracking.js',

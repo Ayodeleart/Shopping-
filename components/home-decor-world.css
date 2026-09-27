@@ -1,0 +1,131 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap');
+
+/* Home & Decor keeps Marcato's fixed shared header visible. The world's own
+   back/title bar begins immediately below it; no bottom navigation is added. */
+body.home-world-open #hdrSearchBtn{display:flex!important}
+#worldPage.world-home{
+  top:var(--hh);overflow-x:hidden;
+  --bg:#fbfaf7;--bg2:#f0eee8;--bg3:#e4e0d8;--card:#fff;
+  --txt:#171815;--txt2:#54564f;--txt3:#888a82;--border:#e4e1da;
+  background:#fbfaf7;color:#171815;
+}
+#worldPage.world-home .wp-hdr{height:52px;background:rgba(251,250,247,.94);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-bottom:1px solid rgba(23,24,21,.1)}
+#worldPage.world-home .wp-hdr-ttl{font-family:'Manrope',sans-serif;font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+#worldPage.world-home .ws-root{background:#fbfaf7;padding:0;overflow-x:clip}
+#worldPage.world-home .hd-world{font-family:'Manrope',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100%;overflow-x:clip}
+
+.hd-sr,.hd-sr:not(:focus){position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+.hd-eyebrow{display:block;font-family:'Manrope',sans-serif;font-size:10px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:#85867e}
+.hd-display{font-family:'Cormorant','Iowan Old Style',Georgia,serif;font-size:clamp(32px,5vw,58px);font-weight:600;line-height:.98;letter-spacing:-.025em;color:#171815;margin-top:8px}
+.hd-section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:32px}
+
+/* Full-bleed Wood-style auto-fading hero */
+.hd-hero{position:relative;width:100%;height:min(68dvh,680px);min-height:470px;overflow:hidden;background:#dad7cf;color:#fff}
+.hd-hero-stage,.hd-hero-slide{position:absolute;inset:0}
+.hd-hero-slide{opacity:0;transform:scale(1.018);transition:opacity 1.35s ease-in-out,transform 1.6s ease-in-out;pointer-events:none;background:#d8d5ce}
+.hd-hero-slide.is-active{opacity:1;transform:scale(1);z-index:1;pointer-events:auto}
+.hd-media{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;display:block}
+.hd-media-gif{opacity:0;transition:opacity .35s ease}
+.hd-media-gif.is-ready{opacity:1}
+.hd-hero-slide.has-cutout{background:radial-gradient(circle at 52% 36%,#285247 0,#173a31 45%,#0c2620 100%)}
+.hd-hero-slide.has-cutout::before{content:'MARCATO';position:absolute;z-index:0;left:50%;top:40%;transform:translate(-50%,-50%);font-family:'Cormorant',Georgia,serif;font-weight:600;font-size:clamp(58px,15vw,190px);letter-spacing:-.04em;color:rgba(255,255,255,.09);white-space:nowrap}
+.hd-hero-slide .hd-media.is-cutout{z-index:1;object-fit:contain;object-position:center 43%;padding:5% 6% 14%;filter:drop-shadow(0 24px 22px rgba(0,0,0,.3))}
+.hd-hero-shade{position:absolute;z-index:2;inset:0;background:linear-gradient(180deg,rgba(9,12,10,.05) 30%,rgba(9,12,10,.72) 100%)}
+.hd-hero-slide.has-cutout .hd-hero-shade{background:linear-gradient(180deg,rgba(9,16,13,0) 45%,rgba(5,16,12,.78) 100%)}
+.hd-hero-copy{position:absolute;z-index:3;left:22px;right:22px;bottom:44px;max-width:680px}
+.hd-hero-copy .hd-eyebrow{color:rgba(255,255,255,.75)}
+.hd-hero-title{font-family:'Cormorant','Iowan Old Style',Georgia,serif;font-size:clamp(38px,8vw,78px);font-weight:600;line-height:.92;letter-spacing:-.035em;max-width:760px;text-wrap:balance}
+.hd-hero-sub{font-size:13px;line-height:1.5;color:rgba(255,255,255,.83);margin-top:11px;max-width:460px}
+.hd-hero-cta{display:inline-flex;align-items:center;gap:15px;margin-top:19px;padding:11px 15px 11px 17px;border:1px solid rgba(255,255,255,.78);background:rgba(255,255,255,.08);color:#fff;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;transition:background .25s,color .25s}
+.hd-hero-cta:hover,.hd-hero-cta:focus-visible{background:#fff;color:#171815}
+.hd-icon,.hd-round-arrow,.hd-more-icon{display:inline-flex;align-items:center;justify-content:center}
+.hd-icon{width:20px;height:20px}
+.hd-icon svg,.hd-round-arrow svg,.hd-more-icon svg{width:100%;height:100%}
+.hd-hero-nav{position:absolute;z-index:5;right:22px;bottom:30px;display:flex;align-items:center;gap:6px}
+.hd-plank{width:14px;height:20px;position:relative}
+.hd-plank::after{content:'';position:absolute;left:0;top:9px;width:100%;height:2px;background:rgba(255,255,255,.45);transition:width .45s ease,background .45s ease}
+.hd-plank.is-active{width:34px}.hd-plank.is-active::after{background:#fff}
+
+/* Editorial introduction and collection tiles */
+.hd-intro{padding:62px 22px 66px;max-width:920px;margin:0 auto;text-align:center}
+.hd-intro-title{font-family:'Cormorant','Iowan Old Style',Georgia,serif;font-size:clamp(38px,7vw,70px);font-weight:600;line-height:.98;letter-spacing:-.03em;margin:13px auto 18px;max-width:760px;text-wrap:balance}
+.hd-intro p{max-width:610px;margin:0 auto;color:#696b64;font-size:13px;line-height:1.72}
+.hd-categories,.hd-featured,.hd-all{padding:58px 16px 68px;border-top:1px solid #e5e2da}
+.hd-category-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px 10px}
+.hd-category-card{min-width:0;text-align:left;display:flex;flex-direction:column;gap:11px;color:#171815}
+.hd-category-card:active{opacity:.74}
+.hd-category-media{position:relative;display:block;aspect-ratio:4/3;overflow:hidden;background:#eeece6}
+.hd-category-card .hd-media{transition:transform .7s cubic-bezier(.2,.8,.2,1)}
+.hd-category-card:hover .hd-media{transform:scale(1.035)}
+.hd-category-card.has-cutout .hd-media{object-fit:contain;padding:8%;filter:drop-shadow(0 14px 12px rgba(34,28,20,.2))}
+.hd-category-ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#aaa99f}
+.hd-category-ph svg{width:42%;height:42%}
+.hd-category-label{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.hd-category-label strong{font-family:'Manrope',sans-serif;font-size:11px;line-height:1.3;letter-spacing:.13em;text-transform:uppercase}
+.hd-round-arrow{width:25px;height:25px;border-radius:50%;border:1px solid #c8c6be;padding:6px;flex-shrink:0}
+
+/* Curated cards must use Marcato's compact product-card mode (no Add to Cart). */
+.hd-featured{background:#173a31;color:#fff;border-top:0}
+.hd-featured .hd-eyebrow{color:#9db2aa}.hd-featured .hd-display{color:#fff}
+.hd-featured-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 10px}
+.hd-featured .pcard{--card:#21473d;--bg2:#294f45;--txt:#fff;--txt2:#eef4f1;--txt3:#a9bbb5;--border:rgba(255,255,255,.08);background:#21473d;border-color:rgba(255,255,255,.08)}
+.hd-featured .has-cutout .pcImg{background:#dcd8cf}
+.hd-featured .has-cutout .pcImg img,.hd-rail-card.has-cutout .pcImg img,.hd-grid-card.has-cutout .pcImg img{object-fit:contain;padding:8%;filter:drop-shadow(0 13px 11px rgba(34,28,20,.23));transform:none!important}
+.hd-product-by{display:block;width:100%;margin-top:7px;color:#92948d;font-size:9px;line-height:1.35;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.03em}
+.hd-featured .hd-product-by{color:#a9bbb5}
+
+/* Adapted Wood CollectionRail: vertical page distance maps to horizontal cards. */
+.hd-collection{position:relative;background:#fbfaf7;border-top:1px solid #e5e2da}
+.hd-collection-sticky{position:sticky;top:52px;height:calc(100dvh - 52px);min-height:520px;overflow:hidden;display:flex;flex-direction:column;background:#fbfaf7}
+.hd-rail-head{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;padding:36px 18px 18px;flex-shrink:0}
+.hd-rail-title{font-family:'Cormorant','Iowan Old Style',Georgia,serif;font-size:clamp(40px,7vw,68px);font-weight:600;line-height:.92;letter-spacing:-.03em;margin-top:7px}
+.hd-rail-hint{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#8b8c85;white-space:nowrap;transition:opacity .35s ease}.hd-rail-hint.is-hidden{opacity:0}
+.hd-rail-viewport{position:relative;flex:1;min-height:0;overflow:hidden}
+.hd-rail-track{position:absolute;left:0;top:0;height:100%;display:flex;align-items:center;gap:15px;padding:0 18px;will-change:transform}
+.hd-rail-card{width:min(68vw,310px);flex:0 0 auto}
+.hd-rail-card .pcard{border-radius:0;border:0;background:transparent}
+.hd-rail-card .pcImg{background:#efede7}
+.hd-rail-card .pcBody{padding-left:0;padding-right:0}
+.hd-rail-more{width:min(68vw,310px);height:min(85vw,390px);max-height:calc(100% - 10px);flex:0 0 auto;background:#171815;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.hd-rail-more .hd-eyebrow{color:#fff}.hd-more-icon{width:34px;height:34px;transition:transform .25s}.hd-rail-more:hover .hd-more-icon{transform:translateX(7px)}
+.hd-rail-meter{height:2px;margin:16px 18px 24px;background:#dedbd3;flex-shrink:0;overflow:hidden}.hd-rail-meter span{display:block;height:100%;width:3%;background:#171815;transition:width .08s linear}
+.hd-collection.is-free{height:auto!important;padding-bottom:22px}
+.hd-collection.is-free .hd-collection-sticky{position:relative;top:auto;height:auto;min-height:0}
+.hd-collection.is-free .hd-rail-viewport{overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;min-height:430px}
+.hd-collection.is-free .hd-rail-viewport::-webkit-scrollbar{display:none}
+.hd-collection.is-free .hd-rail-track{position:relative;height:420px;width:max-content;transform:none!important}
+.hd-collection.is-free .hd-rail-card,.hd-collection.is-free .hd-rail-more{scroll-snap-align:start}
+
+/* Standard two-column shopping grid keeps the shared full card and Add to Cart. */
+.hd-all{padding-bottom:90px}
+.hd-product-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 7px;align-items:stretch}
+.hd-grid-card{min-width:0;display:flex;flex-direction:column}
+.hd-grid-card .pcard{flex:1}
+.hd-grid-card.has-cutout .pcImg{background:#efede7}
+.hd-empty{padding:54px 24px;text-align:center;background:#f0eee8;color:#76776f}
+.hd-empty>svg{width:70px;height:70px;margin:0 auto 17px}.hd-empty h3{font-family:'Cormorant',Georgia,serif;color:#24251f;font-size:29px}.hd-empty p{font-size:12px;line-height:1.55;max-width:390px;margin:8px auto 0}
+
+/* Furniture detail pages use the cached transparent result as the first image,
+   on a warm surface with the Wood-derived contact shadow baked into the PNG. */
+#pModal.hd-furniture .hd-cutout-slide{background:#efede7}
+#pModal.hd-furniture .hd-cutout-slide .pgal__img{object-fit:contain;padding:5%;filter:drop-shadow(0 18px 14px rgba(34,28,20,.14))}
+
+@media (min-width:720px){
+  .hd-hero{height:min(78dvh,820px);min-height:590px}
+  .hd-hero-copy{left:6vw;right:6vw;bottom:62px}.hd-hero-nav{right:6vw;bottom:48px}
+  .hd-intro{padding:90px 40px}
+  .hd-categories,.hd-featured,.hd-all{padding:86px max(34px,5vw) 96px}
+  .hd-category-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:32px 22px}
+  .hd-featured-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:24px 18px}
+  .hd-rail-head{padding:52px max(34px,5vw) 24px}
+  .hd-rail-track{gap:24px;padding:0 max(34px,5vw)}
+  .hd-rail-card,.hd-rail-more{width:330px}.hd-rail-more{height:412px}
+  .hd-rail-meter{margin:20px max(34px,5vw) 28px}
+  .hd-product-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:18px 12px}
+}
+@media (min-width:1280px){
+  #worldPage.world-home .hd-world>section:not(.hd-hero):not(.hd-collection){padding-left:max(calc((100vw - 1440px)/2),6vw);padding-right:max(calc((100vw - 1440px)/2),6vw)}
+}
+@media (prefers-reduced-motion:reduce){
+  .hd-hero-slide,.hd-media,.hd-plank::after{transition:none!important}.hd-hero-slide{transform:none}.hd-rail-track{will-change:auto}
+}

@@ -464,6 +464,7 @@
     it.saved = row; it.draft = draftFromRow(it.kind, row); it.open = false;
     sortList(listFor(it.kind));
     render();
+    document.dispatchEvent(new CustomEvent('worlds:changed', { detail: { slug: S.slug || (row && row.slug) || '' } }));
     if (linkErr) { toast('Saved, but the linked categories were not: ' + explain(linkErr.message), true); console.error(linkErr); }
     else toast(it.kind === 'world' ? 'World saved' : it.kind === 'hero' ? 'Hero slide saved' : 'Category saved');
   }
