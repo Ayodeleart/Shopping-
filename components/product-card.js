@@ -69,15 +69,20 @@ function repaintSwatchColors() {
     if (sw) b.style.background = sw;
   });
 }
+/* A card shows at most SWATCH_CAP real colour dots on one line; any extra real colours are counted in a
+   "+N" chip that opens the product (never invented, never a second wrapped row — a wrapped row is what
+   made card heights inconsistent across the grid). */
+const SWATCH_CAP = 5;
 function swatchHTML(p) {
   const cols = (window.Pcx && Pcx.Variants) ? Pcx.Variants.colors(p) : [];
   if (!cols.length) return '';
   if (!(window.Pcx && Pcx.ProductAttributes)) ensureProductAttributes().then(repaintSwatchColors);
   const picked = cardColorPick[p.id];
-  return `<div class="pcSwatches" onclick="event.stopPropagation()">${cols.map(c => {
+  const shown = cols.slice(0, SWATCH_CAP), extra = cols.length - shown.length;
+  return `<div class="pcSwatches" onclick="event.stopPropagation()">${shown.map(c => {
     const sw = Pcx.Variants.swatch(c);
     return `<button type="button" class="pcSwatch${picked === c ? ' on' : ''}" aria-label="${esc(c)}" aria-pressed="${picked === c}" data-color="${esc(c)}" style="${sw ? `background:${esc(sw)}` : ''}" data-pcid="${num(p.id)}" onclick="pickCardColor(${num(p.id)},'${esc(c).replace(/'/g, "\\'")}')"></button>`;
-  }).join('')}</div>`;
+  }).join('')}${extra > 0 ? `<button type="button" class="pcSwatchMore" aria-label="${esc(extra)} more colours" onclick="openProduct(${num(p.id)})">+${esc(extra)}</button>` : ''}</div>`;
 }
 function pickCardColor(id, c) {
   cardColorPick[id] = cardColorPick[id] === c ? null : c;
@@ -128,11 +133,15 @@ function cardQty(id, d, src) {
   saveCart(); updateCartBadge();
 }
 
-/* cardHTML(p) — the standard shopping card (Add to Cart, swatches, stock bar): main two-column grids
-   (Discover More, category page listing). cardHTML(p, {compact:true}) — the merchandising card used in
-   curated rails (Trending/Popular/Hot Deals/Brand Deals/Flash Sales/home category rows/Featured): no Add
-   to Cart, a prominent image at a consistent ratio, name + price(+original price), favorite and discount
-   indicators only. Both share the same data, ids and click-to-open behaviour — see cardHTML below. */
+/* TWO card types, deliberately kept distinct (see components/product-card.css):
+   cardHTML(p) — the STANDARD product-grid card used by the two-column mobile grids (the Discover feed,
+     the in-place category grid, the category page listing, search, storefronts): square photo, 2-line
+     name, price + previous price on one line, one compact stock/rating line, real colour swatches and
+     Add to Cart.
+   cardHTML(p, {compact:true}) — the MERCHANDISING card used in curated horizontal rails (Trending,
+     Popular, Top/Hot Deals, Brand Deals, Flash Sales, Featured): no Add to Cart, no stock bar, no
+     swatches — just photo, name, price(+previous price), favourite and discount indicators.
+   Both share the same data, ids and click-to-open behaviour. */
 function compactCardHTML(p) {
   const disc = p.original_price && p.original_price > p.price
     ? Math.round((1 - p.price/p.original_price)*100) : 0;
@@ -165,6 +174,9 @@ function cardHTML(p, opts) {
   const pct = tot > 0 ? Math.min(100, Math.round(p.stock/tot*100)) : 0;
   const r = ratingMap[p.id];
   const inCart = plainLine(p.id);
+  /* stock bar and rating share ONE compact line instead of two stacked rows (Konga-style density);
+     the line is left out entirely when the product has neither, so no empty space is reserved. */
+  const stockOrRate = p.stock > 0 || (r && r.n > 0);
 
   return `
     <div class="pcard" onclick="openProduct(${num(p.id)})">
@@ -177,15 +189,16 @@ function cardHTML(p, opts) {
       </div>
       <div class="pcBody">
         <div class="pcName">${esc(p.name)}</div>
-        <div class="pcPrice">${fmt(p.price)}</div>
-        ${swatchHTML(p)}
-        ${disc > 0 ? `<div class="pcWas">${fmt(p.original_price)}</div>` : ''}
-        ${r && r.n > 0 ? `<div class="pcRate">${starsHTML(r.avg, 12)}<span>(${esc(r.n)})</span></div>` : ''}
-        ${p.stock > 0 ? `
-          <div class="pcStockRow">
-            <div class="pcBar"><div class="pcBarFill" style="width:${pct}%"></div></div>
-            <span class="pcStockTxt">${esc(p.stock)} left</span>
+        <div class="pcPriceRow">
+          <span class="pcPrice">${fmt(p.price)}</span>
+          ${disc > 0 ? `<span class="pcWas">${fmt(p.original_price)}</span>` : ''}
+        </div>
+        ${stockOrRate ? `
+          <div class="pcMeta">
+            ${p.stock > 0 ? `<span class="pcBar"><span class="pcBarFill" style="width:${pct}%"></span></span><span class="pcStockTxt">${esc(p.stock)} left</span>` : ''}
+            ${r && r.n > 0 ? `<span class="pcRate">${starsHTML(r.avg, 10)}<span>(${esc(r.n)})</span></span>` : ''}
           </div>` : ''}
+        ${swatchHTML(p)}
         <div class="pcCtl" data-pid="${esc(p.id)}" data-q="${esc(inCart ? inCart.qty : 0)}">${ctlHTML(p.id)}</div>
       </div>
     </div>`;

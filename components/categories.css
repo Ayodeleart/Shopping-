@@ -48,12 +48,13 @@
 
 /* Subcategory tiles: a horizontally scrollable row of compact, circular tiles (not a wrapping grid) so it
    never eats vertical space and behaves like screenshot 3's category icons, on mobile or wider screens. */
-.cpg-subs{display:flex;gap:14px;overflow-x:auto;padding:14px 12px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.cpg-subs{display:flex;gap:12px;overflow-x:auto;padding:12px 12px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .cpg-subs::-webkit-scrollbar{display:none}
-.cpg-tile{flex:0 0 auto;width:64px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;min-width:0}
+.cpg-tile{flex:0 0 auto;width:70px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;min-width:0}
 .cpg-tile:active .cat-thumb{transform:scale(.96)}
-.cpg-tile .cat-thumb{transition:transform .15s;width:60px;height:60px}
-.cpg-tile span.cpg-name{font-size:11.5px;font-weight:600;text-align:center;line-height:1.25;max-width:100%;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.cpg-tile .cat-thumb{transition:transform .15s;width:58px;height:58px}
+/* long single words ("Accessories") must wrap inside the tile instead of spilling over the next one */
+.cpg-tile span.cpg-name{font-size:11px;font-weight:600;text-align:center;line-height:1.2;width:100%;max-width:100%;overflow:hidden;overflow-wrap:anywhere;word-break:break-word;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 
 .cpg-adgap{padding:2px 12px 4px}
 
@@ -116,5 +117,6 @@
 .cpg-fclear{background:var(--bg2);color:var(--txt2)}
 .cpg-fapply{background:var(--red);color:#fff}
 
-/* home tile row + per-category rows: name is a link into the category page */
-.catRowName{cursor:pointer}
+/* the storefront's in-feed category view reuses the tiles/rails above (see #catSubs / #catMerch
+   in index.html), so a category looks the same whether it is browsed in place on the home surface
+   or opened as its own page. */
