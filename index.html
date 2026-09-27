@@ -266,6 +266,13 @@ body:not(.cat-mode) #allSecHd{border-top:0}
 .secTtl{font-size:15px;font-weight:800;letter-spacing:-.2px}
 .secAll{font-size:13px;color:var(--red);font-weight:700}
 
+/* Coloured header bar variant — each merchandising rail gets its own accent (set via the inline
+   --sec-accent custom property), matching Konga's solid-colour section banners (pink deals bar,
+   green trending bar, ...) instead of a plain text heading. */
+.secHd--accent{background:var(--sec-accent, var(--red));padding:10px 13px}
+.secHd--accent .secTtl{color:#fff}
+.secHd--accent .secAll{color:rgba(255,255,255,.9)}
+
 /* ── FLASH SALE ───────────────────────────────────── */
 .flashHd{
   background:var(--red);display:flex;align-items:center;
@@ -301,6 +308,23 @@ body:not(.cat-mode) #allSecHd{border-top:0}
 .hScroll.hScroll--ads .fcard-wrap{width:250px}
 .hScroll--ads .adslot .pcx{padding-top:0;max-width:none}
 .hScroll--ads .adslot .pcx__viewport{padding:0 0 2px}
+/* SHOP BY CATEGORIES — Konga-style 3-across grid of coloured tiles (name top-left, category image
+   filling the rest). Scoped to #shopCatsRow.scg-grid only, so the plain .cpg-tile/.cat-thumb classes
+   still render their usual circular horizontal-scroll look everywhere else (subcategory bars etc). */
+#shopCatsRow.scg-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:12px;overflow:visible}
+#shopCatsRow.scg-grid .cpg-tile{
+  width:auto;flex:none;min-width:0;aspect-ratio:1/1.1;border-radius:12px;overflow:hidden;
+  display:flex;flex-direction:column;align-items:flex-start;text-align:left;padding:10px 10px 0;gap:0;
+}
+#shopCatsRow.scg-grid .cpg-tile:active{transform:scale(.97)}
+#shopCatsRow.scg-grid .cpg-name{
+  font-size:11px;font-weight:800;color:#1c1c1c;text-transform:uppercase;letter-spacing:.2px;
+  line-height:1.25;width:100%;max-width:100%;
+}
+#shopCatsRow.scg-grid .scg-img{flex:1;min-height:0;width:100%;margin-top:6px}
+#shopCatsRow.scg-grid .scg-img .cat-thumb{width:100%;height:100%}
+@media (min-width:720px){#shopCatsRow.scg-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
 /* the merchandising sections stack with a whisper of separation, Konga-style */
 .hSec{background:var(--bg)}
 .hSec + .hSec{margin-top:2px}
@@ -757,7 +781,7 @@ body:not(.cat-mode) #allSecHd{border-top:0}
        opens the existing All-categories page — see buildShopCats(). -->
   <section id="shopCatsSec" style="display:none">
     <div class="secHd"><span class="secTtl">Shop by Categories</span><a class="secAll" href="#cat=all" onclick="openCategory('all');return false">See All</a></div>
-    <div id="shopCatsRow" class="cpg-subs"></div>
+    <div id="shopCatsRow" class="scg-grid"></div>
   </section>
 
   <!-- EXPLORE MARCATO: specialized shopping worlds (Food, Fashion, Beauty, Home, Gifts). Not categories,
@@ -1451,10 +1475,11 @@ function buildShopCats() {
   const roots = catTree ? catTree.visibleRootsIn(null) : [];
   if (!roots.length) { sec.style.display = 'none'; return; }
   sec.style.display = '';
-  $('shopCatsRow').innerHTML = roots.map(c => `
-    <button type="button" class="cpg-tile" onclick="selectCategory(${num(c.id)})" aria-label="Shop ${esc(c.name)}">
-      ${Pcx.Categories.thumb(catTree, c, 'round')}
+  const scgPalette = ['#eef0f3', '#e3f2fb', '#fff8e1', '#e9f7ef', '#f5eee4', '#fbe9f0'];
+  $('shopCatsRow').innerHTML = roots.map((c, i) => `
+    <button type="button" class="cpg-tile" style="background:${scgPalette[i % scgPalette.length]}" onclick="selectCategory(${num(c.id)})" aria-label="Shop ${esc(c.name)}">
       <span class="cpg-name">${esc(c.name)}</span>
+      <div class="scg-img">${Pcx.Categories.thumb(catTree, c, 'fill')}</div>
     </button>`).join('');
 }
 
@@ -2158,8 +2183,10 @@ function homeCategoryRows() {
 const homeSeeAlls = {};
 function homeSeeAll(key) { const fn = homeSeeAlls[key]; if (fn) fn(); }
 function homeRailHTML(sec) {
+  const hdCls = sec.color ? 'secHd secHd--accent' : 'secHd';
+  const hdStyle = sec.color ? ` style="--sec-accent:${esc(sec.color)}"` : '';
   return `<section class="hSec" id="${esc(sec.id)}">
-    <div class="secHd"><span class="secTtl">${esc(sec.title)}</span>${sec.key ? `<a class="secAll" href="#allSec" onclick="homeSeeAll('${esc(sec.key)}');return false">See All</a>` : ''}</div>
+    <div class="${hdCls}"${hdStyle}><span class="secTtl">${esc(sec.title)}</span>${sec.key ? `<a class="secAll" href="#allSec" onclick="homeSeeAll('${esc(sec.key)}');return false">See All</a>` : ''}</div>
     <div class="hScroll">${sec.products.map(p => `<div class="fcard-wrap au">${cardHTML(p, { compact: true })}</div>`).join('')}</div>
   </section>`;
 }
@@ -2192,9 +2219,9 @@ function buildHomeMerch() {
         recP = take(recommendedProducts());
 
   const rails = [];
-  if (trendP.length) rails.push({ id: 'trendSec', key: 'trend', title: 'Now Trending', products: trendP });
-  if (bestP.length) rails.push({ id: 'bestSec', key: 'best', title: 'Best-Selling Products', products: bestP });
-  if (freshP.length) rails.push({ id: 'newSec', key: 'new', title: 'New In', products: freshP });
+  if (trendP.length) rails.push({ id: 'trendSec', key: 'trend', title: 'Now Trending', products: trendP, color: '#1E7A46' });
+  if (bestP.length) rails.push({ id: 'bestSec', key: 'best', title: 'Best-Selling Products', products: bestP, color: '#B8860B' });
+  if (freshP.length) rails.push({ id: 'newSec', key: 'new', title: 'New In', products: freshP, color: '#0F6FC5' });
 
   /* Sponsored Products: the admin's real feed ads (data/ads.js), shown as their sponsored brand
      cards. They are excluded from the Discover feed's own interleave below so a configured ad is
@@ -2204,18 +2231,19 @@ function buildHomeMerch() {
   if (sponAds.length) rails.push({
     id: 'sponSec', title: 'Sponsored Products', ads: sponAds,
     html: `<section class="hSec" id="sponSec">
-      <div class="secHd"><span class="secTtl">Sponsored Products</span></div>
+      <div class="secHd secHd--accent" style="--sec-accent:#6B7280"><span class="secTtl">Sponsored Products</span></div>
       <div class="hScroll hScroll--ads">${sponAds.map(a =>
         `<div class="fcard-wrap au"><div class="adslot" data-ad="${esc(a.id)}"></div></div>`).join('')}</div>
     </section>`
   });
 
-  if (featP.length) rails.push({ id: 'featSec', key: 'feat', title: 'Featured', products: featP });
-  if (brandP.length) rails.push({ id: 'brandDealsSec', key: 'brand', title: 'Brand Deals', products: brandP });
-  if (discP.length) rails.push({ id: 'discSec', key: 'disc', title: 'Discounted Products', products: discP });
+  if (featP.length) rails.push({ id: 'featSec', key: 'feat', title: 'Featured', products: featP, color: '#8E2DE2' });
+  if (brandP.length) rails.push({ id: 'brandDealsSec', key: 'brand', title: 'Brand Deals', products: brandP, color: '#D91C6E' });
+  if (discP.length) rails.push({ id: 'discSec', key: 'disc', title: 'Discounted Products', products: discP, color: '#C0392B' });
 
-  homeCategoryRows().forEach(r => rails.push({
-    id: 'hcat-' + r.cat.id, catId: r.cat.id, title: r.cat.name, products: r.list
+  const catRailColors = ['#0F6FC5', '#1E7A46', '#8E2DE2', '#B8860B', '#C0392B', '#0891B2'];
+  homeCategoryRows().forEach((r, i) => rails.push({
+    id: 'hcat-' + r.cat.id, catId: r.cat.id, title: r.cat.name, products: r.list, color: catRailColors[i % catRailColors.length]
   }));
 
   let html = '';
@@ -2223,7 +2251,7 @@ function buildHomeMerch() {
     if (r.html) html += r.html;
     else if (r.catId != null) {
       html += `<section class="hSec hCatSec" id="hcat-${num(r.catId)}">
-        <div class="secHd"><span class="secTtl">${esc(r.title)}</span><a class="secAll" href="#allSec" onclick="selectCategory(${num(r.catId)});return false">See All</a></div>
+        <div class="secHd secHd--accent" style="--sec-accent:${esc(r.color)}"><span class="secTtl">${esc(r.title)}</span><a class="secAll" href="#allSec" onclick="selectCategory(${num(r.catId)});return false">See All</a></div>
         <div class="hScroll">${r.products.map(p => `<div class="fcard-wrap au">${cardHTML(p, { compact: true })}</div>`).join('')}</div>
       </section>`;
     } else {
