@@ -119,6 +119,37 @@ test('vendor store: opening a product saves state before navigating, with an enc
   assert.match(src, /location\.href = '\/\?p=' \+ id \+ '&from=' \+ back;/, 'the product hand-off carries the encoded back-link');
 });
 
+test('vendor store: "Back to Marcato" prefers history.back() over a fresh reload when arriving from Marcato itself', async () => {
+  const w = await bootStore(null);
+  try {
+    Object.defineProperty(w.document, 'referrer', { value: 'https://shop.test/', configurable: true });
+    Object.defineProperty(w.history, 'length', { value: 2, configurable: true });
+    let wentBack = false;
+    w.history.back = () => { wentBack = true; };
+
+    const evt = new w.Event('click', { bubbles: true, cancelable: true });
+    w.document.getElementById('topBack').dispatchEvent(evt);
+
+    assert.equal(evt.defaultPrevented, true, 'the default link navigation is prevented when we can go back instead');
+    assert.equal(wentBack, true, 'history.back() is used so the homepage restores from bfcache');
+  } finally { w.close(); }
+});
+
+test('vendor store: "Back to Marcato" falls back to the plain link for a direct/shared visit (no Marcato referrer)', async () => {
+  const w = await bootStore(null);
+  try {
+    Object.defineProperty(w.document, 'referrer', { value: '', configurable: true });
+    let wentBack = false;
+    w.history.back = () => { wentBack = true; };
+
+    const evt = new w.Event('click', { bubbles: true, cancelable: true });
+    w.document.getElementById('topBack').dispatchEvent(evt);
+
+    assert.equal(evt.defaultPrevented, false, 'no referrer means the plain href="/" link is left to work normally');
+    assert.equal(wentBack, false);
+  } finally { w.close(); }
+});
+
 test('index.html: the "from" back-link guard accepts a real store path and rejects an external URL', () => {
   const src = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
   const m = /productBackTo = (\/\^[^;]+\/)\.test\(rawFrom\) \? rawFrom : null;/.exec(src);

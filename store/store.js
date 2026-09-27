@@ -408,6 +408,23 @@
       $('storeRoot').style.display = '';
       $('loader').classList.add('done');
 
+      /* "Back to Marcato": if the customer actually came from Marcato itself, prefer the
+         browser's native history.back() over a fresh navigation to "/" — a real Back restores
+         the homepage's scroll position and filters via the browser's bfcache; a fresh load to
+         "/" always resets it. Falls back to the plain link (already in the markup) for a direct
+         or shared link with no useful history to go back to. */
+      $('topBack').addEventListener('click', function (e) {
+        var cameFromMarcato = false;
+        try { cameFromMarcato = document.referrer && new URL(document.referrer).origin === location.origin; } catch (err) { /* ignore */ }
+        if (cameFromMarcato && history.length > 1) {
+          e.preventDefault();
+          var left = false;
+          window.addEventListener('pagehide', function () { left = true; }, { once: true });
+          history.back();
+          setTimeout(function () { if (!left) location.href = '/'; }, 600);
+        }
+      });
+
       /* scroll restoration needs real content height, so it happens after the first render */
       if (saved && saved.scrollY) requestAnimationFrame(() => window.scrollTo(0, saved.scrollY));
       window.addEventListener('pagehide', saveBrowsingState);
