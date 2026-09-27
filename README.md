@@ -71,6 +71,9 @@ shared helpers `data/tracking.js`, vendor fulfilment `vendor/orders.js`, admin o
 ## Storefront v2: brands with logos, favorites, search, new product page
 
 The SQL for this (brands, favorites, real rating summaries, vendor logo uploads, category tidy-up) is pasted in the chat when it is needed, never stored in this repo.
+
+### Phase 3 checkout setup
+Run `migration_phase3_checkout.sql` once in Supabase SQL Editor. Configure both `PAYSTACK_SECRET_KEY` (server-only) and `PAYSTACK_PUBLIC_KEY` (`pk_test_...` or `pk_live_...`). Checkout initializes transactions server-side and completes them with Paystack InlineJS inside Marcato; the browser callback is always verified again by `/api/payment-verify`.
 It creates `brands` (+ `products.brand_id`), `favorites`, the `product_ratings` view and the storage policy that lets a vendor upload their logo.
 
 - **Brand search when adding a product** (vendor and admin forms): the vendor types a brand, sees brands already

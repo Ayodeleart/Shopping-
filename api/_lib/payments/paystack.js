@@ -46,7 +46,7 @@ function channelToMethod(c) { return c || null; }
 
 module.exports = {
   id: 'paystack',
-  requiredEnv: ['PAYSTACK_SECRET_KEY'],
+  requiredEnv: ['PAYSTACK_SECRET_KEY', 'PAYSTACK_PUBLIC_KEY'],
   get isTest() { return secret().startsWith('sk_test_'); },
   configured() { return !!secret(); },
 
