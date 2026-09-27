@@ -34,8 +34,8 @@
   background:#fff;overflow:hidden;flex-shrink:0;
 }
 .pcImg img{
-  position:absolute;inset:0;width:100%;height:100%;    /* the whole photo, contained: no artificial padding, never cropped */
-  box-sizing:border-box;padding:5px;
+  position:absolute;inset:0;width:100%;height:100%;    /* the whole photo, contained: no artificial inset, never cropped */
+  box-sizing:border-box;
   object-fit:contain;object-position:center;background:#fff;
 }
 .noImgPh{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--txt3);background:#fff}
