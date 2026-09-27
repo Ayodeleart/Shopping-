@@ -1301,12 +1301,16 @@ $('menuCats').addEventListener('click', e => {
   if (sub) { closeMenu(); openCategory(sub.dataset.slug); }
 });
 
-function goNavItem(it) { if (it.slug) openCategory(it.slug); else catNavGo(it.title); }
+/* The sticky home top-nav (#catNav) is a set of *filters on the current home feed*, not links to another
+   page — tapping "Phones & Tablets" here must behave exactly like tapping "Home" already does: filter
+   Discover More in place and keep every other tab reachable with one more tap, never navigate to the
+   full category-browsing page (that is what "See All" / the hamburger menu's own category rows are for). */
+function goNavItem(it) { catNavGo(it.title); }
 
 function renderCatNav() {
   const row = $('catNavRow');
   row.innerHTML = `<button class="cnTab${activeCat === 'All' ? ' on' : ''}" data-i="-1">Home</button>` +
-    navItems.map((it, i) => `<button class="cnTab${!it.slug && it.title === activeCat ? ' on' : ''}" data-i="${i}">${esc(it.title)}</button>`).join('');
+    navItems.map((it, i) => `<button class="cnTab${it.title === activeCat ? ' on' : ''}" data-i="${i}">${esc(it.title)}</button>`).join('');
   const on = row.querySelector('.on');
   if (on) row.scrollLeft = on.offsetLeft - (row.clientWidth - on.clientWidth) / 2;
 }
