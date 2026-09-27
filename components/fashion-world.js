@@ -6,8 +6,10 @@
  *   • hero ads carousel    → the existing PromotionalCarousel (image + GIF, autoplay, swipe)
  *   • gender selector      → compact portrait cards fed by `fashion_genders` (admin-managed
  *                            media: image or GIF, shown whole — never cropped or stretched)
- *   • categories           → CIRCULAR tiles from the `categories` rows tagged world
- *                            'fashion'/'both'; tapping opens the existing category page
+ *   • categories           → CIRCULAR tiles for the real subcategories under the
+ *                            Fashion & Clothing / Kids Fashion main categories (see
+ *                            Pcx.Fashion.fashionCategories); tapping opens the existing
+ *                            category page
  *   • discovery rails      → admin `fashion_sections` rows plus automatic real-data rails
  *                            (new, featured, gender, top vendors, categories); a rail with
  *                            no real products hides itself — nothing is ever faked
@@ -158,7 +160,7 @@
         if (r) out.push(r);
       });
     /* category rails */
-    (tree ? F.fashionRoots(tree) : []).forEach(function (cat) {
+    (tree ? F.fashionCategories(tree) : []).forEach(function (cat) {
       if (covered.category[cat.id]) return;
       var r = resolveSection(tree, universe, vendorsMap, { type: 'category', category_id: cat.id, title: cat.name, item_limit: 12, key: 'auto-c-' + cat.id });
       if (r) out.push(r);
@@ -275,7 +277,7 @@
         media.appendChild(img);
         card.appendChild(media);
       } else if (GENDER_ICONS[g.slug]) {
-        var media = h('span', 'fw-g-media');
+        var media = h('span', 'fw-g-media fw-g-media-ph');
         var icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         icon.setAttribute('viewBox', '0 0 24 24');
         icon.setAttribute('class', 'fw-g-ph-icon');
@@ -323,7 +325,7 @@
   /* ── circular categories ──────────────────────────── */
   P.renderCats = function () {
     var self = this, z = this.zCats, tree = this.d.tree();
-    var cats = tree ? F.fashionRoots(tree) : [];
+    var cats = tree ? F.fashionCategories(tree) : [];
     z.textContent = '';
     z.hidden = !cats.length;
     if (!cats.length) return;
@@ -447,7 +449,7 @@
 
   P.renderShop = function () {
     var self = this, z = this.zShop, empty = this.zEmpty, tree = this.d.tree();
-    var cats = tree ? F.fashionRoots(tree) : [];
+    var cats = tree ? F.fashionCategories(tree) : [];
     var universe = this.universe();
     z.textContent = ''; empty.textContent = '';
 
@@ -551,7 +553,7 @@
   C.open = function () {
     if (this.isOpen()) return;
     var tree = this.d.tree();
-    var cats = tree ? F.fashionRoots(tree) : [];
+    var cats = tree ? F.fashionCategories(tree) : [];
     var grid = this.root.querySelector('.fcpg-grid');
     grid.textContent = '';
     if (!cats.length) {

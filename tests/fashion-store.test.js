@@ -2,7 +2,7 @@
  * Boots the real index.html with every real component, then checks the Fashion wiring:
  *   • fashion tables load; universe comes from real fashion categories
  *   • #world=fashion opens the Fashion world (gender cards, hero ads, circular categories)
- *   • the main store menu stays free of Fashion-only categories
+ *   • the main store menu shows Fashion & Clothing as an ordinary category, not a duplicate
  *   • product page size selector: required before add-to-cart, size lands on the cart line
  *   • Fashion-scoped search uses the same SearchPage and clears when it closes
  */
@@ -93,9 +93,10 @@ async function boot(tables, hash, t) {
 
 /* ------------------------------------------------------------------ fixtures */
 const FASHION_CATS = [
-  { id: 100, parent_id: null, slug: 'plays', name: 'Plays!', sort_order: 1, is_active: true, world: 'fashion', color: '#F3E8D3' },
-  { id: 101, parent_id: null, slug: 'shoes-fw', name: 'Shoes', sort_order: 2, is_active: true, world: 'fashion', color: '#eee' },
-  { id: 102, parent_id: null, slug: 'electronics', name: 'Electronics', sort_order: 3, is_active: true, world: null }
+  { id: 99, parent_id: null, slug: 'fashion-clothing', name: 'Fashion & Clothing', sort_order: 1, is_active: true, color: '#F3E8D3' },
+  { id: 100, parent_id: 99, slug: 'plays', name: 'Plays!', sort_order: 1, is_active: true, color: '#F3E8D3' },
+  { id: 101, parent_id: 99, slug: 'shoes-fw', name: 'Shoes', sort_order: 2, is_active: true, color: '#eee' },
+  { id: 102, parent_id: null, slug: 'electronics', name: 'Electronics', sort_order: 3, is_active: true }
 ];
 const PRODUCTS = [
   { id: 1, name: 'Pre-loved Denim Jacket', price: 5000, stock: 3, category_id: 100, category: 'Plays!', vendor_id: 'v1', image_url: 'https://x/1.jpg',
@@ -135,9 +136,12 @@ const TABLES = () => ({
 test('boot: fashion universe is real, menu stays clean, fashion world opens at #world=fashion', async t => {
   const w = await boot(TABLES(), null, t);
 
-  // the main store menu must NOT list the Fashion-only categories
+  // the main store menu shows the real "Fashion & Clothing" category exactly like any
+  // other main category, including its real "Plays!"/"Shoes" subcategories — there is no
+  // separate, hidden "Fashion-only" catalogue to keep out of the main store
   const menuHTML = w.document.getElementById('menuCats').innerHTML;
-  assert.ok(!menuHTML.includes('Plays!'));
+  assert.ok(menuHTML.includes('Fashion &amp; Clothing') || menuHTML.includes('Fashion & Clothing'));
+  assert.ok(menuHTML.includes('Plays!'));
   assert.ok(menuHTML.includes('Electronics'));
 
   // open the Fashion world through the same hash route as the Explore card

@@ -37,36 +37,41 @@ function setup() {
 }
 
 const CAT_ROWS = [
-  { id: 1, parent_id: null, slug: 'shoes', name: 'Shoes', sort_order: 1, is_active: true, world: 'fashion', color: '#eee' },
-  { id: 2, parent_id: null, slug: 'watches', name: 'Watches', sort_order: 2, is_active: true, world: 'both', color: '' },
-  { id: 3, parent_id: null, slug: 'phones', name: 'Phones', sort_order: 3, is_active: true, world: null },
-  { id: 4, parent_id: 1, slug: 'sneakers', name: 'Sneakers', sort_order: 1, is_active: true, world: null }
+  { id: 1, parent_id: null, slug: 'fashion-clothing', name: 'Fashion & Clothing', sort_order: 1, is_active: true, color: '#eee' },
+  { id: 2, parent_id: null, slug: 'kids-fashion', name: 'Kids Fashion', sort_order: 2, is_active: true, color: '' },
+  { id: 3, parent_id: null, slug: 'phones', name: 'Phones', sort_order: 3, is_active: true },
+  { id: 4, parent_id: 1, slug: 'shoes', name: 'Shoes', sort_order: 1, is_active: true },
+  { id: 5, parent_id: 1, slug: 'watches', name: 'Watches', sort_order: 2, is_active: true },
+  { id: 6, parent_id: 4, slug: 'sneakers', name: 'Sneakers', sort_order: 1, is_active: true }
 ];
 
 const PRODUCTS = [
-  { id: 10, name: 'Running Sneakers', price: 100, stock: 5, category_id: 4, vendor_id: 'v1', attributes: { gender: 'Men', sizes: { system: 'EU', values: ['40', '41', '42'] } }, created_at: '2026-01-01' },
-  { id: 11, name: 'Ankara Gown', price: 200, original_price: 400, stock: 0, category_id: 1, vendor_id: 'v2', attributes: { gender: 'Women' }, featured: true, created_at: '2026-01-02' },
-  { id: 12, name: 'Unisex Watch', price: 300, stock: 2, category_id: 2, vendor_id: null, attributes: { gender: 'Unisex' }, created_at: '2026-01-03' },
+  { id: 10, name: 'Running Sneakers', price: 100, stock: 5, category_id: 6, vendor_id: 'v1', attributes: { gender: 'Men', sizes: { system: 'EU', values: ['40', '41', '42'] } }, created_at: '2026-01-01' },
+  { id: 11, name: 'Ankara Gown', price: 200, original_price: 400, stock: 0, category_id: 4, vendor_id: 'v2', attributes: { gender: 'Women' }, featured: true, created_at: '2026-01-02' },
+  { id: 12, name: 'Unisex Watch', price: 300, stock: 2, category_id: 5, vendor_id: null, attributes: { gender: 'Unisex' }, created_at: '2026-01-03' },
   { id: 13, name: 'Phone Case', price: 50, stock: 9, category_id: 3, vendor_id: 'v1', attributes: {}, created_at: '2026-01-04' },
-  { id: 14, name: 'Waist Beads', price: 20, stock: 4, category_id: 1, vendor_id: 'v2', attributes: { waist: ['30', '32'] }, created_at: '2026-01-05' }
+  { id: 14, name: 'Waist Beads', price: 20, stock: 4, category_id: 4, vendor_id: 'v2', attributes: { waist: ['30', '32'] }, created_at: '2026-01-05' }
 ];
 
-test('fashion categories come from the world tag and legacy text still matches', () => {
+test('the Fashion world is anchored on the real Fashion & Clothing / Kids Fashion categories', () => {
   const w = setup();
   const tree = new w.Pcx.Categories.Tree(CAT_ROWS);
   const roots = w.Pcx.Fashion.fashionRoots(tree);
-  assert.deepEqual(roots.map(c => c.slug).sort(), ['shoes', 'watches']);
+  assert.deepEqual(roots.map(c => c.slug).sort(), ['fashion-clothing', 'kids-fashion']);
+  // the browsing tiles are the real subcategories under those roots, not the roots themselves
+  const cats = w.Pcx.Fashion.fashionCategories(tree);
+  assert.deepEqual(cats.map(c => c.slug).sort(), ['shoes', 'watches']);
   const match = w.Pcx.Fashion.productMatcher(tree);
   const universe = PRODUCTS.filter(match);
-  assert.deepEqual(universe.map(p => p.id).sort(), [10, 11, 12, 14]);   // phone case excluded
+  assert.deepEqual(universe.map(p => p.id).sort(), [10, 11, 12, 14]);   // phone case excluded, sneakers included (grandchild)
 });
 
-test('visibleRootsIn scopes each surface correctly', () => {
+test('a category outside Fashion & Clothing / Kids Fashion never joins the Fashion world', () => {
   const w = setup();
   const tree = new w.Pcx.Categories.Tree(CAT_ROWS);
-  assert.deepEqual(tree.visibleRootsIn('fashion').map(c => c.slug).sort(), ['shoes', 'watches']);
-  assert.deepEqual(tree.visibleRootsIn(null).map(c => c.slug).sort(), ['phones', 'watches']);  // shoes is fashion-only
-  assert.deepEqual(tree.visibleRoots().map(c => c.slug).sort(), ['phones', 'shoes', 'watches']); // admin sees everything
+  assert.deepEqual(tree.visibleRoots().map(c => c.slug).sort(), ['fashion-clothing', 'kids-fashion', 'phones']);
+  const match = w.Pcx.Fashion.productMatcher(tree);
+  assert.equal(match(PRODUCTS[3]), false);   // Phone Case (category_id 3, outside both roots)
 });
 
 test('gender matching uses attributes.gender (unisex matches every filter)', () => {
@@ -112,7 +117,7 @@ test('rails are built from real data only and admin rows win over automatic ones
   rails.forEach(r => { if (r.vendor) assert.ok(['Ada Threads', 'Bola Fits'].includes(r.vendor.business_name)); });
 
   // an admin row for the same category suppresses the automatic one and uses the custom title
-  const admin = [{ id: 1, title: 'Step Out in Style', type: 'category', category_id: 1, item_limit: 5, active: true, sort_order: 1 }];
+  const admin = [{ id: 1, title: 'Step Out in Style', type: 'category', category_id: 4, item_limit: 5, active: true, sort_order: 1 }];
   const rails2 = w.Pcx.FashionWorld.buildRails(tree, universe, vendorsMap, admin);
   assert.equal(rails2.filter(r => r.title === 'Shoes').length, 0);
   const custom = rails2.find(r => r.title === 'Step Out in Style');

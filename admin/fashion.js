@@ -3,8 +3,10 @@
  * Four sub-screens, all persisting to Supabase (see migration_fashion.sql):
  *   • Gender Cards  — `fashion_genders`: media (image or GIF) per card, name, order, active
  *   • Hero Ads      — `fashion_ads`: add/edit/replace/delete, link, order, active
- *   • Categories    — the `categories` rows tagged world 'fashion'/'both': add, edit, hide,
- *                     delete, reorder, circular image/GIF placeholder
+ *   • Categories    — the REAL subcategories under Fashion & Clothing / Kids Fashion
+ *                     (Pcx.Fashion.fashionCategories): reorder + hide/show only. Names,
+ *                     images/GIFs, parents and new subcategories are edited on the main
+ *                     Categories admin screen — the same rows, not a copy of them.
  *   • Sections      — `fashion_sections`: discovery rails (title, type, category/vendor/
  *                     gender link, limit, order, active)
  *
@@ -26,7 +28,7 @@
   var genders = [], ads = [], sections = [], catRows = [], tree = null, vendors = [];
   var loaded = { genders: false, ads: false, cats: false, sections: false, vendors: false };
   var missing = {};
-  var editingAd = null, editingCat = null, editingSec = null, pendingFile = null, removeImage = false;
+  var editingAd = null, editingSec = null;
   var genderPickers = {};
 
   var GENDERS = [
@@ -270,9 +272,12 @@
     document.dispatchEvent(new CustomEvent('categories:loaded', { detail: tree }));
   }
 
+  /* The real subcategories under Fashion & Clothing / Kids Fashion (any depth-1 child
+     of either root) — the SAME rows the main Categories admin screen manages. This
+     panel only reorders/hides them for the Fashion world; it never creates a second
+     copy of the taxonomy. */
   function fashionCats() {
-    return tree.list.filter(function (c) { return (c.world === 'fashion' || c.world === 'both') && c.parentId == null; })
-      .sort(function (a, b) { return a.sortOrder - b.sortOrder || a.name.localeCompare(b.name); });
+    return Pcx.Fashion.fashionCategories(tree);
   }
 
   async function loadVendors() {
@@ -283,12 +288,16 @@
 
   function renderCats() {
     var pane = $('fwPane-cats');
-    if (editingCat) return renderCatForm();
     var cats = fashionCats();
+    var roots = tree ? Pcx.Fashion.fashionRoots(tree) : [];
+    var rootNames = roots.map(function (r) { return r.name; }).join(' and ');
     pane.innerHTML =
-      '<div class="ph"><span class="pt">Fashion Categories</span><button class="abtn solid" data-a="new-cat">+ New Category</button></div>' +
-      '<div class="ad-hint" style="margin:-4px 0 12px">The circular tiles in the Fashion world. Images and animated GIFs both work \u2014 shown inside the circle without cropping. Hidden categories disappear from Fashion but keep their products.</div>' +
-      (missing.cats ? '<div class="ad-empty">Could not load categories: run the categories SQL and migration_fashion.sql in Supabase.</div>' : '') +
+      '<div class="ph"><span class="pt">Fashion Categories</span></div>' +
+      '<div class="ad-hint" style="margin:-4px 0 12px">' +
+        (roots.length
+          ? 'The circular tiles in the Fashion world are the real subcategories under <b>' + esc(rootNames) + '</b>. Reorder or hide them below \u2014 names, images/GIFs and new subcategories are added on the main <b>Categories</b> screen, and show up here automatically.'
+          : 'Could not find the "Fashion & Clothing" or "Kids Fashion" categories (expected slugs <code>fashion-clothing</code> / <code>kids-fashion</code>). Check the main Categories screen.') +
+      '</div>' +
       (cats.length ? cats.map(function (c) {
         var live = c.active;
         return '<div class="aditem">' +
@@ -296,102 +305,24 @@
             (Pcx.Categories.imageUrl(c)
               ? '<img src="' + safeUrl(Pcx.Categories.imageUrl(c)) + '" alt="" style="width:100%;height:100%;object-fit:contain">'
               : esc((c.name[0] || '?').toUpperCase())) + '</div>' +
-          '<div class="aditem-body"><div class="aditem-name">' + esc(c.name) + '<span class="pill' + (live ? ' live' : '') + '">' + (live ? 'Live' : 'Hidden') + '</span>' +
-            (c.world === 'both' ? '<span class="pill">also in main store</span>' : '') + '</div>' +
+          '<div class="aditem-body"><div class="aditem-name">' + esc(c.name) + '<span class="pill' + (live ? ' live' : '') + '">' + (live ? 'Live' : 'Hidden') + '</span></div>' +
           '<div class="aditem-meta">' + esc(c.slug) + ' \u00b7 order ' + esc(c.sortOrder) + '</div></div>' +
           '<div class="aditem-acts">' +
             '<button class="abtn" data-a="up-cat" data-id="' + esc(c.id) + '">↑</button>' +
             '<button class="abtn" data-a="down-cat" data-id="' + esc(c.id) + '">↓</button>' +
-            '<button class="abtn" data-a="edit-cat" data-id="' + esc(c.id) + '">Edit</button>' +
+            '<button class="abtn" data-a="toggle-cat" data-id="' + esc(c.id) + '">' + (live ? 'Hide' : 'Show') + '</button>' +
           '</div></div>';
-      }).join('') : (missing.cats ? '' : '<div class="ad-empty">No Fashion categories yet. Run migration_fashion.sql for the starter set, or add one.</div>'));
+      }).join('') : (roots.length ? '<div class="ad-empty">No subcategories under ' + esc(rootNames) + ' yet. Add them on the main Categories screen.</div>' : ''));
   }
 
-  function renderCatForm() {
-    var c = editingCat.id ? tree.byId[editingCat.id] : null;
-    var pane = $('fwPane-cats');
-    pane.innerHTML =
-      '<div class="fcard"><h3>' + (c ? 'Edit Fashion Category' : 'New Fashion Category') + '</h3>' +
-      '<div class="fg"><label>Name *</label><input type="text" data-f="name" maxlength="80" placeholder="e.g. Owambe" value="' + esc(editingCat.name || '') + '"></div>' +
-      '<div class="fg"><label>Slug (unique, used in links)</label><input type="text" data-f="slug" maxlength="90" placeholder="auto from name" value="' + esc(editingCat.slug || '') + '"></div>' +
-      '<div class="row2">' +
-        '<div class="fg"><label>Shows in</label><select data-f="world">' +
-          '<option value="fashion"' + (editingCat.world !== 'both' ? ' selected' : '') + '>Fashion world only</option>' +
-          '<option value="both"' + (editingCat.world === 'both' ? ' selected' : '') + '>Fashion world + main store</option>' +
-        '</select></div>' +
-        '<div class="fg"><label>Tile colour (behind transparent art)</label><input type="color" data-f="color" value="' + esc(editingCat.color || '#f0efeb') + '"></div>' +
-      '</div>' +
-      '<div class="fg"><label>Circular image or GIF</label><div class="cat-imgrow"><div style="width:64px;flex-shrink:0" data-prev>' + (editingCat.imageUrl
-        ? '<div style="width:64px;height:64px;border-radius:50%;overflow:hidden;background:var(--bg2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center"><img src="' + safeUrl(editingCat.imageUrl) + '" alt="" style="width:100%;height:100%;object-fit:contain"></div>'
-        : '') + '</div>' +
-        '<div class="cat-imgbtns"><input type="file" data-f="file" accept="image/*"><button type="button" class="btn-e" data-a="rm-cat-img">Remove image</button></div></div>' +
-      '<div class="ad-hint">Transparent / background-removed GIFs look best on the tile colour.</div>' +
-      '<div class="fg"><label>Display order</label><input type="number" min="1" data-f="sort_order" value="' + esc(editingCat.sort_order || (fashionCats().length + 1)) + '"></div>' +
-      '<label class="cat-chk"><input type="checkbox" data-f="active"' + (editingCat.active === false ? '' : ' checked') + '> Visible in the Fashion world</label>' +
-      '<div class="form-btns"><button class="btn-p" data-a="save-cat">' + (c ? 'Save changes' : 'Add category') + '</button>' +
-        '<button class="btn-s" data-a="cancel-cat">Cancel</button>' +
-        (c ? '<button class="btn-d" data-a="delete-cat" data-id="' + esc(c.id) + '">Delete</button>' : '') + '</div>' +
-      '<div class="uprog" id="fwcProg"><div class="uprog-bar" id="fwcProgBar" style="width:0%"></div></div></div>';
-
-    var nameInput = pane.querySelector('[data-f="name"]');
-    var slugInput = pane.querySelector('[data-f="slug"]');
-    nameInput.addEventListener('input', function () { if (!editingCat.id && !editingCat.slugTouched) slugInput.value = Pcx.Categories.slugify(this.value); });
-    slugInput.addEventListener('input', function () { editingCat.slugTouched = true; });
-    var prev = pane.querySelector('[data-prev]');
-    pane.querySelector('[data-f="file"]').addEventListener('change', function () {
-      pendingFile = this.files[0] || null; removeImage = false;
-      if (pendingFile) prev.innerHTML = '<div style="width:64px;height:64px;border-radius:50%;overflow:hidden;background:var(--bg2);border:1px solid var(--border)"><img src="' + safeUrl(URL.createObjectURL(pendingFile)) + '" alt="" style="width:100%;height:100%;object-fit:contain"></div>';
-    });
-  }
-
-  async function saveCat() {
-    var pane = $('fwPane-cats');
-    var c = editingCat.id ? tree.byId[editingCat.id] : null;
-    var name = pane.querySelector('[data-f="name"]').value.trim();
-    var slug = Pcx.Categories.slugify(pane.querySelector('[data-f="slug"]').value || pane.querySelector('[data-f="name"]').value);
-    if (!name) return toast('Name is required', true);
-    if (!slug) return toast('Slug is required', true);
-    if (tree.list.some(function (x) { return x.slug === slug && (!c || x.id !== c.id); })) return toast('That slug is already used', true);
-
-    showLoad('Saving category...');
-    try {
-      var image_url = c ? (c.imageUrl || null) : null;
-      if (removeImage) image_url = null;
-      if (pendingFile) {
-        var keepAlpha = /png|webp|gif/.test(pendingFile.type);
-        image_url = await uploadImage(pendingFile, 'categories', 'fwcProgBar', 'fwcProg', keepAlpha);
-      }
-      var row = {
-        name: name, slug: slug, parent_id: null,
-        color: pane.querySelector('[data-f="color"]').value,
-        image_url: image_url,
-        is_active: pane.querySelector('[data-f="active"]').checked,
-        world: pane.querySelector('[data-f="world"]').value,
-        sort_order: parseInt(pane.querySelector('[data-f="sort_order"]').value, 10) || (fashionCats().length + 1)
-      };
-      var res = c ? await sb.from('categories').update(row).eq('id', c.id) : await sb.from('categories').insert([row]);
-      if (res.error) throw res.error;
-      toast(c ? 'Category updated' : 'Category added');
-      editingCat = null; pendingFile = null; removeImage = false;
-      await loadCats();
-      renderCats();
-    } catch (e) { toast(explain(e), true); }
-    finally { hideLoad(); }
-  }
-
-  function deleteCat(id) {
+  async function toggleCat(id) {
     var c = tree.byId[id];
     if (!c) return;
-    confirm('Delete category', 'Delete "' + c.name + '" from the catalog? Products keep existing but lose this category. Hiding it instead keeps everything.', async function () {
-      showLoad('Deleting...');
-      var r = await sb.from('categories').delete().eq('id', id);
-      hideLoad();
-      if (r.error) return toast(explain(r.error), true);
-      toast('Category deleted');
-      editingCat = null;
-      await loadCats();
-      renderCats();
-    });
+    var res = await sb.from('categories').update({ is_active: !c.active }).eq('id', id);
+    if (res.error) return toast(explain(res.error), true);
+    toast(c.active ? 'Category hidden' : 'Category shown');
+    await loadCats();
+    renderCats();
   }
 
   async function moveCat(id, dir) {
@@ -577,18 +508,7 @@
     else if (a === 'cancel-ad') { editingAd = null; renderAds(); }
     else if (a === 'toggle-ad') toggleAd(id);
     else if (a === 'delete-ad') deleteAd(id);
-    else if (a === 'new-cat') { editingCat = { name: '', slug: '', world: 'fashion', color: '#f0efeb', imageUrl: '', active: true, sort_order: fashionCats().length + 1 }; pendingFile = null; removeImage = false; renderCats(); window.scrollTo(0, 0); }
-    else if (a === 'edit-cat') {
-      var c = tree.byId[Number(id)];
-      if (!c) return;
-      editingCat = { id: c.id, name: c.name, slug: c.slug, world: c.world || 'fashion', color: c.color || '#f0efeb', imageUrl: c.imageUrl || '', active: c.active, sort_order: c.sortOrder };
-      pendingFile = null; removeImage = false;
-      renderCats(); window.scrollTo(0, 0);
-    }
-    else if (a === 'save-cat') saveCat();
-    else if (a === 'cancel-cat') { editingCat = null; pendingFile = null; removeImage = false; renderCats(); }
-    else if (a === 'rm-cat-img') { removeImage = true; pendingFile = null; var pv = document.querySelector('#fwPane-cats [data-prev]'); if (pv) pv.innerHTML = ''; }
-    else if (a === 'delete-cat') deleteCat(Number(id));
+    else if (a === 'toggle-cat') toggleCat(Number(id));
     else if (a === 'up-cat') moveCat(Number(id), -1);
     else if (a === 'down-cat') moveCat(Number(id), 1);
     else if (a === 'new-sec') { editingSec = { title: '', type: 'category', category_id: null, vendor_id: null, gender: 'women', item_limit: 12, active: true, sort_order: sections.length + 1 }; renderSections(); window.scrollTo(0, 0); }

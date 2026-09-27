@@ -55,40 +55,43 @@
 .fw-search svg{width:15px;height:15px;flex-shrink:0}
 .fw-search span{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* ── gender selector ────────────────────────────────── */
-.fw-gwrap{padding:12px 0 2px}
+/* ── gender selector ──────────────────────────────────
+   Pill-shaped chips, image + label side by side; the cutout always shows (not just
+   on the active pill) and pops slightly above the pill's top edge. The active pill
+   fills solid with the accent colour; inactive pills stay a plain outline. */
+.fw-gwrap{padding:14px 0 4px}
 .fw-genderRow{
-  display:flex;gap:10px;overflow-x:auto;padding:2px 13px 8px;
+  display:flex;gap:10px;overflow-x:auto;padding:8px 13px 10px;
   scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;
 }
 .fw-genderRow::-webkit-scrollbar{display:none}
 .fw-g{
-  position:relative;flex-shrink:0;width:92px;height:118px;border-radius:14px;
-  background:#fff;border:1.5px solid var(--border);overflow:hidden;
-  display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
-  scroll-snap-align:start;transition:border-color .18s,box-shadow .18s,transform .18s;
+  position:relative;flex-shrink:0;min-width:104px;height:50px;border-radius:999px;
+  background:var(--card,#fff);border:1.5px solid var(--border);overflow:visible;
+  display:flex;align-items:center;gap:8px;padding:0 18px 0 6px;
+  scroll-snap-align:start;transition:background-color .18s,border-color .18s,transform .18s;
   -webkit-transform:translateZ(0);
 }
 [data-theme=dark] .fw-g{background:var(--bg2)}
 .fw-g:active{transform:scale(.97)}
 .fw-g-name{
-  position:relative;z-index:2;width:100%;padding:6px 4px 8px;text-align:center;
-  font-size:12px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--txt2);
+  position:relative;z-index:2;white-space:nowrap;
+  font-size:13px;font-weight:800;letter-spacing:.2px;color:var(--txt2);
 }
-.fw-g-media{position:absolute;inset:0;z-index:1;display:flex;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .2s}
-.fw-g-media img{max-width:100%;max-height:100%;object-fit:contain;object-position:center bottom;pointer-events:none}
+.fw-g-media{
+  position:relative;z-index:1;flex-shrink:0;width:34px;height:62px;margin-top:-26px;
+  display:flex;align-items:flex-end;justify-content:center;pointer-events:none;
+}
+.fw-g-media img{max-width:100%;max-height:100%;object-fit:contain;object-position:center bottom}
+/* the plain fallback icon (no media uploaded yet) sits inline in the pill instead of popping above it */
+.fw-g-media-ph{margin-top:0;height:auto;align-items:center}
 /* artwork stays whole: contained, never cropped or stretched; the card may be
    shorter than the file — it simply scales down inside the card */
-.fw-g.on{border-color:var(--fw-accent,#111);box-shadow:0 6px 18px -6px var(--fw-accent-shadow,rgba(0,0,0,.45))}
-.fw-g.on .fw-g-media{opacity:1}
-.fw-g.on .fw-g-name{color:var(--fw-accent,#111)}
-.fw-g.on::after{
-  content:'';position:absolute;left:0;right:0;bottom:0;height:4px;z-index:3;
-  background:var(--fw-accent,#111);
-}
-/* a card without media still reads clearly: soft tinted wash + a quiet icon on the active card */
-.fw-g.on:not(.has-media){background:color-mix(in srgb,var(--fw-accent,#111) 8%,var(--card,#fff))}
-.fw-g-ph-icon{width:44px;height:44px;color:var(--txt3);opacity:.9}
+.fw-g.on{background:var(--fw-accent,#FF7A29);border-color:var(--fw-accent,#FF7A29)}
+.fw-g.on .fw-g-name{color:#fff}
+/* a card without uploaded media still reads clearly: a quiet icon that follows the label colour */
+.fw-g-ph-icon{width:26px;height:26px;color:var(--txt3);opacity:.9;margin-top:0}
+.fw-g.on .fw-g-ph-icon{color:#fff;opacity:.95}
 
 /* ── hero ads (PromotionalCarousel) ─────────────────── */
 .fw-heroWrap{padding:10px 13px 0}

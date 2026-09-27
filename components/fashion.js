@@ -4,8 +4,13 @@
  *   • Gender cards / hero ads / discovery sections  → `fashion_genders`, `fashion_ads`,
  *     `fashion_sections` (see migration_fashion.sql). Every fetch degrades gracefully
  *     (missing:false) when the SQL has not been run yet, so the page still works.
- *   • Fashion categories → rows of the EXISTING `categories` table tagged
- *     `world = 'fashion' | 'both'` (Pcx.Categories.Tree carries `world` on each row).
+ *   • Fashion categories → the world is anchored on the REAL main categories
+ *     "Fashion & Clothing" (slug `fashion-clothing`) and "Kids Fashion" (slug
+ *     `kids-fashion`) — see ROOT_SLUGS below. Every existing subcategory under either
+ *     one (any depth) is a Fashion category automatically; nothing needs to be tagged,
+ *     retyped or duplicated. Images, GIFs, names, order and visibility for those
+ *     subcategories are the SAME fields the main Categories admin screen already
+ *     manages — the Fashion admin only reorders/hides, it never forks the data.
  *   • A product's gender → `products.attributes.gender` ('Men' | 'Women' | 'Unisex' |
  *     'Boys' | 'Girls') exactly as the existing product forms (vendor + admin)
  *     already save it via components/product-attributes.js.
@@ -95,15 +100,35 @@
   }
 
   /* ---------------------------------------------------------------- world products */
-  /* Fashion categories = active tree roots (any depth) tagged world 'fashion' | 'both'. */
+  /* The real, existing main categories that anchor the Fashion World. Anything filed
+     under either one (at any depth) is a Fashion product — no `categories.world` tag,
+     no second catalogue. Add a slug here if another main category should join the
+     Fashion World later; nothing else needs to change. */
+  var ROOT_SLUGS = ['fashion-clothing', 'kids-fashion'];
+
   function fashionRoots(tree) {
     if (!tree) return [];
-    return tree.list.filter(function (c) {
-      return c.active && (c.world === 'fashion' || c.world === 'both') && c.parentId == null;
-    });
+    return ROOT_SLUGS.map(function (slug) { return tree.bySlug[slug]; })
+      .filter(function (c) { return c && c.active; });
   }
 
-  /* One matcher covering every fashion category (and its subcategories, via the
+  /* The real subcategories shoppers browse inside the Fashion world (circular tiles,
+     category chips, per-category rails): the direct children of every Fashion root,
+     in their existing sort order. Each is an ordinary `categories` row — its image,
+     GIF, name and visibility are edited on the main Categories admin screen exactly
+     like any other category; hiding it there hides it here too. */
+  function fashionCategories(tree) {
+    if (!tree) return [];
+    var out = [], seen = {};
+    fashionRoots(tree).forEach(function (root) {
+      tree.visibleChildren(root.id).forEach(function (c) {
+        if (!seen[c.id]) { seen[c.id] = 1; out.push(c); }
+      });
+    });
+    return out.sort(function (a, b) { return (a.sortOrder - b.sortOrder) || String(a.name).localeCompare(String(b.name)); });
+  }
+
+  /* One matcher covering every fashion root (and everything under them, via the
      existing tree machinery — legacy text categories keep matching too). */
   function productMatcher(tree) {
     var roots = fashionRoots(tree);
@@ -125,6 +150,7 @@
     sizeGroups: sizeGroups,
     sizeLabel: sizeLabel,
     fashionRoots: fashionRoots,
+    fashionCategories: fashionCategories,
     productMatcher: productMatcher
   };
 })(window);
