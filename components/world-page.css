@@ -7,10 +7,18 @@
 }
 #worldPage.open{transform:none;visibility:visible;transition-delay:0s}
 
-.wp-hdr{position:sticky;top:0;z-index:5;height:52px;display:flex;align-items:center;gap:10px;padding:0 12px;background:var(--bg);border-bottom:1px solid var(--border)}
-.wp-back{width:36px;height:36px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--txt)}
+.wp-hdr{position:sticky;top:0;z-index:5;height:52px;display:flex;align-items:center;gap:4px;padding:0 12px;background:var(--bg);border-bottom:1px solid var(--border)}
+.wp-back{width:38px;height:38px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--txt)}
 .wp-back:active{opacity:.6}
-.wp-hdr-ttl{font-size:15px;font-weight:800}
+.wp-hdr-ttl{flex:1;min-width:0;font-size:21px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wp-hdr .hdr-icon{width:40px;height:40px;flex-shrink:0;position:relative}
+.wp-hdr .hdr-icon svg{width:21px;height:21px}
+.wp-hdr .hdr-icon:active{opacity:.6}
+#wpCartDot{
+  position:absolute;top:4px;right:2px;min-width:16px;height:16px;padding:0 4px;
+  border-radius:9px;background:var(--red);color:#fff;font-size:10px;font-weight:800;
+  display:none;align-items:center;justify-content:center;z-index:1;
+}
 
 .wp-hero{
   position:relative;overflow:hidden;

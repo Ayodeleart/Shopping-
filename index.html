@@ -1558,6 +1558,9 @@ function initWorldPage() {
     onBack: closeWorldPage,
     storeName: () => storeName,
     ctx: worldCtx,
+    openSearch: () => openSearch(),
+    openCart: () => openCart(),
+    openAccount: () => openAccount(),
     /* Beauty world content, read when the world opens (see components/beauty-world.js).
        catTree/products/etc. are declared `let` in this script, so they are handed
        over by closure — the world must never rely on them being on window. */
@@ -1644,6 +1647,7 @@ function initFashionWorld() {
     cardHTML: p => cardHTML(p),
     onBack: closeWorldPage,
     openCart: () => openCart(),
+    openAccount: () => openAccount(),
     openSearch: () => openFashionSearch(),
     openCategory: slug => openCategory(slug),
     openAllCategories: () => openFashionCats(),
@@ -2592,6 +2596,8 @@ function updateCartBadge() {
   pdot.textContent = n; pdot.style.display = n>0 ? 'flex' : 'none';
   const fdot = $('fwCartDot');
   if (fdot) { fdot.textContent = n; fdot.style.display = n>0 ? 'flex' : 'none'; }
+  const wdot = $('wpCartDot');
+  if (wdot) { wdot.textContent = n; wdot.style.display = n>0 ? 'flex' : 'none'; }
   syncCardCtls();
   if ($('cartDrawer').classList.contains('open')) renderCartList();
   document.getElementById('cartTotal').textContent = fmt(cart.reduce((s,x)=>s+x.price*x.qty,0));
@@ -3121,6 +3127,8 @@ function closeNotifPage() {
 }
 function setUnread(n) {
   document.getElementById('acctDot').style.display = n ? 'block' : 'none';
+  const wa = document.getElementById('wpAcctDot'); if (wa) wa.style.display = n ? 'block' : 'none';
+  const fa = document.getElementById('fwAcctDot'); if (fa) fa.style.display = n ? 'block' : 'none';
   const b = document.getElementById('acctNotifN'); if (b) { b.hidden = !n; b.textContent = n; }
 }
 function initTrackingPages() {
