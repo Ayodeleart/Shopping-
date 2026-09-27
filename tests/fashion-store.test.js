@@ -218,7 +218,7 @@ const VARIANT_PRODUCTS = [
 const withVariants = () => { const t = TABLES(); t.products = t.products.concat(VARIANT_PRODUCTS.map(p => ({ ...p }))); return t; };
 const cartLines = w => JSON.parse(w.localStorage.getItem('cart_v3') || '[]');
 
-test('card: photo fills a fixed media box, heart sits on the photo, no vendor on the card, button always says Add to Cart, swatches show real colours', async t => {
+test('card: photo sits whole in a fixed square media box, heart sits on the photo, no vendor on the card, button always says Add to Cart, swatches show real colours', async t => {
   const w = await boot(withVariants(), null, t);
   const box = w.document.createElement('div');
   box.innerHTML = [10, 12].map(id => w.cardHTML(VARIANT_PRODUCTS.find(p => p.id === id))).join('');
@@ -234,9 +234,10 @@ test('card: photo fills a fixed media box, heart sits on the photo, no vendor on
   assert.equal(tote.querySelectorAll('.pcSwatch').length, 2, 'Ankara Tote has 2 real colours (Black, Red)');
   assert.equal(mug.querySelector('.pcSwatches'), null, 'no colours on a plain product, so no swatch row');
   const css = fs.readFileSync(path.join(ROOT, 'components/product-card.css'), 'utf8');
-  assert.match(css, /\.pcImg img\{[^}]*object-fit:cover/, 'image fills the box');
+  assert.match(css, /\.pcImg\{[^}]*padding-top:100%/, 'the media box is square, like the reference');
+  assert.match(css, /\.pcImg img\{[^}]*object-fit:contain/, 'the whole photo is shown, never cropped');
+  assert.doesNotMatch(css, /\.pcImg img\{[^}]*object-fit:\s*cover/, 'photos are never cropped to the box');
   assert.match(css, /\.pcCtl\{margin-top:auto/, 'buttons are pinned to the card bottom');
-  assert.doesNotMatch(css, /\.pcImg img\{[^}]*padding:/, 'no artificial padding around the photo');
 });
 
 test('variants: tapping Add to Cart on a card with colours opens the bottom sheet, not the product page', async t => {

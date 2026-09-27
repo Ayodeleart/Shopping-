@@ -182,7 +182,25 @@ Without this deployed, the admin panel's Vendors tab can't list or approve vendo
 
 ### 5. Still to do
 - Supabase email templates (vendor approval, order confirmation)
-- Storefront homepage reorder: featured → categories → vendors → recommended for you → recently viewed → hot deals → per-category scrollable rows (currently: hero → categories → vendors → flash sale → featured → all products)
+
+## Storefront homepage (Discover) layout
+
+The Home page is one continuous shopping-discovery feed. Order: hero carousel → admin GIF tiles →
+**Shop by Categories** (circular tiles of the real main categories, See All opens the All-categories
+page) → Explore Marcato worlds → **Today's Deals** (the real `flash_sale` flag, with the admin's
+countdown when one is configured) → Shop by Brand → the merchandising rails → **Discover More**
+(the paginated product feed down to the footer) → **Recently Viewed** (this device's history) →
+Vendors.
+
+The merchandising rails are horizontally scrollable compact-card rows, each shown only when it has
+real, eligible products (no empty headings, nothing invented): **Now Trending** (real reviews) →
+**Best-Selling Products** (real sold units from `order_items`) → **New In** (real listing dates) →
+**Sponsored Products** (the admin's feed ads, excluded from the feed itself so nothing repeats) →
+**Featured** (the admin's flag) → **Brand Deals** (real markdown + resolvable brand) →
+**Discounted Products** (remaining real markdowns) → **Category Products** (one rail per stocked
+main category, See All switches the surface to that category in place) → **Recommended for You**
+(from this device's own browsing history; hidden until there is one). A product already shown in a
+higher rail is not repeated in a lower one.
 
 
 ## Files

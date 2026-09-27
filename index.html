@@ -154,12 +154,12 @@ body.cat-mode{padding-top:calc(var(--hh) + var(--cnh))}
 body.cat-mode #catNav{transform:none;opacity:1;pointer-events:auto}
 body.cat-mode #hero,
 body.cat-mode #tileSec,
+body.cat-mode #shopCatsSec,
 body.cat-mode #exploreSec,
-body.cat-mode #brandSec,
 body.cat-mode #flashSec,
-body.cat-mode #flashGap,
-body.cat-mode #featSec,
-body.cat-mode #featGap,
+body.cat-mode #brandSec,
+body.cat-mode #homeMerch,
+body.cat-mode #recentSec,
 body.cat-mode #vendorSec,
 body.cat-mode .homeAdSlot{display:none!important}
 /* the in-feed subcategory row / merch rails reuse the category page's own styles (components/categories.css) */
@@ -281,14 +281,37 @@ body:not(.cat-mode) #allSecHd{border-top:0}
 @keyframes nt{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
 .nt{animation:nt .14s ease-out}
 
-#flashScroll{
-  display:flex;gap:0;overflow-x:auto;background:var(--bg);
-  scrollbar-width:none;border-bottom:1px solid var(--border);
+#flashScroll.hScroll{padding-top:6px;border-bottom:0}
+.fcard-wrap{padding:0;flex-shrink:0;width:132px}
+
+/* ── HORIZONTAL MERCHANDISING RAILS (home sections) ──
+   One compact, touch-scrollable row per merchandising section (Today's Deals, Now Trending,
+   Best-Selling, New In, Sponsored, Featured, Brand Deals, Discounted, Category Products,
+   Recommended for You, Recently Viewed). Cards sit edge to edge with a small gap and snap
+   while swiping, Konga-style. */
+.hScroll{
+  display:flex;gap:8px;overflow-x:auto;background:var(--bg);
+  scrollbar-width:none;-webkit-overflow-scrolling:touch;
+  scroll-snap-type:x proximity;
+  padding:2px 12px 12px;
 }
-#flashScroll::-webkit-scrollbar{display:none}
-.fcard-wrap{padding:10px 6px 10px;flex-shrink:0;width:156px}
-.fcard-wrap:first-child{padding-left:12px}
-.fcard-wrap:last-child{padding-right:12px}
+.hScroll::-webkit-scrollbar{display:none}
+.hScroll .fcard-wrap{width:132px;padding:0;scroll-snap-align:start}
+/* sponsored brand cards are wider promos, not product cards */
+.hScroll.hScroll--ads .fcard-wrap{width:250px}
+.hScroll--ads .adslot .pcx{padding-top:0;max-width:none}
+.hScroll--ads .adslot .pcx__viewport{padding:0 0 2px}
+/* the merchandising sections stack with a whisper of separation, Konga-style */
+.hSec{background:var(--bg)}
+.hSec + .hSec{margin-top:2px}
+#homeMerch{background:var(--bg)}
+#shopCatsSec{background:var(--bg)}
+#recentSec{background:var(--bg);margin-top:2px}
+@media (min-width:720px){
+  .hScroll .fcard-wrap{width:150px}
+  .hScroll.hScroll--ads .fcard-wrap{width:300px}
+  .hScroll{padding:2px 24px 14px}
+}
 
 /* Product card, grid and empty-state CSS now live in components/product-card.css (linked in head, shared with /store). */
 
@@ -530,9 +553,9 @@ body:not(.cat-mode) #allSecHd{border-top:0}
 }
 
 
-/* ── PER-CATEGORY ROWS (admin-chosen accent color) ───*/
-/* horizontal product rail (product-page "more like this" rails). The homepage no longer has
-   per-category catalogue rows — Home is one continuous discovery feed. */
+/* ── PRODUCT RAILS (product-page "more like this" rails) ───*/
+/* horizontal product rail used on the product page; the homepage's own merchandising rows
+   use .hScroll above (same idea, Konga-tuned density). */
 .catRowScroll{display:flex;gap:10px;overflow-x:auto;padding:0 13px 6px;scrollbar-width:none}
 .catRowScroll::-webkit-scrollbar{display:none}
 .catRowScroll .fcard-wrap{flex-shrink:0}
@@ -728,6 +751,15 @@ body:not(.cat-mode) #allSecHd{border-top:0}
   <!-- SQUARE GIF TILES (admin: Banners > Tiles) -->
   <section id="tileSec" hidden><div id="tileRow" hidden></div></section>
 
+  <!-- SHOP BY CATEGORIES: the store's real main categories (categories table), each tile showing its
+       configured image/GIF or its initial-on-colour placeholder (Pcx.Categories.thumb). Tapping a tile
+       browses that category IN PLACE through the same selectCategory() the sticky bar uses; See All
+       opens the existing All-categories page — see buildShopCats(). -->
+  <section id="shopCatsSec" style="display:none">
+    <div class="secHd"><span class="secTtl">Shop by Categories</span><a class="secAll" href="#cat=all" onclick="openCategory('all');return false">See All</a></div>
+    <div id="shopCatsRow" class="cpg-subs"></div>
+  </section>
+
   <!-- EXPLORE MARCATO: specialized shopping worlds (Food, Fashion, Beauty, Home, Gifts). Not categories,
        not brands, not vendors — separate concepts, see data/worlds.js and components/explore-marcato.js -->
   <section id="exploreSec">
@@ -738,30 +770,17 @@ body:not(.cat-mode) #allSecHd{border-top:0}
     <div id="exploreRow" class="xmRow"></div>
   </section>
 
-  <!-- NOTE: there are deliberately NO per-category catalogue rows here. Home/Discover is one continuous
-       product-discovery feed (promotions, worlds, brands, deals, then the product feed down to the
-       footer); the sticky category bar (#catNav) is the ONLY category-navigation interface, and
-       selecting a category swaps this same surface in place — see selectCategory(). -->
-
-  <!-- HOME AD SLOT A: between Explore Marcato and Shop by Brand. Reuses the same `ads` table / admin
+  <!-- HOME AD SLOT A: between Explore Marcato and Today's Deals. Reuses the same `ads` table / admin
        controls as the Discover feed ads (data/ads.js, admin/ads.js) — see buildHomeAdSlots(). -->
   <div id="homeAdSlotA" class="homeAdSlot" style="display:none"></div>
 
-  <!-- SHOP BY BRAND (vertical list — see buildBrandRow(); real brands/products only) -->
-  <section id="brandSec" style="display:none">
-    <div class="secHd"><span class="secTtl">Shop by Brand</span></div>
-    <div id="brandRow"></div>
-  </section>
-
-  <!-- HOME AD SLOT B: between Shop by Brand and Flash Sales / Featured. -->
-  <div id="homeAdSlotB" class="homeAdSlot" style="display:none"></div>
-
-  <!-- FLASH SALE -->
+  <!-- TODAY'S DEALS: the real flash-sale flag (products.flash_sale) with the admin's countdown when one
+       is running. Konga-style red header; the row itself is built by buildFlash() — see init(). -->
   <section id="flashSec" style="display:none">
     <div class="flashHd">
       <span class="flashTtl">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="#FFD700" stroke="#FFD700" stroke-width="1"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-        Flash Sales
+        Today's Deals
       </span>
       <div id="cdWrap">
         <div class="cbt"><span id="cdH">00</span><label>HRS</label></div>
@@ -770,27 +789,42 @@ body:not(.cat-mode) #allSecHd{border-top:0}
         <span class="csep">:</span>
         <div class="cbt"><span id="cdS">00</span><label>SEC</label></div>
       </div>
-      <a class="flashSeeAll" href="#allSec">See All</a>
+      <a class="flashSeeAll" id="flashSeeAll" href="#allSec">See All</a>
     </div>
-    <div id="flashScroll"></div>
+    <div id="flashScroll" class="hScroll"></div>
   </section>
-  <div id="flashGap" class="sgap" style="display:none"></div>
 
-  <!-- HOME AD SLOT C: between Flash Sales and Featured. -->
+  <!-- HOME AD SLOT B: between Today's Deals and Shop by Brand. -->
+  <div id="homeAdSlotB" class="homeAdSlot" style="display:none"></div>
+
+  <!-- SHOP BY BRAND (vertical list — see buildBrandRow(); real brands/products only) -->
+  <section id="brandSec" style="display:none">
+    <div class="secHd"><span class="secTtl">Shop by Brand</span></div>
+    <div id="brandRow"></div>
+  </section>
+
+  <!-- HOME AD SLOT C: between Shop by Brand and the merchandising rails. -->
   <div id="homeAdSlotC" class="homeAdSlot" style="display:none"></div>
 
-  <!-- FEATURED -->
-  <section id="featSec" style="display:none">
-    <div class="secHd"><span class="secTtl">Featured</span><a class="secAll" href="#allSec">See All</a></div>
-    <div class="pgrid-wrap"><div class="pgrid" id="featGrid"></div></div>
-  </section>
-  <div id="featGap" class="sgap" style="display:none"></div>
+  <!-- HOME MERCHANDISING RAILS — every section is built from REAL, already-loaded data (ratings,
+       order_items, created_at, the ads table, the featured flag, real discounts and brands, the
+       category tree, this device's browsing history) and left out entirely when it has nothing
+       truthful to show. See buildHomeMerch():  Now Trending → Best-Selling Products → New In →
+       Sponsored Products → Featured → Brand Deals → Discounted Products → Category Products
+       (one rail per main category) → Recommended for You. -->
+  <div id="homeMerch" style="display:none">
+    <div id="homeMerchRows"></div>
+    <section id="recSec" style="display:none">
+      <div class="secHd"><span class="secTtl">Recommended for You</span><a class="secAll" id="recSeeAll" href="#allSec">See All</a></div>
+      <div class="hScroll" id="recRow"></div>
+    </section>
+  </div>
 
-  <!-- HOME AD SLOT D: between Featured and Discover More. -->
+  <!-- HOME AD SLOT D: between the merchandising rails and Discover More. -->
   <div id="homeAdSlotD" class="homeAdSlot" style="display:none"></div>
 
   <!-- THE BROWSING SURFACE.
-       Home: one continuous product feed (no heading, no category rows, no second category bar) that keeps
+       Home: one continuous product feed (no heading, no second category bar) that keeps
              loading in batches down to the footer — see renderGrid()/appendDiscoverBatch().
        A category (picked in the sticky #catNav bar): the SAME surface, switched in place — circular
              subcategory tiles, then eligible merchandising rails, then the category's product grid.
@@ -810,6 +844,13 @@ body:not(.cat-mode) #allSecHd{border-top:0}
       <button id="loadMoreBtn" type="button" class="loadMoreBtn" onclick="appendDiscoverBatch()">Load More</button>
     </div>
     <div id="discoverSentinel" aria-hidden="true" style="height:1px"></div>
+  </section>
+
+  <!-- RECENTLY VIEWED (this device's real browsing history, localStorage only — see buildRecentRail()).
+       Kept after the Discover feed like the product history it is; hidden entirely when empty. -->
+  <section id="recentSec" style="display:none">
+    <div class="secHd"><span class="secTtl">Recently Viewed</span><a class="secAll" id="recentSeeAll" href="#allSec">See All</a></div>
+    <div class="hScroll" id="recentRow"></div>
   </section>
 
   <!-- VENDORS: kept near the bottom, after Discover More, so the curated sections up top stay uncluttered.
@@ -1399,6 +1440,24 @@ function filterByBrand(id) {
   showList(b.name, allProds.filter(p => { const pb = brandOf(p); return pb && pb.id === b.id; }));
 }
 
+/* ── SHOP BY CATEGORIES (home) ────────────────────── */
+/* The store's real main categories as circular tiles (their configured image/GIF, or their
+   initial on the category colour when none is set — Pcx.Categories.thumb, the same placeholder
+   the rest of the store uses). Tapping one browses that category in place through the exact
+   selectCategory() the sticky bar uses; See All opens the existing All-categories page. */
+function buildShopCats() {
+  const sec = $('shopCatsSec');
+  if (!sec) return;
+  const roots = catTree ? catTree.visibleRootsIn(null) : [];
+  if (!roots.length) { sec.style.display = 'none'; return; }
+  sec.style.display = '';
+  $('shopCatsRow').innerHTML = roots.map(c => `
+    <button type="button" class="cpg-tile" onclick="selectCategory(${num(c.id)})" aria-label="Shop ${esc(c.name)}">
+      ${Pcx.Categories.thumb(catTree, c, 'round')}
+      <span class="cpg-name">${esc(c.name)}</span>
+    </button>`).join('');
+}
+
 /* ── CATEGORIES (table `categories`, see data/categories.js) ───────
    Main categories become the side-menu tiles, the title bar under the header and the per-category product rows;
    tapping one opens the category page. */
@@ -1857,7 +1916,6 @@ function startCountdown(endTs) {
     if (d <= 0) {
       clearInterval(cdTimer);
       document.getElementById('flashSec').style.display = 'none';
-      document.getElementById('flashGap').style.display = 'none';
       return;
     }
     const h=Math.floor(d/3600000), m=Math.floor((d%3600000)/60000), s=Math.floor((d%60000)/1000);
@@ -1941,9 +1999,21 @@ try { recentViewed = (JSON.parse(localStorage.getItem('recent_viewed_v1')) || []
 function pushRecentViewed(id) {
   recentViewed = [id, ...recentViewed.filter(x => x !== id)].slice(0, 20);
   try { localStorage.setItem('recent_viewed_v1', JSON.stringify(recentViewed)); } catch { /* private mode */ }
+  refreshHistoryRails();   /* the Recently Viewed rail (and Recommended) follow what was just opened */
 }
 function recentProducts(excludeId) {
   return recentViewed.map(id => allProds.find(p => p.id === id)).filter(p => p && p.id !== excludeId).slice(0, 12);
+}
+/* the homepage's Recently Viewed rail — real history only, hidden entirely while there is none */
+function buildRecentRail() {
+  const sec = $('recentSec');
+  if (!sec) return;
+  const list = recentProducts();
+  if (!list.length) { sec.style.display = 'none'; $('recentRow').innerHTML = ''; return; }
+  sec.style.display = '';
+  $('recentRow').innerHTML = list.map(p => `<div class="fcard-wrap au">${cardHTML(p, { compact: true })}</div>`).join('');
+  $('recentSeeAll').onclick = e => { e.preventDefault(); showList('Recently Viewed', recentProducts()); };
+  observeAll($('recentRow').querySelectorAll('.au'));
 }
 /* fills a .pRail section; hides it when there is nothing to show */
 function renderRecentRail(el, excludeId) {
@@ -2006,6 +2076,188 @@ function buildFlash(prods) {
     `<div class="fcard-wrap au">${cardHTML(p, { compact: true })}</div>`
   ).join('');
   observeAll(el.querySelectorAll('.au'));
+}
+
+/* ── HOME MERCHANDISING RAILS ───────────────────────
+   Now Trending / Best-Selling Products / New In / Sponsored Products / Featured / Brand Deals /
+   Discounted Products / Category Products / Recommended for You (Today's Deals is the flash-sale
+   section above; Recently Viewed sits under the Discover feed).
+
+   Every rail uses one REAL, already-loaded signal — ratingMap (real reviews), order_items (real
+   sold units), created_at (real listing dates), the `ads` table (real sponsored brand cards), the
+   featured flag, a resolvable brand + a real markdown, the category tree, or this device's real
+   browsing history. Nothing is invented; a rail with no eligible products is left out entirely so
+   no empty heading ever renders. A product claimed by a rail higher up the page is not repeated
+   in a lower one (the same rule the category page's rails follow). */
+let soldMap = {};          /* product_id -> units really sold, from order_items; empty until it loads */
+let sponsoredRowIds = [];  /* feed ads promoted into the Sponsored rail — excluded from the feed itself */
+const HOME_RAIL_CAP = 12;
+
+/* Real sold units only (cancelled/refunded lines excluded), best effort: a missing or failed
+   order_items table simply means no Best-Selling rail — never an error for the shopper. */
+async function loadSoldStats() {
+  try {
+    const { data } = await sb.from('order_items').select('product_id,qty,status');
+    const sold = {};
+    (data || []).forEach(r => {
+      if (r.status === 'cancelled' || r.status === 'refunded') return;
+      sold[r.product_id] = (sold[r.product_id] || 0) + (Number(r.qty) || 1);
+    });
+    soldMap = sold;
+  } catch (e) { /* no order data: no Best-Selling rail */ }
+}
+
+const homeDiscount = p => (p.original_price && Number(p.original_price) > Number(p.price))
+  ? (1 - Number(p.price) / Number(p.original_price)) : 0;
+
+/* "Recommended for You" — this device's real history only: the main categories and brands of the
+   products the shopper actually opened or saved. No history, no rail (nothing is invented); the
+   products just seen are never recommended straight back. */
+function recommendedProducts() {
+  const byId = {}; allProds.forEach(p => { byId[p.id] = p; });
+  const seeds = [...recentViewed, ...favs].map(id => byId[id]).filter(Boolean);
+  if (!seeds.length) return [];
+  const seen = new Set(seeds.map(p => p.id));
+  const cats = new Set(), brands = new Set();
+  seeds.forEach(p => {
+    const root = (p.category_id != null && catTree) ? catTree.rootOf(p.category_id) : null;
+    if (root) cats.add(root.id);
+    const b = brandOf(p); if (b) brands.add(b.id);
+  });
+  if (!cats.size && !brands.size) return [];
+  const score = p => {
+    if (seen.has(p.id)) return 0;
+    const root = (p.category_id != null && catTree) ? catTree.rootOf(p.category_id) : null;
+    let s = 0;
+    if (root && cats.has(root.id)) s += 2;
+    const b = brandOf(p); if (b && brands.has(b.id)) s += 1;
+    return s;
+  };
+  return allProds.filter(p => score(p) > 0)
+    .sort((a, b) => score(b) - score(a) || homeDiscount(b) - homeDiscount(a) ||
+      (new Date(b.created_at || 0) - new Date(a.created_at || 0)));
+}
+
+/* Category Products: one rail per main category, in the admin's own sort_order, each showing that
+   category's own products (products with a photo first, then the best discounts, then the newest). */
+const CAT_ROWS_MAX = 5, CAT_ROW_CAP = 10;
+const byShowcase = (a, b) =>
+  (Number(!!b.image_url) - Number(!!a.image_url)) ||
+  (homeDiscount(b) - homeDiscount(a)) ||
+  (new Date(b.created_at || 0) - new Date(a.created_at || 0));
+function homeCategoryRows() {
+  if (!catTree) return [];
+  return catTree.visibleRootsIn(null)
+    .map(c => ({ cat: c, list: allProds.filter(catTree.productMatcher(c.id)) }))
+    .filter(r => r.list.length >= 3)                    /* a 1-2 product row reads as noise, not a section */
+    .slice(0, CAT_ROWS_MAX)
+    .map(r => ({ cat: r.cat, list: r.list.sort(byShowcase).slice(0, CAT_ROW_CAP) }));
+}
+
+/* See All handlers for the rails (kept out of the HTML so the anchors stay plain links) */
+const homeSeeAlls = {};
+function homeSeeAll(key) { const fn = homeSeeAlls[key]; if (fn) fn(); }
+function homeRailHTML(sec) {
+  return `<section class="hSec" id="${esc(sec.id)}">
+    <div class="secHd"><span class="secTtl">${esc(sec.title)}</span>${sec.key ? `<a class="secAll" href="#allSec" onclick="homeSeeAll('${esc(sec.key)}');return false">See All</a>` : ''}</div>
+    <div class="hScroll">${sec.products.map(p => `<div class="fcard-wrap au">${cardHTML(p, { compact: true })}</div>`).join('')}</div>
+  </section>`;
+}
+
+function buildHomeMerch() {
+  const host = $('homeMerch'), rows = $('homeMerchRows');
+  if (!host || !rows) return;
+  Object.keys(homeSeeAlls).forEach(k => delete homeSeeAlls[k]);
+
+  /* claim order: the admin's Featured picks win a product over the time/quality-based rails */
+  const take = (() => {
+    const used = new Set();
+    return list => { const out = list.filter(p => !used.has(p.id)).slice(0, HOME_RAIL_CAP); out.forEach(p => used.add(p.id)); return out; };
+  })();
+  const byDisc = (a, b) => homeDiscount(b) - homeDiscount(a);
+  const byNew = (a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0);
+
+  const featuredAll = allProds.filter(p => p.featured);
+  const trendingAll = allProds.filter(p => ratingMap[p.id] && ratingMap[p.id].n > 0)
+    .sort((a, b) => (ratingMap[b.id].avg - ratingMap[a.id].avg) || (ratingMap[b.id].n - ratingMap[a.id].n));
+  const bestAll = allProds.filter(p => (soldMap[p.id] || 0) > 0)
+    .sort((a, b) => ((soldMap[b.id] || 0) - (soldMap[a.id] || 0)) || byDisc(a, b));
+  const NEW_WINDOW_MS = 45 * 24 * 3600 * 1000;
+  const freshAll = allProds.filter(p => p.created_at && (Date.now() - new Date(p.created_at).getTime()) < NEW_WINDOW_MS).sort(byNew);
+  const brandDealsAll = allProds.filter(p => homeDiscount(p) > 0 && brandOf(p)).sort(byDisc);
+  const discAll = allProds.filter(p => homeDiscount(p) > 0).sort(byDisc);
+
+  const featP = take(featuredAll), trendP = take(trendingAll), bestP = take(bestAll),
+        freshP = take(freshAll), brandP = take(brandDealsAll), discP = take(discAll),
+        recP = take(recommendedProducts());
+
+  const rails = [];
+  if (trendP.length) rails.push({ id: 'trendSec', key: 'trend', title: 'Now Trending', products: trendP });
+  if (bestP.length) rails.push({ id: 'bestSec', key: 'best', title: 'Best-Selling Products', products: bestP });
+  if (freshP.length) rails.push({ id: 'newSec', key: 'new', title: 'New In', products: freshP });
+
+  /* Sponsored Products: the admin's real feed ads (data/ads.js), shown as their sponsored brand
+     cards. They are excluded from the Discover feed's own interleave below so a configured ad is
+     never shown twice on the same page. */
+  const sponAds = Ads.forSlot(adsList, { placement: 'feed', categoryId: null });
+  sponsoredRowIds = sponAds.map(a => a.id);
+  if (sponAds.length) rails.push({
+    id: 'sponSec', title: 'Sponsored Products', ads: sponAds,
+    html: `<section class="hSec" id="sponSec">
+      <div class="secHd"><span class="secTtl">Sponsored Products</span></div>
+      <div class="hScroll hScroll--ads">${sponAds.map(a =>
+        `<div class="fcard-wrap au"><div class="adslot" data-ad="${esc(a.id)}"></div></div>`).join('')}</div>
+    </section>`
+  });
+
+  if (featP.length) rails.push({ id: 'featSec', key: 'feat', title: 'Featured', products: featP });
+  if (brandP.length) rails.push({ id: 'brandDealsSec', key: 'brand', title: 'Brand Deals', products: brandP });
+  if (discP.length) rails.push({ id: 'discSec', key: 'disc', title: 'Discounted Products', products: discP });
+
+  homeCategoryRows().forEach(r => rails.push({
+    id: 'hcat-' + r.cat.id, catId: r.cat.id, title: r.cat.name, products: r.list
+  }));
+
+  let html = '';
+  rails.forEach(r => {
+    if (r.html) html += r.html;
+    else if (r.catId != null) {
+      html += `<section class="hSec hCatSec" id="hcat-${num(r.catId)}">
+        <div class="secHd"><span class="secTtl">${esc(r.title)}</span><a class="secAll" href="#allSec" onclick="selectCategory(${num(r.catId)});return false">See All</a></div>
+        <div class="hScroll">${r.products.map(p => `<div class="fcard-wrap au">${cardHTML(p, { compact: true })}</div>`).join('')}</div>
+      </section>`;
+    } else {
+      const key = r.key;                     /* See All opens the section's FULL list in the browsing surface */
+      const full = { trend: trendingAll, best: bestAll, new: freshAll, feat: featuredAll, brand: brandDealsAll, disc: discAll }[key] || [];
+      homeSeeAlls[key] = () => showList(r.title, full);
+      html += homeRailHTML(r);
+    }
+  });
+  rows.innerHTML = html;
+
+  if (sponAds.length) mountFeedAds(rows);    /* renders each sponsored card through the existing ad system */
+  renderRecRail(recP);
+  host.style.display = (rows.children.length || $('recSec').style.display !== 'none') ? '' : 'none';
+  observeAll(rows.querySelectorAll('.au'));
+}
+
+/* Recommended for You fills its own persistent section so it can be refreshed alone (see
+   refreshHistoryRails) without re-rendering — and losing the scroll of — the other rails. */
+function renderRecRail(list) {
+  const sec = $('recSec');
+  if (!sec) return;
+  if (!list || !list.length) { sec.style.display = 'none'; $('recRow').innerHTML = ''; return; }
+  sec.style.display = '';
+  $('recRow').innerHTML = list.map(p => `<div class="fcard-wrap au">${cardHTML(p, { compact: true })}</div>`).join('');
+  $('recSeeAll').onclick = e => { e.preventDefault(); showList('Recommended for You', recommendedProducts()); };
+  observeAll($('recRow').querySelectorAll('.au'));
+}
+
+/* Recently Viewed + Recommended follow what the shopper actually opens (this device's history) */
+function refreshHistoryRails() {
+  if (!allProds.length) return;
+  renderRecRail(recommendedProducts().slice(0, HOME_RAIL_CAP));
+  buildRecentRail();
 }
 
 /* Discover More (the #allGrid feed): loaded in batches instead of painting the whole catalogue in one
@@ -3188,20 +3440,22 @@ function feedSlots(categoryId) {
     afterRows: +n, order: -1, html: `<div class="tileslot au" data-rows="${esc(n)}" style="grid-column:1/-1"></div>`
   }));
   /* Ads the admin placed IN the feed (placement:'feed', scope 'home'/'all' on Home, or scoped to this
-     category) — see data/ads.js Ads.forSlot / admin/ads.js. Ads placed 'between sections' (homeAdIds)
-     are handled by buildHomeAdSlots() below and excluded here so a configured ad is never shown twice. */
+     category) — see data/ads.js Ads.forSlot / admin/ads.js. Two groups are left out so nothing is ever
+     shown twice on the homepage: the ads placed 'between sections' (homeAdIds, see buildHomeAdSlots)
+     and the feed ads promoted into the home page's own Sponsored Products rail (sponsoredRowIds). */
   const feedAds = Ads.forSlot(adsList, { placement: 'feed', categoryId: categoryId == null ? null : categoryId })
-    .filter(a => categoryId != null || homeAdIds.indexOf(a.id) === -1);
+    .filter(a => categoryId != null || (homeAdIds.indexOf(a.id) === -1 && sponsoredRowIds.indexOf(a.id) === -1));
   return feedAds.concat(tileSlots);
 }
 
-/* Ads shown between curated homepage sections (Categories -> Shop by Brand -> Flash -> Featured -> Discover
-   More), reusing the exact same `ads` table, admin controls (placement/scope/category, active, sort_order)
-   and feed-card rendering (data/ads.js, admin/ads.js, PromotionalCarousel) as the in-feed ad slots above —
-   just a different placement. Every ad the admin marked "between curated sections" for the homepage
-   (placement:'section_gap', scope 'home' or 'all') gets a slot, in the admin's own sort_order — nothing is
-   picked or capped by this code. There are 4 physical seams on the homepage today (see the homeAdSlotA-D
-   markup); an admin who configures more than 4 such ads will simply not see the extras until either fewer
+/* Ads shown between curated homepage sections (Explore -> Today's Deals -> Shop by Brand -> the
+   merchandising rails -> Discover More), reusing the exact same `ads` table, admin controls
+   (placement/scope/category, active, sort_order) and feed-card rendering (data/ads.js,
+   admin/ads.js, PromotionalCarousel) as the in-feed ad slots above — just a different placement.
+   Every ad the admin marked "between curated sections" for the homepage (placement:'section_gap',
+   scope 'home' or 'all') gets a slot, in the admin's own sort_order — nothing is picked or capped
+   by this code. There are 4 physical seams on the homepage today (see the homeAdSlotA-D markup);
+   an admin who configures more than 4 such ads will simply not see the extras until either fewer
    are active or a future seam is added — that's a layout limit, not a selection made by this function. */
 function buildHomeAdSlots() {
   const picks = Ads.forSlot(adsList, { placement: 'section_gap', categoryId: null });
@@ -3327,6 +3581,7 @@ async function init() {
     if (orderFromHash() && session) orderPage.open(orderFromHash());
   });
   try {
+    const soldStatsP = loadSoldStats();   /* real sold units for the Best-Selling rail (best effort) */
     const [
       products,
       {data:banners},
@@ -3434,23 +3689,32 @@ async function init() {
     }
     initSearchPage();
 
+    /* Today's Deals: the real flash-sale flag. Shown while there are flagged products and either
+       no end time is configured (open-ended deals) or the admin's countdown is still running;
+       the countdown itself only appears when one is actually configured. */
     const flashProds = allProds.filter(p => p.flash_sale);
-    if (flashEnd && Date.now() < flashEnd && flashProds.length) {
+    const flashLive = flashProds.length && (!flashEnd || Date.now() < flashEnd);
+    if (flashLive) {
       document.getElementById('flashSec').style.display = '';
-      document.getElementById('flashGap').style.display = '';
-      startCountdown(flashEnd);
+      if (flashEnd && Date.now() < flashEnd) startCountdown(flashEnd);
+      else document.getElementById('cdWrap').style.display = 'none';
       buildFlash(flashProds);
+      document.getElementById('flashSeeAll').onclick = e => {
+        e.preventDefault();
+        showList("Today's Deals", allProds.filter(p => p.flash_sale));
+      };
     }
 
-    const featured = allProds.filter(p => p.featured);
-    if (featured.length) {
-      document.getElementById('featSec').style.display = '';
-      document.getElementById('featGap').style.display = '';
-      renderGrid(featured, 'featGrid', false, undefined, true);
-    }
+    /* Shop by Categories, the merchandising rails (Trending / Best-Selling / New In / Sponsored /
+       Featured / Brand Deals / Discounted / Category Products / Recommended) and Recently Viewed.
+       Each section renders only from real data and hides itself when it has nothing to show. */
+    buildShopCats();
+    await soldStatsP;                    /* never rejects; empty on failure = no Best-Selling rail */
+    buildHomeMerch();
+    buildRecentRail();
 
-    /* Home opens as one continuous discovery feed: no section heading, no category rows, no second
-       category bar — just promotions/merchandising above and products all the way to the footer. */
+    /* Home opens as one continuous discovery feed: no section heading, no second category bar —
+       the curated merchandising above, then products all the way to the footer. */
     $('allSecHd').hidden = true;
     renderGrid(allProds, 'allGrid', true);
     ensureDiscoverIO();
