@@ -48,7 +48,14 @@
   };
   /* Product detail, cart drawer and checkout all live on the main storefront.
      A tap here hands off to the existing product modal — no separate checkout is built here. */
-  window.openProduct = id => { location.href = '/?p=' + id; };
+  /* A full navigation (the product modal lives on the main site, not here) — so the current
+     scroll/category/search/sort are saved first, and `from` tells the product page where the
+     "Back" arrow should return to, instead of it just closing onto the main homepage. */
+  window.openProduct = id => {
+    saveBrowsingState();
+    const back = encodeURIComponent(location.pathname + location.search);
+    location.href = '/?p=' + id + '&from=' + back;
+  };
   window.addToCart = (id, src) => {
     const p = state.byId[id];
     if (!p) return;
@@ -111,6 +118,27 @@
   function slugFromPath() {
     const m = /\/store\/([^/?#]+)/.exec(location.pathname);
     return m ? decodeURIComponent(m[1]).trim() : '';
+  }
+
+  /* ── BROWSING STATE (survives leaving for a product and coming back) ──
+     Tapping a product hands off to the main site's real product modal
+     (see window.openProduct below) via a full navigation, so nothing in
+     this page's memory survives that trip. The scroll position, active
+     category, search text and sort order are saved here and restored on
+     the next load of this same store, so returning from a product (or
+     from browser Back/Forward) lands where the customer left off instead
+     of a reset page. */
+  const STATE_KEY = slug => 'mct_store_state:' + slug;
+  function saveBrowsingState() {
+    if (!state.vendor) return;
+    try {
+      sessionStorage.setItem(STATE_KEY(state.vendor.store_slug), JSON.stringify({
+        activeCategory: state.activeCategory, search: state.search, sort: state.sort, scrollY: window.scrollY
+      }));
+    } catch (e) { /* private mode / storage full — browsing still works, just without restore */ }
+  }
+  function loadBrowsingState(slug) {
+    try { return JSON.parse(sessionStorage.getItem(STATE_KEY(slug))) || null; } catch (e) { return null; }
   }
 
   function showState(kind, { title, msg } = {}) {
@@ -276,6 +304,7 @@
         state.activeCategory = btn.dataset.c;
         wrap.querySelectorAll('.catPill').forEach(b => b.classList.toggle('on', b === btn));
         reloadGrid();
+        saveBrowsingState();
       });
     });
   }
@@ -327,7 +356,7 @@
   function onSearchInput(e) {
     clearTimeout(searchTimer);
     const v = e.target.value;
-    searchTimer = setTimeout(() => { state.search = v; reloadGrid(); }, 300);
+    searchTimer = setTimeout(() => { state.search = v; reloadGrid(); saveBrowsingState(); }, 300);
   }
 
   /* ── INIT ──────────────────────────────────────────────────────── */
@@ -348,6 +377,14 @@
       }
       state.vendor = vendor;
 
+      /* restore where the customer left off, if they're returning to this same store */
+      const saved = loadBrowsingState(vendor.store_slug);
+      if (saved) {
+        state.activeCategory = saved.activeCategory || 'All';
+        state.search = saved.search || '';
+        state.sort = saved.sort || 'featured';
+      }
+
       const [count, cats] = await Promise.all([
         loadProductCount(vendor.id),
         loadCategories(vendor.id),
@@ -362,12 +399,18 @@
       renderHero(); // re-render meta line now that ratings may be in
       renderGrid(rows, false);
 
+      $('searchInput').value = state.search;
+      $('sortSelect').value = state.sort;
       $('searchInput').addEventListener('input', onSearchInput);
-      $('sortSelect').addEventListener('change', e => { state.sort = e.target.value; reloadGrid(); });
+      $('sortSelect').addEventListener('change', e => { state.sort = e.target.value; reloadGrid(); saveBrowsingState(); });
       $('loadMoreBtn').addEventListener('click', loadMore);
 
       $('storeRoot').style.display = '';
       $('loader').classList.add('done');
+
+      /* scroll restoration needs real content height, so it happens after the first render */
+      if (saved && saved.scrollY) requestAnimationFrame(() => window.scrollTo(0, saved.scrollY));
+      window.addEventListener('pagehide', saveBrowsingState);
     } catch (err) {
       console.error(err);
       showState('error', { title: 'Connection error', msg: 'Check your internet connection and reload the page.' });

@@ -504,8 +504,22 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
       <h3>Store Profile</h3>
       <div class="fld"><label>Store Logo</label><div id="sLogoPicker"></div><div style="font-size:11.5px;color:var(--txt3);margin-top:6px">Shown next to "Sold by" on your products and on the vendor row of the home page.</div></div>
       <div class="fld"><label>Business Name</label><input id="sName"></div>
+      <div class="fld"><label>Store URL</label><input id="sStoreUrl" disabled><div style="font-size:11.5px;color:var(--txt3);margin-top:6px">Contact support to change your store link.</div></div>
+      <div class="fld"><label>Email</label><input id="sEmail" disabled></div>
       <div class="fld"><label>Phone</label><input id="sPhone"></div>
+      <div class="fld"><label>Store Description</label><textarea id="sDesc" rows="3" placeholder="What do you sell? What makes your store worth following?"></textarea></div>
+      <div class="fld"><label>Street Address</label><input id="sAddress" placeholder="e.g. 14 Allen Avenue"></div>
+      <div class="fld"><label>State</label><select id="sState" onchange="document.getElementById('sLga').value=''"></select></div>
+      <div class="fld"><label>LGA</label><input id="sLga" placeholder="Local government area"></div>
+      <div class="fld"><label>City / Town</label><input id="sCity"></div>
+      <div class="fld"><label>Landmark</label><input id="sLandmark" placeholder="Optional"></div>
       <button class="primaryBtn" id="sSaveBtn">Save Changes</button>
+    </div>
+    <div class="fcard">
+      <h3>Verification</h3>
+      <div class="fld"><label>Seller status</label><div class="obStatusCard" id="sStatusBadge"></div></div>
+      <div class="fld"><label>Identity verification</label><div class="obStatusCard" id="sIdStatusBadge"></div></div>
+      <div class="fld"><label>Bank verification</label><div class="obStatusCard" id="sBankStatusBadge"></div></div>
     </div>
     <div class="fcard">
       <h3>Notifications</h3>
@@ -705,9 +719,8 @@ async function boot() {
   }
 
   document.getElementById('vShopName').textContent = vendorRow.business_name;
-  document.getElementById('sName').value = vendorRow.business_name || '';
-  document.getElementById('sPhone').value = vendorRow.phone || '';
   sLogoPicker.setImages(vendorRow.logo_url ? [vendorRow.logo_url] : []);
+  fillSettingsPanel(vendorRow);
   showScreen('app');
   await loadCategories();
   await Promise.all([loadDash(), loadProducts(), loadOrders()]);
@@ -1461,19 +1474,64 @@ async function loadDash() {
 }
 
 /* ===== SETTINGS ===== */
+/* Shows the real data already collected during onboarding. Verification/status fields are
+   read-only here on purpose: a vendor can update their own contact/store details, but never
+   their own approval or verification status (the vendors_self_update RLS policy already blocks
+   this server-side; the fields below are simply never sent back in the update payload). */
+const ID_VERIF_LABEL = { not_started: ['Not started', ''], pending: ['Pending review', ''], verified: ['Verified', 'ok'], failed: ['Failed', 'fail'], needs_review: ['Needs review', ''] };
+const BANK_VERIF_LABEL = { not_started: ['Not started', ''], pending: ['Pending review', ''], verified: ['Verified', 'ok'], failed: ['Failed', 'fail'] };
+
+function fillSettingsPanel(v) {
+  document.getElementById('sName').value = v.business_name || '';
+  document.getElementById('sStoreUrl').value = v.store_slug ? ('marcato.com/store/' + v.store_slug) : 'Not set yet';
+  document.getElementById('sEmail').value = v.email || '';
+  document.getElementById('sPhone').value = v.phone || '';
+  document.getElementById('sDesc').value = v.store_description || '';
+  document.getElementById('sAddress').value = v.address || '';
+  if (!document.getElementById('sState').options.length) {
+    document.getElementById('sState').innerHTML = '<option value="">Select</option>' + NG_STATES.map(s => `<option>${s}</option>`).join('');
+  }
+  document.getElementById('sState').value = v.state || '';
+  document.getElementById('sLga').value = v.lga || '';
+  document.getElementById('sCity').value = v.city || '';
+  document.getElementById('sLandmark').value = v.landmark || '';
+
+  const statusBadge = document.getElementById('sStatusBadge');
+  statusBadge.className = 'obStatusCard' + (v.status === 'approved' ? ' ok' : v.status === 'suspended' ? ' fail' : '');
+  statusBadge.textContent = v.status === 'approved' ? 'Approved — your store is live' : (v.status || 'Unknown');
+
+  const idBadge = document.getElementById('sIdStatusBadge');
+  const idInfo = ID_VERIF_LABEL[v.id_verification_status] || ['Not provided', ''];
+  idBadge.className = 'obStatusCard' + (idInfo[1] ? ' ' + idInfo[1] : '');
+  idBadge.textContent = idInfo[0];
+
+  const bankBadge = document.getElementById('sBankStatusBadge');
+  const bankInfo = BANK_VERIF_LABEL[v.bank_verification_status] || ['Not provided', ''];
+  bankBadge.className = 'obStatusCard' + (bankInfo[1] ? ' ' + bankInfo[1] : '');
+  bankBadge.textContent = bankInfo[0];
+}
+
 document.getElementById('sSaveBtn').onclick = async () => {
   const business_name = document.getElementById('sName').value.trim();
   const phone = document.getElementById('sPhone').value.trim();
+  const store_description = document.getElementById('sDesc').value.trim() || null;
+  const address = document.getElementById('sAddress').value.trim() || null;
+  const state = document.getElementById('sState').value || null;
+  const lga = document.getElementById('sLga').value.trim() || null;
+  const city = document.getElementById('sCity').value.trim() || null;
+  const landmark = document.getElementById('sLandmark').value.trim() || null;
   if (!business_name) { toast('Business name required', true); return; }
   showLoad('Saving...');
   try {
     /* logo goes to avatars/vendor-logos/<your id>/ */
     const logos = await sLogoPicker.resolve(file => uploadImage(file, 'vendor-logos/' + session.user.id, true));
     const logo_url = logos[0] || null;
-    const { error } = await sb.from('vendors').update({ business_name, phone, logo_url }).eq('id', session.user.id);
+    /* Only ever these fields — never status, application_status, or any *_verification_* field,
+       so a vendor can never touch their own approval/verification state from this form. */
+    const patch = { business_name, phone, logo_url, store_description, address, state, lga, city, landmark };
+    const { error } = await sb.from('vendors').update(patch).eq('id', session.user.id);
     if (error) throw error;
-    vendorRow.business_name = business_name;
-    vendorRow.logo_url = logo_url;
+    Object.assign(vendorRow, patch);
     document.getElementById('vShopName').textContent = business_name;
     toast('Profile updated');
   } catch (e) {

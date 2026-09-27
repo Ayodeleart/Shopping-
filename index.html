@@ -2086,6 +2086,10 @@ function ensureDiscoverIO() {
 /* Photos: components/product-gallery.js (auto-rotating) + components/image-viewer.js (full screen).
    Everything shown here comes from real data: no placeholder ratings, reviews or counts. */
 let pGal = null, pViewer = null, pCur = null, pQty = 1, pHist = [];
+/* Set when a product is opened via a shared/deep link that names where "Back" should return to
+   (e.g. a vendor store page: /?p=ID&from=/store/slug). Cleared once used so later products opened
+   from within the app (pHist) keep their normal in-app back behaviour. */
+let productBackTo = null;
 let foodPairingUI = null, pairingRowsPromise = null;
 function ensureFoodPairingUI() {
   if (!foodPairingUI) foodPairingUI = new Pcx.FoodPairingUI($('pPairing'), { fmt, esc });
@@ -2233,6 +2237,7 @@ function openProduct(id, isBack) {
 
 function closePModal(force) {
   if (!force && pHist.length) { openProduct(pHist.pop(), true); return; }
+  if (!force && productBackTo) { location.href = productBackTo; return; }
   pHist = [];
   destroyProductMedia();
   const m = $('pModal');
@@ -3150,7 +3155,7 @@ function initBuyerUI() {
     sellerName: id => (vendorsMap[id] && vendorsMap[id].business_name) || 'Seller',
     onPaid: () => { cart = []; saveCart(); updateCartBadge(); },
     onExit: () => openCart(), openCart: () => openCart(), openOrders: () => Pcx.Profile.openOrders('all') });
-  Pcx.Profile.init({ ...common, signOut: buyerSignOut, openNotifCenter, openLegal,
+  Pcx.Profile.init({ ...common, signOut: buyerSignOut, openNotifPrefs: openNotifCenter, openLegal,
     openWishlist: () => showFavorites(), openHistory: () => showList('Recently viewed', recentProducts(), 'Nothing viewed yet'), openSupport: openWhatsAppHelp });
 }
 
@@ -3458,7 +3463,14 @@ async function init() {
     updateFavCount();
     syncFavsFromServer();
     const sharedId = Number(new URLSearchParams(location.search).get('p'));   /* shared link: /?p=ID */
-    if (sharedId) openProduct(sharedId);
+    if (sharedId) {
+      /* &from=/store/slug tells the product's Back arrow where to return to (see store/store.js).
+         Restricted to a same-origin /store/... path only — never follow an arbitrary "from" value,
+         which would otherwise be an open-redirect a crafted link could exploit. */
+      const rawFrom = new URLSearchParams(location.search).get('from') || '';
+      productBackTo = /^\/store\/[^/?#]+(?:[/?#].*)?$/.test(rawFrom) ? rawFrom : null;
+      openProduct(sharedId);
+    }
     if (location.hash === '#favorites') showFavorites();   /* e.g. "View Favourites" from the favourites sheet, or the storefront */
 
   } catch(err) {
