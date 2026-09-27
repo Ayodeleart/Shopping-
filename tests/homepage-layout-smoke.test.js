@@ -1,10 +1,11 @@
 /* Integration smoke: boot the REAL index.html in jsdom (local scripts load from disk via file://)
-   with an in-memory Supabase stub, then verify the reorganized homepage:
-     - curated category rows (with a "See All" action) come before Shop by Brand, which is a
-       vertical list (not a horizontal carousel), which comes before Flash/Featured, which come
-       before the Discover More feed (renamed from "All Products") near the bottom
+   with an in-memory Supabase stub, then verify the Discover homepage:
+     - Home is a continuous product-discovery feed: merchandising/promotions/ads stay, but there are
+       NO category catalogue rows and no in-feed category/subcategory sections competing with it
+     - Shop by Brand is a vertical list (not a horizontal carousel) and comes before Flash/Featured,
+       which come before the Discover feed that runs to the footer
      - an ad slot between curated sections renders from the real `ads` table / admin controls
-     - the Discover More feed loads incrementally (Load More / near-bottom auto-load) instead of
+     - the Discover feed loads incrementally (Load More / near-bottom auto-load) instead of
        painting the whole catalogue at once, without duplicating products */
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -137,7 +138,7 @@ class LocalOnlyLoader extends ResourceLoader {
   }
 }
 
-test('real index.html: reorganized homepage (curated sections, vertical brands, ad slot, incremental Discover More)', async () => {
+test('real index.html: Discover homepage (no category catalogues in the feed, vertical brands, ad slot, incremental Discover feed)', async () => {
   const htmlPath = path.join(ROOT, 'index.html');
   const html = fs.readFileSync(htmlPath, 'utf8')
     .replace(/<script src="https:\/\/cdn[^"]*supabase[^"]*"><\/script>/, '');
@@ -172,29 +173,23 @@ test('real index.html: reorganized homepage (curated sections, vertical brands, 
   try {
     // ── section order ──
     const main = $('#main');
-    const order = ['exploreSec', 'catRows', 'brandSec', 'flashSec', 'featSec', 'allSec', 'vendorSec']
-      .map(id => $$(`#main *`).indexOf(w.document.getElementById(id)))
-      .filter(i => i >= 0);
-    // exploreSec, catRows, brandSec, featSec, allSec, vendorSec should all be found and increasing in DOM order
-    const ids = ['exploreSec', 'catRows', 'brandSec', 'featSec', 'allSec', 'vendorSec'];
+    const ids = ['exploreSec', 'brandSec', 'featSec', 'allSec', 'vendorSec'];
     const positions = ids.map(id => Array.prototype.indexOf.call(main.querySelectorAll('*'), w.document.getElementById(id)));
     for (let i = 1; i < positions.length; i++) {
       assert.ok(positions[i] > positions[i - 1], `${ids[i]} should come after ${ids[i - 1]} (got ${positions.join(',')})`);
     }
+    assert.ok(positions.every(i => i >= 0), 'every curated Home section is present');
 
-    // ── curated category rows: capped, with a working "See All", categories with no products absent ──
-    const catRowSecs = $$('.catRowSec');
-    assert.ok(catRowSecs.length >= 2, 'at least the two categories with products got a row');
-    assert.ok(!$('#catRows').textContent.includes('Empty Category'), 'a category with no eligible products gets no curated row');
-    const shoesRow = catRowSecs.find(s => s.querySelector('.catRowName').textContent.includes('Shoes'));
-    assert.ok(shoesRow, 'Shoes row rendered');
-    assert.equal(shoesRow.querySelectorAll('.fcard-wrap').length, 12, 'a manageable number of products per category (capped, not the whole catalogue)');
-    const seeAll = shoesRow.querySelector('.secAll');
-    assert.ok(seeAll, 'category row has a "See All" action');
-    seeAll.click();
-    assert.equal(w.location.hash, '#cat=shoes', 'See All opens the real category listing, correctly filtered');
-    w.location.hash = '';
-    await new Promise(res => setTimeout(res, 30));
+    // ── Discover is one continuous product feed: no category catalogue rows, no second category nav ──
+    assert.equal($('#catRows'), null, 'the per-category catalogue rows are gone from the Discover feed');
+    assert.equal($$('.catRowSec').length, 0, 'no category catalogue sections render inside the feed');
+    assert.equal($('#catFilter'), null, 'no second scrollable category-navigation strip besides the sticky bar');
+    assert.ok($('#catNav'), 'the sticky category bar is the sole category switcher');
+    // the in-place category surface exists but stays out of the way on Home
+    assert.ok($('#catSubs').hasAttribute('hidden'), 'no subcategory tiles in the Discover feed');
+    assert.ok($('#catMerch').hasAttribute('hidden'), 'no category merchandising rails in the Discover feed');
+    assert.ok($('#allSecHd').hasAttribute('hidden'), 'no "Discover More" heading splitting the feed in two');
+    assert.ok(!w.document.body.classList.contains('cat-mode'), 'Home is not in category mode');
 
     // ── Shop by Brand: vertical (grid) list, not a horizontal carousel, capped to a manageable number ──
     const brandRow = $('#brandRow');
@@ -208,8 +203,7 @@ test('real index.html: reorganized homepage (curated sections, vertical brands, 
     assert.ok(slotA && slotA.style.display !== 'none', 'an ad slot renders between curated sections when an ad is configured');
     assert.ok(slotA.querySelector('.adslot'), 'ad slot uses the existing ad-card rendering');
 
-    // ── Discover More: renamed, incremental loading, no duplicates ──
-    assert.equal($('#allSecTitle').textContent, 'Discover More', 'bottom feed relabeled from "All Products"');
+    // ── Discover feed: incremental loading, no duplicates ──
     const allGrid = $('#allGrid');
     const idsOf = () => $$('#allGrid .pcard').map(c => c.getAttribute('onclick'));
     const firstBatchIds = idsOf();

@@ -110,14 +110,16 @@ test('sticky home top-nav filters the home feed in place; never opens the full c
     assert.equal(catPageBefore, false, 'the full category page is not open at the start');
 
     phonesTab.click();
-    await new Promise(res => setTimeout(res, 60));
+    await new Promise(res => setTimeout(res, 200));
 
     // the critical regression check: tapping a real-category tab must NOT navigate to #catPage
     assert.equal($('#catPage').classList.contains('open'), false, 'tapping a category tab must not open the full category-browsing page');
     assert.equal(w.location.hash, hashBefore, 'tapping a category tab must not change the URL / navigate away at all');
 
-    // it must instead filter Discover More on the SAME home screen, in place
-    assert.equal($('#allSecTitle').textContent, 'Phones & Tablets', 'Discover More retitles to the selected category, in place');
+    // it must instead swap the feed for that category's content on the SAME home screen, in place
+    assert.equal($('#allSecTitle').textContent, 'Phones & Tablets', 'the feed retitles to the selected category, in place');
+    assert.ok(!$('#allSecHd').hasAttribute('hidden'), 'the category heading is shown once a category is selected');
+    assert.ok(w.document.body.classList.contains('cat-mode'), 'the browsing surface switches to category mode in place');
     const cardNames = () => $$('#allGrid .pcard .pcName').map(e => e.textContent);
     assert.deepEqual(cardNames(), ['Phone One'], 'the home feed now shows only that category\'s products');
 
@@ -129,15 +131,17 @@ test('sticky home top-nav filters the home feed in place; never opens the full c
     // switching straight to another category tab works the same way, still without navigating away
     const electronicsTab = tabs().find(t => t.textContent === 'Electronics & Technology');
     electronicsTab.click();
-    await new Promise(res => setTimeout(res, 60));
+    await new Promise(res => setTimeout(res, 200));
     assert.equal($('#catPage').classList.contains('open'), false, 'switching tabs again still never opens the full category page');
     assert.equal(w.location.hash, hashBefore, 'switching tabs again still never navigates away');
     assert.deepEqual(cardNames(), ['TV One'], 'the home feed now shows the newly selected category\'s products');
 
     // and tapping Home returns to the unfiltered home feed, in place, exactly the same way
     tabs().find(t => t.textContent === 'Home').click();
-    await new Promise(res => setTimeout(res, 60));
-    assert.equal($('#allSecTitle').textContent, 'Discover More', 'Home restores the unfiltered Discover More feed');
+    await new Promise(res => setTimeout(res, 200));
+    assert.ok($('#allSecHd').hasAttribute('hidden'), 'Home restores the unbroken Discover feed with no category heading');
+    assert.ok(!w.document.body.classList.contains('cat-mode'), 'Home leaves category mode');
+    assert.ok($('#catSubs').hasAttribute('hidden') && $('#catMerch').hasAttribute('hidden'), 'no category content leaks into Home');
     assert.deepEqual(cardNames().sort(), ['Phone One', 'TV One'], 'both products are shown again once unfiltered');
 
     const fatal = errors.filter(m => !/no network|supabase|Failed to fetch/i.test(m));

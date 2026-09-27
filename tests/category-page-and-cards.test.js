@@ -169,14 +169,15 @@ test('compact merchandising cards have no Add to Cart; standard cards always do'
     const flashCards = $$('#flashScroll .pcard');
     assert.ok(flashCards.length > 0, 'flash rail has cards');
     flashCards.forEach(c => assert.ok(!c.querySelector('.pcCtl'), 'flash card has no Add to Cart control'));
-    // curated home category row is compact
-    const catRowCards = $$('#catRows .pcard');
-    assert.ok(catRowCards.length > 0, 'home category rows have cards');
-    catRowCards.forEach(c => assert.ok(!c.querySelector('.pcCtl'), 'home category row card has no Add to Cart control'));
-    // Discover More (standard) always has Add to Cart
+    // every other curated home rail is compact too (they all use the merchandising variant)
+    const railCards = $$('#main .fcard-wrap .pcard');
+    assert.ok(railCards.length > 0, 'curated home rails have cards');
+    railCards.forEach(c => assert.ok(!c.querySelector('.pcCtl'), 'merchandising rail card has no Add to Cart control'));
+    railCards.forEach(c => assert.ok(c.querySelector('.favBtn'), 'merchandising rail card keeps its favourite button'));
+    // Discover feed (standard) always has Add to Cart
     const discoverCards = $$('#allGrid .pcard');
-    assert.ok(discoverCards.length > 0, 'Discover More has cards');
-    discoverCards.forEach(c => assert.ok(c.querySelector('.pcCtl'), 'Discover More card has an Add to Cart control'));
+    assert.ok(discoverCards.length > 0, 'the Discover feed has cards');
+    discoverCards.forEach(c => assert.ok(c.querySelector('.pcCtl'), 'Discover card has an Add to Cart control'));
 
     const fatal = errors.filter(m => !/no network|supabase|Failed to fetch/i.test(m));
     assert.equal(fatal.length, 0, 'no unexpected errors: ' + fatal.join(' | '));

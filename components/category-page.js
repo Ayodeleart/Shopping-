@@ -224,13 +224,7 @@
   P._renderMerch = function (cat) {
     var q = function (s) { return this.root.querySelector(s); }.bind(this);
     var sections = (cat && this.d.merchSections) ? (this.d.merchSections(cat) || []) : [];
-    q('.cpg-merch').innerHTML = sections.map(function (sec) {
-      return '<div class="cpg-msec" style="--msec-accent:' + esc(sec.color || '#D91C2D') + '">' +
-        '<div class="cpg-msec-hd"><span class="cpg-msec-ttl">' + esc(sec.title) + '</span></div>' +
-        '<div class="cpg-msec-scroll">' +
-          sec.products.map(function (p) { return '<div class="fcard-wrap au">' + this.d.cardHTML(p, { compact: true }) + '</div>'; }, this).join('') +
-        '</div></div>';
-    }, this).join('');
+    q('.cpg-merch').innerHTML = CategoryPage.merchHTML(sections, this.d.cardHTML);
     q('.cpg-merch').style.display = sections.length ? '' : 'none';
     if (this.d.observeAllEls) this.d.observeAllEls(this.root.querySelectorAll('.cpg-msec .au'));
   };
@@ -252,9 +246,7 @@
     q('.cpg-crumbs').innerHTML = all ? '' : crumbs.join('<span>\u203a</span>');
 
     var subs = all ? t.visibleRootsIn(this.d.world || null) : t.visibleChildren(cat.id);
-    q('.cpg-subs').innerHTML = subs.map(function (c) {
-      return '<a class="cpg-tile" data-cat="' + esc(c.slug) + '">' + Pcx.Categories.thumb(t, c, 'round') + '<span class="cpg-name">' + esc(c.name) + '</span></a>';
-    }).join('');
+    q('.cpg-subs').innerHTML = CategoryPage.subTilesHTML(t, subs);
     q('.cpg-subs').style.display = subs.length ? '' : 'none';
 
     this._renderAdGaps(cat);
@@ -327,6 +319,32 @@
     this.isOpen = false;
     this.root.classList.remove('open');
     document.body.style.overflow = '';
+  };
+
+  /* ── SHARED RENDERERS ───────────────────────────────────────────────────────────────
+     Used by this page AND by the storefront's in-place category view on the home surface
+     (#catSubs / #catMerch in index.html), so a category looks and behaves identically
+     whether it is browsed in place or opened as its own page — one implementation, not two.
+
+     subTilesHTML(tree, cats) — the circular subcategory tiles: the categories' REAL configured
+       image/GIF through Pcx.Categories.thumb (which falls back to the category's initial on its
+       colour when no image is set) and their real names. Never emoji, never invented.
+     merchHTML(sections, cardHTML) — the curated rails the host decided are eligible; compact
+       MERCHANDISING cards only (no Add to Cart), each rail with its own accent colour. */
+  CategoryPage.subTilesHTML = function (tree, cats) {
+    return (cats || []).map(function (c) {
+      return '<a class="cpg-tile" data-cat="' + esc(c.slug) + '">' + Pcx.Categories.thumb(tree, c, 'round') +
+        '<span class="cpg-name">' + esc(c.name) + '</span></a>';
+    }).join('');
+  };
+  CategoryPage.merchHTML = function (sections, cardHTML) {
+    return (sections || []).map(function (sec) {
+      return '<div class="cpg-msec" style="--msec-accent:' + esc(sec.color || '#D91C2D') + '">' +
+        '<div class="cpg-msec-hd"><span class="cpg-msec-ttl">' + esc(sec.title) + '</span></div>' +
+        '<div class="cpg-msec-scroll">' +
+          (sec.products || []).map(function (p) { return '<div class="fcard-wrap au">' + cardHTML(p, { compact: true }) + '</div>'; }).join('') +
+        '</div></div>';
+    }).join('');
   };
 
   Pcx.CategoryPage = CategoryPage;

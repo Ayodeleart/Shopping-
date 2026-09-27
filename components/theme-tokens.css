@@ -12,7 +12,8 @@
   --red:#D91C2D;--red2:#a81422;
   --gold:#F5B301;
   --border:#e8e8e8;
-  --hh:52px;
+  --hh:52px;      /* header height */
+  --cnh:45px;     /* sticky category bar height (44px tab + 1px border) */
 }
 [data-theme=dark]{
   --bg:#0d0d0d;--bg2:#1a1a1a;--bg3:#252525;--card:#1a1a1a;

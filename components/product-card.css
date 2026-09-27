@@ -4,8 +4,16 @@
  * exact same card produced by components/product-card.js's
  * cardHTML(), instead of re-implementing the styling.
  * Requires: components/theme-tokens.css to be loaded first.
+ *
+ * DENSITY: the standard grid card is tuned for a compact
+ * two-column mobile grid (Konga-like proportions): a near-square
+ * photo box, tight body padding, a 2-line name, price and
+ * previous price on ONE line, a single compact stock/rating
+ * line, and a short Add to Cart. Every optional element has a
+ * fixed footprint so a missing discount / rating / swatch row
+ * cannot make one card taller than its neighbours.
  * ──────────────────────────────────────────────────────────── */
-.fcard-wrap{padding:10px 6px 10px;flex-shrink:0;width:156px}
+.fcard-wrap{padding:10px 6px 10px;flex-shrink:0;width:150px}
 .fcard-wrap:first-child{padding-left:12px}
 .fcard-wrap:last-child{padding-right:12px}
 
@@ -18,84 +26,95 @@
 }
 .pcard:active{transform:scale(.97)}
 
-/* IMAGE AREA */
+/* IMAGE AREA — one fixed media box for every card, so rows line up and no vertical space is wasted.
+   Just under square: the photo still dominates the card, but ~13px per row comes back to the grid. */
 .pcImg{
-  position:relative;padding-top:125%;                 /* one 4:5 media box for every card, so rows always line up */
+  position:relative;padding-top:92%;
   background:var(--bg2);overflow:hidden;flex-shrink:0;
 }
 .pcImg img{
-  position:absolute;inset:0;width:100%;height:100%;    /* the photo fills the box edge to edge: no artificial padding */
+  position:absolute;inset:0;width:100%;height:100%;    /* the photo fills the box edge to edge: no artificial padding, never stretched */
   object-fit:cover;object-position:center;
 }
 .noImgPh{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--txt3);background:var(--bg2)}
 
-/* DISCOUNT BADGE — circular, top right, like Jumia */
+/* DISCOUNT LABEL — small top-left chip, not a big circle: keeps the photo readable */
 .discBadge{
-  position:absolute;top:6px;right:6px;
+  position:absolute;top:5px;left:5px;
   background:var(--red);color:#fff;
-  font-size:11px;font-weight:800;
-  width:38px;height:38px;border-radius:50%;
+  font-size:10px;font-weight:800;letter-spacing:-.2px;
+  height:17px;padding:0 5px;border-radius:4px;
   display:flex;align-items:center;justify-content:center;
-  text-align:center;line-height:1.1;
-  z-index:1;
+  line-height:1;z-index:1;
 }
 
 /* BODY */
-.pcBody{display:flex;flex-direction:column;flex:1;padding:9px 10px 10px}
+.pcBody{display:flex;flex-direction:column;flex:1;padding:5px 7px 6px}
 .pcName{
-  font-size:13px;font-weight:400;color:var(--txt2);
-  line-height:1.3;margin-bottom:5px;min-height:2.6em;
+  font-size:12px;font-weight:400;color:var(--txt2);
+  line-height:1.22;margin-bottom:2px;min-height:2.44em;  /* always 2 lines tall: long and short names give the same card height */
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
 }
-.pcPrice{font-size:17px;font-weight:900;color:var(--txt);margin-bottom:1px}
+/* price and previous price on ONE line (saves a whole row vs. stacking them) */
+.pcPriceRow{display:flex;align-items:baseline;gap:5px;min-height:18px;margin-bottom:1px;overflow:hidden}
+.pcPrice{font-size:15px;font-weight:900;color:var(--txt);line-height:1.2;white-space:nowrap}
+.pcWas{font-size:11px;color:var(--txt3);text-decoration:line-through;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+
 .favBtn{
   width:32px;height:32px;flex-shrink:0;border-radius:50%;
   display:flex;align-items:center;justify-content:center;color:var(--txt2);
 }
 /* on a product card the heart sits ON the photo, bottom-right, in a light translucent circle; absolutely positioned so it never changes card height */
 .pcImg .favBtn{
-  position:absolute;right:8px;bottom:8px;z-index:2;
-  width:36px;height:36px;
+  position:absolute;right:6px;bottom:6px;z-index:2;
+  width:30px;height:30px;
   background:rgba(255,255,255,.88);box-shadow:0 1px 4px rgba(0,0,0,.18);
   -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
 }
 .favBtn:focus-visible,.pcAdd:focus-visible,.pcStepB:focus-visible{outline:2px solid var(--red);outline-offset:2px}
 .favBtn svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linejoin:round}
+.pcImg .favBtn svg{width:17px;height:17px}
 .favBtn.on{color:var(--red)}
 .favBtn.on svg{fill:currentColor}
 .favBtn.pop svg{animation:favPop .34s ease-out}
 @keyframes favPop{0%{transform:scale(.7)}55%{transform:scale(1.3)}100%{transform:scale(1)}}
-.pcRate{display:flex;align-items:center;gap:4px;margin-bottom:6px;min-height:14px;font-size:11px;color:var(--txt3)}
+
+/* ONE compact line for the real stock bar and the real rating (left out when the product has neither) */
+.pcMeta{display:flex;align-items:center;gap:6px;min-height:13px;margin-bottom:3px;overflow:hidden}
+.pcBar{display:block;flex:1;min-width:24px;height:3px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.pcBarFill{display:block;height:100%;background:var(--red);border-radius:2px;transition:width .3s}
+.pcStockTxt{font-size:10.5px;color:var(--txt3);white-space:nowrap;flex-shrink:0}
+.pcRate{display:flex;align-items:center;gap:3px;font-size:10.5px;color:var(--txt3);white-space:nowrap;flex-shrink:0}
 .stars{position:relative;display:inline-flex;line-height:0;vertical-align:middle}
 .stars .st-bg,.stars .st-fg{display:inline-flex;gap:1px;flex-wrap:nowrap}
 .stars svg{flex:0 0 auto;fill:currentColor}
 .stars .st-bg{color:var(--bg3)}
 .stars .st-fg{position:absolute;left:0;top:0;overflow:hidden;color:var(--gold)}
-.pcWas{font-size:12px;color:var(--txt3);text-decoration:line-through;margin-bottom:5px}
-.pcStockRow{display:flex;align-items:center;gap:6px;margin-bottom:7px}
-.pcBar{flex:1;height:4px;background:var(--bg3);border-radius:2px;overflow:hidden}
-.pcBarFill{height:100%;background:var(--red);border-radius:2px;transition:width .3s}
-.pcStockTxt{font-size:11px;color:var(--txt3);white-space:nowrap;flex-shrink:0}
+
 .pcAdd{
-  width:100%;height:36px;background:var(--red);color:#fff;
-  font-size:13px;font-weight:700;border-radius:8px;
+  width:100%;height:32px;background:var(--red);color:#fff;
+  font-size:12.5px;font-weight:700;border-radius:7px;
   transition:background .12s;
 }
 .pcAdd:active{background:var(--red2)}
-.pcCtl{margin-top:auto;padding-top:4px}                 /* pinned to the bottom of the card so buttons line up across a row */
-.pcSwatches{display:flex;gap:5px;margin-bottom:6px;flex-wrap:wrap}
-.pcSwatch{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--border);padding:0}
+.pcCtl{margin-top:auto;padding-top:2px}                 /* pinned to the bottom of the card so buttons line up across a row */
+
+/* real colour swatches: one line only — a wrapped second row is what made card heights uneven */
+.pcSwatches{display:flex;align-items:center;gap:4px;margin-bottom:3px;flex-wrap:nowrap;overflow:hidden;min-height:15px}
+.pcSwatch{width:15px;height:15px;flex-shrink:0;border-radius:50%;border:1.5px solid var(--border);padding:0}
 .pcSwatch.on{border-color:var(--red);box-shadow:0 0 0 1.5px var(--red)}
-.pcSwatch:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+.pcSwatch:focus-visible,.pcSwatchMore:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+.pcSwatchMore{flex-shrink:0;height:15px;padding:0 4px;border-radius:8px;background:var(--bg2);border:1px solid var(--border);font-size:9.5px;font-weight:800;color:var(--txt3);line-height:1}
+
 /* after adding: [ - ]  1  [ + ]  (square red buttons at both ends, quantity in the middle) */
-.pcStep{display:flex;align-items:center;justify-content:space-between;height:36px}
+.pcStep{display:flex;align-items:center;justify-content:space-between;height:32px}
 .pcStepB{
-  width:36px;height:36px;border-radius:8px;background:var(--red);color:#fff;
+  width:32px;height:32px;border-radius:7px;background:var(--red);color:#fff;
   display:flex;align-items:center;justify-content:center;
   box-shadow:0 2px 6px rgba(217,28,45,.35);transition:transform .1s,background .12s;
 }
 .pcStepB:active{background:var(--red2);transform:scale(.92)}
-.pcStepN{flex:1;text-align:center;font-size:16px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums}
+.pcStepN{flex:1;text-align:center;font-size:15px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums}
 
 /* fly-to-cart */
 .flyImg{position:fixed;z-index:1200;pointer-events:none;object-fit:contain;background:#fff;border-radius:14px;box-shadow:0 10px 26px rgba(0,0,0,.32);will-change:transform,opacity}
@@ -107,6 +126,18 @@
 .pgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;align-items:stretch;background:var(--bg);padding:6px}
 .pgrid-wrap{background:var(--bg);padding-bottom:16px}
 .pgrid > div{background:var(--bg)}
+
+/* LOADING — shown while a category's products are still being resolved, so an in-flight
+   query can never look like an empty category (see showGridLoading in index.html). */
+.pcard-skel{pointer-events:none;border-color:var(--border)}
+.pcard-skel .pcImg{background:var(--bg2)}
+.pcard-skel .pcBody{gap:6px;padding:8px 7px 10px}
+.pcard-skel .pcBody span{display:block;height:10px;border-radius:5px;background:var(--bg3)}
+.pcard-skel .pcBody span.w60{width:60%}
+.pcard-skel .pcBody span.w40{width:40%;height:14px}
+.pcard-skel,.pcard-skel .pcImg,.pcard-skel .pcBody span{animation:skelPulse 1.1s ease-in-out infinite}
+@keyframes skelPulse{0%,100%{opacity:1}50%{opacity:.55}}
+@media (prefers-reduced-motion:reduce){.pcard-skel,.pcard-skel .pcImg,.pcard-skel .pcBody span{animation:none}}
 
 /* EMPTY */
 .empty{
@@ -122,17 +153,18 @@
 .d0{animation-delay:0ms}.d1{animation-delay:40ms}.d2{animation-delay:80ms}.d3{animation-delay:120ms}
 
 /* ── COMPACT MERCHANDISING CARD ──────────────────────────────────
- * Used in curated/promotional rails (Trending, Popular, Hot Deals, Brand Deals,
- * Flash Sales, home category rows, Featured): no Add to Cart, a shorter,
- * consistent image box, tighter body. Same .pcard base as the standard card
- * (rounded corners, border, tap feedback) — see cardHTML(p, {compact:true}). */
-.pcard-compact .pcImg{padding-top:100%}                 /* square media box: shorter than the standard 4:5, less "tall and cluttered" */
-.pcard-compact .pcBody-compact{padding:7px 8px 9px}
-.pcard-compact .pcName{font-size:12px;margin-bottom:4px;min-height:2.3em}
-.pcard-compact .pcPriceRow{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
-.pcard-compact .pcPrice{font-size:14px;margin-bottom:0}
-.pcard-compact .pcWas{font-size:11px;margin-bottom:0}
-.pcard-compact .pcRate{margin-bottom:0;margin-top:3px}
-.pcard-compact .pcImg .favBtn{width:28px;height:28px}
-.pcard-compact .pcImg .favBtn svg{width:16px;height:16px}
-.pcard-compact .discBadge{width:32px;height:32px;font-size:10px}
+ * A deliberately DIFFERENT card from the standard grid card above:
+ * used in curated/promotional rails (Trending, Popular, Top Deals,
+ * Hot Deals, Brand Deals, Flash Sales, Featured). No Add to Cart,
+ * no stock bar, no swatches — photo-led, with name, price(+previous
+ * price), favourite and discount only. See cardHTML(p,{compact:true}).
+ * ──────────────────────────────────────────────────────────────── */
+.pcard-compact .pcBody-compact{padding:6px 7px 8px}
+.pcard-compact .pcName{font-size:11.5px;margin-bottom:3px;min-height:2.3em}
+.pcard-compact .pcPriceRow{min-height:0;margin-bottom:0;flex-wrap:wrap}
+.pcard-compact .pcPrice{font-size:13.5px}
+.pcard-compact .pcWas{font-size:10.5px}
+.pcard-compact .pcRate{margin-top:3px}
+.pcard-compact .pcImg .favBtn{width:26px;height:26px;right:5px;bottom:5px}
+.pcard-compact .pcImg .favBtn svg{width:15px;height:15px}
+.pcard-compact .discBadge{height:16px;font-size:9.5px;padding:0 4px}

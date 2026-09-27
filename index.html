@@ -143,7 +143,32 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 
 /* ── MAIN ─────────────────────────────────────────── */
 #main{padding-top:0}
-#allSec{scroll-margin-top:calc(var(--hh) + 46px)}
+#allSec{scroll-margin-top:calc(var(--hh) + var(--cnh))}
+
+/* ── CATEGORY VIEW (a non-Home tab of the sticky bar is selected) ──────────────
+   Same page, same scroll container: only the CONTENT of the browsing surface changes.
+   Everything that is Home-only merchandising is hidden with CSS (each section keeps its
+   own display state, so returning to Home restores exactly what was there before), the
+   sticky bar is pinned visible, and the page reserves room for it so it never overlaps. */
+body.cat-mode{padding-top:calc(var(--hh) + var(--cnh))}
+body.cat-mode #catNav{transform:none;opacity:1;pointer-events:auto}
+body.cat-mode #hero,
+body.cat-mode #tileSec,
+body.cat-mode #exploreSec,
+body.cat-mode #brandSec,
+body.cat-mode #flashSec,
+body.cat-mode #flashGap,
+body.cat-mode #featSec,
+body.cat-mode #featGap,
+body.cat-mode #vendorSec,
+body.cat-mode .homeAdSlot{display:none!important}
+/* the in-feed subcategory row / merch rails reuse the category page's own styles (components/categories.css) */
+#catSubs{border-bottom:1px solid var(--border)}
+#catMerch{padding-bottom:4px}
+#allSecHd{border-top:6px solid var(--bg2)}
+body:not(.cat-mode) #allSecHd{border-top:0}
+/* these three carry a display:flex class, which would otherwise win over the UA's [hidden] rule */
+#catSubs[hidden],#catMerch[hidden],#allSecHd[hidden]{display:none!important}
 
 /* ── INSTALL BANNER ───────────────────────────────── */
 #instBar{
@@ -506,12 +531,8 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
 
 
 /* ── PER-CATEGORY ROWS (admin-chosen accent color) ───*/
-.catRowSec{margin-bottom:4px}
-.catRowHd{display:flex;align-items:center;gap:9px;padding:16px 13px 8px}
-.catRowBar{width:5px;height:19px;border-radius:3px;flex-shrink:0}
-.catRowName{font-size:15px;font-weight:800;color:var(--txt)}
-.catRowCount{font-size:12px;color:var(--txt3);margin-left:auto}
-.catRowHd .secAll{flex-shrink:0}
+/* horizontal product rail (product-page "more like this" rails). The homepage no longer has
+   per-category catalogue rows — Home is one continuous discovery feed. */
 .catRowScroll{display:flex;gap:10px;overflow-x:auto;padding:0 13px 6px;scrollbar-width:none}
 .catRowScroll::-webkit-scrollbar{display:none}
 .catRowScroll .fcard-wrap{flex-shrink:0}
@@ -717,12 +738,12 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
     <div id="exploreRow" class="xmRow"></div>
   </section>
 
-  <!-- CURATED CATEGORY ROWS (a manageable number of real products per category — see buildCategoryRowsTree /
-       buildCategoryRows). Placed right after Explore Marcato so the homepage opens with curated shopping,
-       not the full catalogue (see allSec / #discoverSec further down for that). -->
-  <div id="catRows"></div>
+  <!-- NOTE: there are deliberately NO per-category catalogue rows here. Home/Discover is one continuous
+       product-discovery feed (promotions, worlds, brands, deals, then the product feed down to the
+       footer); the sticky category bar (#catNav) is the ONLY category-navigation interface, and
+       selecting a category swaps this same surface in place — see selectCategory(). -->
 
-  <!-- HOME AD SLOT A: between the category rows and Shop by Brand. Reuses the same `ads` table / admin
+  <!-- HOME AD SLOT A: between Explore Marcato and Shop by Brand. Reuses the same `ads` table / admin
        controls as the Discover feed ads (data/ads.js, admin/ads.js) — see buildHomeAdSlots(). -->
   <div id="homeAdSlotA" class="homeAdSlot" style="display:none"></div>
 
@@ -768,15 +789,22 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
   <!-- HOME AD SLOT D: between Featured and Discover More. -->
   <div id="homeAdSlotD" class="homeAdSlot" style="display:none"></div>
 
-  <!-- DISCOVER MORE (full catalogue, was "All Products"): the scalable bottom feed. Loads in batches —
-       see renderGrid()/appendDiscoverBatch() — so the homepage never has to paint the whole catalogue at once. -->
+  <!-- THE BROWSING SURFACE.
+       Home: one continuous product feed (no heading, no category rows, no second category bar) that keeps
+             loading in batches down to the footer — see renderGrid()/appendDiscoverBatch().
+       A category (picked in the sticky #catNav bar): the SAME surface, switched in place — circular
+             subcategory tiles, then eligible merchandising rails, then the category's product grid.
+       Nothing here ever navigates away or reloads; see selectCategory(). -->
   <section id="allSec">
-    <div class="secHd">
+    <!-- A. circular subcategory tiles (real categories, real images) — category view only -->
+    <div id="catSubs" class="cpg-subs" hidden></div>
+    <!-- B. eligible merchandising rails (Flash/Popular/Brand Deals/Hot Deals/New Arrivals) — category view only -->
+    <div id="catMerch" hidden></div>
+    <!-- C. the product grid. Its header is hidden on Home so the feed reads as one continuous stream. -->
+    <div class="secHd" id="allSecHd" hidden>
       <span class="secTtl" id="allSecTitle">Discover More</span>
       <span id="pCount" style="font-size:12px;color:var(--txt3)"></span>
     </div>
-    <!-- CATEGORY FILTER (compact pills, below title) -->
-    <div id="catFilter" style="display:flex;gap:7px;overflow-x:auto;padding:0 13px 10px;scrollbar-width:none"></div>
     <div class="pgrid-wrap"><div class="pgrid" id="allGrid"></div></div>
     <div id="discoverMoreWrap" style="display:none;text-align:center;padding:6px 13px 22px">
       <button id="loadMoreBtn" type="button" class="loadMoreBtn" onclick="appendDiscoverBatch()">Load More</button>
@@ -1301,16 +1329,21 @@ $('menuCats').addEventListener('click', e => {
   if (sub) { closeMenu(); openCategory(sub.dataset.slug); }
 });
 
-/* The sticky home top-nav (#catNav) is a set of *filters on the current home feed*, not links to another
-   page — tapping "Phones & Tablets" here must behave exactly like tapping "Home" already does: filter
-   Discover More in place and keep every other tab reachable with one more tap, never navigate to the
-   full category-browsing page (that is what "See All" / the hamburger menu's own category rows are for). */
-function goNavItem(it) { catNavGo(it.title); }
+/* The sticky top-nav (#catNav) is the ONE category-navigation interface: "Home" plus every main
+   category. Tapping (or swiping the bar to and tapping) a tab switches the CONTENT of the browsing
+   surface in place — it never opens the full-screen category page, never touches location.hash, never
+   reloads, and every other tab stays one tap away. Tabs are keyed by the real category id, not by the
+   display name, so the identifier handed to the query is always the one the products are filed under. */
+function catKey(it) { return it && it.id != null ? it.id : (it ? it.title : 'All'); }
+function goNavItem(it) { catNavGo(catKey(it)); }
 
 function renderCatNav() {
   const row = $('catNavRow');
-  row.innerHTML = `<button class="cnTab${activeCat === 'All' ? ' on' : ''}" data-i="-1">Home</button>` +
-    navItems.map((it, i) => `<button class="cnTab${it.title === activeCat ? ' on' : ''}" data-i="${i}">${esc(it.title)}</button>`).join('');
+  row.innerHTML = `<button class="cnTab${activeCat === 'All' ? ' on' : ''}" data-i="-1" aria-pressed="${activeCat === 'All'}">Home</button>` +
+    navItems.map((it, i) => {
+      const on = activeCat !== 'All' && String(catKey(it)) === String(activeCat);
+      return `<button class="cnTab${on ? ' on' : ''}" data-i="${i}" aria-pressed="${on}">${esc(it.title)}</button>`;
+    }).join('');
   const on = row.querySelector('.on');
   if (on) row.scrollLeft = on.offsetLeft - (row.clientWidth - on.clientWidth) / 2;
 }
@@ -1321,11 +1354,7 @@ $('catNavRow').addEventListener('click', e => {
   if (i < 0) catNavGo('All'); else goNavItem(navItems[i]);
 });
 
-function catNavGo(c) {
-  filterCat(c);
-  if (c === 'All') window.scrollTo({ top: 0, behavior: 'smooth' });
-  else $('allSec').scrollIntoView({ behavior: 'smooth' });
-}
+function catNavGo(c) { return selectCategory(c); }
 
 /* ── BRANDS ───────────────────────────────────────── */
 function brandOf(p) {
@@ -1375,36 +1404,10 @@ function filterByBrand(id) {
    tapping one opens the category page. */
 let catTree = null, catPage = null, catDeepLinked = false;
 
+/* The sticky bar's tabs: every main category, keyed by its real id so switching hands the product
+   query the same identifier the products are filed under. */
 function buildCategoryTiles() {
-  setNavItems(catTree.visibleRootsIn(null).map(c => ({ title: c.name, slug: c.slug, thumb: Pcx.Categories.thumb(catTree, c, 'fill') })));
-}
-
-/* Curated homepage rows: a manageable number of categories (only ones with eligible products), each
-   showing a manageable number of products — not the whole catalogue. Everything else stays reachable
-   through "See All" (the real category page, #cat=slug) or the Discover More feed further down. */
-const CAT_ROW_CAP = 6, CAT_ROW_PRODUCT_CAP = 12;
-function buildCategoryRowsTree(prods) {
-  const wrap = document.getElementById('catRows');
-  const esc = Pcx.Categories.esc;
-  wrap.innerHTML = catTree.visibleRootsIn(null).map(root => {
-    const matches = prods.filter(catTree.productMatcher(root.id));
-    if (!matches.length) return null;
-    return { root, matches };
-  }).filter(Boolean).slice(0, CAT_ROW_CAP).map(({ root, matches }) => {
-    return `
-      <div class="catRowSec">
-        <div class="catRowHd">
-          <span class="catRowBar" style="background:var(--red)"></span>
-          <span class="catRowName" style="color:var(--red)" onclick="openCategory('${hs(root.slug)}')">${esc(root.name)}</span>
-          <span class="catRowCount">${matches.length} item${matches.length!==1?'s':''}</span>
-          <a class="secAll" href="#" onclick="openCategory('${hs(root.slug)}');return false">See All</a>
-        </div>
-        <div class="catRowScroll">
-          ${matches.slice(0, CAT_ROW_PRODUCT_CAP).map(p => `<div class="fcard-wrap au">${cardHTML(p, { compact: true })}</div>`).join('')}
-        </div>
-      </div>`;
-  }).join('');
-  observeAll(wrap.querySelectorAll('.au'));
+  setNavItems(catTree.visibleRootsIn(null).map(c => ({ id: c.id, title: c.name, slug: c.slug, thumb: Pcx.Categories.thumb(catTree, c, 'fill') })));
 }
 
 /* Category page: opened through #cat=slug so the back button closes it (same idea as the ad page). */
@@ -1458,6 +1461,12 @@ function categoryMerchSections(cat) {
 
   const hot = take(inCat.filter(p => discountPct(p) > 0).sort((a,b) => discountPct(b) - discountPct(a)));
   if (hot.length) sections.push({ key: 'hot', title: 'Hot Deals', color: '#8E2DE2', products: hot });
+
+  /* New Arrivals: real created_at timestamps only (nothing invented, nothing repeated from a rail above) */
+  const NEW_WINDOW_MS = 45 * 24 * 3600 * 1000, now = Date.now();
+  const fresh = take(inCat.filter(p => p.created_at && (now - new Date(p.created_at).getTime()) < NEW_WINDOW_MS)
+    .sort((a,b) => new Date(b.created_at) - new Date(a.created_at)));
+  if (fresh.length) sections.push({ key: 'new', title: 'New Arrivals', color: '#0F6FC5', products: fresh });
 
   return sections;
 }
@@ -1698,51 +1707,142 @@ function filterByVendor(vendorId) {
   showList(v ? (v.business_name || 'Store') : storeName, allProds.filter(p => (p.vendor_id || null) === (vendorId || null)));
 }
 
-/* show a list in the All Products section (vendor shop, brand, favorites) */
+/* show a list in the browsing surface (vendor shop, brand, favorites) — same grid, own title */
 function showList(title, list, emptyMsg) {
-  activeCat = 'All'; renderCatNav();
+  ++catRenderToken;                       /* cancel any category render still in flight */
+  activeCat = 'All'; renderCatNav(); setCatMode(false);
+  $('allSecHd').hidden = false;
   $('allSecTitle').textContent = title;
   $('pCount').textContent = `${list.length} item${list.length!==1?'s':''}`;
   renderGrid(list, 'allGrid', false, emptyMsg);
   $('allSec').scrollIntoView({ behavior: 'smooth' });
 }
 
-/* ── CATEGORY FILTER ──────────────────────────────── */
-let activeCat = 'All', allProds = [], catPills = [];
+/* ── THE BROWSING SURFACE: HOME FEED  <->  ONE CATEGORY, IN PLACE ──────────────────────────
+   activeCat is 'All' (the continuous Discover feed) or the real id of a main category.
+   selectCategory() swaps what the SAME surface shows; it never routes, never reloads and never
+   opens the full-screen category page. Everything it renders comes from the existing category
+   tree (data/categories.js), the existing products in memory and the existing merchandising
+   rules (categoryMerchSections) — nothing is duplicated or invented here. */
+let activeCat = 'All', allProds = [];
+let catRenderToken = 0;                    /* guards against a slow render of a category the shopper already left */
+/* resolves once the products query has actually finished, so a tap made while the catalogue is
+   still loading shows a loading state and then real products — never a false "No products yet" */
+let prodsReady = null, markProdsReady = null;
+prodsReady = new Promise(res => { markProdsReady = res; });
 /* Beauty world content (see migration_beauty.sql + data/beauty.js) */
 let beautyHeroes = [], beautyCats = [], beautySettings = {}, beautyStats = {};
 /* categories a Beauty tile is linked to: products filed there belong to the Beauty world too */
 function beautyLinked() { return Pcx.BeautyData ? Pcx.BeautyData.linkedIds(beautyCats) : []; }
 
-function buildCatFilter(cats) {
-  const row = document.getElementById('catFilter');
-  if (!cats.length) { row.style.display = 'none'; return; }
-  const all = ['All', ...cats];
-  row.style.cssText = 'display:flex;gap:7px;overflow-x:auto;padding:0 13px 10px;scrollbar-width:none;-webkit-overflow-scrolling:touch';
-  row.innerHTML = all.map(c => `
-    <button style="
-      flex-shrink:0;height:30px;padding:0 13px;border-radius:15px;
-      font-size:12px;font-weight:700;white-space:nowrap;
-      background:${c===activeCat?'var(--red)':'var(--bg2)'};
-      color:${c===activeCat?'#fff':'var(--txt2)'};
-      border:1.5px solid ${c===activeCat?'var(--red)':'var(--border)'};
-      transition:all .18s;
-    " data-c="${Pcx.Categories.esc(c)}" onclick="filterCat(this.dataset.c)">${Pcx.Categories.esc(c)}</button>`).join('');
+function setCatMode(on) { document.body.classList.toggle('cat-mode', !!on); }
+
+/* 'All' | a category id | a slug | a category name -> the real main category row (or null for Home).
+   Accepting all four means no caller can hand the query the "wrong identifier" (the MAC assistant and
+   older shortcut data both pass a display name; the sticky bar passes the id). */
+function resolveCat(key) {
+  if (key == null || key === 'All' || key === 'all') return null;
+  if (!catTree) return { id: null, name: String(key), slug: '' };
+  const roots = catTree.visibleRootsIn(null);
+  const s = String(key), low = s.trim().toLowerCase();
+  return roots.find(r => String(r.id) === s)
+      || roots.find(r => r.slug === s)
+      || roots.find(r => String(r.name).trim().toLowerCase() === low)
+      || null;
 }
 
-function filterCat(cat) {
-  activeCat = cat;
-  $('allSecTitle').textContent = cat === 'All' ? 'Discover More' : cat;
-  renderCatNav();
-  let filtered = allProds;
-  if (cat !== 'All') {
-    const root = catTree && catTree.visibleRootsIn(null).find(r => r.name === cat);
-    filtered = root ? allProds.filter(catTree.productMatcher(root.id)) : allProds.filter(p => p.category === cat);
-  }
-  buildCatFilter(catPills);
-  renderGrid(filtered, 'allGrid', cat === 'All');
-  document.getElementById('pCount').textContent = `${filtered.length} item${filtered.length!==1?'s':''}`;
+/* every product filed under this category or any of its subcategories (real category relationships —
+   products.category_id, with the legacy text-name fallback the tree already implements) */
+function productsInCat(cat) {
+  if (!cat) return allProds;
+  if (catTree && cat.id != null) return allProds.filter(catTree.productMatcher(cat.id));
+  const low = String(cat.name).trim().toLowerCase();
+  return allProds.filter(p => String(p.category || '').trim().toLowerCase() === low);
 }
+
+/* A. circular subcategory tiles — the category's REAL children, with their configured image/GIF and
+      name (Pcx.Categories.thumb handles the fallback when no image is set). Same markup and styles as
+      the category page's own tiles, via the shared helper. */
+function renderCatSubs(cat) {
+  const host = $('catSubs');
+  const subs = (catTree && cat && cat.id != null) ? catTree.visibleChildren(cat.id) : [];
+  host.innerHTML = subs.length ? Pcx.CategoryPage.subTilesHTML(catTree, subs) : '';
+  host.hidden = !subs.length;
+}
+$('catSubs').addEventListener('click', e => {
+  const a = e.target.closest('[data-cat]');
+  if (a) openCategory(a.getAttribute('data-cat'));
+});
+
+/* B. eligible merchandising rails for this category (Flash Deals / Popular / Brand Deals / Hot Deals /
+      New Arrivals) — the same categoryMerchSections() the category page uses, so a rail only ever
+      appears when it has real, eligible products. */
+function renderCatMerch(cat) {
+  const host = $('catMerch');
+  const secs = (catTree && cat && cat.id != null) ? (categoryMerchSections(cat) || []) : [];
+  host.innerHTML = secs.length ? Pcx.CategoryPage.merchHTML(secs, cardHTML) : '';
+  host.hidden = !secs.length;
+  if (secs.length) observeAll(host.querySelectorAll('.au'));
+}
+
+function clearCatView() {
+  const s = $('catSubs'), m = $('catMerch');
+  s.innerHTML = ''; s.hidden = true;
+  m.innerHTML = ''; m.hidden = true;
+}
+
+/* skeleton cells while the catalogue is still resolving: a pending query must never read as "empty" */
+function showGridLoading(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.setAttribute('aria-busy', 'true');
+  el.innerHTML = new Array(6).fill(
+    '<div class="pcard pcard-skel" aria-hidden="true"><div class="pcImg"></div>' +
+    '<div class="pcBody"><span></span><span class="w60"></span><span class="w40"></span></div></div>'
+  ).join('');
+}
+
+async function selectCategory(key) {
+  const cat = resolveCat(key);
+  const token = ++catRenderToken;
+  activeCat = cat ? (cat.id != null ? cat.id : cat.name) : 'All';
+  renderCatNav();
+  setCatMode(!!cat);
+
+  if (!cat) {                                   /* HOME: one continuous feed, no heading, no category rows */
+    clearCatView();
+    $('allSecHd').hidden = true;
+    $('allSecTitle').textContent = 'Discover More';
+    await prodsReady;
+    if (token !== catRenderToken) return;
+    renderGrid(allProds, 'allGrid', true);
+    $('pCount').textContent = `${allProds.length} item${allProds.length!==1?'s':''}`;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+
+  /* CATEGORY: subcategory tiles first (they need no product data, so they paint immediately),
+     then the merch rails and the product grid once the catalogue has resolved. */
+  renderCatSubs(cat);
+  $('catMerch').hidden = true; $('catMerch').innerHTML = '';
+  $('allSecHd').hidden = false;
+  $('allSecTitle').textContent = cat.name;
+  $('pCount').textContent = '';
+  showGridLoading('allGrid');
+  $('allSec').scrollIntoView({ behavior: 'smooth' });
+
+  await prodsReady;
+  if (token !== catRenderToken) return;          /* the shopper already switched to another category */
+
+  renderCatMerch(cat);
+  const list = productsInCat(cat);
+  renderGrid(list, 'allGrid', true, `Nothing is listed in ${cat.name} right now. Check back soon.`, false,
+    { emptyTitle: 'No products yet', categoryId: cat.id });
+  $('pCount').textContent = `${list.length} item${list.length!==1?'s':''}`;
+}
+
+/* kept as the public name other code (goHome, the MAC assistant) already calls */
+function filterCat(cat) { return selectCategory(cat); }
 
 /* ── COUNTDOWN ────────────────────────────────────── */
 let cdTimer;
@@ -1904,47 +2004,27 @@ function buildFlash(prods) {
   observeAll(el.querySelectorAll('.au'));
 }
 
-function buildCategoryRows(shortcuts, prods) {
-  const wrap = document.getElementById('catRows');
-  const rows = (shortcuts || []).map(sc => {
-    const matches = prods.filter(p => (p.category || '').trim().toLowerCase() === (sc.title || '').trim().toLowerCase());
-    if (!matches.length) return null;
-    return { sc, matches };
-  }).filter(Boolean).slice(0, CAT_ROW_CAP).map(({ sc, matches }) => {
-    const color = cssColor(sc.bg_color) || '#D91C2D';
-    return `
-      <div class="catRowSec">
-        <div class="catRowHd">
-          <span class="catRowBar" style="background:${color}"></span>
-          <span class="catRowName" style="color:${color}" onclick="catNavGo('${esc(sc.title)}')">${esc(sc.title)}</span>
-          <span class="catRowCount">${matches.length} item${matches.length!==1?'s':''}</span>
-          <a class="secAll" href="#" onclick="catNavGo('${esc(sc.title)}');return false">See All</a>
-        </div>
-        <div class="catRowScroll">
-          ${matches.slice(0, CAT_ROW_PRODUCT_CAP).map(p => `<div class="fcard-wrap au">${cardHTML(p, { compact: true })}</div>`).join('')}
-        </div>
-      </div>`;
-  }).join('');
-  wrap.innerHTML = rows;
-  observeAll(wrap.querySelectorAll('.au'));
-}
-
 /* Discover More (the #allGrid feed): loaded in batches instead of painting the whole catalogue in one
    go (see appendDiscoverBatch / ensureDiscoverIO below). Every other grid on the page (featured rail,
    a brand/vendor/favorites list opened elsewhere, etc.) still renders in one shot as before. */
 let discoverCells = [], discoverShown = 0;
 const DISCOVER_BATCH = 20;
 
-function renderGrid(prods, id, withAds, emptyMsg, compact) {
+/* opts: { emptyTitle, categoryId } — categoryId scopes the interleaved feed ads to the category
+   currently being browsed (see feedSlots); emptyTitle is only ever shown AFTER the products for this
+   view have resolved (selectCategory awaits prodsReady first). */
+function renderGrid(prods, id, withAds, emptyMsg, compact, opts) {
   const el = document.getElementById(id);
+  const o = opts || {};
+  el.removeAttribute('aria-busy');
   if (!prods.length) {
-    el.innerHTML = `<div class="empty"><h3>No products here</h3><p>${esc(emptyMsg || 'Check back soon.')}</p></div>`;
+    el.innerHTML = `<div class="empty"><h3>${esc(o.emptyTitle || 'No products here')}</h3><p>${esc(emptyMsg || 'Check back soon.')}</p></div>`;
     if (id === 'allGrid') { discoverCells = []; discoverShown = 0; updateDiscoverMoreUI(); }
     return;
   }
   let cells = prods.map((p,i) =>
     `<div class="au d${Math.min(i%4,3)}">${cardHTML(p, { compact: !!compact })}</div>`);
-  const slots = withAds ? feedSlots() : [];
+  const slots = withAds ? feedSlots(o.categoryId == null ? null : o.categoryId) : [];
   if (slots.length) cells = Ads.interleave(cells, slots, 2);
 
   if (id !== 'allGrid') {
@@ -3088,14 +3168,17 @@ function feedTileGroups() {
   tilesList.filter(t => t.place === 'rows').forEach(t => (groups[t.afterRows] = groups[t.afterRows] || []).push(t));
   return groups;
 }
-function feedSlots() {
-  const tileSlots = Object.keys(feedTileGroups()).map(n => ({
+/* categoryId null = the Home feed (home tiles + home/all feed ads); a real id = the in-place category
+   grid, which gets the ads the admin scoped to that category and none of the home-only tiles. */
+function feedSlots(categoryId) {
+  const tileSlots = categoryId != null ? [] : Object.keys(feedTileGroups()).map(n => ({
     afterRows: +n, order: -1, html: `<div class="tileslot au" data-rows="${esc(n)}" style="grid-column:1/-1"></div>`
   }));
-  /* Ads the admin placed IN the feed for the homepage (placement:'feed', scope 'home' or 'all') — see
-     data/ads.js Ads.forSlot / admin/ads.js. Ads placed 'between sections' (homeAdIds) are handled by
-     buildHomeAdSlots() below and excluded here so a configured ad is never shown twice for no reason. */
-  const feedAds = Ads.forSlot(adsList, { placement: 'feed', categoryId: null }).filter(a => homeAdIds.indexOf(a.id) === -1);
+  /* Ads the admin placed IN the feed (placement:'feed', scope 'home'/'all' on Home, or scoped to this
+     category) — see data/ads.js Ads.forSlot / admin/ads.js. Ads placed 'between sections' (homeAdIds)
+     are handled by buildHomeAdSlots() below and excluded here so a configured ad is never shown twice. */
+  const feedAds = Ads.forSlot(adsList, { placement: 'feed', categoryId: categoryId == null ? null : categoryId })
+    .filter(a => categoryId != null || homeAdIds.indexOf(a.id) === -1);
   return feedAds.concat(tileSlots);
 }
 
@@ -3193,6 +3276,28 @@ function initAssistant() {
   });
 }
 
+/* Supabase caps a plain select at 1000 rows (db-max-rows), so `select('*')` silently returned only the
+   1000 newest products on a real catalogue — every category whose products all fell outside that window
+   then looked empty ("No products yet") even though the rows, the category_ids and the RLS read policy
+   were all fine. Page through with range(), exactly like Pcx.Categories.fetchAll already does, and
+   de-duplicate in case two rows share a created_at across a page boundary. */
+const PRODUCT_PAGE = 1000;
+async function fetchAllProducts() {
+  let out = [], from = 0;
+  for (;;) {
+    const { data, error } = await sb.from('products').select('*')
+      .order('created_at', { ascending: false }).range(from, from + PRODUCT_PAGE - 1);
+    if (error) throw error;
+    const rows = data || [];
+    out = out.concat(rows);
+    if (rows.length < PRODUCT_PAGE) break;
+    from += PRODUCT_PAGE;
+    if (from > 200000) break;                 // hard stop; no runaway loop on a misbehaving backend
+  }
+  const seen = new Set();
+  return out.filter(p => (seen.has(p.id) ? false : (seen.add(p.id), true)));
+}
+
 async function init() {
   initBuyerUI();
   await checkBuyerSession();
@@ -3210,7 +3315,7 @@ async function init() {
   });
   try {
     const [
-      {data:products},
+      products,
       {data:banners},
       {data:shortcuts},
       {data:settings},
@@ -3225,7 +3330,7 @@ async function init() {
       {data:beautyCatRows},
       {data:beautySetRows}
     ] = await Promise.all([
-      sb.from('products').select('*').order('created_at',{ascending:false}),
+      fetchAllProducts(),
       sb.from('banners').select('*').order('sort_order',{ascending:true}),
       sb.from('shortcuts').select('*').order('sort_order',{ascending:true}),
       sb.from('store_settings').select('*'),
@@ -3248,7 +3353,6 @@ async function init() {
     storeName  = get('storeName')  || 'Marcato';
     const tagline    = get('tagline')    || 'Fast delivery. Real deals.';
     const flashEnd   = get('flashSaleEnd') ? parseInt(get('flashSaleEnd')) : null;
-    const catsJSON   = get('categories');
     const phone      = get('phone') || '';
     currency = get('currency') || '₦';
     storePhone = phone;
@@ -3282,6 +3386,7 @@ async function init() {
     populateFooter(storeName, tagline, phone, get('contactEmail'), get('contactAddress'), get('socialInstagram'), get('socialFacebook'), get('socialX'));
 
     allProds = products || [];
+    markProdsReady();          /* anything waiting on the catalogue (a category tapped during boot) can render now */
     initAds(adRows, banners, tileRows);
     buildCarousel(banners || []);
     buildVendorRow(vendors || []);
@@ -3309,16 +3414,11 @@ async function init() {
     if (catTree) {
       initCategoryPage();
       buildCategoryTiles();
-      buildCategoryRowsTree(allProds);
-      catPills = catTree.visibleRootsIn(null).filter(r => allProds.some(catTree.productMatcher(r.id))).map(r => r.name);
     } else {
+      /* no `categories` table yet: the sticky bar falls back to the old shortcut titles, which the
+         in-place category view resolves by product category name (see resolveCat/productsInCat) */
       setNavItems((shortcuts || []).filter(sc => sc.title).map(sc => ({ title: sc.title, image: sc.image_url, bg: sc.bg_color })));
-      buildCategoryRows(shortcuts || [], allProds);
-      catPills = catsJSON
-        ? JSON.parse(catsJSON)
-        : [...new Set(allProds.map(p=>p.category).filter(Boolean))];
     }
-    buildCatFilter(catPills);
     initSearchPage();
 
     const flashProds = allProds.filter(p => p.flash_sale);
@@ -3336,6 +3436,9 @@ async function init() {
       renderGrid(featured, 'featGrid', false, undefined, true);
     }
 
+    /* Home opens as one continuous discovery feed: no section heading, no category rows, no second
+       category bar — just promotions/merchandising above and products all the way to the footer. */
+    $('allSecHd').hidden = true;
     renderGrid(allProds, 'allGrid', true);
     ensureDiscoverIO();
     syncAdPage();
@@ -3352,9 +3455,11 @@ async function init() {
 
   } catch(err) {
     console.error(err);
-    document.getElementById('allGrid').innerHTML =
-      `<div class="empty"><h3>Connection error</h3><p>Check internet and reload.</p></div>`;
+    const g = document.getElementById('allGrid');
+    g.removeAttribute('aria-busy');
+    g.innerHTML = `<div class="empty"><h3>Connection error</h3><p>Check internet and reload.</p></div>`;
   } finally {
+    markProdsReady();          /* never leave a category tap waiting forever on a failed load */
     const l = document.getElementById('loader');
     l.classList.add('done');
     setTimeout(()=>l.remove(), 350);
