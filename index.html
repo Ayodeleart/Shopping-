@@ -1463,7 +1463,9 @@ function initCategoryPage() {
     tree: () => catTree, products: () => allProds, cardHTML, go: openCategory, onBack: closeCatPage, onHome: goHome,
     world: null,   /* the main store's "All categories" page: Fashion-world categories live in the Fashion world */
     merchSections: categoryMerchSections,
-    ads: () => adsList, mountAds: mountFeedAds, observeAllEls: observeAll
+    ads: () => adsList, mountAds: mountFeedAds, observeAllEls: observeAll,
+    brandLabel: p => { const b = brandOf(p); return b ? b.name : (p.brand || null); },
+    ratingOf: p => ratingMap[p.id] || null
   });
   catDeepLinked = !!catFromHash() || !!wcatFromHash();
   window.addEventListener('hashchange', syncCatPage);

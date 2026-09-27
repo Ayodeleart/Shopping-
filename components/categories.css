@@ -73,5 +73,48 @@
 .cpg-empty{padding:36px 20px;text-align:center;color:var(--txt3);font-size:13px}
 .cpg-empty h3{font-size:15px;color:var(--txt);margin-bottom:4px}
 
+/* Sticky bottom Sort by / Filter by toolbar. Fixed to the viewport, floating above the iPhone home-
+   indicator safe area, never reloading or leaving the category-browsing interface. */
+#catPage.has-toolbar .pgrid-wrap{padding-bottom:76px}   /* keeps the last product row clear of the fixed toolbar */
+.cpg-toolbar{
+  position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 14px);
+  z-index:20;display:flex;align-items:center;background:#17181c;border-radius:999px;
+  box-shadow:0 8px 24px rgba(0,0,0,.28);overflow:hidden;max-width:calc(100% - 28px)
+}
+.cpg-tbtn{
+  display:flex;align-items:center;gap:7px;padding:13px 22px;background:none;border:none;color:#fff;
+  font-size:13.5px;font-weight:700;white-space:nowrap;position:relative
+}
+.cpg-tbtn svg{width:17px;height:17px;flex-shrink:0}
+.cpg-tbtn:active{opacity:.7}
+.cpg-tbsep{width:1px;align-self:stretch;margin:10px 0;background:rgba(255,255,255,.18)}
+.cpg-tbdot{position:absolute;top:9px;right:14px;width:8px;height:8px;border-radius:50%;background:var(--red);border:1.5px solid #17181c}
+
+.cpg-sheet-bg{position:fixed;inset:0;z-index:21;background:rgba(0,0,0,0);transition:background .2s ease}
+.cpg-sheet-bg.on{background:rgba(0,0,0,.4)}
+.cpg-sheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:22;background:var(--card, #fff);border-radius:18px 18px 0 0;
+  padding:4px 4px calc(env(safe-area-inset-bottom,0px) + 4px);
+  transform:translateY(100%);transition:transform .22s ease;max-height:70vh;overflow-y:auto
+}
+.cpg-sheet.on{transform:translateY(0)}
+.cpg-sheet-hd{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 6px;font-size:15px;font-weight:800}
+.cpg-sheet-x{width:30px;height:30px;border-radius:50%;background:var(--bg2);border:none;font-size:18px;line-height:1;color:var(--txt2)}
+.cpg-sheet-body{padding:6px 10px 4px}
+.cpg-sortopt{display:flex;align-items:center;justify-content:space-between;width:100%;padding:13px 10px;background:none;border:none;border-bottom:1px solid var(--border);text-align:left;font-size:14px;color:var(--txt)}
+.cpg-sortopt:last-child{border-bottom:none}
+.cpg-sortopt.on{color:var(--red);font-weight:800}
+.cpg-ck{color:var(--red)}
+.cpg-fgroup{padding:10px 8px}
+.cpg-fgroup label{display:block;font-size:12px;font-weight:700;color:var(--txt3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.02em}
+.cpg-fgroup select{width:100%;height:42px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);padding:0 10px;font-size:13.5px;color:var(--txt)}
+.cpg-frow{display:flex;align-items:center;gap:10px}
+.cpg-frow input{flex:1;min-width:0;height:42px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);padding:0 10px;font-size:13.5px;color:var(--txt)}
+.cpg-frow span{color:var(--txt3)}
+.cpg-sheet-ft{display:flex;gap:10px;padding:10px 14px 6px}
+.cpg-fclear,.cpg-fapply{flex:1;height:44px;border-radius:22px;border:none;font-size:14px;font-weight:800}
+.cpg-fclear{background:var(--bg2);color:var(--txt2)}
+.cpg-fapply{background:var(--red);color:#fff}
+
 /* home tile row + per-category rows: name is a link into the category page */
 .catRowName{cursor:pointer}
