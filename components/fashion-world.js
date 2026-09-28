@@ -278,6 +278,9 @@
         var media = h('span', 'fw-g-media');
         var img = new Image();
         img.alt = ''; img.loading = 'lazy'; img.draggable = false; img.decoding = 'async';
+        img.onload = function () {   /* wide half-body cutouts fill the slot (cropped to centre); tall full-body ones stay whole */
+          if (img.naturalHeight && img.naturalWidth / img.naturalHeight > 0.75) img.classList.add('is-wide');
+        };
         img.src = safeUrl(g.media_url);
         media.appendChild(img);
         card.appendChild(media);

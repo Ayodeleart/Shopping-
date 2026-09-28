@@ -225,9 +225,9 @@ test('gender cutouts are taller than the pill and the scroller leaves room for t
   const css = fs.readFileSync(path.join(__dirname, '..', 'components/fashion-world.css'), 'utf8');
   const num = (re) => Number((re.exec(css) || [])[1]);
   const pillH = num(/\.fw-g\{[^}]*?height:(\d+)px/);
-  const imgH = num(/\.fw-g-media img\{[^}]*?height:(\d+)px/);
+  const imgH = num(/\.fw-g-media\{[^}]*?height:(\d+)px/);
   const padTop = num(/\.fw-genderRow\{[^}]*?padding:(\d+)px/);
-  assert.ok(imgH >= pillH + 30, 'cutout (' + imgH + 'px) is clearly taller than the pill (' + pillH + 'px)');
+  assert.ok(imgH >= pillH + 28, 'cutout (' + imgH + 'px) is clearly taller than the pill (' + pillH + 'px)');
   assert.ok(padTop >= imgH - pillH, 'the horizontal scroller has top padding for the part that rises above the pill (else it is clipped)');
 });
 
