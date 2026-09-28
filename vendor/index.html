@@ -195,6 +195,8 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 .vcHero{display:flex;flex-direction:column;align-items:center;text-align:center;margin:clamp(20px,7vh,64px) 0 28px}
 .vcBadge{width:84px;height:84px;border-radius:50%;background:linear-gradient(135deg,#ef3b4a,#a81422);display:flex;align-items:center;justify-content:center;box-shadow:0 10px 28px rgba(217,28,45,.35)}
 .vcBadge svg{width:42px;height:42px;color:#fff}
+.vcLogo{width:96px;height:96px;border-radius:24px;box-shadow:0 10px 28px rgba(0,0,0,.45)}
+.vcTag{margin-top:6px;font-size:12px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:#f87171}
 .vcH{margin-top:22px;font-size:32px;font-weight:800;color:#fff;letter-spacing:-.5px;line-height:1.1}
 .vcP{margin-top:10px;font-size:16px;color:#9ca3af}
 .vcPanel{background:#1f2937;border-radius:18px;padding:22px 18px 20px}
@@ -248,8 +250,8 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
     <!-- SIGN IN (existing vendors / existing Marcato accounts) -->
     <div id="authFormView">
       <div class="vcHero">
-        <div class="vcBadge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8L18 3H6L3 8m18 0v11a1 1 0 01-1 1H4a1 1 0 01-1-1V8m18 0H3m9 4v6"/></svg></div>
-        <h1 class="vcH">Seller Center</h1>
+        <img class="vcLogo" src="app-icon-maskable-192.png" alt="Marcato">
+        <h1 class="vcH">Marcato</h1><div class="vcTag">Seller Center</div>
         <p class="vcP">Sign in to continue</p>
       </div>
       <div class="vcPanel">
