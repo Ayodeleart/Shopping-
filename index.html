@@ -309,18 +309,6 @@ body:not(.cat-mode) #allSecHd{border-top:0}
 .hScroll.hScroll--ads .fcard-wrap{width:250px}
 .hScroll--ads .adslot .pcx{padding-top:0;max-width:none}
 .hScroll--ads .adslot .pcx__viewport{padding:0 0 2px}
-/* Subcategory tiles inside a category ("Cookware", "Bakeware", ...): a coloured grid, INSIDE the
-   feed, instead of a plain horizontal scroll row — same circular thumb (kept round on purpose), just
-   each tile now sits on its own coloured backdrop and the row wraps like the rest of the feed. */
-.cpg-subs.scg-circle-grid{
-  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:12px;overflow:visible;
-}
-.cpg-subs.scg-circle-grid .cpg-tile{
-  width:auto;flex:none;min-width:0;border-radius:12px;padding:12px 6px 10px;gap:8px;
-}
-.cpg-subs.scg-circle-grid .cat-thumb{width:56px;height:56px}
-@media (min-width:720px){.cpg-subs.scg-circle-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}
-
 /* SHOP BY CATEGORIES — Konga-style 3-across grid of coloured tiles (name top-left, category image
    filling the rest). Scoped to #shopCatsRow.scg-grid only, so the plain .cpg-tile/.cat-thumb classes
    still render their usual circular horizontal-scroll look everywhere else (subcategory bars etc). */
@@ -788,15 +776,6 @@ body:not(.cat-mode) #allSecHd{border-top:0}
   <!-- SQUARE GIF TILES (admin: Banners > Tiles) -->
   <section id="tileSec" hidden><div id="tileRow" hidden></div></section>
 
-  <!-- SHOP BY CATEGORIES: the store's real main categories (categories table), each tile showing its
-       configured image/GIF or its initial-on-colour placeholder (Pcx.Categories.thumb). Tapping a tile
-       browses that category IN PLACE through the same selectCategory() the sticky bar uses; See All
-       opens the existing All-categories page — see buildShopCats(). -->
-  <section id="shopCatsSec" style="display:none">
-    <div class="secHd"><span class="secTtl">Shop by Categories</span><a class="secAll" href="#cat=all" onclick="openCategory('all');return false">See All</a></div>
-    <div id="shopCatsRow" class="scg-grid"></div>
-  </section>
-
   <!-- EXPLORE MARCATO: specialized shopping worlds (Food, Fashion, Beauty, Home, Gifts). Not categories,
        not brands, not vendors — separate concepts, see data/worlds.js and components/explore-marcato.js -->
   <section id="exploreSec">
@@ -805,6 +784,15 @@ body:not(.cat-mode) #allSecHd{border-top:0}
       <span class="xmSub">Step into a world made just for you</span>
     </div>
     <div id="exploreRow" class="xmRow"></div>
+  </section>
+
+  <!-- SHOP BY CATEGORIES: the store's real main categories (categories table), each tile showing its
+       configured image/GIF or its initial-on-colour placeholder (Pcx.Categories.thumb). Tapping a tile
+       sits inside the product feed: Explore Marcato always comes first, then the admin-chosen number of product rows (Settings > Shop by Categories Position), see placeShopCats(). Tapping a tile browses that category IN PLACE through the same selectCategory() the sticky bar uses; See All
+       opens the existing All-categories page — see buildShopCats(). -->
+  <section id="shopCatsSec" style="display:none">
+    <div class="secHd"><span class="secTtl">Shop by Categories</span><a class="secAll" href="#cat=all" onclick="openCategory('all');return false">See All</a></div>
+    <div id="shopCatsRow" class="scg-grid"></div>
   </section>
 
   <!-- HOME AD SLOT A: between Explore Marcato and Today's Deals. Reuses the same `ads` table / admin
@@ -868,7 +856,7 @@ body:not(.cat-mode) #allSecHd{border-top:0}
        Nothing here ever navigates away or reloads; see selectCategory(). -->
   <section id="allSec">
     <!-- A. circular subcategory tiles (real categories, real images) — category view only -->
-    <div id="catSubs" class="cpg-subs scg-circle-grid" hidden></div>
+    <div id="catSubs" class="cpg-subs" hidden></div>
     <!-- B. eligible merchandising rails (Flash/Popular/Brand Deals/Hot Deals/New Arrivals) — category view only -->
     <div id="catMerch" hidden></div>
     <!-- C. the product grid. Its header is hidden on Home so the feed reads as one continuous stream. -->
@@ -1487,6 +1475,25 @@ const HOME_CAT_DUPLICATE_GROUPS = [
   ['School & Education', 'Books & Stationery', 'Books & Stationary', 'Books, Stationery & Education']
 ];
 const HOME_SHOP_CATS_CAP = 12;
+let shopCatsAfterRows = 2;     /* admin: product rows shown before Shop by Categories (store_settings.shopCatsAfterRows) */
+
+/* Shop by Categories lives INSIDE the product feed. Order is fixed: Explore Marcato first, then the
+   admin's number of product rows (Today's Deals, then each merchandising rail, then Recommended),
+   then this block. 0 = straight under Explore Marcato; more rows than exist = after the last one. */
+function placeShopCats() {
+  const sec = $('shopCatsSec'), ex = $('exploreSec');
+  if (!sec || !ex) return;
+  const shown = el => el && el.style.display !== 'none' && !el.hidden;
+  const rows = [];
+  if (shown($('flashSec'))) rows.push($('flashSec'));
+  if (shown($('homeMerch'))) {
+    Array.from($('homeMerchRows').children).forEach(el => { if (el !== sec && shown(el)) rows.push(el); });
+    if (shown($('recSec'))) rows.push($('recSec'));
+  }
+  const n = Math.max(0, shopCatsAfterRows | 0);
+  const anchor = (n === 0 || !rows.length) ? ex : rows[Math.min(n, rows.length) - 1];
+  if (anchor.nextElementSibling !== sec) anchor.after(sec);
+}
 
 function dedupeAndCapShopCats(roots) {
   const countFor = c => allProds.filter(catTree.productMatcher(c.id)).length;
@@ -2317,12 +2324,14 @@ function buildHomeMerch() {
       html += homeRailHTML(r);
     }
   });
+  if ($('shopCatsSec') && rows.contains($('shopCatsSec'))) $('exploreSec').after($('shopCatsSec'));   /* survive the re-render */
   rows.innerHTML = html;
 
   if (sponAds.length) mountFeedAds(rows);    /* renders each sponsored card through the existing ad system */
   renderRecRail(recP);
   host.style.display = (rows.children.length || $('recSec').style.display !== 'none') ? '' : 'none';
   observeAll(rows.querySelectorAll('.au'));
+  placeShopCats();
 }
 
 /* Recommended for You fills its own persistent section so it can be refreshed alone (see
@@ -3704,6 +3713,7 @@ async function init() {
     const get = k => settings?.find(s=>s.key===k)?.value;
     storeName  = get('storeName')  || 'Marcato';
     const tagline    = get('tagline')    || 'Fast delivery. Real deals.';
+    { const n = parseInt(get('shopCatsAfterRows'), 10); shopCatsAfterRows = Number.isFinite(n) ? Math.min(20, Math.max(0, n)) : 2; }
     const flashEnd   = get('flashSaleEnd') ? parseInt(get('flashSaleEnd')) : null;
     const phone      = get('phone') || '';
     currency = get('currency') || '₦';
