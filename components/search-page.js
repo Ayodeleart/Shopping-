@@ -44,6 +44,7 @@
     this.f = this._freshFilters();
     this.idx = null; this.sig = '';
     this.timer = null;
+    this.tab = '';               // '' = everything, else the main category picked in the top tabs
     this._build();
   }
   var P = SearchPage.prototype;
@@ -57,13 +58,19 @@
     var self = this, root = this.root;
     root.innerHTML =
       '<div class="sp-top">' +
-        '<button type="button" class="sp-back" aria-label="Back">' + I.back + '</button>' +
-        '<form class="sp-form" role="search" action="#" novalidate>' + I.search +
+        '<nav class="sp-tabs" role="tablist" aria-label="Search scope"></nav>' +
+        '<form class="sp-form" role="search" action="#" novalidate>' +
+          '<button type="button" class="sp-back" aria-label="Back">' + I.back + '</button>' +
           '<input class="sp-input" type="search" enterkeyhint="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search products, brands and categories" aria-label="Search">' +
           '<button type="button" class="sp-clear" aria-label="Clear search" hidden>' + I.x + '</button>' +
         '</form>' +
       '</div>' +
       '<div class="sp-body"></div>';
+    this.tabsEl = root.querySelector('.sp-tabs');
+    this.tabsEl.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-tab]');
+      if (b) self._setTab(b.getAttribute('data-tab'));
+    });
     this.input = root.querySelector('.sp-input');
     this.clearBtn = root.querySelector('.sp-clear');
     this.body = root.querySelector('.sp-body');
@@ -83,6 +90,8 @@
   P.open = function (query) {
     if (!this.isOpen) {
       this.isOpen = true;
+      this.tab = '';
+      this._renderTabs();
       this.root.classList.add('open');
       document.body.style.overflow = 'hidden';
     }
@@ -136,41 +145,111 @@
     S().recent.add(q);
     this.f = this._freshFilters();
     this.q = q;
-    this.res = S().search(this._index(), q);
+    this.res = this._scope(S().search(this._index(), q));
     this.mode = 'results';
     this._renderResults();
     this.input.blur();
     this.body.scrollTop = 0;
   };
 
-  /* ── idle: recent searches, categories, brands ─────── */
+  /* ── top tabs: the main categories scope the whole page ─── */
+
+  P._tabList = function () {
+    return (this.d.categories() || []).filter(function (c) { return !c.path || c.path.indexOf(' \u203a ') < 0; }).slice(0, 12);
+  };
+
+  P._renderTabs = function () {
+    var e = this._esc.bind(this), cur = this.tab;
+    var list = [{ title: '', label: 'All' }].concat(this._tabList().map(function (c) { return { title: c.title, label: c.title }; }));
+    this.tabsEl.innerHTML = list.map(function (t) {
+      return '<button type="button" role="tab" class="sp-tab' + (t.title === cur ? ' on' : '') + '" aria-selected="' + (t.title === cur) + '" data-tab="' + e(t.title) + '">' + e(t.label) + '</button>';
+    }).join('');
+    this.input.placeholder = cur ? 'Search within ' + cur : 'Search products, brands and categories';
+    var on = this.tabsEl.querySelector('.on');
+    if (on && on.scrollIntoView) { try { on.scrollIntoView({ inline: 'nearest', block: 'nearest' }); } catch (x) {} }
+  };
+
+  P._setTab = function (name) {
+    if (name === this.tab) return;
+    this.tab = name;
+    this._renderTabs();
+    var q = this.input.value.trim();
+    if (!q) { this.mode = 'idle'; this._renderIdle(); }
+    else if (this.mode === 'results') this._submit(q);
+    else this._suggest(q);
+    this.body.scrollTop = 0;
+  };
+
+  P._inTab = function (p) {
+    if (!this.tab) return true;
+    var n = this.d.catNames(p);
+    return n.length > 0 && n[0] === this.tab;
+  };
+
+  P._scope = function (res) {
+    if (!this.tab) return res;
+    var self = this, out = {};
+    for (var k in res) out[k] = res[k];
+    out.items = res.items.filter(function (r) { return self._inTab(r.p); });
+    return out;
+  };
+
+  /* ── idle: hot searches + ranked lists (real data only) ─── */
+
+  /* leaf categories of the products, best first; score(p) is 0 for products that do not count */
+  P._rank = function (pool, score) {
+    var d = this.d, map = {};
+    pool.forEach(function (p) {
+      var n = d.catNames(p); if (!n.length) return;
+      var s = score(p); if (!(s > 0)) return;
+      var k = n[n.length - 1], g = map[k] || (map[k] = { name: k, s: 0, img: '', top: -1 });
+      g.s += s;
+      if (p.image_url && s > g.top) { g.top = s; g.img = p.image_url; }
+    });
+    return Object.keys(map).map(function (k) { return map[k]; })
+      .sort(function (a, b) { return b.s - a.s || a.name.localeCompare(b.name); }).slice(0, 4);
+  };
 
   P._renderIdle = function () {
-    var e = this._esc.bind(this), d = this.d, html = '';
-    var recent = S().recent.get();
-    if (recent.length) {
-      html += '<div class="sp-sec"><div class="sp-sech"><b>Recent searches</b><button type="button" data-recent-clear>Clear all</button></div>' +
-        recent.map(function (r) {
-          return '<div class="sp-recent"><button type="button" class="sp-recent-go" data-recent="' + e(r) + '">' + I.clock + '<span>' + e(r) + '</span></button>' +
-                 '<button type="button" class="sp-recent-x" data-recent-del="' + e(r) + '" aria-label="Remove ' + e(r) + '">' + I.x + '</button></div>';
-        }).join('') + '</div>';
-    }
-    var cats = (d.categories() || []).filter(function (c) { return !c.path || c.path.indexOf(' \u203a ') < 0; }).slice(0, 14);
-    if (cats.length) {
-      html += '<div class="sp-sec"><div class="sp-sech"><b>Browse categories</b></div><div class="sp-chips">' +
-        cats.map(function (c, i) { return '<button type="button" class="sp-chip" data-cat="' + i + '" data-scope="browse">' + e(c.title) + '</button>'; }).join('') +
+    var self = this, e = this._esc.bind(this), d = this.d, html = '';
+    var pool = d.products().filter(function (p) { return self._inTab(p); });
+    var sold = d.sold || function () { return 0; };
+
+    /* Hot searches: this device's recent searches first, then the categories with the most products */
+    var hot = [], seen = {};
+    var addHot = function (t) { var k = String(t).toLowerCase(); if (t && !seen[k] && hot.length < 10) { seen[k] = 1; hot.push(t); } };
+    S().recent.get().slice(0, 3).forEach(addHot);
+    var counts = {};
+    pool.forEach(function (p) { var n = d.catNames(p); if (n.length) { var k = n[n.length - 1]; counts[k] = (counts[k] || 0) + 1; } });
+    Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a] || a.localeCompare(b); }).forEach(addHot);
+    if (hot.length) {
+      html += '<div class="sp-hot"><h3>Hot Searches</h3><div class="sp-hotchips">' +
+        hot.map(function (t) { return '<button type="button" class="sp-hotchip" data-q="' + e(t) + '">' + e(t) + '</button>'; }).join('') +
         '</div></div>';
     }
-    var counts = {}, brands = d.brands() || [];
-    d.products().forEach(function (p) { var b = d.brandOf(p); if (b) counts[b.id] = (counts[b.id] || 0) + 1; });
-    var popular = brands.filter(function (b) { return counts[b.id]; }).sort(function (a, b) { return counts[b.id] - counts[a.id]; }).slice(0, 10);
-    if (popular.length) {
-      html += '<div class="sp-sec"><div class="sp-sech"><b>Popular brands</b></div><div class="sp-chips">' +
-        popular.map(function (b) { return '<button type="button" class="sp-chip sp-chip-brand" data-brand="' + esc(b.id) + '">' + this._logo(b) + e(b.name) + '</button>'; }, this).join('') +
-        '</div></div>';
+
+    /* Ranked columns */
+    var DAY = 86400000, now = Date.now();
+    var fresh = pool.filter(function (p) { return p.created_at && now - Date.parse(p.created_at) < 30 * DAY; });
+    if (!fresh.length) fresh = pool.slice().filter(function (p) { return p.created_at; })
+      .sort(function (a, b) { return Date.parse(b.created_at) - Date.parse(a.created_at); }).slice(0, 40);
+    var freshIds = {}; fresh.forEach(function (p) { freshIds[p.id] = 1; });
+    var cols = [
+      { title: 'Top Searches', rows: this._rank(pool, function (p) { return (sold(p) || 0) * 1000 + 1; }) },
+      { title: 'Trending', rows: this._rank(pool, function (p) { return freshIds[p.id] ? 1 : 0; }) },
+      { title: 'Deals', rows: this._rank(pool, function (p) { return p.original_price && p.original_price > p.price ? 1 : 0; }) }
+    ].filter(function (c) { return c.rows.length; });
+    if (cols.length) {
+      html += '<div class="sp-cols">' + cols.map(function (c) {
+        return '<section class="sp-col"><h3>' + e(c.title) + '</h3>' + c.rows.map(function (r, i) {
+          return '<button type="button" class="sp-rrow" data-q="' + e(r.name) + '"><i>' + (i + 1) + '</i>' +
+            '<span class="sp-rth">' + (r.img ? '<img src="' + safeUrl(r.img) + '" alt="" loading="lazy" onerror="this.remove()">' : '') + '</span>' +
+            '<b>' + e(r.name) + '</b></button>';
+        }).join('') + '</section>';
+      }).join('') + '</div>';
     }
     this.body.innerHTML = html || '<div class="sp-hint">Type what you are looking for. Try a product, a brand or a category.</div>';
-    this._browse = cats;
+    this._browse = [];
   };
 
   P._logo = function (b) {
@@ -182,7 +261,7 @@
   P._suggest = function (q) {
     var d = this.d, e = this._esc.bind(this), Sx = S();
     this.mode = 'suggest'; this.q = q;
-    var res = Sx.search(this._index(), q);
+    var res = this._scope(Sx.search(this._index(), q));
     this.res = res;
 
     var brands = Sx.rankNames(d.brands() || [], q, function (b) { return b.name; }).slice(0, 4);
@@ -319,6 +398,7 @@
   P._onClick = function (ev) {
     var t = ev.target, self = this, d = this.d, el;
 
+    if ((el = t.closest('[data-q]'))) { this._submit(el.getAttribute('data-q')); return; }
     if ((el = t.closest('[data-recent-del]'))) { S().recent.remove(el.getAttribute('data-recent-del')); this._renderIdle(); return; }
     if (t.closest('[data-recent-clear]')) { S().recent.clear(); this._renderIdle(); return; }
     if ((el = t.closest('[data-recent]'))) { this._submit(el.getAttribute('data-recent')); return; }

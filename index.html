@@ -3012,6 +3012,7 @@ function initSearchPage() {
     categories: searchCategories,
     brandOf,
     catNames: productCatNames,
+    sold: p => soldMap[p.id] || 0,
     vendorName: p => (p.vendor_id && vendorsMap[p.vendor_id] ? vendorsMap[p.vendor_id].business_name : storeName) || '',
     cardHTML,
     fmt,
