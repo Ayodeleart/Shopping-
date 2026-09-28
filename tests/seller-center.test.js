@@ -19,14 +19,24 @@ const read = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
 
 /* ── 1. SELLER LANDING PAGE ─────────────────────────────────────────── */
 
-test('seller landing page exists with Vendor Center branding and both CTAs', () => {
+test('Seller Center landing is a compact entry screen (no marketing sections) with working CTAs', () => {
   const html = read('sell/index.html');
-  assert.match(html, /Vendor Center/i, 'has Marcato Vendor Center identity');
-  assert.match(html, /href="\/vendor\/\?intent=register"/, '"Sell on Marcato" opens registration');
-  assert.match(html, /href="\/vendor\/\?intent=signin"/, '"Sign in" opens the vendor login');
-  assert.match(html, /Sell on Marcato/, 'primary CTA label');
-  assert.doesNotMatch(html, /select[^>]*country|choose your country/i, 'no country-selection screen (Nigeria only)');
-  assert.match(html, /reviewed by a person|manually reviews/i, 'explains manual admin review');
+  assert.match(html, /Seller Center/i, 'has Marcato Seller Center identity');
+  assert.match(html, /id="signInBtn" href="\/vendor\/\?intent=signin"/, '"Sign in with Email" opens the dedicated vendor login');
+  assert.match(html, /id="sellBtn" href="\/sell\/register\/"/, '"Sell on Marcato" opens the registration-start screen');
+  assert.doesNotMatch(html, /<h[12][^>]*>[^<]{60,}/, 'no long marketing headline');
+  assert.doesNotMatch(html, /class="(cards?|steps?|hero|ctaBand|needList)"/, 'no feature cards / hero / how-it-works sections');
+  assert.ok(html.length < 5000, 'landing stays small');
+});
+
+test('registration-start screen: Local continues to existing vendor registration; International is not enabled', () => {
+  const html = read('sell/register/index.html');
+  assert.match(html, /Sell on Marcato/);
+  assert.match(html, /business based in Nigeria/);
+  assert.match(html, /id="locIntl" disabled/, 'international registration is not offered (Nigeria-only rules)');
+  assert.match(html, /\/vendor\/\?intent=register/, 'Next continues into the existing vendor registration');
+  assert.match(html, /href="\/vendor\/\?intent=signin"/, '"Already have an account? Sign in" opens vendor login');
+  assert.match(html, /href="\/sell\/" id="backBtn"/, 'back returns to the Seller Center');
 });
 
 test('main site "Sell on Marcato" entry points open the seller landing page, not the login', () => {
@@ -40,8 +50,9 @@ test('main site "Sell on Marcato" entry points open the seller landing page, not
 
 test('vendor login page: Vendor Center branding, register view, and a way back to the landing page', () => {
   const html = read('vendor/index.html');
-  assert.match(html, /<title>Marcato Vendor Center<\/title>/);
+  assert.match(html, /<title>Marcato Seller Center<\/title>/);
   assert.match(html, /class="vcBack" href="\/sell\/"/, 'link back to the seller landing page');
+  assert.match(html, /location\.href = '\/sell\/register\/'/, '"Sell on Marcato" on the login goes to the registration-start screen');
   for (const id of ['authFormView', 'authRegView', 'authResetView', 'authForgot', 'authSubmit',
     'regEmail', 'regPass', 'regPass2', 'regSubmit', 'authGoRegister', 'authGoSignIn2']) {
     assert.ok(html.includes(`id="${id}"`), `element #${id} present`);
@@ -207,8 +218,8 @@ test('signed-out + ?intent=signin: the dedicated vendor login opens', async () =
     assert.equal(d.getElementById('authFormView').style.display, '', 'sign-in view visible');
     assert.equal(d.getElementById('authRegView').style.display, 'none', 'registration view hidden');
     assert.ok(!d.getElementById('app').classList.contains('on'), 'dashboard stays locked');
-    // switching to registration works without a reload
-    d.getElementById('authGoRegister').click();
-    assert.equal(d.getElementById('authRegView').style.display, '', 'switch to registration');
+    // "Sell on Marcato" on the login sends new sellers to the registration-start screen (asserted statically above;
+    // jsdom cannot perform the navigation itself)
+    assert.ok(d.getElementById('authGoRegister'), 'Sell on Marcato action present on the login');
   } finally { dom.window.close(); }
 });

@@ -1,4 +1,4 @@
-const CACHE = 'vendor-v9';
+const CACHE = 'vendor-v10';
 const SCOPE_HOME = '/vendor/';
 const PRECACHE = ['/components/sw-register.js', '/data/safe.js', '/vendor/', '/vendor/index.html', '/vendor/manifest.json', '/icon.svg', '/components/multi-image-picker.js', '/components/multi-image-picker.css',
   '/components/product-attributes.js', '/components/product-attributes.css', '/components/categories.css', '/components/category-picker.js', '/data/categories.js', '/data/home-decor.js',

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#D91C2D">
 <meta name="robots" content="noindex,nofollow">
-<title>Marcato Vendor Center</title>
+<title>Marcato Seller Center</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" sizes="32x32" href="app-icon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -184,39 +184,47 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 #vtoast{position:fixed;bottom:calc(84px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--txt);color:var(--bg);font-size:13px;font-weight:600;padding:11px 20px;border-radius:30px;opacity:0;pointer-events:none;transition:opacity .25s,bottom .25s;z-index:500;white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis}
 #vtoast.on{opacity:1;bottom:calc(94px + env(safe-area-inset-bottom,0px))}
 
-/* ── VENDOR CENTER AUTH THEME ──────────────────────
-   #authWrap gets its own light "Marcato Vendor Center" look, distinct from
-   the customer login on the main site (which keeps the dark glass design).
-   Only overrides — the shared as-* structure/behaviour is unchanged. */
-#authWrap.vcWrap{background:#f4f4f6;padding-top:calc(24px + env(safe-area-inset-top,0));padding-bottom:calc(24px + env(safe-area-inset-bottom,0))}
-#authWrap .vcCard{background:#fff;border:1px solid #e7e7ea;border-radius:22px;box-shadow:0 16px 44px rgba(0,0,0,.08);padding:26px 22px 24px;max-width:400px}
-.vcBack{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:800;color:#8a8a8a;margin-bottom:16px;text-decoration:none}
+/* ── SELLER CENTER LOGIN THEME ─────────────────────
+   Dark navy Seller Center sign-in (modelled on the reference vendor login), distinct from
+   the customer login on the main site. Only overrides — the shared as-* markup and
+   behaviour are unchanged. */
+#authWrap.vcWrap{background:#111827;align-items:flex-start;padding-top:calc(20px + env(safe-area-inset-top,0));padding-bottom:calc(28px + env(safe-area-inset-bottom,0))}
+#authWrap .vcCard{max-width:420px;background:transparent;border:0;box-shadow:none;padding:0;text-align:left}
+.vcBack{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:#9ca3af;margin-bottom:8px;text-decoration:none}
 .vcBack:active{opacity:.6}
-.vcBrand{display:flex;flex-direction:column;align-items:center;margin-bottom:16px}
-.vcBrand img{width:56px;height:56px;border-radius:15px;box-shadow:0 4px 14px rgba(0,0,0,.14)}
-.vcBrand b{margin-top:10px;font-size:20px;font-weight:900;letter-spacing:-.3px;color:#141414;line-height:1.1}
-.vcBrand span{font-size:9.5px;font-weight:800;letter-spacing:2.6px;text-transform:uppercase;color:var(--red);margin-top:3px}
-#authWrap .as-title{color:#141414;font-size:20px}
-#authWrap .as-title svg{color:var(--red)}
-#authWrap .as-sub{color:#77777c}
-#authWrap .as-social-btn{background:#fff;border:1.5px solid #e2e2e6;color:#222;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
-#authWrap .as-divider{color:#9a9aa0}
-#authWrap .as-divider::before,#authWrap .as-divider::after{background:#e9e9ec}
-#authWrap .as-field input{background:#fafafa;border:1.5px solid #e2e2e6;color:#141414;backdrop-filter:none;-webkit-backdrop-filter:none}
-#authWrap .as-field input::placeholder{color:#9a9aa0}
-#authWrap .as-field input:focus{border-color:var(--red)}
-#authWrap .as-field svg{color:#9a9aa0}
-#authWrap .as-eye{color:#8a8a8a}
-#authWrap .as-row{color:#77777c}
-#authWrap .as-link{color:var(--red)}
-#authWrap .as-cta{background:linear-gradient(120deg,var(--red2) 0%,var(--red) 70%);box-shadow:0 10px 24px rgba(217,28,45,.28),inset 0 1px 0 rgba(255,255,255,.25)}
-#authWrap .as-switch{color:#77777c}
-#authWrap .as-switch button{color:var(--red)}
-#authWrap .as-err{color:#dc2626}
-#authWrap .as-info{color:#15803d}
-#authWrap .as-note{color:#9a9aa0}
-#authWrap .ctitle{color:#141414}
-#authWrap .csub{color:#77777c}
+.vcHero{display:flex;flex-direction:column;align-items:center;text-align:center;margin:clamp(20px,7vh,64px) 0 28px}
+.vcBadge{width:84px;height:84px;border-radius:50%;background:linear-gradient(135deg,#ef3b4a,#a81422);display:flex;align-items:center;justify-content:center;box-shadow:0 10px 28px rgba(217,28,45,.35)}
+.vcBadge svg{width:42px;height:42px;color:#fff}
+.vcH{margin-top:22px;font-size:32px;font-weight:800;color:#fff;letter-spacing:-.5px;line-height:1.1}
+.vcP{margin-top:10px;font-size:16px;color:#9ca3af}
+.vcPanel{background:#1f2937;border-radius:18px;padding:22px 18px 20px}
+#authWrap .as-title{justify-content:center;color:#fff;font-size:22px}
+#authWrap .as-title svg{color:#ef3b4a}
+#authWrap .as-sub{color:#9ca3af;text-align:center}
+#authWrap .as-social{grid-template-columns:1fr;gap:12px;margin-bottom:16px}
+#authWrap .as-social-btn{height:54px;border-radius:8px;background:transparent;border:1.5px solid #4b5563;color:#fff;font-size:16px;font-weight:600;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+#authWrap .as-divider{color:#9ca3af;margin:18px 0}
+#authWrap .as-divider::before,#authWrap .as-divider::after{background:#374151}
+#authWrap .as-field input{height:54px;border-radius:8px;background:#374151;border:1.5px solid #4b5563;color:#fff;backdrop-filter:none;-webkit-backdrop-filter:none}
+#authWrap .as-field input::placeholder{color:#9ca3af}
+#authWrap .as-field input:focus{border-color:#ef3b4a}
+#authWrap .as-field svg{color:#9ca3af}
+#authWrap .as-eye{color:#9ca3af}
+#authWrap .as-row{color:#9ca3af}
+#authWrap .as-link{color:#f87171}
+#authWrap .as-cta{height:54px;border-radius:8px;background:linear-gradient(120deg,#a81422 0%,#D91C2D 70%);box-shadow:none;display:flex;align-items:center;justify-content:center;gap:10px}
+#authWrap .as-switch{color:#9ca3af}
+#authWrap .as-switch button{color:#f87171;font-weight:700}
+#authWrap .as-err{color:#f87171}
+#authWrap .as-info{color:#4ade80}
+#authWrap .as-note{color:#6b7280;text-align:center}
+#authWrap .as-switch{text-align:center}
+#authWrap .ctitle{color:#fff}
+#authWrap .csub{color:#9ca3af}
+#authWrap .vcBrand{display:flex;flex-direction:column;align-items:center;margin-bottom:18px}
+#authWrap .vcBrand img{width:64px;height:64px;border-radius:16px}
+#authWrap .vcBrand b{margin-top:10px;font-size:22px;font-weight:800;color:#fff}
+#authWrap .vcBrand span{font-size:10px;font-weight:800;letter-spacing:2.6px;text-transform:uppercase;color:#f87171;margin-top:3px}
 </style>
 <link rel="stylesheet" href="../components/multi-image-picker.css">
 <link rel="stylesheet" href="../components/product-attributes.css">
@@ -235,20 +243,16 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 <!-- 1. VENDOR CENTER: SIGN IN / CREATE SELLER ACCOUNT -->
 <div id="authWrap" class="centerWrap vcWrap" style="display:none">
   <div class="cbox authScreen vcCard">
-    <a class="vcBack" href="/sell/"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>Marcato Seller Center</a>
+    <a class="vcBack" href="/sell/"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>Seller Center</a>
 
     <!-- SIGN IN (existing vendors / existing Marcato accounts) -->
     <div id="authFormView">
-      <div class="vcBrand"><img src="app-icon-maskable-192.png" alt=""><b>Marcato</b><span>Vendor Center</span></div>
-      <div class="as-title">Sign in to your seller account</div>
-      <div class="as-sub">Manage your store, or continue your seller application.</div>
-
-      <div class="as-social">
-        <button type="button" class="as-social-btn" id="authGoogleBtn"><svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.9 32.7 29.4 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.6 18.9 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 16.3 4 9.6 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.5 0 10.4-1.9 14.2-5.1l-6.5-5.5C29.6 35.3 27 36 24 36c-5.4 0-9.9-3.3-11.4-7.9l-6.6 5.1C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.7l6.5 5.5C41.5 36.4 44 30.7 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>Google</button>
-        <button type="button" class="as-social-btn soon" id="authFacebookBtn"><svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><circle cx="24" cy="24" r="20" fill="#1877F2"/><path fill="#fff" d="M27 24.5h3.5l.6-4H27v-2.3c0-1.4.4-2.4 2.4-2.4H31V12c-.4-.1-1.7-.2-3.2-.2-3.2 0-5.4 2-5.4 5.6V20.5H19v4h3.4V35h4.6z"/></svg>Facebook<span class="as-soon-badge">Soon</span></button>
+      <div class="vcHero">
+        <div class="vcBadge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8L18 3H6L3 8m18 0v11a1 1 0 01-1 1H4a1 1 0 01-1-1V8m18 0H3m9 4v6"/></svg></div>
+        <h1 class="vcH">Seller Center</h1>
+        <p class="vcP">Sign in to continue</p>
       </div>
-      <div class="as-divider"><span>Or continue with email</span></div>
-
+      <div class="vcPanel">
       <form id="authForm" novalidate>
         <div class="as-field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 6 10-6"/></svg><input id="authEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="Email address"></div>
         <div class="as-field pass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg><input id="authPass" type="password" autocomplete="current-password" placeholder="Password"><button type="button" class="as-eye" data-for="authPass">Show</button></div>
@@ -257,13 +261,19 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
       </form>
       <div class="as-err" id="authErr"></div>
       <div class="as-info" id="authInfo"></div>
-      <div class="as-switch">New to selling on Marcato? <button type="button" id="authGoRegister">Create your seller account</button></div>
+      <div class="as-divider"><span>Or continue with</span></div>
+      <div class="as-social">
+        <button type="button" class="as-social-btn" id="authGoogleBtn"><svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.9 32.7 29.4 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.6 18.9 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 16.3 4 9.6 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.5 0 10.4-1.9 14.2-5.1l-6.5-5.5C29.6 35.3 27 36 24 36c-5.4 0-9.9-3.3-11.4-7.9l-6.6 5.1C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.7l6.5 5.5C41.5 36.4 44 30.7 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>Google</button>
+        <button type="button" class="as-social-btn soon" id="authFacebookBtn"><svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><circle cx="24" cy="24" r="20" fill="#1877F2"/><path fill="#fff" d="M27 24.5h3.5l.6-4H27v-2.3c0-1.4.4-2.4 2.4-2.4H31V12c-.4-.1-1.7-.2-3.2-.2-3.2 0-5.4 2-5.4 5.6V20.5H19v4h3.4V35h4.6z"/></svg>Facebook<span class="as-soon-badge">Soon</span></button>
+      </div>
+      </div>
+      <div class="as-switch" style="margin-top:20px">New to selling on Marcato? <button type="button" id="authGoRegister">Sell on Marcato</button></div>
       <div class="as-note">One Marcato account works for shopping and selling — sign in with the same details you use on the main site. Have an account but no password yet? Tap <b>Forgot password</b> once to set one.</div>
     </div>
 
     <!-- CREATE SELLER ACCOUNT (new vendors, from the "Sell on Marcato" button) -->
     <div id="authRegView" style="display:none">
-      <div class="vcBrand"><img src="app-icon-maskable-192.png" alt=""><b>Marcato</b><span>Vendor Center</span></div>
+      <div class="vcBrand"><img src="app-icon-maskable-192.png" alt=""><b>Marcato</b><span>Seller Center</span></div>
       <div class="as-title">Create your seller account</div>
       <div class="as-sub">Start your Marcato seller application — it only takes a few minutes.</div>
 
@@ -287,7 +297,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 
     <!-- new password (after the reset-password email link) -->
     <div id="authResetView" style="display:none">
-      <div class="vcBrand"><img src="app-icon-maskable-192.png" alt=""><b>Marcato</b><span>Vendor Center</span></div>
+      <div class="vcBrand"><img src="app-icon-maskable-192.png" alt=""><b>Marcato</b><span>Seller Center</span></div>
       <div class="ctitle">Set a new password</div>
       <div class="csub">Choose a password with at least 8 characters.</div>
       <form id="authResetForm" novalidate>
@@ -697,7 +707,7 @@ function authView(v) {
 function authMsg(err, info) { $a('authErr').textContent = err || ''; $a('authInfo').textContent = info || ''; }
 function regMsg(err, info) { $a('regErr').textContent = err || ''; $a('regInfo').textContent = info || ''; }
 
-$a('authGoRegister').onclick = () => { authMsg('', ''); setVendorIntent('register'); authView('register'); };
+$a('authGoRegister').onclick = () => { location.href = '/sell/register/'; };
 $a('authGoSignIn2').onclick = () => { regMsg('', ''); setVendorIntent('signin'); authView('form'); };
 
 document.querySelectorAll('.as-eye').forEach(btn => {
