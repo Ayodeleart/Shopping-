@@ -272,6 +272,7 @@ body:not(.cat-mode) #allSecHd{border-top:0}
 .secHd--accent{background:var(--sec-accent, var(--red));padding:10px 13px}
 .secHd--accent .secTtl{color:#fff}
 .secHd--accent .secAll{color:rgba(255,255,255,.9)}
+.secHd--accent #pCount{color:rgba(255,255,255,.85)!important}
 
 /* ── FLASH SALE ───────────────────────────────────── */
 .flashHd{
@@ -308,6 +309,18 @@ body:not(.cat-mode) #allSecHd{border-top:0}
 .hScroll.hScroll--ads .fcard-wrap{width:250px}
 .hScroll--ads .adslot .pcx{padding-top:0;max-width:none}
 .hScroll--ads .adslot .pcx__viewport{padding:0 0 2px}
+/* Subcategory tiles inside a category ("Cookware", "Bakeware", ...): a coloured grid, INSIDE the
+   feed, instead of a plain horizontal scroll row — same circular thumb (kept round on purpose), just
+   each tile now sits on its own coloured backdrop and the row wraps like the rest of the feed. */
+.cpg-subs.scg-circle-grid{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:12px;overflow:visible;
+}
+.cpg-subs.scg-circle-grid .cpg-tile{
+  width:auto;flex:none;min-width:0;border-radius:12px;padding:12px 6px 10px;gap:8px;
+}
+.cpg-subs.scg-circle-grid .cat-thumb{width:56px;height:56px}
+@media (min-width:720px){.cpg-subs.scg-circle-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}
+
 /* SHOP BY CATEGORIES — Konga-style 3-across grid of coloured tiles (name top-left, category image
    filling the rest). Scoped to #shopCatsRow.scg-grid only, so the plain .cpg-tile/.cat-thumb classes
    still render their usual circular horizontal-scroll look everywhere else (subcategory bars etc). */
@@ -855,7 +868,7 @@ body:not(.cat-mode) #allSecHd{border-top:0}
        Nothing here ever navigates away or reloads; see selectCategory(). -->
   <section id="allSec">
     <!-- A. circular subcategory tiles (real categories, real images) — category view only -->
-    <div id="catSubs" class="cpg-subs" hidden></div>
+    <div id="catSubs" class="cpg-subs scg-circle-grid" hidden></div>
     <!-- B. eligible merchandising rails (Flash/Popular/Brand Deals/Hot Deals/New Arrivals) — category view only -->
     <div id="catMerch" hidden></div>
     <!-- C. the product grid. Its header is hidden on Home so the feed reads as one continuous stream. -->
@@ -1465,6 +1478,31 @@ function filterByBrand(id) {
 }
 
 /* ── SHOP BY CATEGORIES (home) ────────────────────── */
+/* Categories that are really the same shelf under a different admin-entered name. Nothing in the text
+   of these names overlaps ("School & Education" / "Books & Stationery" share no words), so this can't
+   be detected automatically — add another array here by hand whenever a near-duplicate main category
+   needs folding away from this curated home grid. Whichever name in a group has the most real products
+   is kept; the rest are hidden from THIS grid only (See All / the sticky bar still lists every category). */
+const HOME_CAT_DUPLICATE_GROUPS = [
+  ['School & Education', 'Books & Stationery', 'Books & Stationary', 'Books, Stationery & Education']
+];
+const HOME_SHOP_CATS_CAP = 12;
+
+function dedupeAndCapShopCats(roots) {
+  const countFor = c => allProds.filter(catTree.productMatcher(c.id)).length;
+  let list = roots.slice();
+  HOME_CAT_DUPLICATE_GROUPS.forEach(group => {
+    const names = group.map(n => n.trim().toLowerCase());
+    const inGroup = list.filter(c => names.includes(String(c.name).trim().toLowerCase()));
+    if (inGroup.length > 1) {
+      const keep = inGroup.reduce((a, b) => (countFor(b) > countFor(a) ? b : a));
+      const dropIds = new Set(inGroup.filter(c => c !== keep).map(c => c.id));
+      list = list.filter(c => !dropIds.has(c.id));
+    }
+  });
+  return list.slice(0, HOME_SHOP_CATS_CAP);   /* admin's own sort_order decides which 12 lead */
+}
+
 /* The store's real main categories as circular tiles (their configured image/GIF, or their
    initial on the category colour when none is set — Pcx.Categories.thumb, the same placeholder
    the rest of the store uses). Tapping one browses that category in place through the exact
@@ -1472,7 +1510,8 @@ function filterByBrand(id) {
 function buildShopCats() {
   const sec = $('shopCatsSec');
   if (!sec) return;
-  const roots = catTree ? catTree.visibleRootsIn(null) : [];
+  const allRoots = catTree ? catTree.visibleRootsIn(null) : [];
+  const roots = dedupeAndCapShopCats(allRoots);
   if (!roots.length) { sec.style.display = 'none'; return; }
   sec.style.display = '';
   const scgPalette = ['#eef0f3', '#e3f2fb', '#fff8e1', '#e9f7ef', '#f5eee4', '#fbe9f0'];
@@ -1800,6 +1839,8 @@ function showList(title, list, emptyMsg) {
   ++catRenderToken;                       /* cancel any category render still in flight */
   activeCat = 'All'; renderCatNav(); setCatMode(false);
   $('allSecHd').hidden = false;
+  $('allSecHd').classList.remove('secHd--accent');
+  $('allSecHd').style.removeProperty('--sec-accent');
   $('allSecTitle').textContent = title;
   $('pCount').textContent = `${list.length} item${list.length!==1?'s':''}`;
   renderGrid(list, 'allGrid', false, emptyMsg);
@@ -1890,6 +1931,17 @@ function showGridLoading(id) {
   ).join('');
 }
 
+/* A vivid, white-text-safe accent per category for the #allSecHd header bar — a category's own tile
+   colour (catTree.color) is often a pale pastel meant for a small circle, not a solid full-width bar,
+   so this picks from the same saturated palette used for the merchandising rails instead. */
+const CAT_HD_ACCENTS = ['#D91C2D', '#1E7A46', '#0F6FC5', '#8E2DE2', '#B8860B', '#C0392B', '#0891B2', '#D91C6E'];
+function catHdAccent(cat) {
+  if (!cat || cat.id == null) return '';
+  let h = 0; const s = String(cat.id);
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return CAT_HD_ACCENTS[h % CAT_HD_ACCENTS.length];
+}
+
 async function selectCategory(key) {
   const cat = resolveCat(key);
   const token = ++catRenderToken;
@@ -1900,6 +1952,8 @@ async function selectCategory(key) {
   if (!cat) {                                   /* HOME: one continuous feed, no heading, no category rows */
     clearCatView();
     $('allSecHd').hidden = true;
+    $('allSecHd').classList.remove('secHd--accent');
+    $('allSecHd').style.removeProperty('--sec-accent');
     $('allSecTitle').textContent = 'Discover More';
     await prodsReady;
     if (token !== catRenderToken) return;
@@ -1914,6 +1968,8 @@ async function selectCategory(key) {
   renderCatSubs(cat);
   $('catMerch').hidden = true; $('catMerch').innerHTML = '';
   $('allSecHd').hidden = false;
+  $('allSecHd').classList.add('secHd--accent');
+  $('allSecHd').style.setProperty('--sec-accent', catHdAccent(cat));
   $('allSecTitle').textContent = cat.name;
   $('pCount').textContent = '';
   showGridLoading('allGrid');
