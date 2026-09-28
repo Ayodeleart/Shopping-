@@ -281,7 +281,7 @@
   }
 
   async function loadVendors() {
-    var r = await sb.from('vendors').select('id,business_name,status').order('business_name', { ascending: true });
+    var r = await sb.from('vendors_public').select('id,business_name,status').order('business_name', { ascending: true });
     vendors = r.data || [];
     loaded.vendors = true;
   }

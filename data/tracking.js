@@ -115,7 +115,7 @@
     (r[1].data || []).forEach(function (s) { if (s.vendor_id && ids.indexOf(s.vendor_id) < 0) ids.push(s.vendor_id); });
     var sellers = {};
     if (ids.length) {
-      var v = await sb.from('vendors').select('id,business_name,logo_url').in('id', ids);
+      var v = await sb.from('vendors_public').select('id,business_name,logo_url').in('id', ids);
       (v.data || []).forEach(function (x) { sellers[x.id] = x; });
     }
     return { order: r[0].data, shipments: r[1].data || [], items: r[2].data || [], events: r[3].data || [], carriers: r[4].data || [], sellers: sellers };

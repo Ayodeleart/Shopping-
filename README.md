@@ -213,6 +213,7 @@ higher rail is not repeated in a lower one.
 - icon.svg — App icon
 - setup.sql — Original database setup (run once)
 - migration_vendors.sql — Multi-vendor migration (run once, after setup.sql)
+- migration_vendor_center.sql — Vendor Center hardening (run once, after migration_seller_onboarding.sql): safe `vendors_public` view for storefront surfaces, `vendors_guard` trigger that stops vendors from editing protected verification/bank/status fields, products writable by APPROVED vendors only, and the `vendor_events` application-history / correction-request table. /sell/ is the seller landing page; /vendor/ is the Marcato Vendor Center (sign-in + seller registration + dashboard).
 
 ---
 

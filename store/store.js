@@ -157,7 +157,7 @@
      identity, address, phone or admin/rejection fields. */
   async function loadVendor(slug) {
     const { data, error } = await sb
-      .from('vendors')
+      .from('vendors_public')
       .select('id,business_name,logo_url,store_slug,store_description,city,state,status,application_status,created_at')
       .eq('store_slug', slug)
       .eq('status', 'approved')

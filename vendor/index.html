@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#D91C2D">
 <meta name="robots" content="noindex,nofollow">
-<title>Marcato Vendor</title>
+<title>Marcato Vendor Center</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" sizes="32x32" href="app-icon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -183,6 +183,40 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 @keyframes spin{to{transform:rotate(360deg)}}
 #vtoast{position:fixed;bottom:calc(84px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--txt);color:var(--bg);font-size:13px;font-weight:600;padding:11px 20px;border-radius:30px;opacity:0;pointer-events:none;transition:opacity .25s,bottom .25s;z-index:500;white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis}
 #vtoast.on{opacity:1;bottom:calc(94px + env(safe-area-inset-bottom,0px))}
+
+/* ── VENDOR CENTER AUTH THEME ──────────────────────
+   #authWrap gets its own light "Marcato Vendor Center" look, distinct from
+   the customer login on the main site (which keeps the dark glass design).
+   Only overrides — the shared as-* structure/behaviour is unchanged. */
+#authWrap.vcWrap{background:#f4f4f6;padding-top:calc(24px + env(safe-area-inset-top,0));padding-bottom:calc(24px + env(safe-area-inset-bottom,0))}
+#authWrap .vcCard{background:#fff;border:1px solid #e7e7ea;border-radius:22px;box-shadow:0 16px 44px rgba(0,0,0,.08);padding:26px 22px 24px;max-width:400px}
+.vcBack{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:800;color:#8a8a8a;margin-bottom:16px;text-decoration:none}
+.vcBack:active{opacity:.6}
+.vcBrand{display:flex;flex-direction:column;align-items:center;margin-bottom:16px}
+.vcBrand img{width:56px;height:56px;border-radius:15px;box-shadow:0 4px 14px rgba(0,0,0,.14)}
+.vcBrand b{margin-top:10px;font-size:20px;font-weight:900;letter-spacing:-.3px;color:#141414;line-height:1.1}
+.vcBrand span{font-size:9.5px;font-weight:800;letter-spacing:2.6px;text-transform:uppercase;color:var(--red);margin-top:3px}
+#authWrap .as-title{color:#141414;font-size:20px}
+#authWrap .as-title svg{color:var(--red)}
+#authWrap .as-sub{color:#77777c}
+#authWrap .as-social-btn{background:#fff;border:1.5px solid #e2e2e6;color:#222;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+#authWrap .as-divider{color:#9a9aa0}
+#authWrap .as-divider::before,#authWrap .as-divider::after{background:#e9e9ec}
+#authWrap .as-field input{background:#fafafa;border:1.5px solid #e2e2e6;color:#141414;backdrop-filter:none;-webkit-backdrop-filter:none}
+#authWrap .as-field input::placeholder{color:#9a9aa0}
+#authWrap .as-field input:focus{border-color:var(--red)}
+#authWrap .as-field svg{color:#9a9aa0}
+#authWrap .as-eye{color:#8a8a8a}
+#authWrap .as-row{color:#77777c}
+#authWrap .as-link{color:var(--red)}
+#authWrap .as-cta{background:linear-gradient(120deg,var(--red2) 0%,var(--red) 70%);box-shadow:0 10px 24px rgba(217,28,45,.28),inset 0 1px 0 rgba(255,255,255,.25)}
+#authWrap .as-switch{color:#77777c}
+#authWrap .as-switch button{color:var(--red)}
+#authWrap .as-err{color:#dc2626}
+#authWrap .as-info{color:#15803d}
+#authWrap .as-note{color:#9a9aa0}
+#authWrap .ctitle{color:#141414}
+#authWrap .csub{color:#77777c}
 </style>
 <link rel="stylesheet" href="../components/multi-image-picker.css">
 <link rel="stylesheet" href="../components/product-attributes.css">
@@ -198,15 +232,16 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 <div id="loadOverlay"><div class="spinBox"><div class="spin"></div><span id="loadMsg" style="font-size:12px;color:var(--txt3)">Loading...</span></div></div>
 <div id="vtoast"></div>
 
-<!-- 1. SIGN UP / SIGN IN -->
-<div id="authWrap" class="centerWrap" style="display:none">
-  <div class="cbox authScreen">
+<!-- 1. VENDOR CENTER: SIGN IN / CREATE SELLER ACCOUNT -->
+<div id="authWrap" class="centerWrap vcWrap" style="display:none">
+  <div class="cbox authScreen vcCard">
+    <a class="vcBack" href="/sell/"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>Marcato Seller Center</a>
 
-    <!-- sign in (no self-service sign-up here: Google creates the account, or use a password set via Forgot password) -->
+    <!-- SIGN IN (existing vendors / existing Marcato accounts) -->
     <div id="authFormView">
-      <div class="as-brand"><img src="app-icon-maskable-192.png" alt=""><span>Maccato</span></div>
-      <div class="as-title">Sell on Maccato<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.8 5.3L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.7L12 2z"/><path d="M19 14.5l.9 2.6L22.5 18l-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9.9-2.6z"/></svg></div>
-      <div class="as-sub">Sign in to start or continue your seller application.</div>
+      <div class="vcBrand"><img src="app-icon-maskable-192.png" alt=""><b>Marcato</b><span>Vendor Center</span></div>
+      <div class="as-title">Sign in to your seller account</div>
+      <div class="as-sub">Manage your store, or continue your seller application.</div>
 
       <div class="as-social">
         <button type="button" class="as-social-btn" id="authGoogleBtn"><svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.9 32.7 29.4 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.6 18.9 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 16.3 4 9.6 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.5 0 10.4-1.9 14.2-5.1l-6.5-5.5C29.6 35.3 27 36 24 36c-5.4 0-9.9-3.3-11.4-7.9l-6.6 5.1C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.7l6.5 5.5C41.5 36.4 44 30.7 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>Google</button>
@@ -218,16 +253,41 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
         <div class="as-field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 6 10-6"/></svg><input id="authEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="Email address"></div>
         <div class="as-field pass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg><input id="authPass" type="password" autocomplete="current-password" placeholder="Password"><button type="button" class="as-eye" data-for="authPass">Show</button></div>
         <div class="as-row"><span></span><button type="button" class="as-link" id="authForgot">Forgot password?</button></div>
-        <button type="submit" class="as-cta" id="authSubmit">Log In</button>
+        <button type="submit" class="as-cta" id="authSubmit">Sign In</button>
       </form>
       <div class="as-err" id="authErr"></div>
       <div class="as-info" id="authInfo"></div>
-      <div class="as-note">Don't have a Maccato account yet? Create one on the main site first, then come back here to start selling.<br>Already have one and want a password too? Tap <b>Forgot password</b> once to set one.</div>
+      <div class="as-switch">New to selling on Marcato? <button type="button" id="authGoRegister">Create your seller account</button></div>
+      <div class="as-note">One Marcato account works for shopping and selling — sign in with the same details you use on the main site. Have an account but no password yet? Tap <b>Forgot password</b> once to set one.</div>
+    </div>
+
+    <!-- CREATE SELLER ACCOUNT (new vendors, from the "Sell on Marcato" button) -->
+    <div id="authRegView" style="display:none">
+      <div class="vcBrand"><img src="app-icon-maskable-192.png" alt=""><b>Marcato</b><span>Vendor Center</span></div>
+      <div class="as-title">Create your seller account</div>
+      <div class="as-sub">Start your Marcato seller application — it only takes a few minutes.</div>
+
+      <div class="as-social">
+        <button type="button" class="as-social-btn" id="regGoogleBtn"><svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.9 32.7 29.4 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.6 18.9 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 16.3 4 9.6 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.5 0 10.4-1.9 14.2-5.1l-6.5-5.5C29.6 35.3 27 36 24 36c-5.4 0-9.9-3.3-11.4-7.9l-6.6 5.1C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.7l6.5 5.5C41.5 36.4 44 30.7 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>Google</button>
+        <button type="button" class="as-social-btn soon" id="authFacebookBtn2"><svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><circle cx="24" cy="24" r="20" fill="#1877F2"/><path fill="#fff" d="M27 24.5h3.5l.6-4H27v-2.3c0-1.4.4-2.4 2.4-2.4H31V12c-.4-.1-1.7-.2-3.2-.2-3.2 0-5.4 2-5.4 5.6V20.5H19v4h3.4V35h4.6z"/></svg>Facebook<span class="as-soon-badge">Soon</span></button>
+      </div>
+      <div class="as-divider"><span>Or continue with email</span></div>
+
+      <form id="authRegForm" novalidate>
+        <div class="as-field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 6 10-6"/></svg><input id="regEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="Email address"></div>
+        <div class="as-field pass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg><input id="regPass" type="password" autocomplete="new-password" placeholder="Password (at least 8 characters)"><button type="button" class="as-eye" data-for="regPass">Show</button></div>
+        <div class="as-field pass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg><input id="regPass2" type="password" autocomplete="new-password" placeholder="Confirm password"></div>
+        <button type="submit" class="as-cta" id="regSubmit">Create Seller Account</button>
+      </form>
+      <div class="as-err" id="regErr"></div>
+      <div class="as-info" id="regInfo"></div>
+      <div class="as-switch">Already have a Marcato account? <button type="button" id="authGoSignIn2">Sign in</button></div>
+      <div class="as-note">Your application is reviewed manually by the Marcato team before you can start selling.</div>
     </div>
 
     <!-- new password (after the reset-password email link) -->
     <div id="authResetView" style="display:none">
-      <div class="as-brand"><img src="app-icon-maskable-192.png" alt=""><span>Maccato</span></div>
+      <div class="vcBrand"><img src="app-icon-maskable-192.png" alt=""><b>Marcato</b><span>Vendor Center</span></div>
       <div class="ctitle">Set a new password</div>
       <div class="csub">Choose a password with at least 8 characters.</div>
       <form id="authResetForm" novalidate>
@@ -452,7 +512,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
     <button class="tab on" data-tab="dash" aria-label="Home"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M2.33537 7.87495C1.79491 9.00229 1.98463 10.3208 2.36407 12.9579L2.64284 14.8952C3.13025 18.2827 3.37396 19.9764 4.54903 20.9882C5.72409 22 7.44737 22 10.8939 22H13.1061C16.5526 22 18.2759 22 19.451 20.9882C20.626 19.9764 20.8697 18.2827 21.3572 14.8952L21.6359 12.9579C22.0154 10.3208 22.2051 9.00229 21.6646 7.87495C21.1242 6.7476 19.9738 6.06234 17.6731 4.69181L16.2882 3.86687C14.199 2.62229 13.1543 2 12 2C10.8457 2 9.80104 2.62229 7.71175 3.86687L6.32691 4.69181C4.02619 6.06234 2.87583 6.7476 2.33537 7.87495ZM12 18.75C11.5858 18.75 11.25 18.4142 11.25 18V15C11.25 14.5858 11.5858 14.25 12 14.25C12.4142 14.25 12.75 14.5858 12.75 15V18C12.75 18.4142 12.4142 18.75 12 18.75Z" fill="currentColor"/></svg><span>Home</span></button>
     <button class="tab" data-tab="products" aria-label="Products"><svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g fill="currentColor" fill-rule="evenodd" transform="translate(64.000000, 34.346667)"><path d="M192,7.10542736e-15 L384,110.851252 L384,332.553755 L192,443.405007 L1.42108547e-14,332.553755 L1.42108547e-14,110.851252 L192,7.10542736e-15 Z M127.999,206.918 L128,357.189 L170.666667,381.824 L170.666667,231.552 L127.999,206.918 Z M42.6666667,157.653333 L42.6666667,307.920144 L85.333,332.555 L85.333,182.286 L42.6666667,157.653333 Z M275.991,97.759 L150.413,170.595 L192,194.605531 L317.866667,121.936377 L275.991,97.759 Z M192,49.267223 L66.1333333,121.936377 L107.795,145.989 L233.374,73.154 L192,49.267223 Z"/></g></svg><span>Products</span></button>
     <button class="tab" data-tab="orders" aria-label="Orders"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M21 5L19 12H7.37671M20 16H8L6 3H3M11 6L13 8L17 4M9 20C9 20.5523 8.55228 21 8 21C7.44772 21 7 20.5523 7 20C7 19.4477 7.44772 19 8 19C8.55228 19 9 19.4477 9 20ZM20 20C20 20.5523 19.5523 21 19 21C18.4477 21 18 20.5523 18 20C18 19.4477 18.4477 19 19 19C19.5523 19 20 19.4477 20 20Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Orders</span></button>
-    <button class="tab" data-tab="settings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M14.2788 2.15224C13.9085 2 13.439 2 12.5 2C11.561 2 11.0915 2 10.7212 2.15224C10.2274 2.35523 9.83509 2.74458 9.63056 3.23463C9.53719 3.45834 9.50065 3.7185 9.48635 4.09799C9.46534 4.65568 9.17716 5.17189 8.69017 5.45093C8.20318 5.72996 7.60864 5.71954 7.11149 5.45876C6.77318 5.2813 6.52789 5.18262 6.28599 5.15102C5.75609 5.08178 5.22018 5.22429 4.79616 5.5472C4.47814 5.78938 4.24339 6.1929 3.7739 6.99993C3.30441 7.80697 3.06967 8.21048 3.01735 8.60491C2.94758 9.1308 3.09118 9.66266 3.41655 10.0835C3.56506 10.2756 3.77377 10.437 4.0977 10.639C4.57391 10.936 4.88032 11.4419 4.88029 12C4.88026 12.5581 4.57386 13.0639 4.0977 13.3608C3.77372 13.5629 3.56497 13.7244 3.41645 13.9165C3.09108 14.3373 2.94749 14.8691 3.01725 15.395C3.06957 15.7894 3.30432 16.193 3.7738 17C4.24329 17.807 4.47804 18.2106 4.79606 18.4527C5.22008 18.7756 5.75599 18.9181 6.28589 18.8489C6.52778 18.8173 6.77305 18.7186 7.11133 18.5412C7.60852 18.2804 8.2031 18.27 8.69012 18.549C9.17714 18.8281 9.46533 19.3443 9.48635 19.9021C9.50065 20.2815 9.53719 20.5417 9.63056 20.7654C9.83509 21.2554 10.2274 21.6448 10.7212 21.8478C11.0915 22 11.561 22 12.5 22C13.439 22 13.9085 22 14.2788 21.8478C14.7726 21.6448 15.1649 21.2554 15.3694 20.7654C15.4628 20.5417 15.4994 20.2815 15.5137 19.902C15.5347 19.3443 15.8228 18.8281 16.3098 18.549C16.7968 18.2699 17.3914 18.2804 17.8886 18.5412C18.2269 18.7186 18.4721 18.8172 18.714 18.8488C19.2439 18.9181 19.7798 18.7756 20.2038 18.4527C20.5219 18.2105 20.7566 17.807 21.2261 16.9999C21.6956 16.1929 21.9303 15.7894 21.9827 15.395C22.0524 14.8691 21.9088 14.3372 21.5835 13.9164C21.4349 13.7243 21.2262 13.5628 20.9022 13.3608C20.4261 13.0639 20.1197 12.558 20.1197 11.9999C20.1197 11.4418 20.4261 10.9361 20.9022 10.6392C21.2263 10.4371 21.435 10.2757 21.5836 10.0835C21.9089 9.66273 22.0525 9.13087 21.9828 8.60497C21.9304 8.21055 21.6957 7.80703 21.2262 7C20.7567 6.19297 20.522 5.78945 20.2039 5.54727C19.7799 5.22436 19.244 5.08185 18.7141 5.15109C18.4722 5.18269 18.2269 5.28136 17.8887 5.4588C17.3915 5.71959 16.7969 5.73002 16.3099 5.45096C15.8229 5.17191 15.5347 4.65566 15.5136 4.09794C15.4993 3.71848 15.4628 3.45833 15.3694 3.23463C15.1649 2.74458 14.7726 2.35523 14.2788 2.15224ZM12.5 15C14.1695 15 15.5228 13.6569 15.5228 12C15.5228 10.3431 14.1695 9 12.5 9C10.8305 9 9.47716 10.3431 9.47716 12C9.47716 13.6569 10.8305 15 12.5 15Z" fill="currentColor"/></svg><span>Settings</span></button>
+    <button class="tab" data-tab="settings" aria-label="Profile"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M14.2788 2.15224C13.9085 2 13.439 2 12.5 2C11.561 2 11.0915 2 10.7212 2.15224C10.2274 2.35523 9.83509 2.74458 9.63056 3.23463C9.53719 3.45834 9.50065 3.7185 9.48635 4.09799C9.46534 4.65568 9.17716 5.17189 8.69017 5.45093C8.20318 5.72996 7.60864 5.71954 7.11149 5.45876C6.77318 5.2813 6.52789 5.18262 6.28599 5.15102C5.75609 5.08178 5.22018 5.22429 4.79616 5.5472C4.47814 5.78938 4.24339 6.1929 3.7739 6.99993C3.30441 7.80697 3.06967 8.21048 3.01735 8.60491C2.94758 9.1308 3.09118 9.66266 3.41655 10.0835C3.56506 10.2756 3.77377 10.437 4.0977 10.639C4.57391 10.936 4.88032 11.4419 4.88029 12C4.88026 12.5581 4.57386 13.0639 4.0977 13.3608C3.77372 13.5629 3.56497 13.7244 3.41645 13.9165C3.09108 14.3373 2.94749 14.8691 3.01725 15.395C3.06957 15.7894 3.30432 16.193 3.7738 17C4.24329 17.807 4.47804 18.2106 4.79606 18.4527C5.22008 18.7756 5.75599 18.9181 6.28589 18.8489C6.52778 18.8173 6.77305 18.7186 7.11133 18.5412C7.60852 18.2804 8.2031 18.27 8.69012 18.549C9.17714 18.8281 9.46533 19.3443 9.48635 19.9021C9.50065 20.2815 9.53719 20.5417 9.63056 20.7654C9.83509 21.2554 10.2274 21.6448 10.7212 21.8478C11.0915 22 11.561 22 12.5 22C13.439 22 13.9085 22 14.2788 21.8478C14.7726 21.6448 15.1649 21.2554 15.3694 20.7654C15.4628 20.5417 15.4994 20.2815 15.5137 19.902C15.5347 19.3443 15.8228 18.8281 16.3098 18.549C16.7968 18.2699 17.3914 18.2804 17.8886 18.5412C18.2269 18.7186 18.4721 18.8172 18.714 18.8488C19.2439 18.9181 19.7798 18.7756 20.2038 18.4527C20.5219 18.2105 20.7566 17.807 21.2261 16.9999C21.6956 16.1929 21.9303 15.7894 21.9827 15.395C22.0524 14.8691 21.9088 14.3372 21.5835 13.9164C21.4349 13.7243 21.2262 13.5628 20.9022 13.3608C20.4261 13.0639 20.1197 12.558 20.1197 11.9999C20.1197 11.4418 20.4261 10.9361 20.9022 10.6392C21.2263 10.4371 21.435 10.2757 21.5836 10.0835C21.9089 9.66273 22.0525 9.13087 21.9828 8.60497C21.9304 8.21055 21.6957 7.80703 21.2262 7C20.7567 6.19297 20.522 5.78945 20.2039 5.54727C19.7799 5.22436 19.244 5.08185 18.7141 5.15109C18.4722 5.18269 18.2269 5.28136 17.8887 5.4588C17.3915 5.71959 16.7969 5.73002 16.3099 5.45096C15.8229 5.17191 15.5347 4.65566 15.5136 4.09794C15.4993 3.71848 15.4628 3.45833 15.3694 3.23463C15.1649 2.74458 14.7726 2.35523 14.2788 2.15224ZM12.5 15C14.1695 15 15.5228 13.6569 15.5228 12C15.5228 10.3431 14.1695 9 12.5 9C10.8305 9 9.47716 10.3431 9.47716 12C9.47716 13.6569 10.8305 15 12.5 15Z" fill="currentColor"/></svg><span>Profile</span></button>
   </div>
 
   <div class="panel on" id="panel-dash">
@@ -516,10 +576,29 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
       <button class="primaryBtn" id="sSaveBtn">Save Changes</button>
     </div>
     <div class="fcard">
+      <h3>Business &amp; Application</h3>
+      <p style="font-size:12px;color:var(--txt3);margin:-6px 0 14px;line-height:1.5">Submitted with your seller application and locked after review. If something here is wrong, send a correction request below and an admin will handle it.</p>
+      <div class="fld"><label>Legal Name</label><input id="roLegalName" disabled></div>
+      <div class="frow2">
+        <div class="fld"><label>Date of Birth</label><input id="roDob" disabled></div>
+        <div class="fld"><label>Gender</label><input id="roGender" disabled></div>
+      </div>
+      <div class="fld"><label>Identity Document</label><input id="roIdDoc" disabled></div>
+      <div class="fld"><label>Payout Account</label><input id="roBank" disabled></div>
+      <div class="frow2">
+        <div class="fld"><label>Seller Agreement</label><input id="roTerms" disabled></div>
+        <div class="fld"><label>Application Submitted</label><input id="roSubmitted" disabled></div>
+      </div>
+      <button class="ghostActionBtn" id="reqCorrectionBtn">Request a correction</button>
+      <div class="obStatusCard" id="reqCorrectionStatus"></div>
+    </div>
+    <div class="fcard">
       <h3>Verification</h3>
       <div class="fld"><label>Seller status</label><div class="obStatusCard" id="sStatusBadge"></div></div>
+      <div class="fld"><label>Application status</label><div class="obStatusCard" id="sAppStatusBadge"></div></div>
       <div class="fld"><label>Identity verification</label><div class="obStatusCard" id="sIdStatusBadge"></div></div>
       <div class="fld"><label>Bank verification</label><div class="obStatusCard" id="sBankStatusBadge"></div></div>
+      <div class="fld"><label>What's next</label><div class="obStatusCard" id="sNextSteps"></div></div>
     </div>
     <div class="fcard">
       <h3>Notifications</h3>
@@ -589,17 +668,37 @@ function showScreen(id) {
   });
 }
 
-/* ===== AUTH: sign in only. A new seller's account is created the moment they tap Google
-   (signInWithOAuth registers automatically); email + password sign-in is for anyone who has
-   already set a password (Vendor > Settings, or once via Forgot password below). ===== */
+/* ===== AUTH: Marcato Vendor Center. Same Supabase Auth backend as the main site —
+   one account works for shopping and selling. "Sign in" is for existing accounts;
+   "Create your seller account" (the /sell/ landing page's "Sell on Marcato" path)
+   registers a new account with the SAME auth system and drops straight into the
+   existing onboarding wizard. ===== */
 const $a = id => document.getElementById(id);
 const AUTH_REDIRECT = location.origin + '/vendor/';
 
+/* The /sell/ landing page links here with ?intent=register or ?intent=signin.
+   The intent survives the Google OAuth round-trip via localStorage. */
+const VC_INTENT_KEY = 'marcato_vendor_intent';
+function vendorIntent() {
+  try {
+    const q = new URLSearchParams(location.search).get('intent');
+    if (q === 'register' || q === 'signin') { localStorage.setItem(VC_INTENT_KEY, q); return q; }
+    return localStorage.getItem(VC_INTENT_KEY) || 'signin';
+  } catch (e) { return 'signin'; }
+}
+function setVendorIntent(v) { try { localStorage.setItem(VC_INTENT_KEY, v); } catch (e) {} }
+function clearVendorIntent() { try { localStorage.removeItem(VC_INTENT_KEY); } catch (e) {} }
+
 function authView(v) {
   $a('authFormView').style.display = v === 'form' ? '' : 'none';
+  $a('authRegView').style.display = v === 'register' ? '' : 'none';
   $a('authResetView').style.display = v === 'reset' ? '' : 'none';
 }
 function authMsg(err, info) { $a('authErr').textContent = err || ''; $a('authInfo').textContent = info || ''; }
+function regMsg(err, info) { $a('regErr').textContent = err || ''; $a('regInfo').textContent = info || ''; }
+
+$a('authGoRegister').onclick = () => { authMsg('', ''); setVendorIntent('register'); authView('register'); };
+$a('authGoSignIn2').onclick = () => { regMsg('', ''); setVendorIntent('signin'); authView('form'); };
 
 document.querySelectorAll('.as-eye').forEach(btn => {
   btn.onclick = () => {
@@ -620,16 +719,49 @@ function friendlyAuthError(e) {
   return m || 'Something went wrong. Please try again.';
 }
 
-$a('authGoogleBtn').onclick = () => sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: AUTH_REDIRECT } });
+$a('authGoogleBtn').onclick = () => { setVendorIntent('signin'); sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: AUTH_REDIRECT } }); };
+$a('regGoogleBtn').onclick = () => { setVendorIntent('register'); sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: AUTH_REDIRECT } }); };
 
 /* Google sign-in auto-creates a brand-new account for anyone who has none yet — that is a sign-up,
-   which this page must never do. If the account we land on was created within the last few seconds
-   (i.e. this was its very first sign-in ever), reject it here rather than let it through. */
+   which the SIGN-IN view must never do silently. If the account we land on was created within the
+   last few seconds (its very first sign-in ever) and the visitor did NOT come through "Create your
+   seller account", reject it rather than let it through. Deliberate registrations are welcome. */
 function isBrandNewAccount(user) {
   if (!user || !user.created_at || !user.last_sign_in_at) return false;
   return Math.abs(new Date(user.last_sign_in_at) - new Date(user.created_at)) < 10000;
 }
-$a('authFacebookBtn').onclick = () => toast('Facebook sign-in is coming soon. Please use Google or email for now.');
+const fbSoon = () => toast('Facebook sign-in is coming soon. Please use Google or email for now.');
+$a('authFacebookBtn').onclick = fbSoon;
+$a('authFacebookBtn2').onclick = fbSoon;
+
+/* Create a seller account with email + password (same Supabase Auth as the main site). */
+$a('authRegForm').onsubmit = async ev => {
+  ev.preventDefault();
+  const email = $a('regEmail').value.trim().toLowerCase();
+  const p1 = $a('regPass').value, p2 = $a('regPass2').value;
+  regMsg('', '');
+  if (!EMAIL_RE.test(email)) { regMsg('Enter a valid email address.'); return; }
+  if (p1.length < 8) { regMsg('Your password needs at least 8 characters.'); return; }
+  if (p1 !== p2) { regMsg('The two passwords do not match.'); return; }
+  const btn = $a('regSubmit');
+  btn.disabled = true;
+  try {
+    setVendorIntent('register');
+    const { data, error } = await sb.auth.signUp({ email, password: p1, options: { emailRedirectTo: AUTH_REDIRECT } });
+    if (error) throw error;
+    if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      authView('form'); $a('authEmail').value = email;
+      authMsg('An account with this email already exists. Sign in below to continue your seller application.');
+      return;
+    }
+    if (data.session) { await boot(); return; }     // no email confirmation required: straight into onboarding
+    regMsg('', 'Almost there — we sent a confirmation link to ' + email + '. Open it on this device, then come back here to start your seller application.');
+  } catch (e) {
+    regMsg(friendlyAuthError(e));
+  } finally {
+    btn.disabled = false;
+  }
+};
 
 $a('authForm').onsubmit = async ev => {
   ev.preventDefault();
@@ -687,17 +819,18 @@ async function boot() {
   session = s;
   if (RECOVERY && session) { hideLoad(); showScreen('authWrap'); authView('reset'); return; }
 
-  if (session && isBrandNewAccount(session.user)) {
+  if (session && isBrandNewAccount(session.user) && vendorIntent() !== 'register') {
     await sb.auth.signOut();
     session = null;
-    hideLoad(); showScreen('authWrap'); authView('form');
-    authMsg('No Maccato account was found for that Google account. Create your Maccato account first (the profile icon on the main site), then come back here to start selling.');
+    hideLoad(); showScreen('authWrap'); authView('register');
+    regMsg('', 'That Google account is new to Marcato. Tap Google below to create it as your seller account, or go back and sign in with the account you already use.');
     return;
   }
-  if (!session) { hideLoad(); showScreen('authWrap'); authView('form'); authMsg('', ''); return; }
+  if (!session) { hideLoad(); showScreen('authWrap'); authView(vendorIntent() === 'register' ? 'register' : 'form'); authMsg('', ''); return; }
 
   const { data: v } = await sb.from('vendors').select('*').eq('id', session.user.id).maybeSingle();
   vendorRow = v;
+  if (vendorRow) clearVendorIntent();     // application exists — future visits go straight to sign-in
   hideLoad();
 
   if (!vendorRow || ['draft', 'pending_verification'].includes(vendorRow.application_status)) {
@@ -1509,7 +1642,67 @@ function fillSettingsPanel(v) {
   const bankInfo = BANK_VERIF_LABEL[v.bank_verification_status] || ['Not provided', ''];
   bankBadge.className = 'obStatusCard' + (bankInfo[1] ? ' ' + bankInfo[1] : '');
   bankBadge.textContent = bankInfo[0];
+
+  /* Business & Application — read-only view of what was submitted during onboarding.
+     These fields are protected server-side (vendors_guard trigger + RLS); this panel
+     never writes them, it only displays them. */
+  const setRo = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || '—'; };
+  const ID_METHOD_LABEL = { nin: 'NIN', bvn: 'BVN', drivers_license: "Driver's licence", passport: 'International passport' };
+  setRo('roLegalName', [v.title, v.first_name, v.middle_name, v.last_name].filter(Boolean).join(' '));
+  setRo('roDob', v.date_of_birth);
+  setRo('roGender', v.gender);
+  setRo('roIdDoc', v.id_verification_method
+    ? (ID_METHOD_LABEL[v.id_verification_method] || v.id_verification_method) + (v.id_verification_number ? ' ••••' + String(v.id_verification_number).slice(-4) : '')
+    : '');
+  setRo('roBank', v.bank_account_number
+    ? (v.bank_name || 'Bank') + ' ••••' + String(v.bank_account_number).slice(-4) + (v.bank_account_name ? ' — ' + v.bank_account_name : '')
+    : '');
+  setRo('roTerms', v.terms_accepted_at ? 'Accepted ' + (v.terms_version || '') + ' on ' + new Date(v.terms_accepted_at).toLocaleDateString() : 'Not accepted yet');
+  setRo('roSubmitted', v.submitted_at ? new Date(v.submitted_at).toLocaleString() : 'Not submitted yet');
+
+  /* Application status + guidance */
+  const APP_LABEL = {
+    draft: ['Draft — application not finished yet', ''],
+    pending_verification: ['In progress — not submitted yet', ''],
+    pending_review: ['Submitted — waiting for admin review', ''],
+    approved: ['Approved', 'ok'],
+    rejected: ['Changes requested', 'fail'],
+    suspended: ['Suspended', 'fail']
+  };
+  const appBadge = document.getElementById('sAppStatusBadge');
+  if (appBadge) {
+    const app = APP_LABEL[v.application_status] || [v.application_status || 'Unknown', ''];
+    appBadge.className = 'obStatusCard' + (app[1] ? ' ' + app[1] : '');
+    appBadge.textContent = app[0] + (v.submitted_at ? ' · submitted ' + new Date(v.submitted_at).toLocaleDateString() : '');
+  }
+  const next = document.getElementById('sNextSteps');
+  if (next) {
+    let msg;
+    if (v.status === 'suspended') msg = 'Your store is currently suspended. Contact the Marcato team to resolve it.';
+    else if (v.application_status === 'rejected') msg = 'An admin asked for changes' + (v.rejection_reason ? ': ' + v.rejection_reason : '.') + ' Reopen your application to fix and resubmit.';
+    else if (v.application_status === 'pending_review') msg = 'The Marcato team is reviewing your application manually. You\'ll be notified once a decision is made.';
+    else if (v.status === 'approved') msg = 'You\'re all set — your store is live. Keep your products and profile up to date.';
+    else msg = 'Finish and submit your application so the Marcato team can review it.';
+    next.className = 'obStatusCard';
+    next.textContent = msg;
+  }
 }
+
+/* Controlled correction request: a vendor can never edit protected application
+   fields directly — instead this files a 'correction_request' event (vendor_events
+   table, insert-own-only via RLS) that shows up in the admin's review history. */
+document.getElementById('reqCorrectionBtn').onclick = async () => {
+  const msg = prompt('What needs to be corrected? Describe the change (e.g. legal name spelling, new payout account) and why.');
+  if (msg === null || !msg.trim()) return;
+  const el = document.getElementById('reqCorrectionStatus');
+  el.className = 'obStatusCard'; el.textContent = 'Sending...';
+  const { error } = await sb.from('vendor_events').insert([{
+    vendor_id: session.user.id, actor: 'vendor', actor_id: session.user.id,
+    type: 'correction_request', note: msg.trim().slice(0, 1000)
+  }]);
+  if (error) { el.className = 'obStatusCard fail'; el.textContent = 'Could not send your request: ' + error.message; toast('Request failed', true); }
+  else { el.className = 'obStatusCard ok'; el.textContent = 'Sent — an admin will review your request and get back to you.'; toast('Correction request sent'); }
+};
 
 document.getElementById('sSaveBtn').onclick = async () => {
   const business_name = document.getElementById('sName').value.trim();

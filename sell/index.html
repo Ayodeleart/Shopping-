@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#D91C2D">
+<title>Marcato Vendor Center — Sell on Marcato</title>
+<meta name="description" content="Become a Marcato seller. Open your free store, reach shoppers across Nigeria and manage everything from your phone.">
+<link rel="icon" type="image/png" sizes="32x32" href="/vendor/app-icon-32.png">
+<link rel="apple-touch-icon" href="/vendor/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap">
+<style>
+:root{--red:#D91C2D;--red2:#a81422;--ink:#141414;--ink2:#4c4c4c;--ink3:#8a8a8a;--bg:#fff;--bg2:#f6f6f7;--border:#e7e7ea;--r:16px}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{font-family:'Montserrat',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);line-height:1.5;overflow-x:hidden}
+a{text-decoration:none;color:inherit}
+img{display:block;max-width:100%}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+
+/* HEADER */
+header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);padding-top:env(safe-area-inset-top,0)}
+.hIn{display:flex;align-items:center;gap:10px;height:60px}
+.hBrand{display:flex;align-items:center;gap:10px;min-width:0}
+.hBrand img{width:34px;height:34px;border-radius:9px}
+.hBrand .hName{display:flex;flex-direction:column;line-height:1.1;min-width:0}
+.hBrand .hName b{font-size:15px;font-weight:900;letter-spacing:-.2px;white-space:nowrap}
+.hBrand .hName span{font-size:9.5px;font-weight:800;letter-spacing:2.2px;text-transform:uppercase;color:var(--red);white-space:nowrap}
+.hSpace{flex:1}
+.hSignIn{height:40px;padding:0 18px;display:inline-flex;align-items:center;border:1.5px solid var(--ink);border-radius:22px;font-size:13px;font-weight:800;transition:background .15s,color .15s}
+.hSignIn:active{background:var(--ink);color:#fff}
+
+/* HERO */
+.hero{position:relative;background:linear-gradient(160deg,#1a0508 0%,#5c0a13 45%,var(--red) 100%);color:#fff;overflow:hidden}
+.hero::after{content:'';position:absolute;right:-140px;top:-140px;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.14),rgba(255,255,255,0) 65%)}
+.heroIn{position:relative;padding:56px 0 60px;max-width:640px}
+.heroTag{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:6px 14px;font-size:11px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;margin-bottom:18px}
+.hero h1{font-size:clamp(30px,6vw,46px);font-weight:900;line-height:1.12;letter-spacing:-.8px;margin-bottom:14px}
+.hero p{font-size:15px;color:rgba(255,255,255,.85);max-width:460px;margin-bottom:28px}
+.heroCtas{display:flex;flex-wrap:wrap;gap:12px}
+.btnPrimary{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:54px;padding:0 30px;border-radius:27px;background:#fff;color:var(--red);font-size:15px;font-weight:900;box-shadow:0 10px 26px rgba(0,0,0,.28);transition:transform .15s}
+.btnPrimary:active{transform:scale(.97)}
+.btnGhost{display:inline-flex;align-items:center;justify-content:center;height:54px;padding:0 28px;border-radius:27px;border:1.5px solid rgba(255,255,255,.55);color:#fff;font-size:15px;font-weight:800;transition:background .15s}
+.btnGhost:active{background:rgba(255,255,255,.14)}
+.heroNote{margin-top:18px;font-size:12px;color:rgba(255,255,255,.7)}
+
+/* SECTIONS */
+section{padding:52px 0}
+section.alt{background:var(--bg2)}
+.secKick{font-size:11px;font-weight:800;letter-spacing:2.4px;text-transform:uppercase;color:var(--red);margin-bottom:8px}
+.secTitle{font-size:clamp(22px,4.4vw,30px);font-weight:900;letter-spacing:-.5px;margin-bottom:8px}
+.secSub{font-size:14px;color:var(--ink2);max-width:560px;margin-bottom:30px}
+
+/* WHY CARDS */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.card{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:22px 20px;box-shadow:0 2px 10px rgba(0,0,0,.04)}
+section.alt .card{box-shadow:none}
+.cIcon{width:44px;height:44px;border-radius:13px;background:rgba(217,28,45,.09);color:var(--red);display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+.card h3{font-size:15px;font-weight:800;margin-bottom:6px}
+.card p{font-size:13px;color:var(--ink2)}
+
+/* STEPS */
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;counter-reset:step}
+.step{position:relative;background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:22px 20px 20px}
+.step::before{counter-increment:step;content:counter(step);position:absolute;top:-13px;left:18px;width:28px;height:28px;border-radius:50%;background:var(--red);color:#fff;font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 10px rgba(217,28,45,.35)}
+.step h3{font-size:14px;font-weight:800;margin:6px 0 6px}
+.step p{font-size:12.5px;color:var(--ink2)}
+
+/* CHECKLIST */
+.needList{display:flex;flex-direction:column;gap:10px;max-width:560px}
+.needItem{display:flex;align-items:flex-start;gap:12px;background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px 16px}
+.needItem svg{flex-shrink:0;margin-top:2px;color:#16a34a}
+.needItem b{display:block;font-size:13.5px;font-weight:800}
+.needItem span{font-size:12.5px;color:var(--ink2)}
+
+/* REVIEW NOTE */
+.reviewNote{display:flex;gap:14px;align-items:flex-start;background:#fff8ed;border:1px solid #f3dcb5;border-radius:var(--r);padding:18px;max-width:640px;margin-top:26px}
+.reviewNote svg{flex-shrink:0;color:#d97706;margin-top:2px}
+.reviewNote p{font-size:13px;color:#7a5410}
+
+/* BOTTOM CTA */
+.ctaBand{background:linear-gradient(120deg,var(--red2),var(--red));border-radius:22px;color:#fff;padding:38px 26px;text-align:center}
+.ctaBand h2{font-size:clamp(20px,4.6vw,28px);font-weight:900;letter-spacing:-.4px;margin-bottom:8px}
+.ctaBand p{font-size:13.5px;color:rgba(255,255,255,.85);margin-bottom:22px}
+.ctaBand .btnPrimary{height:52px}
+.ctaBand .row{display:flex;flex-wrap:wrap;justify-content:center;gap:12px}
+
+/* FOOTER */
+footer{border-top:1px solid var(--border);padding:26px 0 calc(26px + env(safe-area-inset-bottom,0));text-align:center}
+footer .fBrand{font-size:13px;font-weight:900;margin-bottom:4px}
+footer .fBrand em{font-style:normal;color:var(--red)}
+footer p{font-size:12px;color:var(--ink3)}
+footer a{color:var(--red);font-weight:700}
+@media (max-width:520px){
+  .heroIn{padding:42px 0 48px}
+  .heroCtas .btnPrimary,.heroCtas .btnGhost{flex:1 1 100%;width:100%}
+  section{padding:42px 0}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap hIn">
+    <a class="hBrand" href="/" aria-label="Back to Marcato">
+      <img src="/vendor/app-icon-192.png" alt="">
+      <span class="hName"><b>Marcato</b><span>Vendor Center</span></span>
+    </a>
+    <span class="hSpace"></span>
+    <a class="hSignIn" href="/vendor/?intent=signin">Sign in</a>
+  </div>
+</header>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="wrap heroIn">
+    <span class="heroTag">Marcato Vendor Center · Nigeria</span>
+    <h1>Turn what you sell into a store all of Nigeria can shop.</h1>
+    <p>Open your free Marcato store, list your products in minutes and manage orders, payouts and customers — all from your phone.</p>
+    <div class="heroCtas">
+      <a class="btnPrimary" href="/vendor/?intent=register">Sell on Marcato
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+      <a class="btnGhost" href="/vendor/?intent=signin">Sign in</a>
+    </div>
+    <div class="heroNote">Already applied? Sign in to check your application status.</div>
+  </div>
+</div>
+
+<!-- WHY -->
+<section>
+  <div class="wrap">
+    <div class="secKick">Why sell on Marcato</div>
+    <div class="secTitle">Everything you need to run your store</div>
+    <p class="secSub">Marcato is a Nigerian marketplace built for independent sellers. You keep your brand — we bring the shoppers and the tools.</p>
+    <div class="cards">
+      <div class="card">
+        <div class="cIcon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8L18 3H6L3 8m18 0v11a1 1 0 01-1 1H4a1 1 0 01-1-1V8m18 0H3m9 4v6"/></svg></div>
+        <h3>Your own store page</h3>
+        <p>Get a branded storefront at marcato.com/store/your-name with your logo, story and full catalogue.</p>
+      </div>
+      <div class="card">
+        <div class="cIcon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01"/></svg></div>
+        <h3>Manage from your phone</h3>
+        <p>Add products, track orders and get push notifications the moment a customer buys — no laptop needed.</p>
+      </div>
+      <div class="card">
+        <div class="cIcon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div>
+        <h3>Payouts to your bank</h3>
+        <p>Link your Nigerian bank account once and receive what you earn for completed orders.</p>
+      </div>
+      <div class="card">
+        <div class="cIcon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <h3>Verified marketplace</h3>
+        <p>Every seller is reviewed by the Marcato team, so shoppers trust the stores they buy from — including yours.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="alt" id="how">
+  <div class="wrap">
+    <div class="secKick">How it works</div>
+    <div class="secTitle">From sign-up to first sale</div>
+    <p class="secSub">The application takes about 10 minutes. Save at any step and finish later — your progress is kept.</p>
+    <div class="steps" style="padding-top:14px">
+      <div class="step">
+        <h3>Create your seller account</h3>
+        <p>Sign up with your email or Google account at the Marcato Vendor Center.</p>
+      </div>
+      <div class="step">
+        <h3>Complete your application</h3>
+        <p>Tell us about your store, verify your phone, add your ID details and payout account.</p>
+      </div>
+      <div class="step">
+        <h3>Get reviewed &amp; approved</h3>
+        <p>The Marcato team manually reviews every application. You'll see your status any time you sign in.</p>
+      </div>
+      <div class="step">
+        <h3>Start selling</h3>
+        <p>Once approved, your store goes live and you can start listing products right away.</p>
+      </div>
+    </div>
+    <div class="reviewNote">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <p><b>Every application is reviewed by a person.</b> Submitting the form doesn't grant selling access by itself — an admin checks your details first and you'll be notified of the decision or asked for corrections.</p>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT YOU NEED -->
+<section>
+  <div class="wrap">
+    <div class="secKick">Before you start</div>
+    <div class="secTitle">What you'll need</div>
+    <p class="secSub">Have these ready and the application will only take a few minutes.</p>
+    <div class="needList">
+      <div class="needItem">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <div><b>An email address</b><span>Used for your seller account and order notifications.</span></div>
+      </div>
+      <div class="needItem">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <div><b>A Nigerian phone number</b><span>We confirm it with a one-time SMS code.</span></div>
+      </div>
+      <div class="needItem">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <div><b>A valid means of identity</b><span>NIN, BVN, driver's licence or international passport number.</span></div>
+      </div>
+      <div class="needItem">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <div><b>A bank account in your name</b><span>Where your payouts for completed orders will go.</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BOTTOM CTA -->
+<section class="alt" style="padding-top:10px">
+  <div class="wrap">
+    <div class="ctaBand">
+      <h2>Ready to open your Marcato store?</h2>
+      <p>It's free to apply. Finish in minutes, get reviewed, start selling.</p>
+      <div class="row">
+        <a class="btnPrimary" href="/vendor/?intent=register">Sell on Marcato</a>
+        <a class="btnGhost" href="/vendor/?intent=signin">Sign in to Vendor Center</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="fBrand">Marcato <em>Vendor Center</em></div>
+    <p>Looking to shop instead? <a href="/">Go to Marcato</a></p>
+  </div>
+</footer>
+
+</body>
+</html>
