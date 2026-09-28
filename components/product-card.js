@@ -24,6 +24,56 @@ if (typeof esc === 'undefined') {
 }
 
 const HEART_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>';
+const NO_IMG_SVG = sz => `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>`;
+
+/* ── IMAGE LOADING (per-card, Marcato-branded) ─────────────────
+ * While a card's real photo is still downloading, its media box carries `.pcImgPend`, which paints the
+ * small branded "MARCATO" placeholder + shimmer (see product-card.css). The class is removed the moment
+ * the photo paints (pcImgDone) or fails (pcImgFail) — never an endless loading animation:
+ *   - onload  -> real photo, placeholder gone
+ *   - onerror -> the same graceful no-image fallback a product without a photo gets
+ *   - a colour-linked photo (pickCardColor) that fails falls back to the product's own real photo. */
+function pcImgDone(img) {
+  const box = img.closest ? img.closest('.pcImg') : null;
+  if (box) box.classList.remove('pcImgPend');
+}
+function pcImgFail(img) {
+  if (img.dataset && img.dataset.origSrc && img.getAttribute('src') !== img.dataset.origSrc) {
+    img.src = img.dataset.origSrc;                      /* a colour-linked photo failed: back to the real photo */
+    return;
+  }
+  const box = img.closest ? img.closest('.pcImg') : null;
+  if (box) box.classList.remove('pcImgPend');
+  const ph = document.createElement('div');
+  ph.className = 'noImgPh';
+  ph.innerHTML = NO_IMG_SVG(img.closest && img.closest('.pcard-compact') ? 30 : 36);
+  img.replaceWith(ph);
+}
+
+/* ── BRANDED LOADING SKELETONS (shared, temporary by design) ───
+ * skelCardHTML()                 one standard grid-card skeleton (image box + name/price/meta/swatch/button bars)
+ * skelCardHTML({compact:true})   one merchandising rail-card skeleton (image + name/price bars only)
+ * skelRailHTML(n)                a whole horizontal rail: neutral header bar + n compact card skeletons
+ * The markup mirrors the real cards' structure (same .pcImg / .pcBody boxes) so a skeleton occupies the
+ * same footprint the real card will — content appearing causes no layout jump. Callers must always
+ * REPLACE these with real content, an empty state or an error state once their data resolves. */
+function skelCardHTML(opts) {
+  const compact = !!(opts && opts.compact);
+  const body = compact
+    ? '<span class="skl skl-txt"></span><span class="skl skl-txt w60"></span><span class="skl skl-price"></span>'
+    : '<span class="skl skl-txt"></span><span class="skl skl-txt w60"></span><span class="skl skl-price"></span>' +
+      '<span class="skl skl-meta"></span>' +
+      '<span class="skl-dots"><i class="skl"></i><i class="skl"></i><i class="skl"></i><i class="skl"></i></span>' +
+      '<span class="skl skl-btn"></span>';
+  return `<div class="pcard pcard-skel${compact ? ' pcard-compact' : ''}" aria-hidden="true">` +
+    `<div class="pcImg"></div><div class="pcBody${compact ? ' pcBody-compact' : ''}">${body}</div></div>`;
+}
+function skelRailHTML(n) {
+  const cards = new Array(n == null ? 4 : n).fill(`<div class="fcard-wrap">${skelCardHTML({ compact: true })}</div>`).join('');
+  return '<div class="cpg-msec pcRail-skel" aria-hidden="true">' +
+    '<div class="cpg-msec-hd"><span class="skl skl-hdbar"></span></div>' +
+    `<div class="cpg-msec-scroll">${cards}</div></div>`;
+}
 
 /* ── STARS (real ratings only) ────────────────────── */
 function starsHTML(avg, px) {
@@ -73,7 +123,7 @@ function repaintSwatchColors() {
    "+N" chip that opens the product (never invented, never a second wrapped row — a wrapped row is what
    made card heights inconsistent across the grid). The row is ALWAYS rendered, even empty, so a product
    with no colours reserves the same .pcSwatches height as one with colours — cards in the same row line up. */
-const SWATCH_CAP = 5;
+const SWATCH_CAP = 4;
 function swatchHTML(p) {
   const cols = (window.Pcx && Pcx.Variants) ? Pcx.Variants.colors(p) : [];
   if (!cols.length) return '<div class="pcSwatches"></div>';
@@ -149,10 +199,10 @@ function compactCardHTML(p) {
   const r = ratingMap[p.id];
   return `
     <div class="pcard pcard-compact" onclick="openProduct(${num(p.id)})">
-      <div class="pcImg">
+      <div class="pcImg${p.image_url ? ' pcImgPend' : ''}">
         ${p.image_url
-          ? `<img src="${safeUrl(p.image_url)}" alt="${esc(p.name)}" loading="lazy">`
-          : `<div class="noImgPh"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>`}
+          ? `<img src="${safeUrl(p.image_url)}" alt="${esc(p.name)}" loading="lazy" onload="pcImgDone(this)" onerror="pcImgFail(this)">`
+          : `<div class="noImgPh">${NO_IMG_SVG(30)}</div>`}
         ${disc > 0 ? `<span class="discBadge">-${disc}%</span>` : ''}
         <button class="favBtn${favs.has(p.id) ? ' on' : ''}" data-fav="${esc(p.id)}" aria-label="Save ${esc(p.name)} to favorites" aria-pressed="${favs.has(p.id)}" onclick="event.stopPropagation();toggleFav(${num(p.id)})">${HEART_SVG}</button>
       </div>
@@ -181,10 +231,10 @@ function cardHTML(p, opts) {
 
   return `
     <div class="pcard" onclick="openProduct(${num(p.id)})">
-      <div class="pcImg">
+      <div class="pcImg${p.image_url ? ' pcImgPend' : ''}">
         ${p.image_url
-          ? `<img src="${safeUrl(p.image_url)}" alt="${esc(p.name)}" loading="lazy">`
-          : `<div class="noImgPh"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>`}
+          ? `<img src="${safeUrl(p.image_url)}" alt="${esc(p.name)}" loading="lazy" onload="pcImgDone(this)" onerror="pcImgFail(this)">`
+          : `<div class="noImgPh">${NO_IMG_SVG(36)}</div>`}
         ${disc > 0 ? `<span class="discBadge">-${disc}%</span>` : ''}
         <button class="favBtn${favs.has(p.id) ? ' on' : ''}" data-fav="${esc(p.id)}" aria-label="Save ${esc(p.name)} to favorites" aria-pressed="${favs.has(p.id)}" onclick="event.stopPropagation();toggleFav(${num(p.id)})">${HEART_SVG}</button>
       </div>

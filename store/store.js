@@ -311,6 +311,7 @@
 
   function renderGrid(products, append) {
     const grid = $('grid');
+    grid.removeAttribute('aria-busy');
     if (!append) grid.innerHTML = '';
     if (!products.length && !append) {
       const emptyMsg = state.search.trim()
@@ -327,13 +328,17 @@
   }
 
   async function reloadGrid() {
-    $('grid').innerHTML = `<div class="empty"><h3>Loading\u2026</h3><p></p></div>`;
+    /* branded card skeletons (shared skelCardHTML from components/product-card.js) while the page
+       of products is fetched — replaced by real cards, the empty state or the error state below */
+    $('grid').setAttribute('aria-busy', 'true');
+    $('grid').innerHTML = new Array(6).fill(`<div>${skelCardHTML()}</div>`).join('');
     try {
       const rows = await fetchProductsPage(true);
       await loadRatings(rows.map(p => p.id));
       renderGrid(rows, false);
     } catch (e) {
       console.error(e);
+      $('grid').removeAttribute('aria-busy');
       $('grid').innerHTML = `<div class="empty"><h3>Couldn\u2019t load products</h3><p>Check your connection and try again.</p></div>`;
     }
   }
