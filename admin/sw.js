@@ -1,7 +1,7 @@
-const CACHE = 'admin-v9';
+const CACHE = 'admin-v10';
 const SCOPE_HOME = '/admin/';
 const PRECACHE = ['/components/sw-register.js', '/data/safe.js', '/admin/', '/admin/index.html', '/admin/manifest.json', '/icon.svg', '/admin/ads.js', '/admin/ads-sections.js', '/admin/ads.css', '/components/multi-image-picker.js', '/components/multi-image-picker.css',
-  '/admin/categories.js', '/admin/categories.css', '/components/categories.css', '/components/category-picker.js', '/data/categories.js', '/data/home-decor.js',
+  '/admin/categories.js', '/admin/categories.css', '/admin/category-images.js', '/admin/category-images.css', '/components/categories.css', '/components/category-picker.js', '/data/categories.js', '/data/home-decor.js',
   '/components/brand-picker.js', '/components/brand-picker.css',
   '/admin/dest-picker.js', '/admin/tiles.js', '/components/tile-row.js', '/data/ads.js',
   '/admin/orders.js', '/data/tracking.js', '/components/order-tracking.css'];

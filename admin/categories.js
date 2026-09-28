@@ -6,7 +6,8 @@
  * (fashion-clothing.png -> Fashion & Clothing), and "Export list" downloads name/slug/parent so you know the names to use.
  *
  * Uses globals from admin/index.html: sb, toast, confirm, showLoad, hideLoad, uploadImage.
- * Needs: data/categories.js, components/category-picker.js, components/categories.css, admin/categories.css.
+ * "Edit all images" opens the bulk image editor (admin/category-images.js).
+ * Needs: data/categories.js, components/category-picker.js, components/categories.css, admin/categories.css, admin/category-images.js.
  * After every load it fires a `categories:loaded` event on document (detail = tree) so the product form can refresh its picker.
  */
 (function () {
@@ -28,6 +29,19 @@
     rows = r.rows;
     rebuild();
     render();
+  }
+
+  /* refetch without touching the screen (the bulk image editor uses this to show what the database really holds) */
+  async function reloadTree() {
+    var r = await C.fetchAll(sb, { includeInactive: true });
+    if (r.error) throw r.error;
+    rows = r.rows; rebuild();
+    return tree;
+  }
+
+  function openBulkImages() {
+    closeForm();
+    CatImages.open({ root: root(), tree: tree, upload: uploadThumb, reload: reloadTree, explain: explain, onClose: function () { load(); } });
   }
 
   function rebuild() {
@@ -82,11 +96,13 @@
   function render() {
     var el = root();
     if (!el) return;
+    if (window.CatImages && CatImages.isOpen()) { CatImages.refresh(tree); return; }   // bulk image editor is showing: keep its pending changes
     el.innerHTML =
       (loadError ? '<div class="cat-err">Could not load categories: ' + esc(loadError) + '<br>If the table does not exist yet, run the categories SQL in the Supabase SQL editor.</div>' : '') +
       '<div class="fcard" id="catHead"><h3>Categories <span class="pill">' + tree.list.length + '</span></h3>' +
         '<div class="cat-bar">' +
           '<button type="button" class="abtn solid" data-act="add">+ Main category</button>' +
+          '<button type="button" class="abtn" data-act="bulkimg">Edit all images</button>' +
           '<label class="abtn" style="display:flex;align-items:center;justify-content:center;cursor:pointer">Bulk thumbnails<input id="catBulk" type="file" accept="image/*" multiple style="display:none"></label>' +
           '<button type="button" class="abtn" data-act="export">Export list</button>' +
         '</div>' +
@@ -299,6 +315,7 @@
       $('cfPrev').innerHTML = C.thumb(tree, c3 ? Object.assign({}, c3, { gifUrl: '' }) : { id: -1, name: '?', icon: '', color: '', imageUrl: '', placeholderPath: '' }, 's56'); }
     else if (act === 'colorclear') { editing.colorCleared = true; $('cfColor').value = '#f0efeb'; }
     else if (act === 'export') exportCSV();
+    else if (act === 'bulkimg') openBulkImages();
   });
   document.addEventListener('input', function (ev) {
     if (ev.target.id === 'catSearch') { query = ev.target.value; renderList(); }
