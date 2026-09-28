@@ -48,13 +48,13 @@
 
 /* Subcategory tiles: a horizontally scrollable row of compact, circular tiles (not a wrapping grid) so it
    never eats vertical space and behaves like screenshot 3's category icons, on mobile or wider screens. */
-.cpg-subs{display:flex;gap:12px;overflow-x:auto;padding:12px 12px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.cpg-subs{display:flex;gap:14px;overflow-x:auto;padding:14px 12px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .cpg-subs::-webkit-scrollbar{display:none}
-.cpg-tile{flex:0 0 auto;width:70px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;min-width:0}
+.cpg-tile{flex:0 0 auto;width:92px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;min-width:0}
 .cpg-tile:active .cat-thumb{transform:scale(.96)}
-.cpg-tile .cat-thumb{transition:transform .15s;width:58px;height:58px}
+.cpg-tile .cat-thumb{transition:transform .15s;width:92px;height:92px}   /* Konga-style: big scrollable circles */
 /* long single words ("Accessories") must wrap inside the tile instead of spilling over the next one */
-.cpg-tile span.cpg-name{font-size:11px;font-weight:600;text-align:center;line-height:1.2;width:100%;max-width:100%;overflow:hidden;overflow-wrap:anywhere;word-break:break-word;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.cpg-tile span.cpg-name{font-size:12px;font-weight:500;text-align:center;line-height:1.25;width:100%;max-width:100%;overflow:hidden;overflow-wrap:anywhere;word-break:break-word;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 
 .cpg-adgap{padding:2px 12px 4px}
 
@@ -62,8 +62,9 @@
    header so sections read as visually distinct rather than identical, while staying in the same red-based
    brand family by default. Compact cards only (see cardHTML(p,{compact:true})). */
 .cpg-msec{margin:10px 0}
-.cpg-msec-hd{margin:0 12px 8px;padding:8px 12px;border-radius:10px;background:color-mix(in srgb, var(--msec-accent, var(--red)) 12%, transparent);border-left:4px solid var(--msec-accent, var(--red))}
-.cpg-msec-ttl{font-size:13.5px;font-weight:800;color:var(--msec-accent, var(--red))}
+/* Konga-style row header: a solid full-width bar in the rail's accent colour with a white title */
+.cpg-msec-hd{margin:0 0 10px;padding:11px 13px;background:var(--msec-accent, var(--red))}
+.cpg-msec-ttl{font-size:15px;font-weight:800;color:#fff}
 .cpg-msec-scroll{display:flex;gap:10px;overflow-x:auto;padding:0 12px 4px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .cpg-msec-scroll::-webkit-scrollbar{display:none}
 .cpg-msec-scroll .fcard-wrap{flex:0 0 auto;width:132px;padding:0}

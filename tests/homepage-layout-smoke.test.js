@@ -198,11 +198,35 @@ test('real index.html: Discover homepage (section order, real-data merchandising
 
   try {
     // ── overall section order ──
-    const order = ['shopCatsSec', 'exploreSec', 'flashSec', 'brandSec', 'homeMerch', 'allSec', 'recentSec', 'vendorSec'];
+    const order = ['exploreSec', 'flashSec', 'brandSec', 'homeMerch', 'allSec', 'recentSec', 'vendorSec'];   // Shop by Categories floats inside the feed: see the placement checks below
     const positions = order.map(posInMain);
     assert.ok(positions.every(i => i >= 0), 'every Home section is present (' + order.join(', ') + ')');
     for (let i = 1; i < positions.length; i++) {
       assert.ok(positions[i] > positions[i - 1], `${order[i]} should come after ${order[i - 1]} (got ${positions.join(',')})`);
+    }
+
+    // ── Shop by Categories sits INSIDE the product feed: Explore Marcato always first, then the admin's
+    //    number of product rows (store_settings.shopCatsAfterRows, default 2) ──
+    {
+      const rowsBefore = () => {
+        const pc = posInMain('shopCatsSec');
+        return ['flashSec', 'recSec'].map(id => w.document.getElementById(id)).concat($$('#homeMerchRows > .hSec'))
+          .filter(el => el && el.style.display !== 'none' && posInMain(el.id) >= 0 && posInMain(el.id) < pc).length;
+      };
+      const totalRows = () => ['flashSec', 'recSec'].map(id => w.document.getElementById(id)).concat($$('#homeMerchRows > .hSec'))
+        .filter(el => el && el.style.display !== 'none').length;
+      assert.ok(posInMain('shopCatsSec') > posInMain('exploreSec'), 'Explore Marcato comes before Shop by Categories');
+      assert.ok(posInMain('shopCatsSec') < posInMain('allSec'), 'Shop by Categories is above the Discover feed');
+      assert.equal(rowsBefore(), Math.min(2, totalRows()), 'default: two product rows before Shop by Categories');
+      w.eval('shopCatsAfterRows = 0; placeShopCats();');
+      assert.equal(rowsBefore(), 0, '0 = straight under Explore Marcato');
+      assert.ok(posInMain('shopCatsSec') > posInMain('exploreSec'), 'still after Explore Marcato at 0');
+      w.eval('shopCatsAfterRows = 1; placeShopCats();');
+      assert.equal(rowsBefore(), Math.min(1, totalRows()), '1 = after the first product row');
+      w.eval('shopCatsAfterRows = 99; placeShopCats();');
+      assert.equal(rowsBefore(), totalRows(), 'more rows than exist = after the last one');
+      assert.ok(posInMain('shopCatsSec') < posInMain('allSec'), 'never falls into the Discover grid');
+      w.eval('shopCatsAfterRows = 2; placeShopCats();');
     }
 
     // ── Shop by Categories: the real main categories, placeholder tiles, See All ──
