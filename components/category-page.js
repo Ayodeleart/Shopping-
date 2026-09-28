@@ -49,7 +49,7 @@
         '<div class="cpg-title"></div></div>' +
       '<div class="cpg-catbar"></div>' +
       '<div class="cpg-crumbs"></div>' +
-      '<div class="cpg-subs"></div>' +
+      '<div class="cpg-subs scg-circle-grid"></div>' +
       '<div class="cpg-adgap"></div>' +
       '<div class="cpg-merch"></div>' +
       '<div class="cpg-adgap"></div>' +
@@ -331,9 +331,10 @@
        colour when no image is set) and their real names. Never emoji, never invented.
      merchHTML(sections, cardHTML) — the curated rails the host decided are eligible; compact
        MERCHANDISING cards only (no Add to Cart), each rail with its own accent colour. */
+  var SUBTILE_PALETTE = ['#eef0f3', '#e3f2fb', '#fff8e1', '#e9f7ef', '#f5eee4', '#fbe9f0'];
   CategoryPage.subTilesHTML = function (tree, cats) {
-    return (cats || []).map(function (c) {
-      return '<a class="cpg-tile" data-cat="' + esc(c.slug) + '">' + Pcx.Categories.thumb(tree, c, 'round') +
+    return (cats || []).map(function (c, i) {
+      return '<a class="cpg-tile" style="background:' + SUBTILE_PALETTE[i % SUBTILE_PALETTE.length] + '" data-cat="' + esc(c.slug) + '">' + Pcx.Categories.thumb(tree, c, 'round') +
         '<span class="cpg-name">' + esc(c.name) + '</span></a>';
     }).join('');
   };
