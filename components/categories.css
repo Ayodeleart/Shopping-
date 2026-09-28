@@ -121,3 +121,13 @@
 /* the storefront's in-feed category view reuses the tiles/rails above (see #catSubs / #catMerch
    in index.html), so a category looks the same whether it is browsed in place on the home surface
    or opened as its own page. */
+
+/* Filter sheet extras: colour / size chips, price hint, stock / sale toggles */
+.cpg-fhint{font-style:normal;font-weight:600;text-transform:none;letter-spacing:0;color:var(--txt3);margin-left:6px}
+.cpg-chips{display:flex;flex-wrap:wrap;gap:8px}
+.cpg-chip{min-height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--border);background:var(--bg2);color:var(--txt);font-size:13px;font-weight:600}
+.cpg-chip.on{background:var(--txt);color:var(--bg);border-color:var(--txt)}
+.cpg-ftoggles{display:flex;flex-direction:column;gap:4px}
+.cpg-ftog{display:flex!important;align-items:center;gap:10px;margin:0!important;padding:8px 0;font-size:14px!important;font-weight:600!important;text-transform:none!important;letter-spacing:0!important;color:var(--txt)!important}
+.cpg-ftog input{width:20px;height:20px;accent-color:var(--red)}
+.cpg-sheet{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 4px)}

@@ -103,8 +103,11 @@ const routeHandler = handler(['POST'], async (req, res) => {
       callbackUrl: siteUrl(req) + '/?pay_return=1', metadata: { order_id: co.order_id, reference }
     });
   } catch (e) {
+    // The real cause (bad/expired key, wrong mode, Paystack down...) goes to the server log only; the customer gets a safe message.
+    console.error('[payments] initialize failed for order ' + co.order_id + ': HTTP ' + (e.status || '?') + ' ' + String(e.message || e).slice(0, 200));
     await rpc('fail_payment', { p_reference: reference, p_status: 'failed', p_reason: 'could not start: ' + String(e.message || e).slice(0, 200) }).catch(() => {});
-    throw new HttpError(502, 'We could not start the payment. Please try again.', 'provider_error');
+    // The order already exists: hand its id back so the checkout page retries THAT order instead of creating a second one.
+    return send(res, 502, { error: 'We could not start the payment. Please try again.', code: 'provider_error', order_id: co.order_id, guest_token: guestToken });
   }
   await db().from('payments').update({ authorization_url: init.authorizationUrl, updated_at: new Date().toISOString() }).eq('reference', reference);
 

@@ -77,10 +77,16 @@
 
   async function loadMethods() {
     try {
-      var j = await (await fetch('/api/payment-methods')).json();
-      S.configured = !!j.configured; S.methods = j.methods || []; S.isTest = !!j.is_test; S.pricing = j.pricing || S.pricing;
+      var r = await fetch('/api/payment-methods', { headers: { Accept: 'application/json' } });
+      var j = await r.json().catch(function () { return null; });
+      if (!r.ok || !j) throw new Error('payment-methods returned HTTP ' + r.status);
+      S.configured = !!j.configured; S.methods = j.methods || []; S.isTest = !!j.is_test; S.pricing = j.pricing || S.pricing; S.methodsError = false;
       if (!S.method || !S.methods.some(function (m) { return m.id === S.method; })) S.method = S.methods.length ? S.methods[0].id : null;
-    } catch (_) { S.configured = false; S.methods = []; }
+    } catch (e) {
+      /* the payment endpoint itself could not be reached / crashed: say so (and offer a retry) instead of claiming payments do not exist */
+      S.configured = false; S.methods = []; S.methodsError = true;
+      if (global.console) console.warn('[checkout] could not load payment methods:', e && e.message);
+    }
   }
 
   /* ── rendering ── */
@@ -108,7 +114,7 @@
       '<label class="ck-f"><span>Street address</span><input data-f="line1" autocomplete="street-address" value="' + esc(f.line1) + '"></label>' +
       '<div class="ck-grid"><label class="ck-f"><span>Town / city / area</span><input data-f="city" autocomplete="address-level-2" value="' + esc(f.city) + '"></label>' +
       '<label class="ck-f"><span>State</span><select data-f="state" autocomplete="address-level-1"><option value="">Select state</option>' + (global.NigeriaAddress ? global.NigeriaAddress.stateNames : []).map(function (x) { return '<option value="' + esc(x) + '"' + (f.state === x ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') + '</select></label></div>' +
-      '<label class="ck-f"><span>LGA</span><select data-f="lga"><option value="">Select LGA (optional)</option>' + ((global.NigeriaAddress && f.state) ? global.NigeriaAddress.lgas(f.state) : []).map(function (x) { return '<option value="' + esc(x) + '"' + (f.lga === x ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') + '</select></label>' +
+      '<label class="ck-f"><span>LGA</span><select data-f="lga">' + lgaOptionsHTML(f.state, f.lga) + '</select></label>' +
       '<div class="ck-grid"><label class="ck-f"><span>Landmark (optional)</span><input data-f="landmark" value="' + esc(f.landmark) + '"></label>' +
       '<label class="ck-f"><span>House / building (optional)</span><input data-f="house_number" autocomplete="address-line2" value="' + esc(f.house_number) + '"></label></div>' +
       '<label class="ck-f"><span>Delivery instructions (optional)</span><input data-f="delivery_instructions" value="' + esc(f.delivery_instructions) + '"></label>' +
@@ -131,6 +137,9 @@
   }
 
   function renderPayment() {
+    if (S.methodsError) {
+      return '<section class="ck-card"><div class="ck-h"><span>Payment</span></div><div class="ck-warn"><b>We could not reach the payment service.</b> Your cart and details are saved. Check your connection and try again.</div><button class="ck-btn" data-a="retry-methods" style="margin-top:10px">Try again</button></section>';
+    }
     if (!S.configured) {
       return '<section class="ck-card"><div class="ck-h"><span>Payment</span></div><div class="ck-warn"><b>Online payment is not available yet.</b> Your cart is saved. Please check back soon.</div></section>';
     }
@@ -152,8 +161,20 @@
       row('Total', D.fmt(t.total), 'ck-row--total') + '</section>';
   }
 
+  /* The inputs are the only place typed text lives until "Use this address" is pressed, and render() rebuilds the
+     whole page from S.form. So every render must first copy what is on screen into S.form (captureForm), otherwise
+     any re-render (choosing a state, a payment method, "Change"...) silently wipes the half-filled form. */
+  function captureForm() {
+    if (!root || !S || !S.form) return;
+    root.querySelectorAll('[data-f]').forEach(function (i) { S.form[i.dataset.f] = i.value; });
+  }
+
   function render() {
     if (!root) return;
+    captureForm();
+    var body = root.querySelector('.ck-body'), scrollTop = body ? body.scrollTop : 0;
+    var ae = document.activeElement, focusKey = (ae && root.contains(ae) && ae.dataset) ? ae.dataset.f : null, selStart = null, selEnd = null;
+    if (focusKey && ae.selectionStart != null) { try { selStart = ae.selectionStart; selEnd = ae.selectionEnd; } catch (_) {} }
     var t = totals();
     var ready = !S.editing && Buyer.complete(S.delivery) && S.configured && S.method && D.cart().length && !S.busy;
     root.innerHTML =
@@ -168,17 +189,55 @@
         '<button class="ck-pay" data-a="pay"' + (ready ? '' : ' disabled') + '>' + (S.busy ? 'Starting payment...' : 'Pay ' + D.fmt(t.total)) + '</button></footer>';
     var slot = root.querySelector('[data-as]');
     if (slot) Pcx.AddressSearch.mount(slot, { onPick: pickAddress });
-    var stateSelect = root.querySelector('[data-f="state"]');
-    if (stateSelect) stateSelect.addEventListener('change', function () {
-      S.form.state = this.value; S.form.lga = ''; render();
-    });
+    var nb = root.querySelector('.ck-body'); if (nb) nb.scrollTop = scrollTop;
+    if (focusKey) {
+      var again = root.querySelector('[data-f="' + focusKey + '"]');
+      if (again) { try { again.focus({ preventScroll: true }); if (selStart != null && again.setSelectionRange) again.setSelectionRange(selStart, selEnd); } catch (_) {} }
+    }
+  }
+
+  /* ── form fields: S.form is kept live, so nothing typed can be lost ── */
+
+  function lgaOptionsHTML(state, current) {
+    var list = (global.NigeriaAddress && state) ? global.NigeriaAddress.lgas(state) : [];
+    return '<option value="">Select LGA (optional)</option>' + list.map(function (x) {
+      return '<option value="' + esc(x) + '"' + (current === x ? ' selected' : '') + '>' + esc(x) + '</option>';
+    }).join('');
+  }
+
+  /* "Lagos State" / "Federal Capital Territory" from the address search -> the name the State dropdown uses */
+  function normState(name) {
+    var n = String(name || '').trim(); if (!n) return '';
+    var names = (global.NigeriaAddress && global.NigeriaAddress.stateNames) || [];
+    var low = n.toLowerCase().replace(/\s+state$/, '');
+    if (/^(fct|federal capital territory|abuja fct|abuja)$/.test(low)) return names.indexOf('Abuja') !== -1 ? 'Abuja' : n;
+    var hit = names.filter(function (x) { return x.toLowerCase() === low; })[0];
+    return hit || n;
+  }
+
+  function onFieldChange(e) {
+    var el = e.target; if (!el || !el.dataset || !el.dataset.f || !S || !S.form) return;
+    var key = el.dataset.f;
+    S.form[key] = el.value;
+    if (key === 'state' && e.type === 'change') {
+      /* Only the LGA list depends on the state: refresh that one <select> in place. No full re-render, so every
+         other field, the focus and the scroll position stay exactly as the customer left them. */
+      var lga = root.querySelector('[data-f="lga"]');
+      var keep = S.form.lga && global.NigeriaAddress && global.NigeriaAddress.lgas(el.value).indexOf(S.form.lga) !== -1 ? S.form.lga : '';
+      S.form.lga = keep;
+      if (lga) { lga.innerHTML = lgaOptionsHTML(el.value, keep); lga.value = keep; }
+    }
   }
 
   /* ── actions ── */
 
   function pickAddress(a) {
-    S.form = Object.assign(S.form || {}, { line1: a.line1, city: a.city || a.area, state: a.state, lat: a.lat, lng: a.lon, display_name: a.display_name });
+    captureForm();
+    var st = normState(a.state);
+    var keepLga = S.form.lga && global.NigeriaAddress && global.NigeriaAddress.lgas(st).indexOf(S.form.lga) !== -1 ? S.form.lga : '';
+    S.form = Object.assign(S.form || {}, { line1: a.line1 || S.form.line1 || '', city: a.city || a.area || S.form.city || '', state: st || S.form.state || '', lga: keepLga, lat: a.lat, lng: a.lon, display_name: a.display_name });
     ['line1', 'city', 'state'].forEach(function (k) { var el = root.querySelector('[data-f="' + k + '"]'); if (el) el.value = S.form[k] || ''; });
+    var lgaEl = root.querySelector('[data-f="lga"]'); if (lgaEl) { lgaEl.innerHTML = lgaOptionsHTML(S.form.state, S.form.lga); lgaEl.value = S.form.lga || ''; }
     var el = root.querySelector('[data-f="line1"]'); if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
   }
 
@@ -194,18 +253,27 @@
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.email || '')) { D.toast('Add a valid email for your receipt'); return; }
     S.delivery = { name: f.name, phone: f.phone, email: f.email, line1: f.line1, city: f.city || '', state: f.state || '', lga: f.lga || '',
       house_number: f.house_number || '', landmark: f.landmark || '', delivery_instructions: f.delivery_instructions || '',
-      lat: f.lat == null ? null : f.lat, lng: f.lng == null ? null : f.lng, display_name: f.display_name || '', address_id: null, dirty: true };
+      lat: f.lat == null ? null : f.lat, lng: f.lng == null ? null : f.lng, display_name: f.display_name || '', address_id: f.address_id || null, dirty: true };
     S.editing = false; S.error = ''; render();
   }
 
+  /* Saves the delivery details for next time. Signed in: profile + address book (an edited saved address is UPDATED,
+     a new one inserted, and the returned id is remembered so the same address is never inserted twice). Guest: this
+     device only. Runs before the payment starts so a failed payment does not lose the details. Never blocks payment. */
   async function persistDetails() {
     var s = D.session(), d = S.delivery;
     try {
-      if (!S.saveFlag) return;
+      if (!S.saveFlag || !d) return;
       if (s) {
         var uid = s.user.id;
-        if (!S.profile || S.profile.full_name !== d.name || S.profile.phone !== d.phone) await Buyer.saveProfile(D.sb, uid, { full_name: d.name, phone: d.phone });
-        if (d.dirty) await Buyer.saveAddress(D.sb, uid, { label: 'Home', full_name: d.name, phone: d.phone, line1: d.line1, city: d.city, state: d.state, lga: d.lga, house_number: d.house_number, landmark: d.landmark, delivery_instructions: d.delivery_instructions, lat: d.lat, lng: d.lng, display_name: d.display_name, is_default: !S.addresses.length });
+        if (!S.profile || S.profile.full_name !== d.name || S.profile.phone !== d.phone) {
+          S.profile = (await Buyer.saveProfile(D.sb, uid, { full_name: d.name, phone: d.phone })) || S.profile;
+        }
+        if (d.dirty) {
+          var existing = d.address_id ? S.addresses.filter(function (x) { return x.id === d.address_id; })[0] : null;
+          var saved = await Buyer.saveAddress(D.sb, uid, { id: d.address_id || undefined, label: (existing && existing.label) || 'Home', full_name: d.name, phone: d.phone, line1: d.line1, city: d.city, state: d.state, lga: d.lga, house_number: d.house_number, landmark: d.landmark, delivery_instructions: d.delivery_instructions, lat: d.lat, lng: d.lng, display_name: d.display_name, is_default: existing ? !!existing.is_default : !S.addresses.length });
+          if (saved && saved.id) { d.address_id = saved.id; d.dirty = false; S.addresses = await Buyer.addresses(D.sb, uid); }
+        }
       } else Buyer.saveGuest(d);
     } catch (_) { /* saving is a convenience; never block a payment on it */ }
   }
@@ -249,27 +317,37 @@
     });
   }
 
+  /* what an order would contain: if this is unchanged since a failed/cancelled attempt, that attempt's order is reused */
+  function orderSignature(d) {
+    return JSON.stringify([D.cart().map(function (x) { return [x.id, x.qty, x.size || '', x.color || '']; }), [d.name, d.phone, d.email, d.line1, d.house_number, d.city, d.lga, d.state, d.landmark, d.delivery_instructions]]);
+  }
+
   async function pay() {
+    if (S.busy || S.paying) return;                       // one payment start at a time: no double taps, no double orders
     var d = S.delivery;
     if (!Buyer.complete(d)) { S.editing = true; render(); return; }
-    S.busy = true; S.error = ''; render();
+    S.paying = true; S.busy = true; S.error = ''; render();
     try {
-      var h = { 'Content-Type': 'application/json' }; if (token()) h.Authorization = 'Bearer ' + token();
-      var r = await fetch('/api/checkout', { method: 'POST', headers: h, body: JSON.stringify({
-        items: D.cart().map(function (x) { return { product_id: x.id, qty: x.qty, size: x.size || null, color: x.color || null }; }), method: S.method,
-        delivery: { name: d.name, phone: d.phone, email: d.email, line1: d.line1, city: d.city, state: d.state, lga: d.lga, house_number: d.house_number, landmark: d.landmark, delivery_instructions: d.delivery_instructions, lat: d.lat, lng: d.lng, display_name: d.display_name } }) });
-      var j = await r.json();
-      if (!r.ok) throw new Error(j.error || 'Could not start the payment');
       await persistDetails();
-      if (j.provider === 'paystack' && j.access_code && j.public_key) {
+      var h = { 'Content-Type': 'application/json' }; if (token()) h.Authorization = 'Bearer ' + token();
+      var sig = orderSignature(d), reuse = S.pendingOrder && S.pendingOrder.sig === sig ? S.pendingOrder : null;
+      var payload = reuse
+        ? { order_id: reuse.order_id, guest_token: reuse.guest_token, method: S.method }
+        : { items: D.cart().map(function (x) { return { product_id: x.id, qty: x.qty, size: x.size || null, color: x.color || null }; }), method: S.method,
+            delivery: { name: d.name, phone: d.phone, email: d.email, line1: d.line1, city: d.city, state: d.state, lga: d.lga, house_number: d.house_number, landmark: d.landmark, delivery_instructions: d.delivery_instructions, lat: d.lat, lng: d.lng, display_name: d.display_name } };
+      var r = await fetch('/api/checkout', { method: 'POST', headers: h, body: JSON.stringify(payload) });
+      var j = await r.json().catch(function () { return {}; });
+      if (j && j.order_id) S.pendingOrder = { order_id: j.order_id, guest_token: j.guest_token || null, sig: sig };   // remembered even when starting the payment failed
+      if (!r.ok) throw new Error(j.error || 'Could not start the payment');
+      if (j.access_code) {
         await openInlinePayment(j);
-      } else {
+      } else if (j.authorization_url) {
         try { localStorage.setItem(PENDING_KEY, JSON.stringify({ reference: j.reference, order_id: j.order_id, guest_token: j.guest_token || null, at: Date.now() })); } catch (_) {}
         global.location.href = j.authorization_url;
-      }
+      } else throw new Error('Payment session is unavailable. Please try again.');
     } catch (e) {
       S.busy = false; S.error = e.message; render(); D.toast(e.message);
-    }
+    } finally { S.paying = false; }
   }
 
   function onClick(e) {
@@ -282,11 +360,13 @@
     else if (a === 'save-address') saveAddressAction();
     else if (a === 'save-flag') S.saveFlag = t.checked;
     else if (a === 'method') { S.method = t.dataset.id; render(); }
+    else if (a === 'retry-methods') { S.loadingMethods = true; loadMethods().then(function () { S.loadingMethods = false; render(); }); }
     else if (a === 'pay') pay();
     else if (a === 'use-addr') {
       var ad = S.addresses.find(function (x) { return String(x.id) === t.dataset.id; });
       var s = D.session();
-      S.delivery = Buyer.fromSaved(S.profile, ad, s && s.user.email); S.editing = false; render();
+      S.delivery = Buyer.fromSaved(S.profile, ad, s && s.user.email); S.delivery.dirty = false;
+      S.form = Object.assign({}, S.delivery); S.editing = false; render();
     }
   }
 
@@ -297,6 +377,8 @@
     root = document.getElementById('chkPage');
     if (!root) { root = document.createElement('div'); root.id = 'chkPage'; document.body.appendChild(root); }
     root.addEventListener('click', onClick);
+    root.addEventListener('input', onFieldChange);
+    root.addEventListener('change', onFieldChange);
   }
 
   async function open() {
@@ -394,7 +476,7 @@
   }
 
   async function resumePayment(j) {
-    if (j && j.provider === 'paystack' && j.access_code && j.public_key) return openInlinePayment(j);
+    if (j && j.provider === 'paystack' && j.access_code) return openInlinePayment(j);
     if (j && j.authorization_url) return global.location.href = j.authorization_url;
     throw new Error('Payment session is unavailable. Please try again.');
   }

@@ -13,6 +13,11 @@ async function pricing() {
 module.exports = handler(['GET'], async (req, res) => {
   const p = providers.active();
   const pr = await pricing().catch(() => ({ delivery_fee: 0, service_fee: 0, tax_rate: 0 }));
-  if (!p) return send(res, 200, { configured: false, methods: [], pricing: pr });
+  if (!p) {
+    const reason = providers.inactiveReason();
+    const st = providers.status();          // names only, never values: shows up in the Vercel function log
+    console.warn('[payments] not available: ' + reason + (st.missing.length ? ' (missing: ' + st.missing.join(', ') + ')' : ''));
+    return send(res, 200, { configured: false, reason, methods: [], pricing: pr });
+  }
   send(res, 200, { configured: true, provider: p.id, is_test: !!p.isTest, methods: p.methods(), pricing: pr });
 });

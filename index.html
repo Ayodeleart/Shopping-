@@ -154,6 +154,7 @@ input{font-family:inherit;color:inherit;-webkit-appearance:none;outline:none}
    own display state, so returning to Home restores exactly what was there before), the
    sticky bar is pinned visible, and the page reserves room for it so it never overlaps. */
 body.cat-mode{padding-top:calc(var(--hh) + var(--cnh))}
+body.has-cat-toolbar{padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))}   /* the fixed Sort/Filter pill never sits on the last row or the footer */
 body.cat-mode #catNav{transform:none;opacity:1;pointer-events:auto}
 body.cat-mode #hero,
 body.cat-mode #tileSec,
@@ -1607,7 +1608,8 @@ function initCategoryPage() {
     merchSections: categoryMerchSections,
     ads: () => adsList, mountAds: mountFeedAds, observeAllEls: observeAll,
     brandLabel: p => { const b = brandOf(p); return b ? b.name : (p.brand || null); },
-    ratingOf: p => ratingMap[p.id] || null
+    ratingOf: p => ratingMap[p.id] || null,
+    facets: productFacets
   });
   catDeepLinked = !!catFromHash() || !!wcatFromHash();
   window.addEventListener('hashchange', syncCatPage);
@@ -1843,6 +1845,7 @@ function filterByVendor(vendorId) {
 /* show a list in the browsing surface (vendor shop, brand, favorites) — same grid, own title */
 function showList(title, list, emptyMsg) {
   ++catRenderToken;                       /* cancel any category render still in flight */
+  hideCatToolbar();
   activeCat = 'All'; renderCatNav(); setCatMode(false);
   $('allSecHd').hidden = false;
   $('allSecHd').classList.remove('secHd--accent');
@@ -1946,6 +1949,44 @@ function catHdAccent(cat) {
   return CAT_HD_ACCENTS[h % CAT_HD_ACCENTS.length];
 }
 
+/* ── SORT BY / FILTER BY TOOLBAR for the in-place category view ────────────────────────────
+   The floating bottom pill (Pcx.CategoryToolbar, the same one the full-screen category page uses) over the SAME
+   product list this view renders. It exists only while a category is selected in the sticky bar, is hidden on the
+   Home feed / vendor / brand / favourites lists, and re-renders #allGrid in place: no navigation, no reload, the
+   category selection, sticky nav and (as far as the shrinking list allows) scroll position all stay put. */
+let catToolbar = null, catToolbarCat = null;
+function productFacets(p) {                     /* real colours / sizes from the product's own attributes (Pcx.Variants) */
+  const V = window.Pcx && Pcx.Variants; if (!V) return { colors: [], sizes: [] };
+  const sizes = [];
+  (V.sizeGroups(p) || []).forEach(g => { if (g.key === 'size') g.values.forEach(v => sizes.push(v)); });
+  return { colors: V.colors(p) || [], sizes };
+}
+function renderCatProducts(cat, tb) {
+  const list = tb.result(), total = tb.total(), filtered = tb.active() && total > 0;
+  renderGrid(list, 'allGrid', true,
+    filtered ? 'Try widening the price range or clearing filters.' : `Nothing is listed in ${cat.name} right now. Check back soon.`, false,
+    { emptyTitle: filtered ? 'No products match those filters' : 'No products yet', categoryId: cat.id });
+  $('pCount').textContent = `${list.length} item${list.length !== 1 ? 's' : ''}` + (list.length !== total ? ` (of ${total})` : '');
+}
+function hideCatToolbar() {
+  catToolbarCat = null;
+  if (catToolbar) catToolbar.hide();
+  document.body.classList.remove('has-cat-toolbar');
+}
+function showCatToolbar(cat, list) {
+  if (!(window.Pcx && Pcx.CategoryToolbar)) return;                     /* script is deferred: nothing to show yet */
+  if (!catToolbar) catToolbar = new Pcx.CategoryToolbar(document.body, {
+    brandLabel: p => { const b = brandOf(p); return b ? b.name : (p.brand || null); },
+    ratingOf: p => ratingMap[p.id] || null,
+    facets: productFacets,
+    onChange: (_l, tb) => { if (catToolbarCat) renderCatProducts(catToolbarCat, tb); }
+  });
+  catToolbarCat = cat;
+  catToolbar.setList(list);
+  catToolbar.show();
+  document.body.classList.add('has-cat-toolbar');
+}
+
 async function selectCategory(key) {
   const cat = resolveCat(key);
   const token = ++catRenderToken;
@@ -1953,6 +1994,7 @@ async function selectCategory(key) {
   renderCatNav();
   setCatMode(!!cat);
 
+  hideCatToolbar();                             /* a new list is coming: sort/filter never carry over between categories */
   if (!cat) {                                   /* HOME: one continuous feed, no heading, no category rows */
     clearCatView();
     $('allSecHd').hidden = true;
@@ -1990,6 +2032,7 @@ async function selectCategory(key) {
   renderGrid(list, 'allGrid', true, `Nothing is listed in ${cat.name} right now. Check back soon.`, false,
     { emptyTitle: 'No products yet', categoryId: cat.id });
   $('pCount').textContent = `${list.length} item${list.length!==1?'s':''}`;
+  if (list.length) showCatToolbar(cat, list);
 }
 
 /* kept as the public name other code (goHome, the MAC assistant) already calls */

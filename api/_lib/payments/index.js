@@ -39,18 +39,36 @@ function get(id) {
   return load();
 }
 
-// The provider new checkouts use (from PAYMENT_PROVIDER). Returns null when nothing usable is configured.
-function active() {
+// Which provider id is selected. PAYMENT_PROVIDER wins. When it is not set but Paystack's secret key is, Paystack is
+// used: a store that has added its Paystack key should not silently show "payment not available" just because a
+// second variable was forgotten. This never falls back to the mock provider, and never applies when PAYMENT_PROVIDER is
+// set to something else (including an unknown value, which stays an error).
+function selectedId() {
   const id = (process.env.PAYMENT_PROVIDER || '').trim().toLowerCase();
+  if (id) return id;
+  return (process.env.PAYSTACK_SECRET_KEY || '').trim() ? 'paystack' : '';
+}
+
+// The provider new checkouts use. Returns null when nothing usable is configured.
+function active() {
+  const id = selectedId();
   if (!id || !registry[id]) return null;
   const p = get(id);
   return p.configured() ? p : null;
 }
 
+// Why active() is null, as a short code the checkout page can act on (no values, no variable names).
+function inactiveReason() {
+  const id = selectedId();
+  if (!id) return 'provider_not_selected';
+  if (!registry[id]) return 'unknown_provider';
+  return get(id).configured() ? null : 'missing_credentials';
+}
+
 // For the admin screen: what is configured and what is missing (names only, never values)
 function status() {
-  const id = (process.env.PAYMENT_PROVIDER || '').trim().toLowerCase();
-  const info = { selected: id || null, available: Object.keys(registry), configured: false, isTest: null, missing: [] };
+  const id = selectedId();
+  const info = { selected: id || null, inferred: !(process.env.PAYMENT_PROVIDER || '').trim() && !!id, available: Object.keys(registry), configured: false, isTest: null, missing: [] };
   if (!id) { info.missing = ['PAYMENT_PROVIDER']; return info; }
   if (!registry[id]) { info.missing = ['PAYMENT_PROVIDER (unknown: ' + id + ')']; return info; }
   const p = get(id);
@@ -61,4 +79,4 @@ function status() {
   return info;
 }
 
-module.exports = { get, active, status, registry };
+module.exports = { get, active, status, inactiveReason, selectedId, registry };
