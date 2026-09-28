@@ -75,7 +75,6 @@ test('Home & Decor world opens through the existing WorldPage route and uses onl
 
     const root = w.document.getElementById('worldPage');
     assert.ok(root.classList.contains('open') && root.classList.contains('world-home'));
-    assert.ok(w.document.body.classList.contains('home-world-open'), 'shared Marcato header mode is active');
     assert.equal(root.querySelector('.wp-hdr-ttl').textContent, 'Home & Decor');
     assert.equal(root.querySelectorAll('.hd-hero-slide').length, 2, 'admin hero slides persisted into the custom hero');
     assert.deepEqual([...root.querySelectorAll('.hd-category-label strong')].map(e => e.textContent), ['Living room', 'Lighting']);
@@ -96,8 +95,12 @@ test('Home & Decor world opens through the existing WorldPage route and uses onl
     root.querySelector('[data-hd-category="51"]').click();
     assert.deepEqual(calls.worldCategories, [51], 'collection tile uses the existing world-category route');
 
+    assert.equal(root.querySelectorAll('.wp-hdr').length, 1, 'exactly one header — no duplicate main-header bar, same as every other world');
+
     page.close();
-    assert.ok(!w.document.body.classList.contains('home-world-open'));
+    const overlay = fs.readFileSync(path.join(ROOT, 'components/home-decor-world.css'), 'utf8');
+    assert.doesNotMatch(overlay, /top:\s*var\(--hh\)/, 'Home & Decor covers the main header like every other world');
+    assert.ok(!w.document.body.classList.contains('home-world-open'), 'no shared-header mode any more');
   } finally { dom.window.close(); }
 });
 

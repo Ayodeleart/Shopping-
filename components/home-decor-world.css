@@ -1,10 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Cormorant:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap');
 
-/* Home & Decor keeps Marcato's fixed shared header visible. The world's own
-   back/title bar begins immediately below it; no bottom navigation is added. */
-body.home-world-open #hdrSearchBtn{display:flex!important}
+/* Home & Decor uses the exact same full-screen #worldPage overlay as every other world
+   (Beauty, Fashion, Food, Gifts) — its own .wp-hdr back/title/search/cart/profile bar is
+   the ONLY header shown while it's open; the main Marcato header sits behind it, same as
+   everywhere else. Only the colour/type theme below is Home & Decor-specific. */
 #worldPage.world-home{
-  top:var(--hh);overflow-x:hidden;
+  overflow-x:hidden;
   --bg:#fbfaf7;--bg2:#f0eee8;--bg3:#e4e0d8;--card:#fff;
   --txt:#171815;--txt2:#54564f;--txt3:#888a82;--border:#e4e1da;
   background:#fbfaf7;color:#171815;

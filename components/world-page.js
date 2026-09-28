@@ -53,7 +53,6 @@
     this.root.scrollTop = 0;
     this.root.classList.add('open');
     this.root.setAttribute('aria-hidden', 'false');
-    document.body.classList.toggle('home-world-open', world.slug === 'home' || world.slug === 'home-decor');
     document.body.style.overflow = 'hidden';
   };
 
@@ -62,7 +61,6 @@
     this.root.classList.remove('open');
     this.root.setAttribute('aria-hidden', 'true');
     if (this.root._homeDecorCleanup) { this.root._homeDecorCleanup(); this.root._homeDecorCleanup = null; }
-    document.body.classList.remove('home-world-open');
     document.body.style.overflow = '';
   };
 

@@ -232,7 +232,9 @@ test('card: photo sits whole in a fixed square media box, heart sits on the phot
     assert.equal(c.querySelector('.pcAdd').textContent.trim(), 'Add to Cart', 'button always says Add to Cart, never "Choose options"');
   }
   assert.equal(tote.querySelectorAll('.pcSwatch').length, 2, 'Ankara Tote has 2 real colours (Black, Red)');
-  assert.equal(mug.querySelector('.pcSwatches'), null, 'no colours on a plain product, so no swatch row');
+  assert.equal(mug.querySelectorAll('.pcSwatch').length, 0, 'no colours on a plain product, so no swatches');
+  assert.ok(mug.querySelector('.pcSwatches'), 'the swatch row is still rendered (empty) so its height is reserved and cards line up');
+  assert.ok(mug.querySelector('.pcMeta'), 'the stock/rating row is always rendered so card heights match');
   const css = fs.readFileSync(path.join(ROOT, 'components/product-card.css'), 'utf8');
   assert.match(css, /\.pcImg\{[^}]*padding-top:100%/, 'the media box is square, like the reference');
   assert.match(css, /\.pcImg img\{[^}]*object-fit:contain/, 'the whole photo is shown, never cropped');

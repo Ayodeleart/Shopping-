@@ -71,11 +71,12 @@ function repaintSwatchColors() {
 }
 /* A card shows at most SWATCH_CAP real colour dots on one line; any extra real colours are counted in a
    "+N" chip that opens the product (never invented, never a second wrapped row — a wrapped row is what
-   made card heights inconsistent across the grid). */
+   made card heights inconsistent across the grid). The row is ALWAYS rendered, even empty, so a product
+   with no colours reserves the same .pcSwatches height as one with colours — cards in the same row line up. */
 const SWATCH_CAP = 5;
 function swatchHTML(p) {
   const cols = (window.Pcx && Pcx.Variants) ? Pcx.Variants.colors(p) : [];
-  if (!cols.length) return '';
+  if (!cols.length) return '<div class="pcSwatches"></div>';
   if (!(window.Pcx && Pcx.ProductAttributes)) ensureProductAttributes().then(repaintSwatchColors);
   const picked = cardColorPick[p.id];
   const shown = cols.slice(0, SWATCH_CAP), extra = cols.length - shown.length;
@@ -174,9 +175,9 @@ function cardHTML(p, opts) {
   const pct = tot > 0 ? Math.min(100, Math.round(p.stock/tot*100)) : 0;
   const r = ratingMap[p.id];
   const inCart = plainLine(p.id);
-  /* stock bar and rating share ONE compact line instead of two stacked rows (Konga-style density);
-     the line is left out entirely when the product has neither, so no empty space is reserved. */
-  const stockOrRate = p.stock > 0 || (r && r.n > 0);
+  /* stock bar and rating share ONE compact line instead of two stacked rows (Konga-style density).
+     The row is ALWAYS rendered, even with nothing to show — .pcMeta's min-height keeps every card
+     in a row the same height regardless of which optional rows a given product happens to have. */
 
   return `
     <div class="pcard" onclick="openProduct(${num(p.id)})">
@@ -193,11 +194,10 @@ function cardHTML(p, opts) {
           <span class="pcPrice">${fmt(p.price)}</span>
           ${disc > 0 ? `<span class="pcWas">${fmt(p.original_price)}</span>` : ''}
         </div>
-        ${stockOrRate ? `
-          <div class="pcMeta">
+        <div class="pcMeta">
             ${p.stock > 0 ? `<span class="pcBar"><span class="pcBarFill" style="width:${pct}%"></span></span><span class="pcStockTxt">${esc(p.stock)} left</span>` : ''}
             ${r && r.n > 0 ? `<span class="pcRate">${starsHTML(r.avg, 10)}<span>(${esc(r.n)})</span></span>` : ''}
-          </div>` : ''}
+          </div>
         ${swatchHTML(p)}
         <div class="pcCtl" data-pid="${esc(p.id)}" data-q="${esc(inCart ? inCart.qty : 0)}">${ctlHTML(p.id)}</div>
       </div>
