@@ -56,41 +56,41 @@
 .fw-search span{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* ── gender selector ──────────────────────────────────
-   Pill-shaped chips, image + label side by side; the cutout always shows (not just
-   on the active pill) and pops slightly above the pill's top edge. The active pill
-   fills solid with the accent colour; inactive pills stay a plain outline. */
-.fw-gwrap{padding:14px 0 4px}
+   Pill chips: cutout on the left, label on the right. The cutout is TALLER than the pill
+   (fixed 96px vs a 52px pill), bottom-aligned with it, so the head and shoulders rise
+   above the frame. The row is a horizontal scroller, which clips anything above it — so it
+   carries generous top padding to give the rising artwork room. */
+.fw-gwrap{padding:0}
 .fw-genderRow{
-  display:flex;gap:10px;overflow-x:auto;padding:8px 13px 10px;
+  display:flex;gap:12px;overflow-x:auto;padding:52px 13px 12px;
   scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;
 }
 .fw-genderRow::-webkit-scrollbar{display:none}
 .fw-g{
-  position:relative;flex-shrink:0;min-width:104px;height:50px;border-radius:999px;
+  position:relative;flex-shrink:0;min-width:108px;height:52px;border-radius:999px;
   background:var(--card,#fff);border:1.5px solid var(--border);overflow:visible;
-  display:flex;align-items:center;gap:8px;padding:0 18px 0 6px;
+  display:flex;align-items:center;gap:6px;padding:0 20px 0 6px;
   scroll-snap-align:start;transition:background-color .18s,border-color .18s,transform .18s;
-  -webkit-transform:translateZ(0);
 }
 [data-theme=dark] .fw-g{background:var(--bg2)}
 .fw-g:active{transform:scale(.97)}
 .fw-g-name{
   position:relative;z-index:2;white-space:nowrap;
-  font-size:13px;font-weight:800;letter-spacing:.2px;color:var(--txt2);
+  font-size:14px;font-weight:800;letter-spacing:.2px;color:var(--txt2);
 }
 .fw-g-media{
-  position:relative;z-index:1;flex-shrink:0;width:34px;height:62px;margin-top:-26px;
-  display:flex;align-items:flex-end;justify-content:center;pointer-events:none;
+  position:relative;z-index:1;flex-shrink:0;align-self:flex-end;margin-bottom:-1.5px;
+  height:96px;display:flex;align-items:flex-end;justify-content:center;pointer-events:none;
 }
-.fw-g-media img{max-width:100%;max-height:100%;object-fit:contain;object-position:center bottom}
-/* the plain fallback icon (no media uploaded yet) sits inline in the pill instead of popping above it */
-.fw-g-media-ph{margin-top:0;height:auto;align-items:center}
-/* artwork stays whole: contained, never cropped or stretched; the card may be
-   shorter than the file — it simply scales down inside the card */
+.fw-g-media img{
+  display:block;height:96px;width:auto;max-width:96px;
+  object-fit:contain;object-position:center bottom;
+}
+/* fallback icon (no cutout uploaded yet) sits inline in the pill instead of rising above it */
+.fw-g-media-ph{align-self:center;margin-bottom:0;height:auto;align-items:center}
 .fw-g.on{background:var(--fw-accent,#FF7A29);border-color:var(--fw-accent,#FF7A29)}
 .fw-g.on .fw-g-name{color:#fff}
-/* a card without uploaded media still reads clearly: a quiet icon that follows the label colour */
-.fw-g-ph-icon{width:26px;height:26px;color:var(--txt3);opacity:.9;margin-top:0}
+.fw-g-ph-icon{width:28px;height:28px;margin:0 4px;color:var(--txt3);opacity:.9}
 .fw-g.on .fw-g-ph-icon{color:#fff;opacity:.95}
 
 /* ── hero ads (PromotionalCarousel) ─────────────────── */
@@ -136,17 +136,23 @@
 }
 
 /* ── rails (discovery sections) ─────────────────────── */
-.fw-railHd{display:flex;align-items:center;gap:9px;padding:18px 13px 8px}
-.fw-railBar{width:5px;height:19px;border-radius:3px;background:var(--red);flex-shrink:0}
-.fw-railName{font-size:15.5px;font-weight:800;letter-spacing:-.2px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.fw-railCount{margin-left:auto;flex-shrink:0;font-size:11.5px;color:var(--txt3);font-weight:600}
-.fw-railMore{flex-shrink:0;display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:800;color:var(--txt2);padding:4px 0 4px 8px}
-.fw-railMore:active{color:var(--red)}
+/* Each rail title sits on a full-width colour band (Konga-style); the colour cycles per rail. */
+.fw-railHd,.fw-vendorHead{
+  --hd:#D71A2E;display:flex;align-items:center;gap:9px;
+  margin-top:18px;padding:11px 13px;background:var(--hd);color:#fff;
+}
+.fw-hd0{--hd:#D71A2E}.fw-hd1{--hd:#2E7D45}.fw-hd2{--hd:#1F5FBF}.fw-hd3{--hd:#E8590C}
+.fw-hd4{--hd:#7A3FC2}.fw-hd5{--hd:#D6247A}.fw-hd6{--hd:#0E8A8C}
+.fw-railBar{display:none}
+.fw-railName{font-size:16px;font-weight:800;letter-spacing:-.2px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#fff}
+.fw-railCount{margin-left:auto;flex-shrink:0;font-size:11.5px;color:rgba(255,255,255,.85);font-weight:600}
+.fw-railMore{flex-shrink:0;display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:800;color:#fff;padding:4px 0 4px 8px}
+.fw-railMore:active{opacity:.7}
 .fw-railMore svg{width:11px;height:11px}
-.fw-vendorHead{display:flex;align-items:center;gap:9px;padding:18px 13px 8px}
-.fw-vendorHead .fw-railName{font-size:15.5px}
+.fw-vendorHead .fw-railName{font-size:16px}
+.fw-vendorHead .fw-railMore{margin-left:auto}
 .fw-rail{
-  display:flex;gap:10px;overflow-x:auto;padding:0 13px 6px;
+  display:flex;gap:10px;overflow-x:auto;padding:12px 13px 6px;
   scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;
 }
 .fw-rail::-webkit-scrollbar{display:none}

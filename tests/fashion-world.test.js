@@ -220,3 +220,35 @@ test('empty world state and the all-categories page degrade gracefully', () => {
   assert.ok(w.document.querySelector('#fashionCatsPage .fw-empty'));
   cp.close();
 });
+
+test('gender cutouts are taller than the pill and the scroller leaves room for them', () => {
+  const css = fs.readFileSync(path.join(__dirname, '..', 'components/fashion-world.css'), 'utf8');
+  const num = (re) => Number((re.exec(css) || [])[1]);
+  const pillH = num(/\.fw-g\{[^}]*?height:(\d+)px/);
+  const imgH = num(/\.fw-g-media img\{[^}]*?height:(\d+)px/);
+  const padTop = num(/\.fw-genderRow\{[^}]*?padding:(\d+)px/);
+  assert.ok(imgH >= pillH + 30, 'cutout (' + imgH + 'px) is clearly taller than the pill (' + pillH + 'px)');
+  assert.ok(padTop >= imgH - pillH, 'the horizontal scroller has top padding for the part that rises above the pill (else it is clipped)');
+});
+
+test('discovery rail headers are colour bands that cycle through a palette', async () => {
+  const w = setup();
+  load(w, 'components/promotion-slide.js');
+  load(w, 'components/drag-gesture.js');
+  load(w, 'components/promotional-carousel.js');
+  load(w, 'components/fashion-world.js');
+  w.document.body.innerHTML = '<div id="fashionPage"></div>';
+  const tree = new w.Pcx.Categories.Tree(CAT_ROWS);
+  const universe = PRODUCTS.filter(w.Pcx.Fashion.productMatcher(tree));
+  const page = new w.Pcx.FashionWorld(w.document.getElementById('fashionPage'), {
+    genders: () => [], ads: () => [], sections: () => [], tree: () => tree, products: () => universe,
+    vendorsMap: () => ({}), storeName: () => 'Marcato',
+    cardHTML: p => `<div class="pcard" data-pid="${p.id}">${p.name}</div>`,
+    onBack() {}, openCart() {}, openSearch() {}, openCategory() {}, openAllCategories() {}, openStore() {},
+    afterRender() {}, toast() {}
+  });
+  page.open();
+  const heads = [...w.document.querySelectorAll('#fashionPage .fw-railHd, #fashionPage .fw-vendorHead')];
+  assert.ok(heads.length >= 1, 'at least one rail header rendered');
+  heads.forEach((hd, i) => assert.ok(hd.classList.contains('fw-hd' + (i % 7)), 'header ' + i + ' carries its palette class'));
+});

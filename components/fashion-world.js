@@ -381,11 +381,11 @@
     z.hidden = !rails.length;
     if (!rails.length) return;
 
-    rails.forEach(function (r) {
+    rails.forEach(function (r, ri) {
       var sec = h('section');
       var hd;
       if (r.vendor) {
-        hd = h('div', 'fw-vendorHead');
+        hd = h('div', 'fw-vendorHead fw-hd' + (ri % 7));
         var av = h('span');
         av.style.cssText = 'width:30px;height:30px;border-radius:50%;overflow:hidden;flex-shrink:0;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--txt2)';
         if (r.vendor.logo_url) {
@@ -402,7 +402,7 @@
         moreV.addEventListener('click', function () { self.d.openStore(r.vendor.store_slug || r.vendor.id); });
         hd.appendChild(moreV);
       } else {
-        hd = h('div', 'fw-railHd');
+        hd = h('div', 'fw-railHd fw-hd' + (ri % 7));
         hd.appendChild(h('span', 'fw-railBar'));
         hd.appendChild(h('span', 'fw-railName', r.title));
         hd.appendChild(h('span', 'fw-railCount', r.prods.length + ' item' + (r.prods.length !== 1 ? 's' : '')));
