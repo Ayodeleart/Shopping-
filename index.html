@@ -1926,15 +1926,13 @@ function clearCatView() {
   m.innerHTML = ''; m.hidden = true;
 }
 
-/* skeleton cells while the catalogue is still resolving: a pending query must never read as "empty" */
+/* skeleton cells while the catalogue is still resolving: a pending query must never read as "empty".
+   The cells are the shared Marcato-branded card skeletons (skelCardHTML, components/product-card.js). */
 function showGridLoading(id) {
   const el = document.getElementById(id);
   if (!el) return;
   el.setAttribute('aria-busy', 'true');
-  el.innerHTML = new Array(6).fill(
-    '<div class="pcard pcard-skel" aria-hidden="true"><div class="pcImg"></div>' +
-    '<div class="pcBody"><span></span><span class="w60"></span><span class="w40"></span></div></div>'
-  ).join('');
+  el.innerHTML = new Array(6).fill(skelCardHTML()).join('');
 }
 
 /* A vivid, white-text-safe accent per category for the #allSecHd header bar — a category's own tile
@@ -1970,9 +1968,12 @@ async function selectCategory(key) {
   }
 
   /* CATEGORY: subcategory tiles first (they need no product data, so they paint immediately),
-     then the merch rails and the product grid once the catalogue has resolved. */
+     then the merch rails and the product grid once the catalogue has resolved. While that query is
+     in flight, the merch area holds one branded skeleton rail (same .cpg-msec footprint as a real
+     rail) instead of blank space — renderCatMerch() below always replaces it with the real rails,
+     or removes it when the category has none. */
   renderCatSubs(cat);
-  $('catMerch').hidden = true; $('catMerch').innerHTML = '';
+  $('catMerch').innerHTML = skelRailHTML(); $('catMerch').hidden = false;
   $('allSecHd').hidden = false;
   $('allSecHd').classList.add('secHd--accent');
   $('allSecHd').style.setProperty('--sec-accent', catHdAccent(cat));
@@ -3658,6 +3659,7 @@ async function fetchAllProducts() {
 }
 
 async function init() {
+  showGridLoading('allGrid');   /* branded skeleton cards under the boot loader — the Discover grid is never a blank white area while the catalogue loads */
   initBuyerUI();
   await checkBuyerSession();
   initTrackingPages();
