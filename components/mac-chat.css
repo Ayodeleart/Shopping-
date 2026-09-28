@@ -2,7 +2,7 @@
  * --txt,--txt2,--txt3,--red,--red2,--gold,--border), switched by [data-theme=dark] on <html>/<body> — nothing here
  * is a hardcoded light/dark guess, so it always matches whatever theme the shopper is on.
  * z-index 290: above the header and MAC's own fab, above the store's full pages/drawers; below nothing. */
-.macChat { position: fixed; inset: 0; z-index: 290; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+.macChat { position: fixed; inset: 0; z-index: 290; font-family: var(--font, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
   --mac-accent: var(--mac-accent-user, var(--red)); --mac-pride: linear-gradient(135deg, #e40303, #ff8c00, #ffed00, #008026, #004dff, #750787); }
 .macChat[hidden] { display: none; }
 .macChat-scrim { position: absolute; inset: 0; background: rgba(0, 0, 0, .45); opacity: 0; transition: opacity .25s; }

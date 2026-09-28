@@ -64,7 +64,7 @@
 .cpg-msec{margin:10px 0}
 /* Konga-style row header: a solid full-width bar in the rail's accent colour with a white title */
 .cpg-msec-hd{margin:0 0 10px;padding:11px 13px;background:var(--msec-accent, var(--red))}
-.cpg-msec-ttl{font-size:15px;font-weight:800;color:#fff}
+.cpg-msec-ttl{font-size:13.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#fff}
 .cpg-msec-scroll{display:flex;gap:10px;overflow-x:auto;padding:0 12px 4px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .cpg-msec-scroll::-webkit-scrollbar{display:none}
 .cpg-msec-scroll .fcard-wrap{flex:0 0 auto;width:132px;padding:0}

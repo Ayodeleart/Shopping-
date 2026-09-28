@@ -102,7 +102,7 @@
 
 /* ── sections ───────────────────────────────────────── */
 .fw-secHd{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:20px 13px 10px}
-.fw-secTtl{font-size:16.5px;font-weight:900;letter-spacing:-.2px}
+.fw-secTtl{font-size:14px;font-weight:900;letter-spacing:.06em;text-transform:uppercase}
 .fw-secSub{display:block;font-size:11.5px;font-weight:600;color:var(--txt3);margin-top:2px;letter-spacing:.2px}
 .fw-seeAll{
   flex-shrink:0;font-size:12.5px;font-weight:800;color:var(--txt2);

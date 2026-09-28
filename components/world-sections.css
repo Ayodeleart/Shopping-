@@ -30,7 +30,7 @@
 /* products (same 3-column look as the food world) */
 .ws-sec{margin-top:14px}
 .ws-sech{display:flex;align-items:center;padding:0 14px 10px}
-.ws-sech-ttl{font-size:14.5px;font-weight:800;color:var(--txt)}
+.ws-sech-ttl{font-size:13.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--txt)}
 .ws-grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border)}
 .ws-grid3 .pcard{border:none}
 .ws-grid3 > div{background:var(--bg)}
