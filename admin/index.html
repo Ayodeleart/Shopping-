@@ -285,7 +285,7 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
 <!-- LOGIN (Google only; this account also has to be in the ADMIN_EMAILS allow-list below) -->
 <div id="loginWrap">
   <div class="lbox authScreen">
-    <div class="as-brand"><img src="app-icon-maskable-192.png" alt=""><span>Maccato</span></div>
+    <div class="as-brand"><img src="app-icon-maskable-192.png" alt=""><span>Marcato</span></div>
     <div class="as-title">Admin Login<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.8 5.3L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.7L12 2z"/><path d="M19 14.5l.9 2.6L22.5 18l-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9.9-2.6z"/></svg></div>
     <div class="as-sub">Sign in with an authorized admin Google account.</div>
 
@@ -1399,12 +1399,14 @@ async function adminApiCall(body) {
 }
 
 let adminVendorsCache = [];
+let adminVendorEvents = [];
 async function loadVendors() {
   const pendingEl = document.getElementById('vendorsPending');
   const allEl = document.getElementById('vendorsAll');
   try {
-    const { vendors } = await adminApiCall(null);
+    const { vendors, events } = await adminApiCall(null);
     adminVendorsCache = vendors;
+    adminVendorEvents = events || [];
     const pending = vendors.filter(v => v.status === 'pending');
     pendingEl.innerHTML = pending.length ? pending.map(vendorRowHtml).join('') : '<div class="no-items"><h3>No pending applications</h3></div>';
     allEl.innerHTML = vendors.length ? vendors.map(vendorRowHtml).join('') : '<div class="no-items"><h3>No vendors yet</h3></div>';
@@ -1497,6 +1499,8 @@ function openVendorDetail(id) {
       ${v.rejection_reason ? row('Last Feedback', v.rejection_reason) : ''}
     </div></div>
 
+    <div class="vdSec"><div class="vdSecTtl">History</div><div class="vdCard">${vendorHistoryHtml(v.id)}</div></div>
+
     <div class="vdActions">
       ${v.status !== 'approved' ? `<button class="btn-e" onclick="setVendorStatus('${hs(v.id)}','approved')">Approve</button>` : ''}
       <button class="btn-d" onclick="vdRequestChanges('${hs(v.id)}')">Request Changes</button>
@@ -1518,6 +1522,21 @@ function vdRequestChanges(id) {
   const reason = prompt('What does this seller need to fix or re-submit?');
   if (reason === null) return;
   setVendorStatus(id, 'rejected', reason);
+}
+
+/* Application history + the seller's own correction requests (vendor_events table;
+   written by /api/admin-vendors on every decision and by the seller's "Request a
+   correction" button). Empty until migration_vendor_center.sql has been run. */
+function vendorHistoryHtml(vendorId) {
+  const evts = (adminVendorEvents || []).filter(e => e.vendor_id === vendorId).slice(0, 25);
+  if (!evts.length) return '<div class="vdRow"><span class="vdVal" style="color:var(--txt3)">No history recorded yet.</span></div>';
+  return evts.map(e => {
+    const who = e.actor === 'admin' ? 'Admin' : e.actor === 'vendor' ? 'Seller' : 'System';
+    const what = e.type === 'correction_request' ? 'Correction request' : e.type === 'status_change' ? 'Decision' : 'Note';
+    const color = e.type === 'correction_request' ? '#d97706' : 'var(--txt2, #555)';
+    return `<div class="vdRow"><span class="vdLabel">${esc(new Date(e.created_at).toLocaleString())}</span>` +
+      `<span class="vdVal" style="color:${color}"><b>${esc(who)} · ${esc(what)}</b>${e.note ? '<br>' + esc(e.note) : ''}</span></div>`;
+  }).join('');
 }
 
 /* ===== ANNOUNCEMENTS (push broadcast) ===== */

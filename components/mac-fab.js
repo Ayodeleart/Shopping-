@@ -76,7 +76,7 @@
   var BRIDGE = rrect(194, 155, 12, 7, 2, 4, 2);
   var GLINTS = [line(160, 163, 148, 187, 4), line(170, 163, 164, 175, 3), line(240, 163, 228, 187, 4), line(250, 163, 244, 175, 3)];
 
-  /* ---- worlds: Maccato's specialised sections (Food, Fashion, Beauty, Home & Decor). One MAC, same core moves;
+  /* ---- worlds: Marcato's specialised sections (Food, Fashion, Beauty, Home & Decor). One MAC, same core moves;
      entering a world swaps its interactive head accessory (still the exact nod-on / shake-off trick sunglasses
      use), adds that world's costume to the body, and — Food, Home — an occasional prop animation near its side.
      `null`/'default' is the plain general-store MAC (sunglasses), unchanged. */

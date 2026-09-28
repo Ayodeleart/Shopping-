@@ -30,7 +30,7 @@
     var r = await Promise.all([
       ids.length ? sb.from('shipments').select('*').in('order_id', ids) : { data: [] },
       ids.length ? sb.from('order_items').select('*').in('order_id', ids) : { data: [] },
-      sb.from('vendors').select('id,business_name'),
+      sb.from('vendors_public').select('id,business_name'),
       sb.from('carriers').select('*').order('sort_order')
     ]);
     if (r[0].error) return false;

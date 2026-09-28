@@ -24,7 +24,7 @@ const PRODUCTS = [
 
 function makeClient() {
   function builder(table) {
-    let rows = (table === 'vendors' ? [VENDOR] : table === 'products' ? PRODUCTS : []).slice();
+    let rows = (table === 'vendors' || table === 'vendors_public' ? [VENDOR] : table === 'products' ? PRODUCTS : []).slice();
     let opts = {};
     const q = {
       select(_c, o) { opts = o || {}; return q; },

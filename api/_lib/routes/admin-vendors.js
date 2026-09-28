@@ -38,7 +38,14 @@ module.exports = async (req, res) => {
     if (req.method === 'GET') {
       const { data, error } = await supabaseAdmin.from('vendors').select('*').order('created_at', { ascending: false });
       if (error) throw error;
-      return res.status(200).json({ vendors: data });
+      // Application history / audit trail (vendor_events, added by migration_vendor_center.sql).
+      // Tolerate a missing table so the vendors list keeps working before the migration is run.
+      let events = [];
+      try {
+        const ev = await supabaseAdmin.from('vendor_events').select('*').order('created_at', { ascending: false }).limit(500);
+        if (!ev.error && Array.isArray(ev.data)) events = ev.data;
+      } catch (e) { /* table not created yet */ }
+      return res.status(200).json({ vendors: data, events });
     }
 
     if (req.method === 'POST') {
@@ -54,6 +61,17 @@ module.exports = async (req, res) => {
       if (status === 'pending') { patch.application_status = 'pending_review'; patch.rejection_reason = null; }
       const { error } = await supabaseAdmin.from('vendors').update(patch).eq('id', vendor_id);
       if (error) throw error;
+      // Record the decision in the audit trail (best effort — the decision itself already succeeded).
+      try {
+        await supabaseAdmin.from('vendor_events').insert([{
+          vendor_id,
+          actor: 'admin',
+          actor_id: user.id,
+          type: 'status_change',
+          note: (status === 'rejected' ? 'Changes requested' : status.charAt(0).toUpperCase() + status.slice(1)) +
+                (reason ? ' — ' + String(reason).slice(0, 800) : '') + ' (by ' + (user.email || 'admin') + ')'
+        }]);
+      } catch (e) { /* vendor_events not created yet */ }
       return res.status(200).json({ ok: true });
     }
 
