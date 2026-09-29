@@ -31,7 +31,7 @@ async function boot(o) {
   const dom = new JSDOM('<!doctype html><body><div id="catAdmin"></div></body>', { url: 'https://shop.test/admin/', runScripts: 'outside-only', pretendToBeVisual: true });
   const w = dom.window; windows.push(w);
   const sb = makeSb(o.seed || seed(), { isAdmin: o.isAdmin !== false });
-  const log = { toasts: [], uploads: [], confirms: [] };
+  const log = { toasts: [], uploads: [], confirms: [], bgCalls: [] };
   // failure injection: fail an upload by file name, or the category update for an id
   const failUpload = o.failUpload || new Set(), failUpdate = o.failUpdate || new Set();
   const realFrom = sb.from;
@@ -58,11 +58,12 @@ async function boot(o) {
     if (failUpload.has(file.name)) throw new Error('Upload blocked');
     return 'https://cdn.test/storage/v1/object/public/avatars/' + folder + '/' + Date.now() + '_' + log.uploads.length + '_' + file.name;
   };
-  const failBg = o.failBg || new Set();
-  w.removeImageBackground = async (file) => {
-    log.uploads.push('bg:' + file.name);   // recorded distinctly so tests can see it ran, before the real upload of its result
-    if (failBg.has(file.name)) throw new Error('cutout failed');
-    return new w.File([new Uint8Array(10)], file.name.replace(/\.[^.]+$/, '') + '.cutout.png', { type: 'image/png' });
+  const failBg = o.failBg || new Set(), unconfiguredBg = o.unconfiguredBg || new Set();
+  w.removeBgServer = async (url) => {
+    log.bgCalls.push(url);
+    if ([...failBg].some(n => url.includes(n))) throw new Error('cutout failed');
+    if ([...unconfiguredBg].some(n => url.includes(n))) return null;   // service not configured / unavailable
+    return url.replace(/(\.[^./]+)$/, '.cutout$1');
   };
   ['data/safe.js', 'data/categories.js', 'components/category-picker.js', 'admin/category-images.js', 'admin/categories.js'].forEach(f => w.eval(read(f)));
   await w.CatAdmin.load(); await settle();
@@ -250,42 +251,51 @@ test('a non-image file is refused and nothing becomes pending', async () => {
   assert.ok(ui.log.toasts.some(t => t.err));
 });
 
-test('remove background is on by default and cuts out every picked photo before it is saved', async () => {
+test('remove background is on by default: each photo uploads first, then remove.bg cuts it out and the cutout is what gets saved', async () => {
   const ui = await boot(); await ui.open();
   assert.ok(ui.$('#cimRmBg').checked, 'on by default');
   await ui.pick(1, ui.file('fashion-new.png')); await ui.pick(2, ui.file('food-new.png'));
   await ui.save();
-  assert.deepEqual(ui.log.uploads.sort(), ['bg:fashion-new.png', 'bg:food-new.png', 'fashion-new.cutout.png', 'food-new.cutout.png']);
-  assert.match(ui.img(1), /fashion-new\.cutout\.png$/);
+  assert.deepEqual(ui.log.uploads.sort(), ['fashion-new.png', 'food-new.png'], 'the plain photo is what gets uploaded to storage');
+  assert.equal(ui.log.bgCalls.length, 2, 'remove.bg was called once per photo, with the uploaded URL');
+  assert.match(ui.img(1), /fashion-new\.cutout\.png$/, 'the saved image is the cutout, not the plain upload');
   assert.match(ui.img(2), /food-new\.cutout\.png$/);
 });
 
-test('turning the toggle off uploads the original photo untouched', async () => {
+test('turning the toggle off saves the plain uploaded photo, no remove.bg call at all', async () => {
   const ui = await boot(); await ui.open(); await ui.removeBgOff();
   await ui.pick(1, ui.file('fashion-new.png'));
   await ui.save();
-  assert.deepEqual(ui.log.uploads, ['fashion-new.png'], 'no cutout step ran');
+  assert.deepEqual(ui.log.bgCalls, [], 'no cutout call was made');
   assert.match(ui.img(1), /fashion-new\.png$/);
 });
 
-test('a photo whose background cannot be removed still saves, using the original', async () => {
+test('a photo remove.bg cannot process still saves, using the plain upload', async () => {
   const ui = await boot({ failBg: new Set(['food-new.png']) }); await ui.open();
   await ui.pick(1, ui.file('fashion-new.png')); await ui.pick(2, ui.file('food-new.png'));
   await ui.save();
   assert.match(ui.img(1), /fashion-new\.cutout\.png$/, 'this one was cut out fine');
-  assert.match(ui.img(2), /food-new\.png$/, 'this one fell back to the original instead of failing');
+  assert.match(ui.img(2), /food-new\.png$/, 'this one fell back to the plain upload instead of failing');
   const item2 = ui.item(2);
   assert.ok(item2.classList.contains('saved') && !item2.classList.contains('failed'));
 });
 
-test('retrying a failed upload does not run the cutout twice', async () => {
-  const ui = await boot({ failUpload: new Set(['fashion-new.cutout.png']) }); await ui.open();
+test('when the service is not configured (null result), the plain upload is kept, not an error', async () => {
+  const ui = await boot({ unconfiguredBg: new Set(['food-new.png']) }); await ui.open();
+  await ui.pick(2, ui.file('food-new.png'));
+  await ui.save();
+  assert.match(ui.img(2), /food-new\.png$/);
+  assert.ok(ui.item(2).classList.contains('saved'));
+});
+
+test('retrying a failed database update does not call remove.bg again for the same photo', async () => {
+  const ui = await boot({ failUpdate: new Set([1]) }); await ui.open();
   await ui.pick(1, ui.file('fashion-new.png'));
   await ui.save();
-  assert.equal(ui.log.uploads.filter(u => u === 'bg:fashion-new.png').length, 1);
-  assert.equal(ui.img(1), OLD('fashion'), 'kept the old image after the failed upload');
-  ui.failUpload.delete('fashion-new.cutout.png');
+  assert.equal(ui.log.bgCalls.length, 1);
+  assert.equal(ui.img(1), OLD('fashion'), 'kept the old image after the failed update');
+  ui.failUpdate.delete(1);
   await ui.save();
-  assert.equal(ui.log.uploads.filter(u => u === 'bg:fashion-new.png').length, 1, 'the cutout from the first attempt was reused, not redone');
+  assert.equal(ui.log.bgCalls.length, 1, 'the cutout from the first attempt was reused, not redone (and not re-billed)');
   assert.match(ui.img(1), /fashion-new\.cutout\.png$/);
 });

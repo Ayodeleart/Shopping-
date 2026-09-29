@@ -10,16 +10,18 @@
  * Uses the existing `image_url` column and storage bucket: no migration. The optional GIF (gif_url) is not touched here.
  *
  * "Remove background from every upload" is ONE toggle for the whole batch (on by default): when a pending
- * item is a freshly picked photo (not a removal), Save All Changes runs it through the same free, in-browser
- * cutout already used for product photos (removeImageBackground, @imgly/background-removal) before uploading
- * it, so a transparent PNG is saved instead of the original. A photo that fails to process just uploads as-is
- * (never blocks the batch); already-transparent uploads are unaffected either way.
+ * item is a freshly picked photo (not a removal), Save All Changes uploads it as usual and then runs the SAME
+ * paid, server-side cutout Beauty and Home & Decor products already use (removeBgServer -> POST /api/remove-bg,
+ * remove.bg via REMOVE_BG_API_KEY in the Vercel env, admin-only, key never reaches the browser) -- a higher-
+ * quality cutout than the free in-browser one, with the source-hash cache /api/remove-bg already keeps, so the
+ * exact same photo is never billed twice. If the service is unavailable or not configured, the plain uploaded
+ * photo is kept and used instead -- never blocks the batch. Already-transparent uploads are unaffected either way.
  *
  * API (used by admin/categories.js and admin/index.html):
  *   CatImages.open({ root, tree, upload(file) -> url, reload() -> tree, explain(err), onClose() })
  *   CatImages.refresh(tree)     re-render with a new tree, keeping pending changes
  *   CatImages.isOpen(), CatImages.hasPending(), CatImages.guard(proceed)  (asks before dropping pending changes)
- * Uses globals: sb, toast, confirm, safeUrl, removeImageBackground; Pcx.Categories.
+ * Uses globals: sb, toast, confirm, safeUrl, removeBgServer; Pcx.Categories.
  */
 (function (global) {
   'use strict';
@@ -129,7 +131,7 @@
         tabsHTML() +
         '<div class="cat-note">Pick a different image for each item below, then tap <b>Save All Changes</b> once. Nothing is uploaded until you save. Items you do not touch keep their current image.</div>' +
         '<label class="cat-chk cim-rmbg"><input type="checkbox" id="cimRmBg"' + (st.removeBg ? ' checked' : '') + '><span>Remove background from every upload' +
-          '<small>Cuts out each photo in your browser before saving \u2014 free, no extra step per item. Turn off if your images are already transparent.</small></span></label>' +
+          '<small>Runs each photo through remove.bg (the same paid cutout Beauty and Home &amp; Decor products use) after uploading \u2014 a photo already processed once is never billed again. Turn off if your images are already transparent.</small></span></label>' +
         '<input class="cat-search" id="cimFilter" type="search" placeholder="Filter by name" value="' + esc(st.filter) + '">' +
       '</div>' +
       (st.summary ? '<div class="cim-summary" id="cimSummary">' + st.summary + '</div>' : '') +
@@ -200,17 +202,19 @@
       try {
         var url = null;
         if (!p.remove) {
-          if (!p.uploadedUrl) {
-            /* p.bgFile, once produced, survives a retry so a failed upload never re-runs the cutout */
-            if (st.removeBg && !p.bgFile && !p.bgSkip) {
-              st.progress = { done: i, total: ids.length, name: c.name + ' \u2014 removing background' }; refreshBar();
-              try { p.bgFile = await removeImageBackground(p.file); }
-              catch (e) { p.bgSkip = true; }   // fall back to the original photo; never blocks the batch
-              st.progress = { done: i, total: ids.length, name: c.name }; refreshBar();
-            }
-            p.uploadedUrl = await opts.upload(p.bgFile || p.file);   // fresh unique storage path each time
-          }
+          /* upload the original first (remove.bg needs a hosted, store-owned URL to fetch from) */
+          if (!p.uploadedUrl) p.uploadedUrl = await opts.upload(p.file);   // fresh unique storage path each time
           url = p.uploadedUrl;
+          /* p.cutoutUrl / p.cutoutSkip, once set, survive a retry so a failed DB update never re-runs (and re-bills) the cutout */
+          if (st.removeBg && !p.cutoutUrl && !p.cutoutSkip) {
+            st.progress = { done: i, total: ids.length, name: c.name + ' \u2014 removing background' }; refreshBar();
+            try {
+              var cut = await removeBgServer(p.uploadedUrl);
+              if (cut) p.cutoutUrl = cut; else p.cutoutSkip = true;   // service unavailable / not configured: keep the plain upload
+            } catch (e) { p.cutoutSkip = true; }
+            st.progress = { done: i, total: ids.length, name: c.name }; refreshBar();
+          }
+          if (p.cutoutUrl) url = p.cutoutUrl;
         }
         /* Plain update + trust res.error, exactly like the already-working single-category editor's save().
            No .select() here: some Postgres/PostgREST setups don't return the updated row on an UPDATE unless
