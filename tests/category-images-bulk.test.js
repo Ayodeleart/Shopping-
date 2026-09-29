@@ -79,6 +79,34 @@ async function boot(o) {
   return ui;
 }
 
+test('reproduces the real admin page\'s "const sb" (not a window property) and still saves — regression for the global.sb bug', async () => {
+  // admin/index.html declares `const sb = ...` in its inline script; unlike `var`/function declarations,
+  // a top-level const never becomes a window property, so code must use the bare `sb` identifier, not
+  // `global.sb` / `window.sb`. This wires the fake client the same const way to catch that class of bug.
+  const dom = new JSDOM('<!doctype html><body><div id="catAdmin"></div></body>', { url: 'https://shop.test/admin/', runScripts: 'outside-only', pretendToBeVisual: true });
+  windows.push(dom.window);
+  const w = dom.window;
+  const sbReal = makeSb(seed(), { isAdmin: true });
+  w.__realSb = sbReal; w.BUCKET = 'avatars';
+  w.toast = () => {}; w.confirm = (t, m, cb) => cb(); w.showLoad = () => {}; w.hideLoad = () => {};
+  w.URL.createObjectURL = () => 'blob:test/1'; w.URL.revokeObjectURL = () => {};
+  w.Element.prototype.scrollIntoView = function () {};
+  w.uploadImage = async () => 'https://cdn.test/storage/v1/object/public/avatars/categories/x.png';
+  const src = 'const sb = window.__realSb;\n' + ['data/safe.js', 'data/categories.js', 'components/category-picker.js', 'admin/category-images.js', 'admin/categories.js'].map(f => read(f) + '\n;\n').join('');
+  w.eval(src);   // one script, `const sb` first: matches how a real browser shares top-level let/const across <script> tags in one document
+  await w.CatAdmin.load(); await settle();
+  w.document.querySelector('[data-act="bulkimg"]').click(); await settle();
+  const input = w.document.querySelector('[data-cim-file="1"]');
+  const file = new w.File([new Uint8Array(10)], 'a.png', { type: 'image/png' });
+  Object.defineProperty(input, 'files', { value: [file], configurable: true });
+  input.dispatchEvent(new w.Event('change', { bubbles: true })); await settle();
+  w.document.querySelector('[data-cim="save"]').click(); await settle();
+  assert.match(sbReal._db.tables.categories.find(r => r.id === 1).image_url, /x\.png$/);
+  const item = w.document.querySelector('[data-item="1"]');
+  assert.ok(item.classList.contains('saved') && !item.classList.contains('failed'), 'saved, not stuck failed: ' + item.textContent);
+  assert.equal(w.CatImages.hasPending(), false);
+});
+
 test('lists every category with its own image control, subcategories grouped under their parent', async () => {
   const ui = await boot(); await ui.open();
   assert.deepEqual(ui.$$('[data-item] .cim-name').map(e => e.textContent), ['Fashion', 'Food', 'Beauty']);

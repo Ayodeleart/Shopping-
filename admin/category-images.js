@@ -26,7 +26,7 @@
   function el(sel) { return root ? root.querySelector(sel) : null; }
   function isOpen() { return !!opts; }
   function hasPending() { return Object.keys(st.pending).length > 0; }
-  function ask(title, msg, cb) { if (typeof global.confirm === 'function' && global.confirm.length >= 3) global.confirm(title, msg, cb); else cb(); }
+  function ask(title, msg, cb) { if (typeof confirm === 'function' && confirm.length >= 3) confirm(title, msg, cb); else cb(); }   // the page's own confirm(title, msg, cb), not the browser's
 
   function isRoot(c) { return c.parentId == null; }
   function inScope(c, scope) { return scope === 'cats' ? isRoot(c) : !isRoot(c); }
@@ -164,7 +164,7 @@
 
   function pick(id, file) {
     if (!tree.byId[id]) return;
-    if (!file || !/^image\//.test(file.type || '')) { global.toast('Choose an image file', true); return; }
+    if (!file || !/^image\//.test(file.type || '')) { toast('Choose an image file', true); return; }
     freeBlob(st.pending[id]);
     st.pending[id] = { file: file, blobUrl: URL.createObjectURL(file), remove: false, uploadedUrl: null };
     delete st.failed[id]; delete st.savedNow[id];
@@ -199,7 +199,7 @@
            No .select() here: some Postgres/PostgREST setups don't return the updated row on an UPDATE unless
            a matching SELECT policy also passes, which made a real, successful save look like "0 rows changed"
            and get reported as a failure even though the image was saved. */
-        var r = await global.sb.from('categories').update({ image_url: url }).eq('id', id);
+        var r = await sb.from('categories').update({ image_url: url }).eq('id', id);
         if (r.error) throw r.error;
         freeBlob(p); delete st.pending[id]; st.savedNow[id] = true; ok++;
       } catch (e) {
@@ -215,8 +215,8 @@
         '). Their images were kept and your selections are still here: tap Save All Changes to retry.' : '.') +
       (refreshed ? '' : ' Could not reload the list from the database; refresh to confirm.');
     render();
-    if (bad.length) global.toast(ok + ' saved, ' + bad.length + ' failed. Tap Save All Changes to retry.', true);
-    else global.toast(ok + ' image change' + (ok === 1 ? '' : 's') + ' saved');
+    if (bad.length) toast(ok + ' saved, ' + bad.length + ' failed. Tap Save All Changes to retry.', true);
+    else toast(ok + ' image change' + (ok === 1 ? '' : 's') + ' saved');
     var s = el('#cimSummary'); if (s && s.scrollIntoView) s.scrollIntoView({ block: 'nearest' });
   }
 
