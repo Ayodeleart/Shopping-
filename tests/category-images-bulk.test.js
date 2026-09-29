@@ -33,7 +33,7 @@ async function boot(o) {
   const sb = makeSb(o.seed || seed(), { isAdmin: o.isAdmin !== false });
   const log = { toasts: [], uploads: [], confirms: [] };
   // failure injection: fail an upload by file name, or the category update for an id
-  const failUpload = o.failUpload || new Set(), failUpdate = o.failUpdate || new Set(), zeroRows = o.zeroRows || new Set();
+  const failUpload = o.failUpload || new Set(), failUpdate = o.failUpdate || new Set();
   const realFrom = sb.from;
   sb.from = t => {
     const q = realFrom(t);
@@ -42,7 +42,6 @@ async function boot(o) {
     q.update = p => { const u = realUpdate(p); const realEq = u.eq; u.eq = (c, v) => { uid = v; return realEq(c, v); };
       const realThen = u.then; u.then = (a, b) => {
         if (failUpdate.has(uid)) return Promise.resolve({ data: null, error: { message: 'network down' } }).then(a, b);
-        if (zeroRows.has(uid)) return Promise.resolve({ data: [], error: null }).then(a, b);
         return realThen.call(u, a, b); };
       return u; };
     return q;
@@ -63,7 +62,7 @@ async function boot(o) {
   await w.CatAdmin.load(); await settle();
   const $ = s => w.document.querySelector(s), $$ = s => [...w.document.querySelectorAll(s)];
   const ui = {
-    w, sb, db: sb._db, log, $, $$, failUpload, failUpdate, zeroRows,
+    w, sb, db: sb._db, log, $, $$, failUpload, failUpdate,
     img: id => (ui.db.tables.categories.find(r => r.id === id) || {}).image_url,
     async click(el) { (typeof el === 'string' ? $(el) : el).click(); await settle(); },
     file: (name, type) => new w.File([new Uint8Array(10)], name, { type: type || 'image/png' }),
@@ -166,16 +165,12 @@ test('an upload that worked but whose database update failed is not uploaded twi
   assert.match(ui.img(2), /food\.png$/);
 });
 
-test('a database update that changes no row (blocked by policy) is a failure, not a success', async () => {
-  const ui = await boot(); await ui.open();
-  await ui.pick(2, ui.file('food.png')); ui.zeroRows.add(2);
-  await ui.save();
-  assert.ok(ui.item(2).classList.contains('failed'));
-  assert.ok(ui.log.toasts.every(t => t.err));
+test('a policy-denied write surfaces as a per-item failure without clearing the image', async () => {
   const denied = await boot({ isAdmin: false }); await denied.open();
   await denied.pick(2, denied.file('x.png')); await denied.save();
   assert.ok(denied.item(2).classList.contains('failed'), 'not-admin: policy error surfaces per item');
   assert.equal(denied.img(2), null);
+  assert.match(denied.item(2).textContent, /Not allowed/);
 });
 
 test('Remove clears only that item, Undo drops a pending change, unchanged images are preserved', async () => {

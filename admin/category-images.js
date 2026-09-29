@@ -195,9 +195,12 @@
           if (!p.uploadedUrl) p.uploadedUrl = await opts.upload(p.file);   // fresh unique storage path each time
           url = p.uploadedUrl;
         }
-        var r = await global.sb.from('categories').update({ image_url: url }).eq('id', id).select('id');
+        /* Plain update + trust res.error, exactly like the already-working single-category editor's save().
+           No .select() here: some Postgres/PostgREST setups don't return the updated row on an UPDATE unless
+           a matching SELECT policy also passes, which made a real, successful save look like "0 rows changed"
+           and get reported as a failure even though the image was saved. */
+        var r = await global.sb.from('categories').update({ image_url: url }).eq('id', id);
         if (r.error) throw r.error;
-        if (!r.data || !r.data.length) throw new Error('The database did not accept the change. Sign in with the admin account and try again.');
         freeBlob(p); delete st.pending[id]; st.savedNow[id] = true; ok++;
       } catch (e) {
         st.failed[id] = opts.explain ? opts.explain(e) : ((e && e.message) || String(e));
