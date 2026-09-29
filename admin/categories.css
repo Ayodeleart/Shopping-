@@ -26,3 +26,7 @@
 .cat-colorrow input[type=color]{width:56px!important;flex-shrink:0;padding:2px!important}
 .cat-chk{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:600;padding:6px 0}
 .cat-chk input{width:20px!important;min-height:0!important;height:20px;accent-color:var(--red);-webkit-appearance:checkbox;appearance:auto}
+.cim-rmbg{align-items:flex-start;margin:2px 0 12px}
+.cim-rmbg input{margin-top:2px}
+.cim-rmbg span{display:flex;flex-direction:column;gap:2px}
+.cim-rmbg small{font-weight:400;color:var(--txt3);font-size:11.5px;line-height:1.35}

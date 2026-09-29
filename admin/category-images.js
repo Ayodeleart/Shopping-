@@ -9,18 +9,24 @@
  *
  * Uses the existing `image_url` column and storage bucket: no migration. The optional GIF (gif_url) is not touched here.
  *
+ * "Remove background from every upload" is ONE toggle for the whole batch (on by default): when a pending
+ * item is a freshly picked photo (not a removal), Save All Changes runs it through the same free, in-browser
+ * cutout already used for product photos (removeImageBackground, @imgly/background-removal) before uploading
+ * it, so a transparent PNG is saved instead of the original. A photo that fails to process just uploads as-is
+ * (never blocks the batch); already-transparent uploads are unaffected either way.
+ *
  * API (used by admin/categories.js and admin/index.html):
  *   CatImages.open({ root, tree, upload(file) -> url, reload() -> tree, explain(err), onClose() })
  *   CatImages.refresh(tree)     re-render with a new tree, keeping pending changes
  *   CatImages.isOpen(), CatImages.hasPending(), CatImages.guard(proceed)  (asks before dropping pending changes)
- * Uses globals: sb, toast, confirm, safeUrl; Pcx.Categories.
+ * Uses globals: sb, toast, confirm, safeUrl, removeImageBackground; Pcx.Categories.
  */
 (function (global) {
   'use strict';
 
   var C = global.Pcx.Categories, esc = C.esc;
   var opts = null, tree = null, root = null;
-  var st = { scope: 'cats', filter: '', pending: {}, saving: false, progress: null, failed: {}, savedNow: {}, summary: '' };
+  var st = { scope: 'cats', filter: '', pending: {}, saving: false, progress: null, failed: {}, savedNow: {}, summary: '', removeBg: true };
 
   /* ------------------------------------------------------------ helpers */
   function el(sel) { return root ? root.querySelector(sel) : null; }
@@ -122,6 +128,8 @@
       '<div class="fcard cim-head"><div class="cim-top"><button type="button" class="btn-s" data-cim="back">\u2190 Back</button><h3>Edit all images</h3></div>' +
         tabsHTML() +
         '<div class="cat-note">Pick a different image for each item below, then tap <b>Save All Changes</b> once. Nothing is uploaded until you save. Items you do not touch keep their current image.</div>' +
+        '<label class="cat-chk cim-rmbg"><input type="checkbox" id="cimRmBg"' + (st.removeBg ? ' checked' : '') + '><span>Remove background from every upload' +
+          '<small>Cuts out each photo in your browser before saving \u2014 free, no extra step per item. Turn off if your images are already transparent.</small></span></label>' +
         '<input class="cat-search" id="cimFilter" type="search" placeholder="Filter by name" value="' + esc(st.filter) + '">' +
       '</div>' +
       (st.summary ? '<div class="cim-summary" id="cimSummary">' + st.summary + '</div>' : '') +
@@ -192,7 +200,16 @@
       try {
         var url = null;
         if (!p.remove) {
-          if (!p.uploadedUrl) p.uploadedUrl = await opts.upload(p.file);   // fresh unique storage path each time
+          if (!p.uploadedUrl) {
+            /* p.bgFile, once produced, survives a retry so a failed upload never re-runs the cutout */
+            if (st.removeBg && !p.bgFile && !p.bgSkip) {
+              st.progress = { done: i, total: ids.length, name: c.name + ' \u2014 removing background' }; refreshBar();
+              try { p.bgFile = await removeImageBackground(p.file); }
+              catch (e) { p.bgSkip = true; }   // fall back to the original photo; never blocks the batch
+              st.progress = { done: i, total: ids.length, name: c.name }; refreshBar();
+            }
+            p.uploadedUrl = await opts.upload(p.bgFile || p.file);   // fresh unique storage path each time
+          }
           url = p.uploadedUrl;
         }
         /* Plain update + trust res.error, exactly like the already-working single-category editor's save().
@@ -240,6 +257,7 @@
     if (f) pick(id, f);
   }
   function onInput(ev) {
+    if (ev.target.id === 'cimRmBg') { st.removeBg = ev.target.checked; return; }
     if (ev.target.id !== 'cimFilter') return;
     st.filter = ev.target.value;
     var l = el('#cimList'); if (l) l.innerHTML = listHTML();
@@ -248,7 +266,7 @@
   function open(o) {
     if (opts) detach();
     opts = o; tree = o.tree; root = o.root;
-    st = { scope: 'cats', filter: '', pending: {}, saving: false, progress: null, failed: {}, savedNow: {}, summary: '' };
+    st = { scope: 'cats', filter: '', pending: {}, saving: false, progress: null, failed: {}, savedNow: {}, summary: '', removeBg: true };
     root.addEventListener('click', onClick); root.addEventListener('change', onChange); root.addEventListener('input', onInput);
     render();
     if (root.scrollIntoView) root.scrollIntoView({ block: 'start' });

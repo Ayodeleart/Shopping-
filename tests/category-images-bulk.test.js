@@ -58,6 +58,12 @@ async function boot(o) {
     if (failUpload.has(file.name)) throw new Error('Upload blocked');
     return 'https://cdn.test/storage/v1/object/public/avatars/' + folder + '/' + Date.now() + '_' + log.uploads.length + '_' + file.name;
   };
+  const failBg = o.failBg || new Set();
+  w.removeImageBackground = async (file) => {
+    log.uploads.push('bg:' + file.name);   // recorded distinctly so tests can see it ran, before the real upload of its result
+    if (failBg.has(file.name)) throw new Error('cutout failed');
+    return new w.File([new Uint8Array(10)], file.name.replace(/\.[^.]+$/, '') + '.cutout.png', { type: 'image/png' });
+  };
   ['data/safe.js', 'data/categories.js', 'components/category-picker.js', 'admin/category-images.js', 'admin/categories.js'].forEach(f => w.eval(read(f)));
   await w.CatAdmin.load(); await settle();
   const $ = s => w.document.querySelector(s), $$ = s => [...w.document.querySelectorAll(s)];
@@ -73,6 +79,10 @@ async function boot(o) {
       input.dispatchEvent(new w.Event('change', { bubbles: true })); await settle();
     },
     async open() { await ui.click('[data-act="bulkimg"]'); },
+    async removeBgOff() {
+      const cb = $('#cimRmBg'); cb.checked = false;
+      cb.dispatchEvent(new w.Event('input', { bubbles: true })); await settle();
+    },
     async tab(scope) { await ui.click('[data-cim="tab"][data-scope="' + scope + '"]'); },
     save: () => ui.click('[data-cim="save"]')
   };
@@ -118,7 +128,7 @@ test('lists every category with its own image control, subcategories grouped und
 });
 
 test('different images for several categories and subcategories in one batch: nothing uploads until Save, then each lands on its own item', async () => {
-  const ui = await boot(); await ui.open();
+  const ui = await boot(); await ui.open(); await ui.removeBgOff();
   await ui.pick(1, ui.file('fashion-new.png')); await ui.pick(2, ui.file('food-new.png'));     // Beauty is left alone
   await ui.tab('subs');
   await ui.pick(11, ui.file('shoes-new.png')); await ui.pick(22, ui.file('swallow-new.png')); await ui.pick(211, ui.file('jollof-new.png'));
@@ -144,7 +154,7 @@ test('different images for several categories and subcategories in one batch: no
 });
 
 test('choosing an image for one item never changes another item\'s pending image', async () => {
-  const ui = await boot(); await ui.open();
+  const ui = await boot(); await ui.open(); await ui.removeBgOff();
   await ui.pick(1, ui.file('a.png')); await ui.pick(2, ui.file('b.png'));
   await ui.pick(1, ui.file('a2.png'));                                                      // replace A again
   await ui.save();
@@ -153,7 +163,7 @@ test('choosing an image for one item never changes another item\'s pending image
 });
 
 test('after saving, a fresh load from the database shows each image on the right item', async () => {
-  const ui = await boot(); await ui.open();
+  const ui = await boot(); await ui.open(); await ui.removeBgOff();
   await ui.pick(1, ui.file('one.png')); await ui.pick(3, ui.file('three.png')); await ui.save();
   await ui.w.CatAdmin.load(); await settle();
   const t = ui.w.CatAdmin.tree();
@@ -161,7 +171,7 @@ test('after saving, a fresh load from the database shows each image on the right
 });
 
 test('a failed upload keeps the old image and the chosen file, the others still save, and retry works without re-uploading successes', async () => {
-  const ui = await boot(); await ui.open();
+  const ui = await boot(); await ui.open(); await ui.removeBgOff();
   await ui.pick(1, ui.file('good.png')); await ui.pick(3, ui.file('bad.png')); await ui.pick(2, ui.file('ok.png'));
   ui.failUpload.add('bad.png');
   await ui.save();
@@ -181,7 +191,7 @@ test('a failed upload keeps the old image and the chosen file, the others still 
 });
 
 test('an upload that worked but whose database update failed is not uploaded twice on retry, and nothing is reported as saved', async () => {
-  const ui = await boot(); await ui.open();
+  const ui = await boot(); await ui.open(); await ui.removeBgOff();
   await ui.pick(2, ui.file('food.png')); ui.failUpdate.add(2);
   await ui.save();
   assert.equal(ui.img(2), null);
@@ -238,4 +248,44 @@ test('a non-image file is refused and nothing becomes pending', async () => {
   await ui.pick(1, ui.file('doc.pdf', 'application/pdf'));
   assert.equal(ui.w.CatImages.hasPending(), false);
   assert.ok(ui.log.toasts.some(t => t.err));
+});
+
+test('remove background is on by default and cuts out every picked photo before it is saved', async () => {
+  const ui = await boot(); await ui.open();
+  assert.ok(ui.$('#cimRmBg').checked, 'on by default');
+  await ui.pick(1, ui.file('fashion-new.png')); await ui.pick(2, ui.file('food-new.png'));
+  await ui.save();
+  assert.deepEqual(ui.log.uploads.sort(), ['bg:fashion-new.png', 'bg:food-new.png', 'fashion-new.cutout.png', 'food-new.cutout.png']);
+  assert.match(ui.img(1), /fashion-new\.cutout\.png$/);
+  assert.match(ui.img(2), /food-new\.cutout\.png$/);
+});
+
+test('turning the toggle off uploads the original photo untouched', async () => {
+  const ui = await boot(); await ui.open(); await ui.removeBgOff();
+  await ui.pick(1, ui.file('fashion-new.png'));
+  await ui.save();
+  assert.deepEqual(ui.log.uploads, ['fashion-new.png'], 'no cutout step ran');
+  assert.match(ui.img(1), /fashion-new\.png$/);
+});
+
+test('a photo whose background cannot be removed still saves, using the original', async () => {
+  const ui = await boot({ failBg: new Set(['food-new.png']) }); await ui.open();
+  await ui.pick(1, ui.file('fashion-new.png')); await ui.pick(2, ui.file('food-new.png'));
+  await ui.save();
+  assert.match(ui.img(1), /fashion-new\.cutout\.png$/, 'this one was cut out fine');
+  assert.match(ui.img(2), /food-new\.png$/, 'this one fell back to the original instead of failing');
+  const item2 = ui.item(2);
+  assert.ok(item2.classList.contains('saved') && !item2.classList.contains('failed'));
+});
+
+test('retrying a failed upload does not run the cutout twice', async () => {
+  const ui = await boot({ failUpload: new Set(['fashion-new.cutout.png']) }); await ui.open();
+  await ui.pick(1, ui.file('fashion-new.png'));
+  await ui.save();
+  assert.equal(ui.log.uploads.filter(u => u === 'bg:fashion-new.png').length, 1);
+  assert.equal(ui.img(1), OLD('fashion'), 'kept the old image after the failed upload');
+  ui.failUpload.delete('fashion-new.cutout.png');
+  await ui.save();
+  assert.equal(ui.log.uploads.filter(u => u === 'bg:fashion-new.png').length, 1, 'the cutout from the first attempt was reused, not redone');
+  assert.match(ui.img(1), /fashion-new\.cutout\.png$/);
 });
