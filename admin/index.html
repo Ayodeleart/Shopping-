@@ -471,10 +471,13 @@ input,select,textarea{font-family:inherit;color:inherit;-webkit-appearance:none}
        (Food, Home, Gifts, and any world an admin creates) plus the two worlds that still have their own bespoke
        admin screens (Fashion, Beauty). One tab, one sub-nav, instead of scattered across Banners. -->
   <div class="panel" id="p-explore">
-    <div id="exploreSubnav" style="display:flex;border-bottom:2px solid var(--border);margin-bottom:14px">
-      <button class="bsub-tab on" data-esub="worlds" onclick="switchExploreSub('worlds')">Worlds</button>
+    <div id="exploreSubnav" style="display:flex;flex-wrap:wrap;border-bottom:2px solid var(--border);margin-bottom:14px">
+      <button class="bsub-tab" data-esub="food" onclick="switchExploreSub('food')">Food</button>
+      <button class="bsub-tab" data-esub="home" onclick="switchExploreSub('home')">Home &amp; Decor</button>
+      <button class="bsub-tab" data-esub="gifts" onclick="switchExploreSub('gifts')">Gifts</button>
       <button class="bsub-tab" data-esub="fashion" onclick="switchExploreSub('fashion')">Fashion</button>
       <button class="bsub-tab" data-esub="beauty" onclick="switchExploreSub('beauty')">Beauty</button>
+      <button class="bsub-tab on" data-esub="worlds" onclick="switchExploreSub('worlds')">All Worlds</button>
     </div>
 
     <!-- Food, Home & Decor, Gifts, and any other world an admin creates: hero + display categories (admin/worlds.js) -->
@@ -773,10 +776,12 @@ let exploreSub = 'worlds';
 window.switchExploreSub = function (which) {
   exploreSub = which;
   document.querySelectorAll('[data-esub]').forEach(t => t.classList.toggle('on', t.dataset.esub === which));
-  document.getElementById('worldsPane').style.display = which === 'worlds' ? '' : 'none';
+  const directWorld = { food: 'food', home: 'home', gifts: 'gifts' }[which] || null;
+  const isWorldsPane = which === 'worlds' || directWorld;
+  document.getElementById('worldsPane').style.display = isWorldsPane ? '' : 'none';
   document.getElementById('explorePane-fashion').style.display = which === 'fashion' ? '' : 'none';
   document.getElementById('beautyPane').style.display = which === 'beauty' ? '' : 'none';
-  if (which === 'worlds') window.WorldsAdmin.open();
+  if (isWorldsPane && window.WorldsAdmin) window.WorldsAdmin.open(directWorld);
   if (which === 'fashion' && window.FashionAdmin) window.FashionAdmin.open();
   if (which === 'beauty' && window.BeautyAdmin) window.BeautyAdmin.open();
 };
