@@ -532,6 +532,7 @@
     S.view = 'list'; S.slug = null; S.err = S.needsMigration ? S.err : '';
     render();
     window.scrollTo(0, 0);
+    if (window.switchExploreSub) window.switchExploreSub('worlds');
   }
 
   function addItem(kind) {
@@ -607,13 +608,14 @@
   }
 
   window.WorldsAdmin = {
-    open: async function () {
+    open: async function (slug) {
       bind();
       if (!S.loaded) {
         pane().innerHTML = '<div class="ad-empty">Loading...</div>';
         try { await loadWorlds(); } catch (e) { S.needsMigration = true; S.err = explain(e.message); }
         S.loaded = true;
       }
+      if (slug) { await openWorld(slug); return; }
       if (S.view === 'world' && S.slug) { render(); return; }
       render();
     },

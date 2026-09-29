@@ -329,3 +329,12 @@ test('admin > Fashion and Beauty have their own admin, so the generic Hero/Categ
   c = await ui.openCard('Food');
   assert.ok(c.querySelector('[data-a="manage"]'), 'Food still uses the generic manager');
 });
+
+test('admin > WorldsAdmin.open(slug) jumps straight into that world\'s editor (used by the Food / Home & Decor / Gifts admin tabs, so those worlds are one click away instead of buried in the worlds list)', async () => {
+  const ui = await boot();
+  await ui.w.WorldsAdmin.open('food');
+  await settle();
+  assert.match(ui.$('#worldsPane').textContent, /Food/);
+  assert.ok(ui.$('[data-a="hero-toggle"]'), 'landed straight on the world editor (hero/categories), not the list');
+  assert.equal(ui.$$('.wa-card').length, 0, 'the worlds list itself is not shown');
+});
