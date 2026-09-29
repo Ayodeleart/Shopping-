@@ -77,11 +77,15 @@
 
   function pickFile(kind) {
     var i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*';
+    i.style.position = 'fixed'; i.style.left = '-9999px'; i.style.opacity = '0';
+    document.body.appendChild(i);                          // detached inputs can silently fail to open on iOS Safari/PWA
+    var cleanup = function () { if (i.parentNode) i.parentNode.removeChild(i); };
     i.onchange = async function () {
-      if (!i.files[0]) return;
+      if (!i.files[0]) { cleanup(); return; }
       D.toast('Uploading photo...');
       try { await uploadPhoto(kind, i.files[0]); D.toast(kind === 'avatar' ? 'Profile photo updated' : 'Cover photo updated'); render(); }
       catch (e) { D.toast(e.message); }
+      finally { cleanup(); }
     };
     i.click();
   }
