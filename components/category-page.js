@@ -121,6 +121,9 @@
     return this._base.some(function (p) { var r = f(p); return !!(r && Number(r.n) > 0); });
   };
   TP.total = function () { return this._base.length; };
+  /* the Shop by Brand strip drives the SAME brand filter as the Filter sheet, so the two always agree */
+  TP.brand = function () { return this._filter.brand || ''; };
+  TP.setBrand = function (name) { this._filter.brand = name || ''; this._changed(); };
   TP._syncDot = function () { if (this.dot) this.dot.style.display = this.active() ? '' : 'none'; };
   TP._changed = function () { this._syncDot(); if (this.d.onChange) this.d.onChange(this.result(), this); };
   TP.show = function () { this.bar.style.display = ''; };
@@ -213,6 +216,7 @@
       '<div class="cpg-adgap"></div>' +
       '<div class="cpg-merch"></div>' +
       '<div class="cpg-adgap"></div>' +
+      '<div class="cpg-brands"></div>' +
       '<div class="cpg-sec"><b class="cpg-sect">Products</b><span class="cpg-count"></span></div>' +
       '<div class="pgrid-wrap"><div class="pgrid cpg-grid"></div></div>';
     var self = this;
@@ -236,6 +240,7 @@
   P._renderProductGrid = function () {
     var ctx = this._ctx, q = function (s) { return this.root.querySelector(s); }.bind(this);
     if (!ctx) return;
+    this._syncBrands();
     var list = this._tb.result();
     q('.cpg-count').textContent = list.length + ' item' + (list.length === 1 ? '' : 's') +
       (list.length !== ctx.baseProds.length ? ' (of ' + ctx.baseProds.length + ')' : '');
@@ -251,6 +256,24 @@
     } else {
       q('.cpg-grid').innerHTML = '<div class="cpg-empty" style="grid-column:1/-1"><h3>No products match those filters</h3><p>Try widening the price range or clearing filters.</p></div>';
     }
+  };
+
+  /* Shop by Brand (Pcx.BrandStrip): only brands that really have products in THIS list; a tap filters the grid below in place */
+  P._syncBrands = function () {
+    var host = this.root.querySelector('.cpg-brands'), self = this;
+    if (!host) return;
+    if (!this._ctx || !global.Pcx || !Pcx.BrandStrip) { host.style.display = 'none'; return; }
+    var name = this._tb.brand();
+    var nameKey = function (p) { var b = self.d.brandLabel ? self.d.brandLabel(p) : null; return b || ''; };
+    var activeKey = null;
+    if (name) { var hit = this._ctx.baseProds.filter(function (p) { return nameKey(p) === name; })[0]; activeKey = hit ? Pcx.BrandStrip.keyOf(hit, this.d.brandOf) : null; }
+    if (!this._strip) {
+      this._strip = Pcx.BrandStrip.mount(host, {
+        products: this._ctx.baseProds, brandOf: this.d.brandOf, active: activeKey,
+        onSelect: function (item) { self._tb.setBrand(item ? item.name : ''); }
+      });
+    } else this._strip.update(this._ctx.baseProds, activeKey);
+    host.style.display = this._strip.el.hidden ? 'none' : '';
   };
 
   P._showToolbar = function () { this._tb.show(); this.root.classList.add('has-toolbar'); };
@@ -337,6 +360,7 @@
       this._showToolbar();
     } else {
       this._ctx = null;
+      this._syncBrands();
       this._hideToolbar();
     }
     this._show();
@@ -377,6 +401,7 @@
     q('.pgrid-wrap').style.display = '';
     q('.cpg-grid').innerHTML = '<div class="cpg-empty" style="grid-column:1/-1"><h3>Category not found</h3><p>It may have been moved or hidden.</p></div>';
     this._ctx = null;
+    this._syncBrands();
     this._hideToolbar();
     this._show();
   };

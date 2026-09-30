@@ -65,7 +65,8 @@
       else window.openProduct(id);
       return;
     }
-    addLine(p, src, null, null);
+    const d = (window.Pcx && Pcx.Variants) ? Pcx.Variants.defaults(p) : { size: null, color: null };   /* a single colour / size is picked automatically */
+    addLine(p, src, d.size, d.color);
   };
   function addLine(p, src, size, color) {
     if (src) window.flyToCart(src);

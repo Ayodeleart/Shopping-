@@ -9,10 +9,10 @@
  *   - categories:      `beauty_categories` rows (image / GIF, order, on/off — managed in admin)
  *   - hero:            `beauty_heroes` rows (image / GIF, title, subtitle, button, destination)
  *   - background:      the admin-set Beauty background (`beauty_settings`), else the built-in one
- *   - search:          Pcx.Search (the store's search engine) run over the Beauty products
+ *   - search:          the shared Marcato search page (deps.openSearch), scoped to the Beauty products by the host
  *   - cart / favorites / profile / product page / seller store: the existing global handlers
  *
- * Page order:  search → hero → categories (2 rows x 5) → merchandising rails → shop by brand → filters → products.
+ * Page order:  hero → categories (2 rows x 5) → merchandising rails → shop by brand → filters → products.
  * There is NO bottom navigation and NO header of its own: the shared world header (components/world-page.js,
  * the same bar every other world uses) sits on top and this module renders underneath it.
  * Product cards are the store's own standard / compact cards (deps.cardHTML) — Beauty has no card of its own.
@@ -46,6 +46,7 @@
 
   var PAGE = 24;                         // products drawn per step in "All products"
   var CAT_CAP = 10;                      // subcategory tiles on the page: 2 rows of 5 (See All shows every one)
+  var NEW_CAP = 6;                       // New In stops at 6 so a brand-new catalogue still leaves products for the deal rails
   var RAIL_CAP = 10;                     // products per curated rail
   var BRAND_CAP = 20;                    // brands in the Shop by Brand strip
   var NEW_WINDOW_MS = 45 * 24 * 3600 * 1000;   // "New In" = real created_at within the last 45 days (same rule as the home page)
@@ -149,8 +150,8 @@
 
   P._merchSections = function () {
     var self = this, ctx = this.ctx, B = ns.BeautyData, pool = ctx.pool, used = {};
-    var take = function (list) {
-      var out = list.filter(function (p) { return !used[p.id]; }).slice(0, RAIL_CAP);
+    var take = function (list, cap) {
+      var out = list.filter(function (p) { return !used[p.id]; }).slice(0, cap || RAIL_CAP);
       out.forEach(function (p) { used[p.id] = 1; });
       return out;
     };
@@ -168,7 +169,7 @@
     add('best', 'Best Selling', '#B8860B', take(pool.filter(function (p) { return sold(p) > 0; })
       .sort(function (a, b) { return (sold(b) - sold(a)) || byDisc(a, b); })));
     var now = Date.now();
-    add('new', 'New In', '#0F6FC5', take(B.sortNewest(pool.filter(function (p) { return p.created_at && (now - new Date(p.created_at).getTime()) < NEW_WINDOW_MS; }))));
+    add('new', 'New In', '#0F6FC5', take(B.sortNewest(pool.filter(function (p) { return p.created_at && (now - new Date(p.created_at).getTime()) < NEW_WINDOW_MS; })), NEW_CAP));
     add('brand', 'Brand Deals', '#D91C6E', take(pool.filter(function (p) { return disc(p) > 0 && self._brandRow(p); }).sort(byDisc)));
     add('disc', 'Discounted Products', '#C0392B', take(pool.filter(function (p) { return disc(p) > 0; }).sort(byDisc)));
     return secs;
@@ -191,32 +192,20 @@
       '<div class="hScroll hScroll--ads">' + ads.map(function (a) { return '<div class="fcard-wrap"><div class="adslot" data-ad="' + esc(a.id) + '"></div></div>'; }).join('') + '</div></section>';
   };
 
-  /* ── Shop by Brand: only brands that really have products in Beauty ── */
+  /* ── Shop by Brand: the shared Pcx.BrandStrip over the Beauty pool (only brands that really have Beauty products) ── */
 
-  P._brandsInPool = function () {
-    var self = this, byId = {}, list = [];
-    this.ctx.pool.forEach(function (p) {
-      var b = self._brandRow(p);
-      if (!b) return;
-      if (!byId[b.id]) { byId[b.id] = { b: b, n: 0 }; list.push(byId[b.id]); }
-      byId[b.id].n++;
+  P._brandsMount = function () {
+    var self = this, host = this.root.querySelector('[data-bw-brands]');
+    if (!host || !ns.BrandStrip) return;
+    this._strip = ns.BrandStrip.mount(host, {
+      products: this.ctx.pool, brandOf: function (p) { return self._brandRow(p); }, cap: BRAND_CAP, className: 'bw-bs',
+      onSelect: function (item) {
+        if (!item) { self._setFilter({ type: 'all' }, false); return; }
+        var rec = null;
+        self.ctx.pool.some(function (p) { var b = self._brandRow(p); if (b && ns.BrandStrip.keyOf(p, function (x) { return self._brandRow(x); }) === item.key) { rec = b; return true; } return false; });
+        if (rec) self._setFilter({ type: 'brand', brand: rec }, true);     /* same browsing interface: the listing below re-filters in place */
+      }
     });
-    return list.sort(function (x, y) { return (y.n - x.n) || String(x.b.name).localeCompare(String(y.b.name)); }).slice(0, BRAND_CAP);
-  };
-
-  P._brandsHTML = function () {
-    var self = this, list = this._brandsInPool();
-    if (!list.length) return '';
-    var on = this.filter.type === 'brand' && this.filter.brand ? String(this.filter.brand.id) : '';
-    return '<section class="bw-sec" aria-label="Shop by Brand">' +
-      '<div class="secHd secHd--accent" style="--sec-accent:#8E2DE2"><span class="secTtl">Shop by Brand</span></div>' +
-      '<div class="bw-brands" data-bw-brands>' + list.map(function (x) {
-        var b = x.b, letter = esc(String(b.name || '?').trim().charAt(0).toUpperCase());
-        return '<button type="button" class="bw-brand' + (String(b.id) === on ? ' on' : '') + '" data-bw-brand="' + esc(b.id) + '" title="' + esc(b.name) + '">' +
-          '<span class="bw-brand-logo"><span class="bw-brand-letter">' + letter + '</span>' +
-          (b.logo_url ? '<img src="' + safeUrl(b.logo_url) + '" alt="" loading="lazy" decoding="async" draggable="false" onerror="this.remove()">' : '') +
-          '</span><span class="bw-brand-name">' + esc(b.name) + '</span></button>';
-      }).join('') + '</div></section>';
   };
 
   /* ── build ─────────────────────────────────────────────────────── */
@@ -235,10 +224,6 @@
         '<div class="bw-bg" aria-hidden="true"><div class="bw-bg-in"><div class="bw-bg-img"></div><div class="bw-bg-veil"></div></div></div>' +
 
         '<main class="bw-main">' +
-          '<div class="bw-search" data-bw-search>' +
-            '<button type="button" class="bw-searchbtn" data-bw="search">' + I.search + '<span>Search beauty products</span></button>' +
-          '</div>' +
-
           (ctx.promos.length ? this._heroHTML(ctx.promos) : '') +
 
           (shownCats.length ?
@@ -249,7 +234,7 @@
 
           merch + sponsored +
 
-          this._brandsHTML() +
+          '<div data-bw-brands></div>' +
 
           '<section class="bw-sec bw-all" data-bw-all aria-label="Beauty products">' +
             '<div class="secHd secHd--accent" style="--sec-accent:#0F6FC5"><span class="secTtl" data-bw-title>All Products</span><span class="bw-count" data-bw-count></span></div>' +
@@ -263,38 +248,26 @@
           '<div class="bw-ov-body" data-bw-catsgrid></div>' +
         '</div>' +
 
-        '<div class="bw-overlay" data-bw-spage hidden>' +
-          '<div class="bw-sp-hdr">' +
-            '<button type="button" class="bw-back" data-bw="closesearch" aria-label="Close search">' + I.back + '</button>' +
-            '<div class="bw-sp-form" role="search">' + I.search +
-              '<input class="bw-sp-input" type="search" enterkeyhint="search" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Search beauty products" aria-label="Search beauty products">' +
-            '</div>' +
-          '</div>' +
-          '<div class="bw-sp-body" data-bw-sbody></div>' +
-        '</div>' +
       '</div>';
 
     this.el = {};
     var map = { grid: '[data-bw-grid]', count: '[data-bw-count]', title: '[data-bw-title]', allSec: '[data-bw-all]',
-      catsPage: '[data-bw-catspage]', catsGrid: '[data-bw-catsgrid]', sPage: '[data-bw-spage]', sBody: '[data-bw-sbody]',
-      sInput: '.bw-sp-input', hero: '[data-bw-hero]', track: '[data-bw-track]', dots: '[data-bw-dots]', search: '[data-bw-search]', brands: '[data-bw-brands]' };
+      catsPage: '[data-bw-catspage]', catsGrid: '[data-bw-catsgrid]',
+      hero: '[data-bw-hero]', track: '[data-bw-track]', dots: '[data-bw-dots]', brands: '[data-bw-brands]' };
     Object.keys(map).forEach(function (k) { self.el[k] = root.querySelector(map[k]); });
 
     /* the Beauty background: the admin's image, else the built-in one */
     this.root.querySelector('.bw-root').style.setProperty('--bw-bg', 'url("' + String(ctx.bg).replace(/"/g, '%22') + '")');
 
+    this._brandsMount();
     this._heroStart();
     if (this._ads && this._ads.length && typeof this.d.mountAds === 'function') this.d.mountAds(this.root.querySelector('[data-bw-msec="sponsored"]'));
 
     this._on(root, 'click', function (e) { self._onClick(e); });
     this._on(root, 'keydown', function (e) {
       if (e.key !== 'Escape') return;
-      if (!self.el.sPage.hidden) self._closeSearch();
-      else if (!self.el.catsPage.hidden) self._closeCats();
+      if (!self.el.catsPage.hidden) self._closeCats();
     });
-    this._on(this.el.sInput, 'input', function () { self._searchType(); });
-    this._on(this.el.sInput, 'keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); self._searchSubmit(); } });
-    this._on(this.el.sBody, 'click', function (e) { self._searchClick(e); });
 
     this._applyFilter();
   };
@@ -450,9 +423,11 @@
       : list.length + ' product' + (list.length === 1 ? '' : 's');
     var chips = this._chipsHTML();
     this.root.querySelectorAll('[data-bw-chips-inline]').forEach(function (el) { el.innerHTML = chips; });
-    this.root.querySelectorAll('[data-bw-brands] .bw-brand').forEach(function (t) {
-      t.classList.toggle('on', self.filter.type === 'brand' && self.filter.brand && String(self.filter.brand.id) === t.getAttribute('data-bw-brand'));
-    });
+    if (this._strip) {
+      var bf = this.filter.type === 'brand' && this.filter.brand ? this.filter.brand : null, key = null;
+      if (bf) this.ctx.pool.some(function (p) { var b = self._brandRow(p); if (b && String(b.id) === String(bf.id)) { key = ns.BrandStrip.keyOf(p, function (x) { return self._brandRow(x); }); return true; } return false; });
+      this._strip.setActive(key);
+    }
     this.root.querySelectorAll('[data-bw-catgrid] .bw-tile').forEach(function (t) {
       t.classList.toggle('on', self.filter.type === 'cat' && self.filter.row && String(self.filter.row.id) === t.getAttribute('data-bw-cat'));
     });
@@ -493,140 +468,11 @@
     setTimeout(function () { if (!self.destroyed) self.el.catsPage.hidden = true; }, 220);
   };
 
-  /* ── search page ───────────────────────────────────────────────── */
+  /* ── search: Marcato's ONE shared search page (components/search-page.js), scoped to Beauty by the host ── */
 
   P._searchOpen = function () {
-    var self = this;
-    this.el.sPage.hidden = false;
-    requestAnimationFrame(function () { self.el.sPage.classList.add('open'); self.el.sInput.focus(); });
-    this._searchIdle();
-  };
-
-  P._closeSearch = function () {
-    var self = this;
-    this.el.sPage.classList.remove('open');
-    this.el.sInput.blur();
-    setTimeout(function () { if (!self.destroyed) self.el.sPage.hidden = true; }, 220);
-  };
-
-  P._searchIndex = function () {
-    var S = ns.Search;
-    if (!S) return null;
-    var list = this.ctx.pool;
-    var sig = list.length + ':' + (list[0] ? list[0].id : '');
-    if (!this._sIdx || this._sSig !== sig) {
-      var catTree = this.ctx.catTree, c = this.ctx;
-      this._sIdx = S.buildIndex(list, function (p) {
-        var b = c.brands ? c.brands.find(function (x) { return String(x.id) === String(p.brand_id); }) : null;
-        var names = catTree && p.category_id ? (catTree.path(p.category_id) || []).map(function (c2) { return c2.name; }).reverse() : [];
-        return { brand: b ? b.name : p.brand, cats: names, vendor: c.vendors[p.vendor_id] ? c.vendors[p.vendor_id].business_name : '' };
-      });
-      this._sSig = sig;
-    }
-    return this._sIdx;
-  };
-
-  P._searchIdle = function () {
-    var self = this, S = ns.Search, e = esc, html = '', ctx = this.ctx;
-    var recent = S ? S.recent.get() : [];
-    if (recent.length) {
-      html += '<div class="bw-sp-sec"><div class="bw-sp-sech"><b>Recent searches</b></div>' +
-        recent.map(function (r) { return '<button type="button" class="bw-sp-recent" data-bw-recent="' + e(r) + '"><span>' + e(r) + '</span></button>'; }).join('') +
-        '</div>';
-    }
-    var cats = ctx.cats.filter(function (c) { return c.kind === 'category'; }).slice(0, 12);
-    if (cats.length) {
-      html += '<div class="bw-sp-sec"><div class="bw-sp-sech"><b>Browse Beauty</b></div><div class="bw-sp-chips">' +
-        cats.map(function (c) { return '<button type="button" class="bw-sp-chip" data-bw-cat="' + esc(c.id) + '">' + e(c.name) + '</button>'; }).join('') +
-        '</div></div>';
-    }
-    this.el.sBody.innerHTML = html || '<div class="bw-sp-hint">Search the real Beauty catalog &mdash; products, by their real name, brand and category.</div>';
-    this._searchMode = 'idle';
-  };
-
-  P._searchType = function () {
-    var self = this, q = (this.el.sInput.value || '').trim();
-    if (!q) { this._searchIdle(); return; }
-    clearTimeout(this._sTimer);
-    this._sTimer = setTimeout(function () { self._searchSuggest(q); }, 100);
-  };
-
-  P._searchSuggest = function (q) {
-    var self = this, S = ns.Search, e = esc, c = this.ctx;
-    if (!S) return;
-    var idx = this._searchIndex();
-    if (!idx) return;
-    this._searchMode = 'suggest'; this._sQ = q;
-    var res = S.search(idx, q);
-    this._sRes = res;
-    var cats = this.ctx.cats.filter(function (c2) { return c2.kind === 'category'; });
-    var rankedCats = S.rankNames(cats, q, function (c) { return c.name; }).slice(0, 6);
-    var html = '';
-    if (rankedCats.length) {
-      html += '<div class="bw-sp-sec"><div class="bw-sp-sech"><b>Categories</b></div><div class="bw-sp-chips">' +
-        rankedCats.map(function (c) { return '<button type="button" class="bw-sp-chip" data-bw-cat="' + esc(c.id) + '">' + S.highlight(c.name, q) + '</button>'; }).join('') +
-        '</div></div>';
-    }
-    if (res.items.length) {
-      var top = res.items.slice(0, 8);
-      html += '<div class="bw-sp-sec"><div class="bw-sp-sech"><b>' + (res.partial ? 'Similar products' : 'Products') + '</b></div>' +
-        top.map(function (r) {
-          var p = r.p, img = p.beauty_image_url || p.image_url;
-          var seller = c.vendors[p.vendor_id] ? c.vendors[p.vendor_id].business_name : '';
-          return '<button type="button" class="bw-sp-item" data-bw-prod="' + esc(p.id) + '">' +
-            (img ? '<img class="bw-sp-img" src="' + safeUrl(img) + '" alt="" loading="lazy" onerror="this.remove()">' : '<span class="bw-sp-img bw-sp-noimg">' + I.search + '</span>') +
-            '<span class="bw-sp-itx"><span class="bw-sp-iname">' + S.highlight(p.name, q) + '</span>' +
-            (seller ? '<span class="bw-sp-isub">' + e(seller) + '</span>' : '') + '</span>' +
-            '<span class="bw-sp-ipc">' + e(c.fmt ? c.fmt(p.price) : num(p.price)) + '</span></button>';
-        }).join('') +
-        '</div>' +
-        '<button type="button" class="bw-sp-seeall" data-bw-seemore>See all ' + res.items.length + ' result' + (res.items.length === 1 ? '' : 's') + ' ' + I.arrow + '</button>';
-    } else if (!rankedCats.length) {
-      html = '<div class="bw-sp-none"><b>No results for &ldquo;' + e(q) + '&rdquo;</b><span>Check the spelling, or try a shorter word.</span></div>';
-    }
-    this.el.sBody.innerHTML = html;
-  };
-
-  P._searchSubmit = function () {
-    var q = (this.el.sInput.value || '').trim();
-    if (!q) return;
-    this._searchSuggest(q);
-    var body = this.el.sBody;
-    var more = body.querySelector('[data-bw-seemore]');
-    if (more) more.click(); else this.el.sInput.blur();
-  };
-
-  P._searchResultsHTML = function () {
-    var self = this, S = ns.Search;
-    var list = this._sRes.items.map(function (r) { return r.p; });
-    if (!list.length) return '<div class="bw-sp-none"><b>No products found</b><span>Try different words or browse the categories.</span></div>';
-    return '<div class="bw-sp-count">' + list.length + ' result' + (list.length === 1 ? '' : 's') + ' for &ldquo;' + esc(this._sQ) + '&rdquo;</div>' +
-      '<div class="pgrid-wrap"><div class="pgrid">' + list.map(function (p) { return self._card(p); }).join('') + '</div></div>';
-  };
-
-  P._searchClick = function (ev) {
-    var t = ev.target, el;
-    if ((el = t.closest('[data-bw-recent]'))) { this.el.sInput.value = el.getAttribute('data-bw-recent'); this._searchSubmit(); return; }
-    if ((el = t.closest('[data-bw-cat]'))) {
-      var row = this._rowForId(el.getAttribute('data-bw-cat'));
-      if (row) { this._closeSearch(); this._setFilter({ type: 'cat', row: row }, true); }
-      return;
-    }
-    if ((el = t.closest('[data-bw-prod]'))) {
-      this._closeSearch();
-      if (global.openProduct) global.openProduct(Number(el.getAttribute('data-bw-prod')));
-      return;
-    }
-    if (t.closest('[data-bw-seemore]')) {
-      this._searchMode = 'results';
-      this.el.sBody.innerHTML = this._searchResultsHTML();
-      this.el.sBody.scrollTop = 0;
-      return;
-    }
-    /* tapping a card in the results grid opens the existing product page */
-    if (this._searchMode === 'results' && t.closest('.pcard') && !t.closest('.pcCtl, .favBtn')) {
-      this._closeSearch();
-    }
+    if (typeof this.d.openSearch === 'function') this.d.openSearch('beauty');
+    else if (global.openSearch) global.openSearch();
   };
 
   /* ── global actions (existing systems) ────────────────────────── */
@@ -639,21 +485,12 @@
       if (a === 'search') { this._searchOpen(); return; }
       if (a === 'allcats') { this._openCats(); return; }
       if (a === 'closecats') { this._closeCats(); return; }
-      if (a === 'closesearch') { this._closeSearch(); return; }
       if (a === 'more') { this.limit += PAGE; this._applyFilter(); return; }
       if (a === 'clear') { this._setFilter({ type: 'all' }, false); return; }
     }
     if ((b = t.closest('[data-bw-goto]'))) { if (this._goto) this._goto(Number(b.getAttribute('data-bw-goto'))); return; }
     if ((b = t.closest('[data-bw-filter]'))) {
       this._setFilter({ type: b.getAttribute('data-bw-filter') }, true);
-      return;
-    }
-    if ((b = t.closest('[data-bw-brand]'))) {
-      var bid = b.getAttribute('data-bw-brand'), rec = null;
-      this._brandsInPool().forEach(function (x) { if (String(x.b.id) === bid) rec = x.b; });
-      if (!rec) return;
-      /* same browsing interface: the Beauty listing below re-filters in place */
-      this._setFilter(this.filter.type === 'brand' && String(this.filter.brand.id) === bid ? { type: 'all' } : { type: 'brand', brand: rec }, true);
       return;
     }
     if ((b = t.closest('[data-bw-cat]'))) {

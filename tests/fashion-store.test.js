@@ -186,12 +186,11 @@ test('size selection: chips render, add-to-cart is blocked until a size is picke
   assert.equal(w.document.getElementById('pSizeRow').style.display, '');
   assert.equal(w.document.querySelectorAll('#pSizes .pSizeChip').length, 3);
 
-  w.pAddToCart();                                             // no size picked yet
+  w.pAddToCart();                                             // no size picked yet -> the shared bottom sheet opens
   assert.equal(JSON.parse(w.localStorage.getItem('cart_v3') || '[]').length, 0);   // blocked
-  assert.ok(w.document.getElementById('pSizeRow').classList.contains('miss'));
-
-  w.pickPSize(0, 1);                                          // EU 42
-  w.pAddToCart();
+  assert.ok(sheetOpen(w), 'the existing variant sheet opens before anything is added');
+  sheetPick(w, '42');                                         // EU 42, chosen in the sheet
+  sheetAdd(w);
   let lines = JSON.parse(w.localStorage.getItem('cart_v3') || '[]');
   assert.equal(lines.length, 1);
   assert.equal(lines[0].size, '42');
@@ -217,6 +216,9 @@ const VARIANT_PRODUCTS = [
 ];
 const withVariants = () => { const t = TABLES(); t.products = t.products.concat(VARIANT_PRODUCTS.map(p => ({ ...p }))); return t; };
 const cartLines = w => JSON.parse(w.localStorage.getItem('cart_v3') || '[]');
+const sheetOpen = w => { const e = w.document.getElementById('variantSheet'); return !!e && e.classList.contains('open'); };   // the sheet is created on first use
+const sheetPick = (w, v) => w.document.querySelector('#variantSheet [data-vs-pick="' + v + '"]').click();
+const sheetAdd = w => w.document.querySelector('#variantSheet .vsAdd').click();
 
 test('card: photo sits whole in a fixed square media box, heart sits on the photo, no vendor on the card, button always says Add to Cart, swatches show real colours', async t => {
   const w = await boot(withVariants(), null, t);
@@ -267,10 +269,12 @@ test('variants: colour-only product needs a colour on the product page too; add 
   assert.equal(w.document.getElementById('pSizeRow').style.display, 'none', 'no size selector on a colour-only product');
   w.pAddToCart();
   assert.equal(cartLines(w).length, 0, 'blocked until a colour is picked');
-  assert.ok(w.document.getElementById('pColorRow').classList.contains('miss'));
-  w.pickPColor(0);
-  assert.equal(w.document.querySelector('#pColors .pSizeChip.on').textContent.trim(), 'Black');
-  w.pAddToCart();
+  assert.ok(sheetOpen(w), 'two real colours -> the shared sheet asks which one');
+  sheetAdd(w);
+  assert.equal(cartLines(w).length, 0, 'the sheet itself refuses an incomplete pick');
+  sheetPick(w, 'Black');
+  sheetAdd(w);
+  assert.equal(w.document.querySelector('#pColors .pSizeChip.on').textContent.trim(), 'Black', 'the page behind reflects the sheet\'s choice');
   const l = cartLines(w);
   assert.equal(l.length, 1);
   assert.equal(l[0].color, 'Black');
@@ -365,4 +369,40 @@ test('favourites: un-favouriting does not reopen the sheet; #favorites deep-link
   w.location.hash = '#favorites';
   w.dispatchEvent(new w.Event('hashchange'));
   assert.equal(spy.mock.calls.length, 1, '#favorites opens the Favorites list (works as a deep link from the storefront too)');
+});
+
+
+test('variants: a single colour / single size is selected automatically and never prompts; nothing is invented', async t => {
+  const tb = withVariants();
+  tb.products.push(
+    { id: 13, name: 'One Colour Cap', price: 2000, stock: 5, category_id: 100, category: 'Plays!', vendor_id: 'v1', image_url: 'https://x/13.jpg', attributes: { colors: ['Navy'] }, created_at: '2026-01-09' },
+    { id: 14, name: 'Mono Shirt', price: 5000, stock: 5, category_id: 100, category: 'Plays!', vendor_id: 'v1', image_url: 'https://x/14.jpg',
+      attributes: { colors: ['Navy'], sizes: { system: 'Letter (XS-XXL)', values: ['L'] } }, created_at: '2026-01-10' },
+    { id: 15, name: 'Two Size Shirt', price: 5000, stock: 5, category_id: 100, category: 'Plays!', vendor_id: 'v1', image_url: 'https://x/15.jpg',
+      attributes: { colors: ['Navy'], sizes: { system: 'Letter (XS-XXL)', values: ['M', 'L'] } }, created_at: '2026-01-11' });
+  const w = await boot(tb, null, t);
+
+  /* product page: one colour -> Add to Cart goes straight through with that colour */
+  w.openProduct(13);
+  w.pAddToCart();
+  assert.ok(!sheetOpen(w), 'no colour prompt for a single colour');
+  assert.equal(cartLines(w)[0].color, 'Navy');
+  assert.equal(cartLines(w)[0].size, null);
+  w.closePModal(true);
+
+  /* card add: single colour + single size -> both filled in, no sheet */
+  w.addToCart(14, null, 1, true);
+  assert.ok(!sheetOpen(w), 'no prompt when every attribute has one value');
+  const mono = cartLines(w).find(l => l.id === 14);
+  assert.equal(mono.color, 'Navy'); assert.equal(mono.size, 'L');
+
+  /* a REAL choice (two sizes) still opens the sheet, and only asks for the size (the lone colour is not shown) */
+  w.addToCart(15, null, 1, true);
+  assert.ok(sheetOpen(w));
+  assert.equal(w.document.querySelectorAll('#variantSheet [data-vs-group="color"]').length, 0, 'the single colour is not offered as a choice');
+  assert.equal(w.document.querySelectorAll('#variantSheet [data-vs-group="s0"]').length, 2);
+  assert.equal(cartLines(w).find(l => l.id === 15), undefined, 'nothing added yet');
+  sheetPick(w, 'M'); sheetAdd(w);
+  const two = cartLines(w).find(l => l.id === 15);
+  assert.equal(two.size, 'M'); assert.equal(two.color, 'Navy', 'the single colour is applied automatically');
 });

@@ -35,6 +35,7 @@
 <link rel="stylesheet" href="components/world-page.css">
 <link rel="stylesheet" href="components/world-sections.css">
 <link rel="stylesheet" href="components/home-decor-world.css">
+<link rel="stylesheet" href="components/brand-strip.css">
 <script defer src="components/world-sections.js"></script>
 <script defer src="data/home-decor.js"></script>
 <script defer src="components/home-decor-world.js"></script>
@@ -80,6 +81,7 @@
 <link rel="stylesheet" href="components/product-card.css">
 <link rel="stylesheet" href="components/seller-brand.css">
 <script src="components/product-card.js"></script>
+<script src="components/brand-strip.js"></script>
 <script src="components/seller-brand.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
@@ -172,7 +174,7 @@ body.cat-mode .homeAdSlot{display:none!important}
 #allSecHd{border-top:6px solid var(--bg2)}
 body:not(.cat-mode) #allSecHd{border-top:0}
 /* these three carry a display:flex class, which would otherwise win over the UA's [hidden] rule */
-#catSubs[hidden],#catMerch[hidden],#allSecHd[hidden]{display:none!important}
+#catSubs[hidden],#catMerch[hidden],#catBrands[hidden],#allSecHd[hidden]{display:none!important}
 
 /* ── INSTALL BANNER ───────────────────────────────── */
 #instBar{
@@ -849,6 +851,8 @@ body:not(.cat-mode) #allSecHd{border-top:0}
     <div id="catSubs" class="cpg-subs" hidden></div>
     <!-- B. eligible merchandising rails (Flash/Popular/Brand Deals/Hot Deals/New Arrivals) — category view only -->
     <div id="catMerch" hidden></div>
+    <!-- B2. Shop by Brand for THIS category (real brands with products here) — category view only -->
+    <div id="catBrands" hidden></div>
     <!-- C. the product grid. Its header is hidden on Home so the feed reads as one continuous stream. -->
     <div class="secHd" id="allSecHd" hidden>
       <span class="secTtl" id="allSecTitle">Discover More</span>
@@ -1601,6 +1605,7 @@ function initCategoryPage() {
     world: null,   /* the main store's "All categories" page: Fashion-world categories live in the Fashion world */
     merchSections: categoryMerchSections,
     ads: () => adsList, mountAds: mountFeedAds, observeAllEls: observeAll,
+    brandOf,
     brandLabel: p => { const b = brandOf(p); return b ? b.name : (p.brand || null); },
     ratingOf: p => ratingMap[p.id] || null,
     facets: productFacets
@@ -1672,6 +1677,7 @@ const worldCtx = {
   vendors: () => vendorsMap,
   storeName: () => storeName,
   cardHTML,
+  brandOf,
   openProduct,
   openStore,
   openCategory,
@@ -1683,7 +1689,7 @@ function initWorldPage() {
     onBack: closeWorldPage,
     storeName: () => storeName,
     ctx: worldCtx,
-    openSearch: () => openSearch(),
+    openSearch: slug => openWorldSearch(slug),
     openCart: () => openCart(),
     openAccount: () => openAccount(),
     brandOf,
@@ -1767,6 +1773,7 @@ function initFashionWorld() {
     vendorsMap: () => vendorsMap,
     storeName: () => storeName,
     cardHTML: p => cardHTML(p),
+    brandOf,
     onBack: closeWorldPage,
     openCart: () => openCart(),
     openAccount: () => openAccount(),
@@ -1952,7 +1959,23 @@ function productFacets(p) {                     /* real colours / sizes from the
   (V.sizeGroups(p) || []).forEach(g => { if (g.key === 'size') g.values.forEach(v => sizes.push(v)); });
   return { colors: V.colors(p) || [], sizes };
 }
+/* Shop by Brand for the in-place category view: the shared Pcx.BrandStrip over this category's products; a tap drives the
+   toolbar's own brand filter, so the grid below re-filters in place and the Filter sheet stays in sync */
+let catBrandStrip = null;
+function syncCatBrands(tb, baseList) {
+  const host = $('catBrands');
+  if (!host || !(window.Pcx && Pcx.BrandStrip)) return;
+  const base = baseList || tb._base || [];
+  const name = tb.brand();
+  const label = p => { const b = brandOf(p); return b ? b.name : (p.brand || ''); };
+  const hit = name ? base.find(p => label(p) === name) : null;
+  const active = hit ? Pcx.BrandStrip.keyOf(hit, brandOf) : null;
+  if (!catBrandStrip) catBrandStrip = Pcx.BrandStrip.mount(host, { products: base, brandOf, active, onSelect: it => catToolbar && catToolbar.setBrand(it ? it.name : '') });
+  else catBrandStrip.update(base, active);
+  host.hidden = catBrandStrip.el.hidden;
+}
 function renderCatProducts(cat, tb) {
+  syncCatBrands(tb);
   const list = tb.result(), total = tb.total(), filtered = tb.active() && total > 0;
   renderGrid(list, 'allGrid', true,
     filtered ? 'Try widening the price range or clearing filters.' : `Nothing is listed in ${cat.name} right now. Check back soon.`, false,
@@ -1961,12 +1984,14 @@ function renderCatProducts(cat, tb) {
 }
 function hideCatToolbar() {
   catToolbarCat = null;
+  if ($('catBrands')) $('catBrands').hidden = true;
   if (catToolbar) catToolbar.hide();
   document.body.classList.remove('has-cat-toolbar');
 }
 function showCatToolbar(cat, list) {
   if (!(window.Pcx && Pcx.CategoryToolbar)) return;                     /* script is deferred: nothing to show yet */
   if (!catToolbar) catToolbar = new Pcx.CategoryToolbar(document.body, {
+    brandOf,
     brandLabel: p => { const b = brandOf(p); return b ? b.name : (p.brand || null); },
     ratingOf: p => ratingMap[p.id] || null,
     facets: productFacets,
@@ -1975,6 +2000,7 @@ function showCatToolbar(cat, list) {
   catToolbarCat = cat;
   catToolbar.setList(list);
   catToolbar.show();
+  syncCatBrands(catToolbar, list);
   document.body.classList.add('has-cat-toolbar');
 }
 
@@ -2679,7 +2705,7 @@ let pColorList = [], pColorPick = null;
 
 function renderPColors(p) {
   pColorList = (window.Pcx && Pcx.Variants) ? Pcx.Variants.colors(p) : [];
-  pColorPick = null;
+  pColorPick = pColorList.length === 1 ? pColorList[0] : null;     /* one colour: selected for the customer, never required */
   const row = $('pColorRow');
   row.classList.remove('miss');
   if (!pColorList.length) { row.style.display = 'none'; $('pColors').innerHTML = ''; return; }
@@ -2721,6 +2747,9 @@ let pSizeGroups = [], pSizePicks = {};
 function renderPSizes(p) {
   pSizeGroups = (window.Pcx && Pcx.Fashion) ? Pcx.Fashion.sizeGroups(p) : [];
   pSizePicks = {};
+  { const cg = pSizeGroups.find(g => g.key === 'cups');       /* a single size value is selected for the customer */
+    if (pSizeGroups[0] && pSizeGroups[0].values.length === 1) pSizePicks[0] = pSizeGroups[0].values[0];
+    if (cg && cg.values.length === 1) pSizePicks[1] = cg.values[0]; }
   const row1 = $('pSizeRow'), row2 = $('pSize2Row');
   row1.classList.remove('miss'); row2.classList.remove('miss');
   if (!pSizeGroups.length) { row1.style.display = 'none'; row2.style.display = 'none'; return; }
@@ -2728,12 +2757,12 @@ function renderPSizes(p) {
   row1.style.display = '';
   $('pSizeLbl').textContent = primary.label + ':';
   $('pSizes').innerHTML = primary.values.map((v, i) =>
-    `<button type="button" class="pSizeChip" data-i="${i}" onclick="pickPSize(0,${i})">${esc(v)}</button>`).join('');
+    `<button type="button" class="pSizeChip${pSizePicks[0] === v ? ' on' : ''}" data-i="${i}" onclick="pickPSize(0,${i})">${esc(v)}</button>`).join('');
   if (cups) {
     row2.style.display = '';
     $('pSize2Lbl').textContent = cups.label + ':';
     $('pSizes2').innerHTML = cups.values.map((v, i) =>
-      `<button type="button" class="pSizeChip" data-i="${i}" onclick="pickPSize(1,${i})">${esc(v)}</button>`).join('');
+      `<button type="button" class="pSizeChip${pSizePicks[1] === v ? ' on' : ''}" data-i="${i}" onclick="pickPSize(1,${i})">${esc(v)}</button>`).join('');
   } else row2.style.display = 'none';
 }
 
@@ -2761,24 +2790,50 @@ function pSizeMissing() {
   return false;
 }
 
-function pAddToCart() {
-  if (!pCur) return;
+/* A mandatory choice (more than one colour / size) that the customer has not made yet opens the SAME bottom sheet the
+   cards use, pre-filled with whatever they already picked on the page; the action then continues with the completed pick.
+   One colour / one size is already selected automatically and never prompts. */
+function pWithVariant(next) {
+  const V = window.Pcx && Pcx.Variants;
+  const slots = V ? V.sizeSlots(pCur) : [];
+  const needColor = pColorList.length > 1 && !pColorPick;
+  const needSize = slots.some((g, i) => g.values.length > 1 && !pSizePicks[i]);
+  if (!needColor && !needSize) { next({ size: pPickedSize(), color: pColorPick }); return; }
+  if (window.Pcx && Pcx.VariantSheet) {
+    Pcx.VariantSheet.open(pCur, {
+      preset: { color: pColorPick, picks: [pSizePicks[0] || null, pSizePicks[1] || null] },
+      onAdd: pick => {
+        pColorPick = pick.color || pColorPick; paintPColors();      /* reflect the sheet's choice on the page behind it */
+        next(pick);
+      }
+    });
+    return;
+  }
+  /* sheet script not loaded: the old inline prompts still protect the cart */
   if (pColorMissing()) { toast('Select a colour', true); return; }
   if (pSizeMissing()) { toast('Select a size', true); return; }
-  addToCart(pCur.id, pGal && pGal.currentImage(), pQty, true, pPickedSize(), pColorPick);
-  addPairingsToCart();
+}
+
+function pAddToCart() {
+  if (!pCur) return;
+  const item = pCur, src = pGal && pGal.currentImage();
+  pWithVariant(pick => {
+    addToCart(item.id, src, pQty, true, pick.size, pick.color);
+    addPairingsToCart();
+  });
 }
 
 function pBuyNow() {
   if (!pCur) return;
-  if (pColorMissing()) { toast('Select a colour', true); return; }
-  if (pSizeMissing()) { toast('Select a size', true); return; }
-  const size = pPickedSize(), color = pColorPick;
-  const key = Pcx.Variants.lineKey({ id: pCur.id, size, color });
-  const ex = cart.find(x => Pcx.Variants.lineKey(x) === key);
-  if (ex) { ex.qty = pQty; saveCart(); updateCartBadge(); } else cartAdd(pCur, pQty, size, color);
-  addPairingsToCart();
-  openCheckout();
+  const item = pCur;
+  pWithVariant(pick => {
+    const size = pick.size, color = pick.color;
+    const key = Pcx.Variants.lineKey({ id: item.id, size, color });
+    const ex = cart.find(x => Pcx.Variants.lineKey(x) === key);
+    if (ex) { ex.qty = pQty; saveCart(); updateCartBadge(); } else cartAdd(item, pQty, size, color);
+    addPairingsToCart();
+    openCheckout();
+  });
 }
 
 /* Pairings are never added on their own — only alongside the main product, and only the
@@ -2955,8 +3010,13 @@ function addToCart(id, src, qty, note, size, color) {
   const p = allProds.find(x => x.id===id);
   if (!p) return;
   const V = window.Pcx && Pcx.Variants;
-  const needColor = V && V.colors(p).length && color == null;
-  const needSize = V && V.sizeGroups(p).length && size == null;
+  if (V) {                                   /* a single colour / single size value is chosen automatically, never asked */
+    const d = V.defaults(p);
+    if (color == null) color = d.color;
+    if (size == null) size = d.size;
+  }
+  const needColor = V && V.colors(p).length > 1 && color == null;
+  const needSize = V && V.sizeSlots(p).some(g => g.values.length > 1) && size == null;
   if (needColor || needSize) {
     if (window.Pcx && Pcx.VariantSheet) {
       Pcx.VariantSheet.open(p, { onAdd: pick => addToCart(id, src, qty, note, pick.size, pick.color) });
@@ -3035,6 +3095,7 @@ function closeCheckout() { Pcx.Checkout.close(); }
 /* ── SEARCH ───────────────────────────────────────── */
 /* Recent searches, live suggestions, typo tolerance, sort + filters: see data/search.js and components/search-page.js */
 function searchCategories() {
+  if (searchScope && searchScope.categoryList) return searchScope.categoryList;
   if (catTree) return catTree.visibleRootsIn(searchScope ? 'fashion' : null)
     .map(c => ({ title: c.name, slug: c.slug, path: catTree.label(c.id) }));
   return navItems.map(it => ({ title: it.title, slug: it.slug || '', path: it.title }));
@@ -3061,11 +3122,26 @@ function initSearchPage() {
   });
   /* clear the Fashion scope whenever the search page closes (back, Escape, goHome) */
   const spClose = searchPage.close.bind(searchPage);
-  searchPage.close = function () { spClose(); searchScope = null; };
+  searchPage.close = function () { spClose(); searchScope = null; const sp = $('searchPage'); if (sp) sp.classList.remove('theme-home'); };
 }
 /* The search page reads products() on every keystroke, so the Fashion scope set by
    openFashionSearch() must stay active while that search session is open. */
 function openSearch(q) { if (searchPage) searchPage.open(q); }
+/* The generic world header's search icon (Beauty, Home & Decor, Food, Gifts...): the SAME shared search page, with
+   - Beauty: scoped to the real Beauty products (same idea as openFashionSearch)
+   - Home & Decor: the world's green tokens applied to the search page through a class (see home-decor-world.css) */
+function openWorldSearch(slug) {
+  const sp = $('searchPage');
+  if (sp) sp.classList.toggle('theme-home', slug === 'home' || slug === 'home-decor');
+  if (slug === 'beauty' && Pcx.BeautyData && catTree) {
+    const root = Pcx.BeautyData.root(catTree);
+    searchScope = {
+      products: Pcx.BeautyData.pool(catTree, allProds, beautyLinked()),
+      categoryList: root ? [{ title: root.name, slug: root.slug, path: catTree.label(root.id) }] : []
+    };
+  }
+  openSearch();
+}
 
 /* ── HOME (logo / store name, from anywhere) ─────── */
 function goHome(e) {
@@ -3533,6 +3609,36 @@ function initTrackingPages() {
   if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', e => { if (e.data && e.data.type === 'notification') notifCenter.refreshUnread(); });
 }
 
+/* ── PROFILE BACK-NAVIGATION ─────────────────────────
+   The profile page is an overlay: the world / category / product page it was opened from stays mounted underneath
+   (filters, search and scroll position intact). It used to have NO history entry of its own, so the browser / installed-PWA
+   Back gesture popped the page UNDER it (the #world=… / category hash) and closing the profile then landed on Home.
+   Now opening Profile pushes one same-URL history entry (no hashchange, nothing underneath re-renders); Back closes only the
+   profile (or steps back inside it) and the app's own back button pops that same entry. */
+let profileEntry = false;
+function profileHistoryPush() {
+  try { history.pushState({ pcxProfile: 1 }, '', location.href); profileEntry = true; } catch (e) { profileEntry = false; }
+}
+function profileHistoryPop(opts) {
+  if (opts && opts.fromHistory) { profileEntry = false; return; }        /* the browser already popped it */
+  if (!profileEntry) return;
+  profileEntry = false;
+  /* deferred: a caller that closes Profile and immediately navigates (hash change) has already moved the entry — then leave it
+     (a stale one is skipped by the popstate handler below) instead of popping the page it just opened */
+  setTimeout(() => { if (history.state && history.state.pcxProfile) history.back(); }, 0);
+}
+window.addEventListener('popstate', e => {
+  const P = window.Pcx && Pcx.Profile;
+  if (!P) return;
+  const marked = !!(e.state && e.state.pcxProfile);
+  if (P.isOpen() && !marked) {                       /* Back pressed while Profile is showing */
+    if (P.canGoBack()) { P.back(); profileHistoryPush(); return; }   /* inside a sub-page: step back within the profile, keep its entry */
+    profileEntry = false; P.close({ fromHistory: true });
+  } else if (!P.isOpen() && marked) {                /* a stale profile entry (left behind by a redirect): skip over it, no loop */
+    history.back();
+  }
+});
+
 /* ── CHECKOUT + PROFILE WIRING ───────────────────── */
 function initBuyerUI() {
   const common = { sb, session: () => buyerSession, fmt, toast };
@@ -3540,7 +3646,7 @@ function initBuyerUI() {
     sellerName: id => (vendorsMap[id] && vendorsMap[id].business_name) || 'Seller',
     onPaid: () => { cart = []; saveCart(); updateCartBadge(); },
     onExit: () => openCart(), openCart: () => openCart(), openOrders: () => Pcx.Profile.openOrders('all') });
-  Pcx.Profile.init({ ...common, signOut: buyerSignOut, openNotifPrefs: openNotifCenter, openLegal,
+  Pcx.Profile.init({ ...common, onOpen: profileHistoryPush, onClose: profileHistoryPop, signOut: buyerSignOut, openNotifPrefs: openNotifCenter, openLegal,
     openWishlist: () => showFavorites(), openHistory: () => showList('Recently viewed', recentProducts(), 'Nothing viewed yet'), openSupport: openWhatsAppHelp });
 }
 

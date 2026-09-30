@@ -197,7 +197,7 @@ function cardQty(id, d, src) {
 function cardBrandHTML(p) {
   const b = (typeof brandOf === 'function') ? brandOf(p) : null;
   const n = b && b.name ? b.name : (p.brand && String(p.brand).trim());
-  return n ? `<div class="pcBrand">${esc(n)}</div>` : '';
+  return n ? `<div class="pcBrand">${esc(n)}</div>` : '<div class="pcBrand" aria-hidden="true"></div>';   /* empty line keeps prices aligned; nothing is invented */
 }
 
 function compactCardHTML(p) {

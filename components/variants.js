@@ -29,8 +29,34 @@
   function colors(p) { return clean(attrs(p).colors); }
   function sizeGroups(p) { return (Pcx.Fashion && Pcx.Fashion.sizeGroups) ? Pcx.Fashion.sizeGroups(p) : []; }
 
-  /* does this product need the customer to choose something before it can be added to the cart? */
-  function needsChoice(p) { return colors(p).length > 0 || sizeGroups(p).length > 0; }
+  /* the size groups a customer actually picks from: the primary group, plus the cup group of a band+cup product
+     (the same two slots the product page uses: pSizeGroups[0] and the 'cups' group) */
+  function sizeSlots(p) {
+    var gs = sizeGroups(p);
+    if (!gs.length) return [];
+    var cups = gs.filter(function (g) { return g.key === 'cups'; })[0];
+    return cups && cups !== gs[0] ? [gs[0], cups] : [gs[0]];
+  }
+  function joinSize(picks) {
+    var v = (picks || []).filter(Boolean);
+    return (Pcx.Fashion && Pcx.Fashion.sizeLabel) ? Pcx.Fashion.sizeLabel(v) : v.join(' / ');
+  }
+
+  /* A choice is only a choice when there is more than one option. A single colour / a single size value is selected for
+     the customer automatically (defaults) and never prompts. Nothing is invented: every value comes from the product. */
+  function defaults(p) {
+    var cols = colors(p), slots = sizeSlots(p);
+    var picks = slots.map(function (g) { return g.values.length === 1 ? g.values[0] : null; });
+    return {
+      color: cols.length === 1 ? cols[0] : null,
+      picks: picks,
+      size: slots.length && picks.every(Boolean) ? joinSize(picks) : null
+    };
+  }
+  /* true when the customer must still choose a colour or a size (more than one real option) before adding to the cart */
+  function needsChoice(p) {
+    return colors(p).length > 1 || sizeSlots(p).some(function (g) { return g.values.length > 1; });
+  }
 
   /* two cart lines are one line only when product, size and colour all match */
   function lineKey(x) { return [x && x.id, (x && x.size) || '', (x && x.color) || ''].join('|'); }
@@ -64,7 +90,7 @@
     return (ci && colorName && ci[colorName]) ? ci[colorName] : null;
   }
 
-  Pcx.Variants = { colors: colors, sizeGroups: sizeGroups, needsChoice: needsChoice, lineKey: lineKey, label: label, payload: payload, swatch: swatch, image: image };
+  Pcx.Variants = { colors: colors, sizeGroups: sizeGroups, sizeSlots: sizeSlots, joinSize: joinSize, defaults: defaults, needsChoice: needsChoice, lineKey: lineKey, label: label, payload: payload, swatch: swatch, image: image };
 
   /* ------------------------------------------------------------------------------------------------------------
    * Pcx.VariantSheet — the one bottom sheet used to pick colour/size, from the Home card, search, favourites, or
@@ -105,18 +131,27 @@
     return sheetEl;
   }
 
+  /* sheetState = { product, color, picks: [primary, cups], onAdd } — picks start from the automatic single-value picks */
   function pick(group, value) {
     if (group === 'color') sheetState.color = sheetState.color === value ? null : value;
-    else sheetState.size = sheetState.size === value ? null : value;
+    else { var i = group === 's1' ? 1 : 0; sheetState.picks[i] = sheetState.picks[i] === value ? null : value; }
     var img = sheetState.color ? image(sheetState.product, sheetState.color) : null;
     sheetEl.querySelector('.vsImg').src = img || sheetState.product.image_url || '';
     paintSheet();
   }
 
+  /* what is still missing, in the order the customer sees it (only groups with a real choice can be missing) */
+  function missingList() {
+    var p = sheetState.product, out = [];
+    if (colors(p).length > 1 && !sheetState.color) out.push('a colour');
+    sizeSlots(p).forEach(function (g, i) { if (g.values.length > 1 && !sheetState.picks[i]) out.push(i === 1 ? 'a cup size' : 'a size'); });
+    return out;
+  }
+
   function paintSheet() {
-    var p = sheetState.product, groups = sizeGroups(p), cols = colors(p);
+    var p = sheetState.product, slots = sizeSlots(p), cols = colors(p);
     var body = sheetEl.querySelector('.vsBody'), html = '';
-    if (cols.length) {
+    if (cols.length > 1) {                 /* a single colour is chosen for the customer: no group shown */
       html += '<div class="vsGroup"><div class="vsGroupLbl">Colour' + (sheetState.color ? ': ' + esc(sheetState.color) : '') + '</div><div class="vsChips">' +
         cols.map(function (c) {
           var sw = swatch(c);
@@ -124,32 +159,34 @@
             (sw ? '<span class="vsDot" style="background:' + esc(sw) + '"></span>' : '') + esc(c) + '</button>';
         }).join('') + '</div></div>';
     }
-    groups.forEach(function (g) {
-      var lbl = g.label || 'Size';
-      html += '<div class="vsGroup"><div class="vsGroupLbl">' + esc(lbl) + (sheetState.size ? ': ' + esc(sheetState.size) : '') + '</div><div class="vsChips">' +
-        (g.values || []).map(function (v) { return '<button type="button" class="vsChip' + (sheetState.size === v ? ' on' : '') + '" data-vs-pick="' + esc(v) + '" data-vs-group="size">' + esc(v) + '</button>'; }).join('') +
+    slots.forEach(function (g, i) {
+      if (g.values.length < 2) return;     /* a single size value is chosen for the customer */
+      var lbl = g.label || 'Size', cur = sheetState.picks[i];
+      html += '<div class="vsGroup"><div class="vsGroupLbl">' + esc(lbl) + (cur ? ': ' + esc(cur) : '') + '</div><div class="vsChips">' +
+        g.values.map(function (v) { return '<button type="button" class="vsChip' + (cur === v ? ' on' : '') + '" data-vs-pick="' + esc(v) + '" data-vs-group="s' + i + '">' + esc(v) + '</button>'; }).join('') +
         '</div></div>';
     });
     body.innerHTML = html;
-    var missing = (cols.length && !sheetState.color) || (groups.length && !sheetState.size);
-    sheetEl.querySelector('.vsAdd').textContent = missing ? 'Select ' + (cols.length && !sheetState.color ? 'a colour' : 'a size') + ' to continue' : 'Add to Cart';
+    var miss = missingList();
+    sheetEl.querySelector('.vsAdd').textContent = miss.length ? 'Select ' + miss[0] + ' to continue' : 'Add to Cart';
     sheetEl.querySelector('.vsAdd').disabled = false; // stays tappable so a forgotten pick re-shows the prompt instead of doing nothing
   }
 
   function tryAdd() {
-    var p = sheetState.product, cols = colors(p), groups = sizeGroups(p);
-    if (cols.length && !sheetState.color) return paintSheet();
-    if (groups.length && !sheetState.size) return paintSheet();
-    var cb = sheetState.onAdd;
+    if (missingList().length) return paintSheet();     // never hand back an incomplete variant
+    var cb = sheetState.onAdd, size = sheetState.picks.some(Boolean) ? joinSize(sheetState.picks) : null, color = sheetState.color || null;
     closeSheet();
-    if (cb) cb({ size: sheetState.size || null, color: sheetState.color || null });
+    if (cb) cb({ size: size, color: color });
   }
 
-  /* opts.onAdd(({size, color})) fires once both required picks are made; the caller does the actual cartAdd. */
+  /* opts.onAdd(({size, color})) fires once every required pick is made; the caller does the actual cartAdd.
+     opts.preset = { color, picks } carries what the customer already chose on the page behind the sheet. */
   function openSheet(product, opts) {
     ensureSheetEl();
-    sheetState = { product: product, size: null, color: null, onAdd: (opts && opts.onAdd) || null };
-    sheetEl.querySelector('.vsImg').src = product.image_url || '';
+    var d = defaults(product), pre = (opts && opts.preset) || {};
+    var picks = d.picks.map(function (v, i) { return v || (pre.picks && pre.picks[i]) || null; });
+    sheetState = { product: product, color: d.color || pre.color || null, picks: picks, onAdd: (opts && opts.onAdd) || null };
+    sheetEl.querySelector('.vsImg').src = (sheetState.color && image(product, sheetState.color)) || product.image_url || '';
     sheetEl.querySelector('.vsName').textContent = product.name || '';
     sheetEl.querySelector('.vsPrice').textContent = money(product.price);
     paintSheet();
@@ -166,7 +203,8 @@
      every "Add to Cart" button (card, search result, favourites) should call. Never navigates. */
   function addWithSheet(product, opts) {
     if (needsChoice(product)) return openSheet(product, opts);
-    if (opts && opts.onAdd) opts.onAdd({ size: null, color: null });
+    var d = defaults(product);      /* nothing to choose: single colour / single size are picked automatically */
+    if (opts && opts.onAdd) opts.onAdd({ size: d.size, color: d.color });
   }
 
   Pcx.VariantSheet = { open: openSheet, close: closeSheet, addWithSheet: addWithSheet };

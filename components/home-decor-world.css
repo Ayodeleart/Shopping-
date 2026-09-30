@@ -130,3 +130,24 @@
 @media (prefers-reduced-motion:reduce){
   .hd-hero-slide,.hd-media,.hd-plank::after{transition:none!important}.hd-hero-slide{transform:none}.hd-rail-track{will-change:auto}
 }
+
+
+/* The shared search page is a body-level overlay, so it cannot inherit the world's tokens. When the search is opened
+   from Home & Decor (openWorldSearch), it gets the SAME green tokens as #worldPage.world-home — no second search component. */
+#searchPage.theme-home{
+  --bg:#0b2620;--bg2:#123a30;--bg3:#184a3d;--card:#123a30;
+  --txt:#f5f3ec;--txt2:#cfe0d8;--txt3:#8fada2;--border:rgba(255,255,255,.12);
+  background:#0b2620;color:#f5f3ec;color-scheme:dark;
+}
+#searchPage.theme-home .sp-form{background:var(--bg2);border-color:var(--border)}
+#searchPage.theme-home .sp-input{color:var(--txt);caret-color:#9fc2b4}
+#searchPage.theme-home .sp-hotchip{background:var(--bg2);border-color:var(--border);color:var(--txt)}
+
+/* Shop by Brand (shared strip) on the green world: transparent, light text, the world's own rules */
+.hd-brands{margin:0 -16px 14px}
+.hd-world .bs{background:transparent}
+.hd-world .bs .secHd{margin:0 16px}
+.hd-world .bs-brand,.hd-world .bs-name{color:#f5f3ec}
+.hd-world .bs-logo{border-color:rgba(255,255,255,.22)}
+.hd-world .bs-brand.on .bs-logo{border-color:#9fc2b4;box-shadow:0 0 0 2px #9fc2b4}
+.hd-world .bs-brand.on .bs-name{color:#9fc2b4}

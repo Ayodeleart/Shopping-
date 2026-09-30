@@ -268,8 +268,22 @@
     var sec = h('div', 'ws-sec');
     var hd = h('div', 'ws-sech'); hd.appendChild(h('span', 'ws-sech-ttl', products.length ? 'Shop ' + world.name : world.name));
     sec.appendChild(hd);
-    if (products.length) sec.appendChild(productGrid(products, ctx));
-    else sec.appendChild(h('div', 'ws-empty', 'No products here yet. Check back soon.'));
+    if (products.length) {
+      var holder = h('div', 'ws-gridholder');
+      var draw = function (list) { holder.textContent = ''; holder.appendChild(productGrid(list, ctx)); };
+      if (Pcx.BrandStrip && typeof ctx.brandOf === 'function') {
+        var bhost = h('div', 'ws-brands'); sec.appendChild(bhost);
+        var strip = Pcx.BrandStrip.mount(bhost, {
+          products: products, brandOf: ctx.brandOf,
+          onSelect: function (item) {      /* real brands of THIS world only; the grid below re-filters in place */
+            draw(item ? products.filter(function (p) { return Pcx.BrandStrip.keyOf(p, ctx.brandOf) === item.key; }) : products);
+          }
+        });
+        if (strip.el.hidden) bhost.style.display = 'none';
+      }
+      draw(products);
+      sec.appendChild(holder);
+    } else sec.appendChild(h('div', 'ws-empty', 'No products here yet. Check back soon.'));
     parent.appendChild(sec);
   }
 

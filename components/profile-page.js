@@ -297,15 +297,27 @@
       root.addEventListener('click', onClick);
     }
     ST = { stack: ['home'], profile: null, counts: null, orderCounts: null, addresses: [], orders: null, filter: 'all' };
+    var already = root.classList.contains('open');
+    if (!already) prevOverflow = document.body.style.overflow;        /* restored on close: a world/category page underneath may itself be locking scroll */
     root.classList.add('open'); document.body.style.overflow = 'hidden'; render();
+    if (!already && D.onOpen) D.onOpen();
     var uid = user().id;
     var res = await Promise.all([Buyer.profile(D.sb, uid), Buyer.counts(D.sb, uid), Buyer.orderCounts(D.sb, uid)]);
     ST.profile = res[0]; ST.counts = res[1]; ST.orderCounts = res[2];
     if (ST.stack.length === 1) render();
     return true;
   }
-  function close() { if (!root) return; root.classList.remove('open'); document.body.style.overflow = ''; if (D.onClose) D.onClose(); }
+  var prevOverflow = '';
+  function isOpen() { return !!root && root.classList.contains('open'); }
+  /* a sub-view (orders, settings, address book...) is open: Back should return to the profile home first */
+  function canGoBack() { return !!ST && ST.stack.length > 1; }
+  /* opts.fromHistory: closed BY the browser/PWA back gesture, so the host must not pop history a second time */
+  function close(opts) {
+    if (!root || !root.classList.contains('open')) return;
+    root.classList.remove('open'); document.body.style.overflow = prevOverflow || '';
+    if (D.onClose) D.onClose(opts || {});
+  }
   function openOrders(filter) { return open().then(function () { ST.filter = filter || 'all'; go('orders'); return loadOrders().then(render); }); }
 
-  (global.Pcx = global.Pcx || {}).Profile = { init: function (d) { D = d; }, open: open, close: close, openOrders: openOrders };
+  (global.Pcx = global.Pcx || {}).Profile = { init: function (d) { D = d; }, open: open, close: close, back: back, isOpen: isOpen, canGoBack: canGoBack, openOrders: openOrders };
 })(window);

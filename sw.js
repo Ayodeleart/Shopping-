@@ -1,4 +1,4 @@
-const CACHE = 'store-v19';
+const CACHE = 'store-v20';
 const SCOPE_HOME = '/';
 const PRECACHE = ['/components/sw-register.js', '/data/safe.js', '/', '/index.html', '/manifest.json', '/icon.svg',
   '/components/promotional-carousel.css', '/components/promotional-carousel.js',
@@ -9,6 +9,7 @@ const PRECACHE = ['/components/sw-register.js', '/data/safe.js', '/', '/index.ht
   '/data/worlds.js', '/data/home-decor.js', '/components/explore-marcato.css', '/components/explore-marcato.js',
   '/components/world-page.css', '/components/world-page.js', '/components/world-sections.css', '/components/world-sections.js',
   '/components/home-decor-world.css', '/components/home-decor-world.js',
+  '/components/brand-strip.css', '/components/brand-strip.js',
   '/components/product-page.css', '/components/product-gallery.js', '/components/image-viewer.js',
   '/data/search.js', '/components/search-page.js', '/components/search-page.css',
   '/data/tracking.js', '/components/order-tracking.css', '/components/order-tracking.js',

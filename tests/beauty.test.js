@@ -47,6 +47,7 @@ function bootWindow() {
   w.eval(R('data/categories.js'));
   w.eval(R('data/search.js'));
   w.eval(R('data/beauty.js'));
+  w.eval(R('components/brand-strip.js'));
   w.eval(R('components/beauty-world.js'));
   return w;
 }
@@ -81,7 +82,7 @@ function mountWorld(w, opts) {
     '<div class="pcPriceRow"><span class="pcPrice">' + w.fmt(p.price) + '</span></div><div class="pcCtl" data-pid="' + p.id + '">' + w.ctlHTML(p.id) + '</div></div>';
   const inst = w.Pcx.BeautyWorld.mount(w.document.getElementById('wp'), world, {
     onBack: () => { w.__back = true; },
-    cardHTML, brandOf: w.brandOf, sponsored: o.sponsored, mountAds: o.mountAds,
+    cardHTML, brandOf: w.brandOf, sponsored: o.sponsored, mountAds: o.mountAds, openSearch: o.openSearch,
     beauty: {
       heroes: o.heroes, cats: o.cats, settings: Object.entries(o.settings).map(([key, value]) => ({ key, value })), stats: o.stats,
       catTree: w.catTree, products: o.products || w.allProds, vendors: w.vendorsMap, brands: o.brands || w.brandsList, brandById: w.brandById, ratings: o.ratings || w.ratingMap, fmt: w.fmt
@@ -171,8 +172,7 @@ test('beauty world: page structure, no bottom nav, real grid + counts', () => {
   const $ = s => el.querySelector(s);
   const $$ = s => [...el.querySelectorAll(s)];
 
-  assert.ok($('.bw-searchbtn'), 'premium search bar present');
-  assert.ok($('[data-bw="search"]'), 'Beauty search entry point');
+  assert.equal($$('[data-bw-search], .bw-search, .bw-searchbtn').length, 0, 'no Beauty-only search bar: search is the shared header icon');
   /* the shared world header (components/world-page.js) is the ONLY header: Beauty draws none of its own */
   assert.equal($$('header, .bw-hdr, .bw-bar, .bw-sub, .bw-tools').length, 0, 'no Beauty-only header, glass bar or duplicate header');
   assert.equal($$('.bw-tile').length, 4, 'active tiles only');
@@ -227,28 +227,17 @@ test('beauty world: popularity ranks real sales first', () => {
   assert.deepEqual(names, ['Men Beard Oil', 'Kids Shampoo', 'Viva Glam Lipstick']);
 });
 
-test('beauty world: search overlay finds real beauty products only', () => {
+test('beauty world: search is the shared Marcato search (no Beauty-only search), opened from the shared header', () => {
   const w = bootWindow();
   const el = w.document.getElementById('wp');
-  const inst = mountWorld(w);
-  const $ = s => el.querySelector(s);
-
-  $('[data-bw="search"]').click();
-  assert.ok(!$('[data-bw-spage]').hidden, 'search overlay opens');
-  const input = $('.bw-sp-input');
-  input.value = 'lipstick';
-  input.dispatchEvent(new w.Event('input', { bubbles: true }));
-  /* the suggest is debounced */
-  return new Promise(res => setTimeout(() => {
-    const items = [...el.querySelectorAll('[data-bw-spage] .bw-sp-item')];
-    assert.equal(items.length, 1);
-    assert.ok(items[0].textContent.includes('Viva Glam Lipstick'));
-    assert.ok(!el.textContent.includes('iPhone'));
-    items[0].click();
-    assert.equal(w.__opened, 11, 'opens the existing product page');
-    inst.destroy();
-    res();
-  }, 200));
+  const opened = [];
+  const inst = mountWorld(w, { openSearch: slug => opened.push(slug) });
+  assert.equal(el.querySelectorAll('.bw-search, .bw-searchbtn').length, 0, 'no Beauty-specific search bar on the page');
+  inst._searchOpen();                                /* the shared header icon reaches the same call through world-page.js */
+  assert.deepEqual(opened, ['beauty'], 'opens the ONE shared search page, scoped to Beauty');
+  assert.equal(el.querySelectorAll('[data-bw-spage], .bw-sp-input, .bw-sp-item').length, 0, 'no Beauty-specific search overlay exists');
+  assert.ok(!/bw-sp-/.test(R('components/beauty-world.css')), 'no leftover Beauty search styles');
+  inst.destroy();
 });
 
 test('beauty world: empty state when no products', () => {
@@ -314,8 +303,8 @@ test('beauty world: Shop by Brand lists only brands with Beauty products and fil
     { id: 25, name: 'iPhone', price: 100, category_id: 6, brand_id: 3, created_at: daysAgo(94) }
   ];
   const inst = mountWorld(w, { products, brandById });
-  const chips = [...el.querySelectorAll('[data-bw-brands] .bw-brand')];
-  assert.deepEqual(chips.map(c => c.querySelector('.bw-brand-name').textContent), ['MAC', 'Nyx'], 'busiest first; Apple has no Beauty products so it is not shown');
+  const chips = [...el.querySelectorAll('[data-bw-brands] .bs-brand')];
+  assert.deepEqual(chips.map(c => c.querySelector('.bs-name').textContent), ['MAC', 'Nyx'], 'busiest first; Apple has no Beauty products so it is not shown');
   assert.ok(chips[0].querySelector('img[src="https://x/mac.png"]'), 'real brand logo reused');
 
   const names = () => [...el.querySelectorAll('[data-bw-grid] .pcName')].map(n => n.textContent).sort();
@@ -323,7 +312,7 @@ test('beauty world: Shop by Brand lists only brands with Beauty products and fil
   chips[0].click();
   assert.deepEqual(names(), ['Lip A', 'Lip B'], 'only MAC products of the current category');
   assert.equal(el.querySelector('[data-bw-title]').textContent, 'MAC');
-  assert.ok(el.querySelector('[data-bw-brands] .bw-brand.on'), 'selected brand is highlighted');
+  assert.ok(el.querySelector('[data-bw-brands] .bs-brand.on'), 'selected brand is highlighted');
   assert.deepEqual([...el.querySelectorAll('[data-bw-grid] .pcBrand')].map(n => n.textContent), ['MAC', 'MAC'], 'each card shows its real brand');
   el.querySelector('[data-bw="clear"]').click();
   assert.equal(names().length, 4, 'Clear returns to the full listing');

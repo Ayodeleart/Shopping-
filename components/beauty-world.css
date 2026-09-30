@@ -53,16 +53,6 @@
 .bw-clear{height:26px;padding:0 10px;font-size:11.5px;margin-right:6px}
 
 /* search bar (the original one — it scrolls away) */
-.bw-search{padding:14px 14px 0}
-.bw-searchbtn{
-  display:flex;align-items:center;gap:12px;width:100%;height:50px;padding:0 18px;border-radius:25px;cursor:pointer;
-  border:1px solid var(--bw-line);background:var(--bw-glass);box-shadow:var(--bw-hi),var(--bw-shadow);
-  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
-  font-size:14.5px;font-weight:600;color:var(--bw-txt2);text-align:left;
-}
-.bw-searchbtn svg{flex-shrink:0;color:var(--bw-txt)}
-.bw-searchbtn span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.bw-searchbtn:active{transform:scale(.985)}
 
 /* ── hero ───────────────────────────────────────────────────────── */
 .bw-hero-sec{margin-top:16px}
@@ -139,39 +129,12 @@
   opacity:0;transform:translateY(14px);transition:opacity .22s ease,transform .26s cubic-bezier(.3,.8,.3,1);
 }
 .bw-overlay.open{opacity:1;transform:none}
-.bw-ov-hdr,.bw-sp-hdr{flex-shrink:0;display:flex;align-items:center;gap:8px;padding:calc(env(safe-area-inset-top,0px)) 8px 0;height:calc(58px + env(safe-area-inset-top,0px));border-bottom:1px solid rgba(255,240,215,.14)}
-.bw-ov-body,.bw-sp-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:16px 14px calc(30px + env(safe-area-inset-bottom,0px))}
 .bw-cpg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px 10px;max-width:700px;margin:0 auto}
 .bw-cpg-item{display:flex;flex-direction:column;align-items:center;gap:4px}
 .bw-tile-big{width:100%}
 .bw-tile-big .bw-tile-ring{width:84px;height:84px}
 .bw-cpg-count{font-size:11px;color:var(--bw-txt3)}
 
-.bw-sp-form{flex:1;min-width:0;height:44px;display:flex;align-items:center;gap:10px;padding:0 16px;border-radius:22px;border:1px solid var(--bw-line);background:var(--bw-glass-strong);box-shadow:var(--bw-hi)}
-.bw-sp-form svg{flex-shrink:0;opacity:.85}
-.bw-sp-input{flex:1;min-width:0;height:100%;border:0;outline:0;background:none;color:var(--bw-txt);font:inherit;font-size:15px;font-weight:600}
-.bw-sp-input::placeholder{color:var(--bw-txt3)}
-.bw-sp-input::-webkit-search-cancel-button{display:none}
-.bw-sp-body{max-width:760px;width:100%;margin:0 auto}
-.bw-sp-sec{margin-bottom:20px}
-.bw-sp-sech{margin-bottom:9px;font-size:13px;color:var(--bw-txt2)}
-.bw-sp-sech b{font-weight:800;letter-spacing:.3px;text-transform:uppercase;font-size:11.5px}
-.bw-sp-recent{display:block;width:100%;padding:11px 4px;text-align:left;border:0;border-bottom:1px solid rgba(255,240,215,.12);background:none;font-size:14.5px;cursor:pointer}
-.bw-sp-chips{display:flex;flex-wrap:wrap;gap:8px}
-.bw-sp-chip{height:34px;padding:0 15px;border-radius:17px;border:1px solid var(--bw-line);background:var(--bw-glass);box-shadow:var(--bw-hi);font-size:13px;font-weight:700;cursor:pointer}
-.bw-sp-hint{padding:40px 20px;text-align:center;color:var(--bw-txt2);font-size:14px;line-height:1.55}
-.bw-sp-item{display:flex;align-items:center;gap:12px;width:100%;padding:8px;margin-bottom:8px;text-align:left;border-radius:20px;border:1px solid var(--bw-line);background:var(--bw-glass);box-shadow:var(--bw-hi);cursor:pointer}
-.bw-sp-img{width:54px;height:54px;flex-shrink:0;border-radius:15px;object-fit:contain;background:rgba(255,246,230,.16)}
-.bw-sp-noimg{display:flex;align-items:center;justify-content:center}
-.bw-sp-itx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
-.bw-sp-iname{font-size:14px;font-weight:700;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.bw-sp-isub{font-size:11.5px;color:var(--bw-txt3)}
-.bw-sp-ipc{font-size:14px;font-weight:800;flex-shrink:0}
-.bw-sp-item mark,.bw-sp-chip mark{background:none;color:#F6B650;font-weight:800}
-.bw-sp-seeall{display:flex;align-items:center;justify-content:center;gap:5px;width:100%;height:44px;border-radius:22px;border:1px solid var(--bw-line);background:var(--bw-gold);color:#fff;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 6px 16px rgba(217,130,31,.45)}
-.bw-sp-none{padding:36px 18px;text-align:center;display:flex;flex-direction:column;gap:6px}
-.bw-sp-none span{font-size:13px;color:var(--bw-txt2)}
-.bw-sp-count{margin-bottom:12px;font-size:13px;color:var(--bw-txt2)}
 
 /* ── larger screens ─────────────────────────────────────────────── */
 @media (min-width:720px){
@@ -350,11 +313,9 @@
 .bw-root .bw-catgrid,.bw-root .pgrid-wrap,.bw-root .pgrid,.bw-root .hSec,.bw-root .hScroll{background:transparent}
 .bw-root .bw-chips-inline{padding-top:10px}
 
-/* Shop by Brand: real brands with products in Beauty; tapping one filters the listing in place */
-.bw-brands{display:flex;gap:12px;overflow-x:auto;padding:12px 14px 6px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
-.bw-brand{flex:0 0 auto;width:66px;display:flex;flex-direction:column;align-items:center;gap:6px;padding:0;border:0;background:none;cursor:pointer}
-.bw-brand-logo{position:relative;width:56px;height:56px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#fff;border:1px solid var(--bw-line);box-shadow:var(--bw-hi),0 6px 14px rgba(18,10,3,.3)}
-.bw-brand-logo img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:6px;background:#fff}
-.bw-brand-letter{font-size:20px;font-weight:800;color:#3a2a14}
-.bw-brand.on .bw-brand-logo{border-color:#F6B650;box-shadow:0 0 0 2px rgba(246,182,80,.65)}
-.bw-brand-name{width:100%;font-size:11px;font-weight:700;line-height:1.2;text-align:center;color:var(--bw-txt);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+/* Shop by Brand is the shared strip (components/brand-strip.css); on the Beauty page it sits on the world's own background */
+.bw-root .bs{background:transparent}
+.bw-root .bs-brand,.bw-root .bs-name{color:var(--bw-txt)}
+.bw-root .bs-logo{border-color:var(--bw-line)}
+.bw-root .bs-brand.on .bs-logo{border-color:#F6B650;box-shadow:0 0 0 2px rgba(246,182,80,.65)}
+.bw-root .bs-brand.on .bs-name{color:#F6B650}

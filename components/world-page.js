@@ -79,7 +79,7 @@
     hdr.appendChild(back); hdr.appendChild(h('span', 'wp-hdr-ttl', world.name));
 
     var searchBtn = h('button', 'hdr-icon'); searchBtn.type = 'button'; searchBtn.setAttribute('aria-label', 'Search'); searchBtn.innerHTML = SEARCH_ICON;
-    searchBtn.addEventListener('click', function () { (d.openSearch || global.openSearch || function () {})(); });
+    searchBtn.addEventListener('click', function () { (d.openSearch || global.openSearch || function () {})(world.slug); });
     var cartBtn = h('button', 'hdr-icon'); cartBtn.type = 'button'; cartBtn.setAttribute('aria-label', 'Cart'); cartBtn.innerHTML = CART_ICON;
     var cartDot = h('span'); cartDot.id = 'wpCartDot'; cartBtn.appendChild(cartDot);
     cartBtn.addEventListener('click', function () { (d.openCart || global.openCart || function () {})(); });
@@ -92,7 +92,7 @@
     if (world.slug === 'beauty' && global.Pcx && global.Pcx.BeautyWorld) {   /* the dedicated Beauty world (components/beauty-world.js) renders UNDER the shared header */
       global.Pcx.BeautyWorld.mount(root, world, {
         onBack: d.onBack, beauty: d.beauty && d.beauty(),
-        cardHTML: ctx && ctx.cardHTML, brandOf: d.brandOf, sponsored: d.sponsored, mountAds: d.mountAds
+        cardHTML: ctx && ctx.cardHTML, openSearch: d.openSearch, brandOf: d.brandOf, sponsored: d.sponsored, mountAds: d.mountAds
       });
       return;
     }

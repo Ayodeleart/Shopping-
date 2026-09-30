@@ -29,6 +29,7 @@
  *   vendor(id){vendor row|null}                 storeName(){string}
  *   cardHTML(p){html}                           fmt(n){string}
  *   onBack()  openCart()  openSearch()  openCategory(slug)  openStore(id)  toast(msg)
+ *   brandOf(p){ {id,name,logo_url} | null }     (optional: the store's brand resolver, for Shop by Brand)
  *
  * Requires: promotional-carousel.js, fashion.js, product-card.css, seller-brand.css,
  *           fashion-world.css, drag-gesture.js, promotion-slide.js.
@@ -178,6 +179,7 @@
     this.layout = 'grid';
     this.catId = null;
     this.sort = 'new';
+    this.brand = null;             /* Shop by Brand: the selected BrandStrip key, or null */
     this.inStock = false;
     this.carousel = null;
     this.built = false;
@@ -449,6 +451,11 @@
       list = list.filter(match);
     }
     if (this.inStock) list = list.filter(function (p) { return Number(p.stock) > 0; });
+    this._brandPool = list;        /* what the Shop by Brand strip draws from: this view, before the brand itself is applied */
+    if (this.brand && Pcx.BrandStrip) {
+      var bo = this.d.brandOf, bk = this.brand;
+      list = list.filter(function (p) { return Pcx.BrandStrip.keyOf(p, bo) === bk; });
+    }
     if (this.sort === 'price_asc') list = list.slice().sort(function (a, b) { return Number(a.price) - Number(b.price); });
     else if (this.sort === 'price_desc') list = list.slice().sort(function (a, b) { return Number(b.price) - Number(a.price); });
     else if (this.sort === 'discount') list = list.slice().sort(function (a, b) { return discountOf(b) - discountOf(a); });
@@ -501,7 +508,7 @@
 
     /* sort + availability chips */
     var sorts = [['new', 'Newest'], ['price_asc', 'Price \u2191'], ['price_desc', 'Price \u2193'], ['discount', 'Biggest discount']];
-    var srow = h('div', 'fw-chipRow');
+    var srow = h('div', 'fw-chipRow fw-sortRow');   /* sticks under the Fashion header (see fashion-world.css) */
     sorts.forEach(function (s) {
       var on = self.sort === s[0];
       var chip = h('button', 'fw-chip' + (on ? ' on' : '')); chip.type = 'button'; chip.textContent = s[1];
@@ -513,8 +520,19 @@
     srow.appendChild(stock);
     z.appendChild(srow);
 
-    /* the grid (reuses the ONE product card system) */
     var list = this.filtered();
+
+    /* Shop by Brand: only brands that really have products in this view; a tap filters the grid below in place */
+    if (Pcx.BrandStrip) {
+      var bhost = h('div', 'fw-brands'); z.appendChild(bhost);
+      var strip = Pcx.BrandStrip.mount(bhost, {
+        products: this._brandPool || [], brandOf: this.d.brandOf, active: this.brand,
+        onSelect: function (item) { self.brand = item ? item.key : null; self.renderShop(); }
+      });
+      if (strip.el.hidden) bhost.style.display = 'none';
+    }
+
+    /* the grid (reuses the ONE product card system) */
     var grid = h('div', 'fwGrid' + (this.layout === 'list' ? ' list' : ''));
     if (!list.length) {
       var msg = h('div', 'fw-empty');

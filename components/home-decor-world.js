@@ -332,7 +332,16 @@
       sec.appendChild(empty);
     } else {
       var grid = h('div', 'hd-product-grid');
-      products.forEach(function (p) { grid.appendChild(cardWrap(p, ctx, false, 'hd-grid-card')); });
+      var draw = function (list) { grid.textContent = ''; list.forEach(function (p) { grid.appendChild(cardWrap(p, ctx, false, 'hd-grid-card')); }); };
+      if (Pcx.BrandStrip && typeof ctx.brandOf === 'function') {
+        var bhost = h('div', 'hd-brands'); sec.appendChild(bhost);
+        var strip = Pcx.BrandStrip.mount(bhost, {
+          products: products, brandOf: ctx.brandOf,
+          onSelect: function (item) { draw(item ? products.filter(function (p) { return Pcx.BrandStrip.keyOf(p, ctx.brandOf) === item.key; }) : products); }
+        });
+        if (strip.el.hidden) bhost.style.display = 'none';
+      }
+      draw(products);
       sec.appendChild(grid);
     }
     parent.appendChild(sec);

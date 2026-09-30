@@ -157,7 +157,7 @@ test('real index.html: #world=beauty boots the Beauty world from real wiring', a
   assert.ok(w.Pcx && w.Pcx.BeautyData && w.Pcx.BeautyWorld, 'beauty modules loaded');
   assert.ok($('#worldPage') && $('#worldPage').classList.contains('open'), 'world page opened from #world=beauty');
   assert.ok($('.bw-root'), 'Beauty world mounted by the real page delegation');
-  assert.ok($('.bw-searchbtn'), 'premium beauty search bar');
+  assert.ok(!$('.bw-searchbtn'), 'no Beauty-only search bar (search is the shared header icon)');
   assert.equal(w.document.querySelectorAll('[data-bw-grid] .pcard').length, 1, 'only the real beauty product, drawn by the store\'s own card');
   assert.equal(w.document.querySelectorAll('.bw-card').length, 0, 'no Beauty-only card component');
   assert.equal(w.document.querySelectorAll('#worldPage header').length, 1, 'exactly one header: the shared world header');
