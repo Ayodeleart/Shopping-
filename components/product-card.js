@@ -193,6 +193,13 @@ function cardQty(id, d, src) {
      Popular, Top/Hot Deals, Brand Deals, Flash Sales, Featured): no Add to Cart, no stock bar, no
      swatches — just photo, name, price(+previous price), favourite and discount indicators.
    Both share the same data, ids and click-to-open behaviour. */
+/* the product's REAL brand (brand record first, else its brand text) under the name; nothing when it has none */
+function cardBrandHTML(p) {
+  const b = (typeof brandOf === 'function') ? brandOf(p) : null;
+  const n = b && b.name ? b.name : (p.brand && String(p.brand).trim());
+  return n ? `<div class="pcBrand">${esc(n)}</div>` : '';
+}
+
 function compactCardHTML(p) {
   const disc = p.original_price && p.original_price > p.price
     ? Math.round((1 - p.price/p.original_price)*100) : 0;
@@ -208,6 +215,7 @@ function compactCardHTML(p) {
       </div>
       <div class="pcBody pcBody-compact">
         <div class="pcName">${esc(p.name)}</div>
+        ${cardBrandHTML(p)}
         <div class="pcPriceRow">
           <span class="pcPrice">${fmt(p.price)}</span>
           ${disc > 0 ? `<span class="pcWas">${fmt(p.original_price)}</span>` : ''}
@@ -240,6 +248,7 @@ function cardHTML(p, opts) {
       </div>
       <div class="pcBody">
         <div class="pcName">${esc(p.name)}</div>
+        ${cardBrandHTML(p)}
         <div class="pcPriceRow">
           <span class="pcPrice">${fmt(p.price)}</span>
           ${disc > 0 ? `<span class="pcWas">${fmt(p.original_price)}</span>` : ''}

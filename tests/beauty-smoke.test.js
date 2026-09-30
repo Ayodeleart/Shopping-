@@ -158,8 +158,10 @@ test('real index.html: #world=beauty boots the Beauty world from real wiring', a
   assert.ok($('#worldPage') && $('#worldPage').classList.contains('open'), 'world page opened from #world=beauty');
   assert.ok($('.bw-root'), 'Beauty world mounted by the real page delegation');
   assert.ok($('.bw-searchbtn'), 'premium beauty search bar');
-  assert.equal(w.document.querySelectorAll('[data-bw-grid] .bw-card').length, 1, 'only the real beauty product');
-  assert.ok(w.document.querySelector('[data-bw-grid] .bw-card-img img').src.includes('cut.png'), 'cutout photo on the card');
+  assert.equal(w.document.querySelectorAll('[data-bw-grid] .pcard').length, 1, 'only the real beauty product, drawn by the store\'s own card');
+  assert.equal(w.document.querySelectorAll('.bw-card').length, 0, 'no Beauty-only card component');
+  assert.equal(w.document.querySelectorAll('#worldPage header').length, 1, 'exactly one header: the shared world header');
+  assert.ok(w.document.querySelector('#worldPage > .wp-hdr'), 'shared header is present above the Beauty page');
   assert.equal(w.document.querySelectorAll('.bw-tile').length, 2, 'two active admin tiles');
   assert.ok(w.document.querySelector('.bw-hero .bw-slide'), 'hero carousel rendered from beauty_heroes');
   assert.ok(w.document.querySelector('.bw-root').style.getPropertyValue('--bw-bg').includes('bg.jpg'), 'admin background image applied');

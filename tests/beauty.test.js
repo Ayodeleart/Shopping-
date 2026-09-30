@@ -55,7 +55,7 @@ function mountWorld(w, opts) {
   const o = Object.assign({
     heroes: [], cats: beautyCats, settings: { background_url: 'https://x/bg.jpg', background_enabled: '1' }, stats: {}
   }, opts || {});
-  w.allProds = prods;
+  w.allProds = o.products || prods;
   w.catTree = new w.Pcx.Categories.Tree(catRows);
   w.vendorsMap = {};
   w.brandsList = [];
@@ -73,11 +73,18 @@ function mountWorld(w, opts) {
   w.openAccount = () => { w.__acct = true; };
   w.showFavorites = () => { w.__favs = true; };
   const world = { slug: 'beauty', name: 'Beauty', gradient: 'linear-gradient(#333,#111)' };
+  w.brandById = o.brandById || {};
+  w.brandOf = p => (p.brand_id && w.brandById[p.brand_id]) || null;
+  /* stand-in for the store's cardHTML: same class names as components/product-card.js (standard vs compact) */
+  const cardHTML = (p, c) => '<div class="pcard' + (c && c.compact ? ' pcard-compact' : '') + '" onclick="openProduct(' + p.id + ')">' +
+    '<div class="pcName">' + p.name + '</div>' + (w.brandOf(p) ? '<div class="pcBrand">' + w.brandOf(p).name + '</div>' : '') +
+    '<div class="pcPriceRow"><span class="pcPrice">' + w.fmt(p.price) + '</span></div><div class="pcCtl" data-pid="' + p.id + '">' + w.ctlHTML(p.id) + '</div></div>';
   const inst = w.Pcx.BeautyWorld.mount(w.document.getElementById('wp'), world, {
     onBack: () => { w.__back = true; },
+    cardHTML, brandOf: w.brandOf, sponsored: o.sponsored, mountAds: o.mountAds,
     beauty: {
       heroes: o.heroes, cats: o.cats, settings: Object.entries(o.settings).map(([key, value]) => ({ key, value })), stats: o.stats,
-      catTree: w.catTree, products: w.allProds, vendors: w.vendorsMap, brands: w.brandsList, brandById: w.brandById, ratings: w.ratingMap, fmt: w.fmt
+      catTree: w.catTree, products: o.products || w.allProds, vendors: w.vendorsMap, brands: o.brands || w.brandsList, brandById: w.brandById, ratings: o.ratings || w.ratingMap, fmt: w.fmt
     }
   });
   return inst;
@@ -165,13 +172,14 @@ test('beauty world: page structure, no bottom nav, real grid + counts', () => {
   const $$ = s => [...el.querySelectorAll(s)];
 
   assert.ok($('.bw-searchbtn'), 'premium search bar present');
-  assert.ok($('[data-bw="search"]'), 'search icon in header');
-  assert.ok($('[data-bw="favs"]') && $('[data-bw="cart"]') && $('[data-bw="profile"]'), 'existing fav/cart/profile actions');
+  assert.ok($('[data-bw="search"]'), 'Beauty search entry point');
+  /* the shared world header (components/world-page.js) is the ONLY header: Beauty draws none of its own */
+  assert.equal($$('header, .bw-hdr, .bw-bar, .bw-sub, .bw-tools').length, 0, 'no Beauty-only header, glass bar or duplicate header');
   assert.equal($$('.bw-tile').length, 4, 'active tiles only');
   assert.equal($$('[data-bw-chips-inline] .bw-chip').length, 5, 'All/Newest/Popular/Man/Kids (no Woman — no such category)');
   assert.equal($('[data-bw-count]').textContent, '3 products', 'real count');
-  assert.equal($$('[data-bw-grid] .bw-card').length, 3, 'only real Beauty products in the grid');
-  assert.equal($$('.bw-card').length, 6, 'grid (3) + New In rail (3) — the same real products');
+  assert.equal($$('[data-bw-grid] .pcard').length, 3, 'only real Beauty products in the grid, drawn by the store\'s own card');
+  assert.equal($$('.bw-card').length, 0, 'Beauty has no card component of its own');
   assert.ok(!el.textContent.includes('iPhone 15'), 'non-Beauty products stay out');
   /* no bottom navigation: nothing visible is pinned to the bottom edge */
   $$('*').forEach(node => {
@@ -189,8 +197,8 @@ test('beauty world: category tile + filters change the grid', () => {
   const inst = mountWorld(w);
   const $ = s => el.querySelector(s);
 
-  const gname = () => el.querySelector('[data-bw-grid] .bw-card-name').textContent;
-  const gcards = () => el.querySelectorAll('[data-bw-grid] .bw-card');
+  const gname = () => el.querySelector('[data-bw-grid] .pcName').textContent;
+  const gcards = () => el.querySelectorAll('[data-bw-grid] .pcard');
 
   [...el.querySelectorAll('.bw-tile')].find(t => t.textContent.includes('Makeup')).click();
   assert.equal(gcards().length, 1, "tile shows only that category's real products");
@@ -215,7 +223,7 @@ test('beauty world: popularity ranks real sales first', () => {
   mountWorld(w, { stats: { 13: { sold: 5, reviews: 0 }, 14: { sold: 0, reviews: 1 } } });
   const $ = s => el.querySelector(s);
   $('[data-bw-filter="best"]').click();
-  const names = [...el.querySelectorAll('[data-bw-grid] .bw-card-name')].map(n => n.textContent);
+  const names = [...el.querySelectorAll('[data-bw-grid] .pcName')].map(n => n.textContent);
   assert.deepEqual(names, ['Men Beard Oil', 'Kids Shampoo', 'Viva Glam Lipstick']);
 });
 
@@ -243,15 +251,7 @@ test('beauty world: search overlay finds real beauty products only', () => {
   }, 200));
 });
 
-test('beauty world: cutout photo used on cards when present; empty state when no products', () => {
-  const w = bootWindow();
-  const el = w.document.getElementById('wp');
-  prods[0].beauty_image_url = 'https://x/cutout.png';
-  const inst1 = mountWorld(w);
-  assert.equal(el.querySelector('[data-bw-grid] .bw-card-img img').getAttribute('src'), 'https://x/cutout.png');
-  delete prods[0].beauty_image_url;
-  inst1.destroy();
-
+test('beauty world: empty state when no products', () => {
   /* empty pool -> clean empty state, no faked products */
   const w2 = bootWindow();
   w2.allProds = [];
@@ -263,9 +263,126 @@ test('beauty world: cutout photo used on cards when present; empty state when no
       catTree: new w2.Pcx.Categories.Tree(catRows), products: [], vendors: {}, brands: [], brandById: {}, ratings: {}, fmt: n => 'N' + n
     }
   });
-  assert.equal(el2.querySelectorAll('.bw-card').length, 0);
+  assert.equal(el2.querySelectorAll('.pcard').length, 0);
   assert.ok(el2.textContent.includes('No beauty products yet'));
   inst2.destroy();
+});
+
+/* ── repair regressions: subcategory grid, merchandising rails, Shop by Brand, no custom header/card ── */
+
+const daysAgo = n => new Date(Date.now() - n * 24 * 3600 * 1000).toISOString();
+
+test('beauty world: subcategories show as at most 10 tiles (two rows of five), keep their images, See All lists every one', () => {
+  const w = bootWindow();
+  const el = w.document.getElementById('wp');
+  const cats = Array.from({ length: 12 }, (_, i) => ({
+    id: 100 + i, name: 'Sub ' + (i + 1), slug: 'sub-' + (i + 1), kind: 'category', keywords: 'sub ' + (i + 1),
+    image_url: 'https://x/sub' + (i + 1) + '.png', sort_order: i + 1, active: true
+  }));
+  const inst = mountWorld(w, { cats });
+  const tiles = [...el.querySelectorAll('[data-bw-catgrid] .bw-tile')];
+  assert.equal(tiles.length, 10, 'capped at 10 tiles on the page');
+  assert.ok(tiles.every(t => t.querySelector('img.bw-tile-img[src^="https://x/sub"]')), 'the existing uploaded images are used, not letters/emojis');
+  assert.ok(tiles.every(t => t.querySelector('.bw-tile-label').textContent.trim()), 'every tile has a readable label');
+
+  /* the layout itself: 5 equal columns (jsdom does not lay out, so guard the stylesheet rule) */
+  const css = R('components/beauty-world.css');
+  assert.match(css, /\.bw-catgrid\{display:grid;grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/, 'catgrid is a 5-column grid -> 10 tiles = 2 rows');
+  assert.ok(!/\.bw-catrail/.test(css), 'the old single horizontal row is gone');
+
+  /* See All: the full listing inside the Beauty world */
+  el.querySelector('[data-bw="allcats"]').click();
+  const page = el.querySelector('[data-bw-catspage]');
+  assert.ok(!page.hidden, 'See All opens the full category listing (still inside the Beauty world)');
+  assert.equal(page.querySelectorAll('.bw-tile').length, 12, 'every category, not just the first 10');
+  /* choosing one filters the real products in the same interface and closes the listing */
+  page.querySelectorAll('.bw-tile')[11].click();
+  assert.equal(el.querySelector('[data-bw-title]').textContent, 'Sub 12');
+  assert.equal(w.__opened, undefined, 'no navigation away from the Beauty world');
+  inst.destroy();
+});
+
+test('beauty world: Shop by Brand lists only brands with Beauty products and filters the listing in place', () => {
+  const w = bootWindow();
+  const el = w.document.getElementById('wp');
+  const brandById = { 1: { id: 1, name: 'MAC', logo_url: 'https://x/mac.png' }, 2: { id: 2, name: 'Nyx' }, 3: { id: 3, name: 'Apple' } };
+  const products = [
+    { id: 21, name: 'Lip A', price: 100, category_id: 3, brand_id: 1, created_at: daysAgo(90) },
+    { id: 22, name: 'Lip B', price: 100, category_id: 3, brand_id: 1, created_at: daysAgo(91) },
+    { id: 23, name: 'Oil C', price: 100, category_id: 4, brand_id: 2, created_at: daysAgo(92) },
+    { id: 24, name: 'Wash D', price: 100, category_id: 5, brand_id: null, created_at: daysAgo(93) },
+    { id: 25, name: 'iPhone', price: 100, category_id: 6, brand_id: 3, created_at: daysAgo(94) }
+  ];
+  const inst = mountWorld(w, { products, brandById });
+  const chips = [...el.querySelectorAll('[data-bw-brands] .bw-brand')];
+  assert.deepEqual(chips.map(c => c.querySelector('.bw-brand-name').textContent), ['MAC', 'Nyx'], 'busiest first; Apple has no Beauty products so it is not shown');
+  assert.ok(chips[0].querySelector('img[src="https://x/mac.png"]'), 'real brand logo reused');
+
+  const names = () => [...el.querySelectorAll('[data-bw-grid] .pcName')].map(n => n.textContent).sort();
+  assert.equal(names().length, 4, 'all four Beauty products before filtering');
+  chips[0].click();
+  assert.deepEqual(names(), ['Lip A', 'Lip B'], 'only MAC products of the current category');
+  assert.equal(el.querySelector('[data-bw-title]').textContent, 'MAC');
+  assert.ok(el.querySelector('[data-bw-brands] .bw-brand.on'), 'selected brand is highlighted');
+  assert.deepEqual([...el.querySelectorAll('[data-bw-grid] .pcBrand')].map(n => n.textContent), ['MAC', 'MAC'], 'each card shows its real brand');
+  el.querySelector('[data-bw="clear"]').click();
+  assert.equal(names().length, 4, 'Clear returns to the full listing');
+  inst.destroy();
+});
+
+test('beauty world: merchandising rails use real data, never repeat a product, never draw empty, use the shared coloured header', () => {
+  const w = bootWindow();
+  const el = w.document.getElementById('wp');
+  const brandById = { 1: { id: 1, name: 'MAC' } };
+  const products = [
+    { id: 31, name: 'Flash', price: 50, original_price: 100, flash_sale: true, category_id: 3, brand_id: 1, created_at: daysAgo(200) },
+    { id: 32, name: 'Rated', price: 100, category_id: 3, created_at: daysAgo(200) },
+    { id: 33, name: 'Fresh', price: 100, category_id: 4, created_at: daysAgo(3) },
+    { id: 34, name: 'BrandDeal', price: 80, original_price: 100, category_id: 4, brand_id: 1, created_at: daysAgo(200) },
+    { id: 35, name: 'PlainDeal', price: 90, original_price: 100, category_id: 5, created_at: daysAgo(200) },
+    { id: 36, name: 'Plain', price: 100, category_id: 5, created_at: daysAgo(200) }
+  ];
+  const ratings = { 32: { avg: 4.5, n: 3 } };
+  const inst = mountWorld(w, { products, brandById, ratings });
+  const secs = k => el.querySelector('[data-bw-msec="' + k + '"]');
+  const names = k => [...secs(k).querySelectorAll('.pcName')].map(n => n.textContent);
+
+  assert.deepEqual(names('deals'), ['Flash']);
+  assert.deepEqual(names('trend'), ['Rated']);
+  assert.deepEqual(names('new'), ['Fresh']);
+  assert.deepEqual(names('brand'), ['BrandDeal']);
+  assert.deepEqual(names('disc'), ['PlainDeal']);
+  assert.equal(secs('best'), null, 'Best Selling needs real sales: none -> no rail');
+  assert.equal(secs('sponsored'), null, 'no genuine sponsored listing -> no Sponsored rail');
+  const all = [...el.querySelectorAll('.bw-msec .pcName')].map(n => n.textContent);
+  assert.equal(new Set(all).size, all.length, 'a product is claimed by one rail only');
+  el.querySelectorAll('.bw-msec').forEach(sec => {
+    const hd = sec.querySelector('.secHd.secHd--accent');
+    assert.ok(hd && /^#[0-9A-Fa-f]{6}$/.test(hd.style.getPropertyValue('--sec-accent')), 'coloured shared section header');
+    assert.ok(sec.querySelectorAll('.pcard-compact').length > 0, 'compact cards in curated rows');
+  });
+  /* the section headings outside the rails are coloured too */
+  assert.ok(el.querySelector('[data-bw-all] .secHd--accent'), 'main listing heading is coloured');
+  inst.destroy();
+
+  /* real sales appear -> Best Selling appears */
+  const w2 = bootWindow();
+  const el2 = w2.document.getElementById('wp');
+  const inst2 = mountWorld(w2, { products, brandById, ratings, stats: { 36: { sold: 4, reviews: 0 } } });
+  assert.deepEqual([...el2.querySelectorAll('[data-bw-msec="best"] .pcName')].map(n => n.textContent), ['Plain']);
+  inst2.destroy();
+});
+
+test('beauty world: Sponsored Products only when genuine sponsored listings exist, through the store\'s ad mounter', () => {
+  const w = bootWindow();
+  const el = w.document.getElementById('wp');
+  let mounted = null;
+  const inst = mountWorld(w, { sponsored: () => [{ id: 7 }, { id: 8 }], mountAds: node => { mounted = node; } });
+  const sec = el.querySelector('[data-bw-msec="sponsored"]');
+  assert.ok(sec, 'sponsored rail shown for real ads');
+  assert.equal(sec.querySelectorAll('.adslot[data-ad]').length, 2);
+  assert.equal(mounted, sec, 'ads are rendered by the existing ad system');
+  inst.destroy();
 });
 
 /* ── /api/remove-bg.js helpers (no network) ──────────────────────── */

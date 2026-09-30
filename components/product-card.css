@@ -223,3 +223,6 @@
 .pcard-compact .pcImg .favBtn{width:24px;height:24px;top:4px;right:4px}
 .pcard-compact .pcImg .favBtn svg{width:14px;height:14px}
 .pcard-compact .discBadge{height:14px;font-size:9px;padding:0 3px;top:4px;left:4px}
+
+/* brand line under the product name (real brand only) */
+.pcBrand{font-size:10.5px;line-height:1.2;font-weight:600;color:var(--txt3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}

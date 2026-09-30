@@ -365,12 +365,13 @@ test('real index.html: Discover homepage (section order, real-data merchandising
     assert.ok($$('#recRow .pcard .pcName').length > 0, 'recommendations come from the shopper\'s own categories/brands');
     w.closePModal(true);
 
-    // ── Shop by Brand: vertical (grid) list, not a horizontal carousel, capped to a manageable number ──
+    // ── Shop by Brand: ONE compact strip, capped to a manageable number; See All reveals the rest as a grid ──
     const brandRow = $('#brandRow');
-    assert.equal(w.getComputedStyle(brandRow).display, 'grid', 'brand row is a vertical/grid layout, not a horizontal flex carousel');
+    assert.equal(w.getComputedStyle(brandRow).display, 'flex', 'brand row is one compact horizontal strip');
     const bcards = $$('.bcard');
     assert.ok(bcards.length > 0 && bcards.length <= 12, 'a manageable, capped number of brands (got ' + bcards.length + ')');
-    assert.ok($('.bcard-count'), 'brand card shows real product count (no fake data)');
+    assert.ok($('#brandSec .secHd--accent'), 'Shop by Brand uses the shared coloured section header');
+    assert.ok($('#recSec .secHd--accent'), 'Recommended for You uses the shared coloured section header');
 
     // ── ad between curated sections, reusing the real ads table/admin controls ──
     const slotA = $('#homeAdSlotA');

@@ -208,30 +208,20 @@ body:not(.cat-mode) #allSecHd{border-top:0}
 .cnTab.on{color:var(--red);font-weight:800}
 .cnTab.on::after{content:'';position:absolute;left:10px;right:10px;bottom:0;height:3px;border-radius:3px 3px 0 0;background:var(--red)}
 
-/* ── SHOP BY BRAND (vertical list, not a horizontal carousel) ───── */
-#brandRow{
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;padding:2px 13px 14px;
-}
-.bcard{
-  display:flex;align-items:center;gap:10px;text-align:left;padding:8px;border-radius:12px;
-  background:var(--bg2);border:1px solid var(--border);min-width:0;
-}
+/* ── SHOP BY BRAND (one compact section: a horizontal strip; See All opens the whole set as a grid in place) ───── */
+#brandRow{display:flex;gap:12px;overflow-x:auto;padding:12px 13px 14px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+#brandRow::-webkit-scrollbar{display:none}
+#brandRow.all{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px 8px;overflow:visible}
+.bcard{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;flex:0 0 auto;width:68px;padding:0;background:none;border:0;min-width:0}
+#brandRow.all .bcard{width:auto}
 .bcard:active{opacity:.8}
-.bcard-tile{
-  position:relative;width:44px;height:44px;border-radius:10px;overflow:hidden;background:#1d1d1f;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;
-}
-.bcard-tile::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.28),rgba(0,0,0,.55))}
-.bcard-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.55}
-.bcard-logo{
-  position:relative;z-index:1;width:44px;height:44px;border-radius:10px;background:#fff;overflow:hidden;
-  display:flex;align-items:center;justify-content:center;
-  font-size:15px;font-weight:900;color:#666;
-}
-.bcard-logo img{width:100%;height:100%;object-fit:contain;padding:4px}
+.bcard-tile{position:relative;width:56px;height:56px;border-radius:50%;overflow:hidden;background:#fff;border:1px solid var(--border);display:flex;align-items:center;justify-content:center}
+.bcard-bg{display:none}
+.bcard-logo{position:relative;z-index:1;width:100%;height:100%;background:#fff;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#666}
+.bcard-logo img{width:100%;height:100%;object-fit:contain;padding:6px}
 .bcard-logo.nologo::after{content:attr(data-l)}
-.bcard-name{font-size:13px;font-weight:700;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
-.bcard-count{font-size:11.5px;color:var(--txt3);flex-shrink:0}
+.bcard-name{font-size:11.5px;font-weight:700;line-height:1.2;color:var(--txt);width:100%;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.bcard-count{display:none}
 
 /* ── HOME AD SLOTS (between curated sections) ─────── */
 .homeAdSlot{padding:8px 13px 4px}
@@ -824,7 +814,7 @@ body:not(.cat-mode) #allSecHd{border-top:0}
 
   <!-- SHOP BY BRAND (vertical list — see buildBrandRow(); real brands/products only) -->
   <section id="brandSec" style="display:none">
-    <div class="secHd"><span class="secTtl">Shop by Brand</span></div>
+    <div class="secHd secHd--accent" style="--sec-accent:#8E2DE2"><span class="secTtl">Shop by Brand</span><a class="secAll" id="brandSeeAll" href="#brandSec" hidden>See All</a></div>
     <div id="brandRow"></div>
   </section>
 
@@ -840,7 +830,7 @@ body:not(.cat-mode) #allSecHd{border-top:0}
   <div id="homeMerch" style="display:none">
     <div id="homeMerchRows"></div>
     <section id="recSec" style="display:none">
-      <div class="secHd"><span class="secTtl">Recommended for You</span><a class="secAll" id="recSeeAll" href="#allSec">See All</a></div>
+      <div class="secHd secHd--accent" style="--sec-accent:#0891B2"><span class="secTtl">Recommended for You</span><a class="secAll" id="recSeeAll" href="#allSec">See All</a></div>
       <div class="hScroll" id="recRow"></div>
     </section>
   </div>
@@ -1433,28 +1423,32 @@ function brandOf(p) {
    busiest brands first. The full set is still reachable — tapping a brand opens all of its products via
    the existing filterByBrand/showList path, same as before. */
 const BRAND_ROW_CAP = 12;
+let brandShowAll = false;
 function buildBrandRow() {
-  const sec = $('brandSec'), row = $('brandRow');
+  const sec = $('brandSec'), row = $('brandRow'), more = $('brandSeeAll');
   const items = brandsList
     .map(b => ({ b, prods: allProds.filter(p => { const pb = brandOf(p); return pb && pb.id === b.id; }) }))
     .filter(x => x.prods.length)
-    .sort((x, y) => y.prods.length - x.prods.length || x.b.name.localeCompare(y.b.name))
-    .slice(0, BRAND_ROW_CAP);
+    .sort((x, y) => y.prods.length - x.prods.length || x.b.name.localeCompare(y.b.name));
   if (!items.length) { sec.style.display = 'none'; return; }
   sec.style.display = '';
-  row.innerHTML = items.map(({ b, prods }) => {
-    const bg = prods.find(p => p.image_url);
+  const shown = brandShowAll ? items : items.slice(0, BRAND_ROW_CAP);
+  row.classList.toggle('all', brandShowAll);
+  if (more) {
+    more.hidden = items.length <= BRAND_ROW_CAP;
+    more.textContent = brandShowAll ? 'Show less' : 'See All';
+    more.onclick = e => { e.preventDefault(); brandShowAll = !brandShowAll; buildBrandRow(); };
+  }
+  row.innerHTML = shown.map(({ b }) => {
     const letter = esc((b.name[0] || '?').toUpperCase());
     return `
       <button class="bcard" onclick="filterByBrand(${num(b.id)})">
         <span class="bcard-tile">
-          ${bg ? `<img class="bcard-bg" src="${safeUrl(bg.image_url)}" alt="" loading="lazy">` : ''}
           <span class="bcard-logo${b.logo_url ? '' : ' nologo'}" data-l="${letter}">${b.logo_url
-            ? `<img src="${safeUrl(b.logo_url)}" alt="${esc(b.name)}" loading="lazy" onerror="this.parentNode.classList.add('nologo');this.remove()">`
+            ? `<img src="${safeUrl(b.logo_url)}" alt="${esc(b.name)}" loading="lazy" decoding="async" onerror="this.parentNode.classList.add('nologo');this.remove()">`
             : ''}</span>
         </span>
         <span class="bcard-name">${esc(b.name)}</span>
-        <span class="bcard-count">${prods.length}</span>
       </button>`;
   }).join('');
 }
@@ -1692,6 +1686,9 @@ function initWorldPage() {
     openSearch: () => openSearch(),
     openCart: () => openCart(),
     openAccount: () => openAccount(),
+    brandOf,
+    sponsored: () => { const r = Pcx.BeautyData && Pcx.BeautyData.root(catTree); return r ? Ads.forSlot(adsList, { placement: 'feed', categoryId: r.id }) : []; },
+    mountAds: el => { if (el) mountFeedAds(el); },
     /* Beauty world content, read when the world opens (see components/beauty-world.js).
        catTree/products/etc. are declared `let` in this script, so they are handed
        over by closure — the world must never rely on them being on window. */
@@ -1731,14 +1728,8 @@ async function loadBeautyStats() {
     if (!Pcx.BeautyData) return;
     const pool = Pcx.BeautyData.pool(catTree, allProds, beautyLinked());
     if (!pool.length) return;
-    const { data } = await sb.from('order_items').select('product_id,qty,status');
-    if (!data) return;
-    const sold = {};
-    (data || []).forEach(r => {
-      if (r.status === 'cancelled' || r.status === 'refunded') return;
-      sold[r.product_id] = (sold[r.product_id] || 0) + (Number(r.qty) || 1);
-    });
-    pool.forEach(p => { beautyStats[p.id] = { sold: sold[p.id] || 0, reviews: ratingMap[p.id] ? ratingMap[p.id].n : 0 }; });
+    await loadSoldStats();                    /* the SAME single order_items request the home Best-Selling rail uses */
+    pool.forEach(p => { beautyStats[p.id] = { sold: soldMap[p.id] || 0, reviews: ratingMap[p.id] ? ratingMap[p.id].n : 0 }; });
   } catch (e) { /* no stats -> Popular sorts by newest instead */ }
 }
 
@@ -2226,16 +2217,21 @@ const HOME_RAIL_CAP = 12;
 
 /* Real sold units only (cancelled/refunded lines excluded), best effort: a missing or failed
    order_items table simply means no Best-Selling rail — never an error for the shopper. */
-async function loadSoldStats() {
-  try {
-    const { data } = await sb.from('order_items').select('product_id,qty,status');
-    const sold = {};
-    (data || []).forEach(r => {
-      if (r.status === 'cancelled' || r.status === 'refunded') return;
-      sold[r.product_id] = (sold[r.product_id] || 0) + (Number(r.qty) || 1);
-    });
-    soldMap = sold;
-  } catch (e) { /* no order data: no Best-Selling rail */ }
+let soldStatsPromise = null;
+function loadSoldStats() {
+  if (soldStatsPromise) return soldStatsPromise;     /* one order_items download per page load, however many callers */
+  soldStatsPromise = (async () => {
+    try {
+      const { data } = await sb.from('order_items').select('product_id,qty,status');
+      const sold = {};
+      (data || []).forEach(r => {
+        if (r.status === 'cancelled' || r.status === 'refunded') return;
+        sold[r.product_id] = (sold[r.product_id] || 0) + (Number(r.qty) || 1);
+      });
+      soldMap = sold;
+    } catch (e) { /* no order data: no Best-Selling rail */ }
+  })();
+  return soldStatsPromise;
 }
 
 const homeDiscount = p => (p.original_price && Number(p.original_price) > Number(p.price))
@@ -3745,7 +3741,7 @@ async function init() {
       sb.from('tiles').select('*').eq('active',true).order('sort_order',{ascending:true}),
       Pcx.Categories.fetchAll(sb).then(r => ({ data: r.rows })),
       sb.from('brands').select('*').order('name',{ascending:true}),
-      sb.from('product_ratings').select('*'),
+      sb.from('product_ratings').select('product_id,avg_rating,review_count'),
       Worlds.fetch(sb).catch(() => ({ list: Worlds.defaults(), legacy: true })),
       /* Beauty world content (migration_beauty.sql). Missing tables are fine:
          the world shows a clean setup state instead of breaking the home page. */

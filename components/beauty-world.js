@@ -12,13 +12,14 @@
  *   - search:          Pcx.Search (the store's search engine) run over the Beauty products
  *   - cart / favorites / profile / product page / seller store: the existing global handlers
  *
- * Page order:  search → hero → categories → new in → filters → products.
- * There is NO bottom navigation. The Marcato header (back + wordmark) stays on top; once the
- * search bar scrolls away a glass bar slides in under it with the filters and the search /
- * favorites / cart / profile icons.
+ * Page order:  search → hero → categories (2 rows x 5) → merchandising rails → shop by brand → filters → products.
+ * There is NO bottom navigation and NO header of its own: the shared world header (components/world-page.js,
+ * the same bar every other world uses) sits on top and this module renders underneath it.
+ * Product cards are the store's own standard / compact cards (deps.cardHTML) — Beauty has no card of its own.
  *
  *   Pcx.BeautyWorld.mount(root, world, {
- *     onBack: () => {},
+ *     onBack: () => {}, cardHTML: (p, opts) => html, brandOf: p => brandRow|null,
+ *     sponsored: () => [ads], mountAds: el => {},
  *     beauty: { heroes, cats, settings, stats, catTree, products, vendors, brands, brandById, ratings, fmt }
  *   })
  *
@@ -44,6 +45,10 @@
   };
 
   var PAGE = 24;                         // products drawn per step in "All products"
+  var CAT_CAP = 10;                      // subcategory tiles on the page: 2 rows of 5 (See All shows every one)
+  var RAIL_CAP = 10;                     // products per curated rail
+  var BRAND_CAP = 20;                    // brands in the Shop by Brand strip
+  var NEW_WINDOW_MS = 45 * 24 * 3600 * 1000;   // "New In" = real created_at within the last 45 days (same rule as the home page)
   var FILTERS = [
     { key: 'all', label: 'All' },
     { key: 'new', label: 'Newest' },
@@ -125,35 +130,93 @@
     return v && v.business_name ? v.business_name : '';
   };
 
-  /* ── product card (the store's own cart / favorites / product-page handlers) ── */
+  /* ── product card: the store's OWN cards (deps.cardHTML) — never a Beauty-only card ── */
 
-  P._card = function (p, cls) {
+  P._card = function (p, compact) {
+    var f = this.d.cardHTML;
+    if (typeof f !== 'function') return '';
+    return compact ? '<div class="fcard-wrap">' + f(p, { compact: true }) + '</div>' : f(p);
+  };
+
+  /* the product's real brand record (brand_id first, then the brand text) — deps.brandOf is the store's own resolver */
+  P._brandRow = function (p) {
     var c = this.ctx;
-    var cut = !!p.beauty_image_url;
-    var img = p.beauty_image_url || p.image_url;
-    var by = this._byline(p);
-    var was = Number(p.original_price) > Number(p.price) ? Number(p.original_price) : 0;
-    var off = was ? Math.round((1 - Number(p.price) / was) * 100) : 0;
-    var r = c.ratings[p.id];
-    var fav = (typeof favs !== 'undefined' && favs && favs.has && favs.has(p.id)) ? ' on' : '';
-    var inCart = (typeof cart !== 'undefined' && cart && cart.find) ? cart.find(function (x) { return x.id === p.id; }) : null;
-    var ctl = (typeof global.ctlHTML === 'function') ? global.ctlHTML(p.id) : '';
-    return '<article class="bw-card' + (cls ? ' ' + cls : '') + '" data-bw-open="' + esc(p.id) + '">' +
-      '<div class="bw-card-img' + (cut ? ' is-cut' : ' is-photo') + '">' +
-        (img ? '<img src="' + safeUrl(img) + '" alt="' + esc(p.name) + '" loading="lazy" decoding="async" onerror="this.remove()">' : '<span class="bw-card-noimg">' + I.sparkle + '</span>') +
-        (off > 0 ? '<span class="bw-card-off">-' + off + '%</span>' : '') +
-        '<button type="button" class="favBtn bw-heart' + fav + '" data-fav="' + esc(p.id) + '" aria-label="Save to favorites" onclick="event.stopPropagation();toggleFav(' + num(p.id) + ')">' + I.heartSm + '</button>' +
-      '</div>' +
-      '<div class="bw-card-body">' +
-        '<div class="bw-card-name">' + esc(p.name) + '</div>' +
-        (by ? '<div class="bw-card-by">' + esc(by) + '</div>' : '') +
-        (r && r.n > 0 ? '<div class="bw-card-rate"><span class="bw-star">&#9733;</span> ' + (Math.round(Number(r.avg) * 10) / 10) + ' <span class="bw-rate-n">(' + esc(r.n) + ')</span></div>' : '') +
-        '<div class="bw-card-buy">' +
-          '<div class="bw-card-price"><b>' + esc(this._money(p.price)) + '</b>' + (was ? '<s>' + esc(this._money(was)) + '</s>' : '') + '</div>' +
-          '<div class="pcCtl bw-ctl" data-pid="' + esc(p.id) + '" data-q="' + esc(inCart ? inCart.qty : 0) + '">' + ctl + '</div>' +
-        '</div>' +
-      '</div>' +
-    '</article>';
+    if (typeof this.d.brandOf === 'function') return this.d.brandOf(p) || null;
+    return p.brand_id != null && c.brandById[p.brand_id] ? c.brandById[p.brand_id] : null;
+  };
+
+  /* ── curated merchandising rails — REAL data only, no product claimed by two rails, empty rails never drawn ── */
+
+  P._merchSections = function () {
+    var self = this, ctx = this.ctx, B = ns.BeautyData, pool = ctx.pool, used = {};
+    var take = function (list) {
+      var out = list.filter(function (p) { return !used[p.id]; }).slice(0, RAIL_CAP);
+      out.forEach(function (p) { used[p.id] = 1; });
+      return out;
+    };
+    var disc = function (p) { return Number(p.original_price) > Number(p.price) ? 1 - Number(p.price) / Number(p.original_price) : 0; };
+    var byDisc = function (a, b) { return disc(b) - disc(a); };
+    var secs = [];
+    var add = function (key, title, color, list) { if (list.length) secs.push({ key: key, title: title, color: color, products: list }); };
+
+    add('deals', "Today's Deals", '#D91C2D', take(pool.filter(function (p) { return p.flash_sale; }).sort(byDisc)));
+    var rated = pool.filter(function (p) { return ctx.ratings[p.id] && ctx.ratings[p.id].n > 0; })
+      .sort(function (a, b) { return (ctx.ratings[b.id].avg - ctx.ratings[a.id].avg) || (ctx.ratings[b.id].n - ctx.ratings[a.id].n); });
+    add('trend', 'Now Trending', '#1E7A46', take(rated));
+    /* Best Selling only from real sold units (order_items) — no sales, no rail */
+    var sold = function (p) { return (ctx.stats[p.id] && ctx.stats[p.id].sold) || 0; };
+    add('best', 'Best Selling', '#B8860B', take(pool.filter(function (p) { return sold(p) > 0; })
+      .sort(function (a, b) { return (sold(b) - sold(a)) || byDisc(a, b); })));
+    var now = Date.now();
+    add('new', 'New In', '#0F6FC5', take(B.sortNewest(pool.filter(function (p) { return p.created_at && (now - new Date(p.created_at).getTime()) < NEW_WINDOW_MS; }))));
+    add('brand', 'Brand Deals', '#D91C6E', take(pool.filter(function (p) { return disc(p) > 0 && self._brandRow(p); }).sort(byDisc)));
+    add('disc', 'Discounted Products', '#C0392B', take(pool.filter(function (p) { return disc(p) > 0; }).sort(byDisc)));
+    return secs;
+  };
+
+  P._railHTML = function (sec) {
+    var self = this;
+    return '<section class="hSec bw-msec" data-bw-msec="' + esc(sec.key) + '" aria-label="' + esc(sec.title) + '">' +
+      '<div class="secHd secHd--accent" style="--sec-accent:' + esc(sec.color) + '"><span class="secTtl">' + esc(sec.title) + '</span></div>' +
+      '<div class="hScroll">' + sec.products.map(function (p) { return self._card(p, true); }).join('') + '</div></section>';
+  };
+
+  /* Sponsored Products: only genuine sponsored listings (the admin's feed ads), rendered through the store's own ad system */
+  P._sponsoredHTML = function () {
+    var ads = typeof this.d.sponsored === 'function' ? (this.d.sponsored() || []) : [];
+    this._ads = ads;
+    if (!ads.length) return '';
+    return '<section class="hSec bw-msec" data-bw-msec="sponsored" aria-label="Sponsored Products">' +
+      '<div class="secHd secHd--accent" style="--sec-accent:#6B7280"><span class="secTtl">Sponsored Products</span></div>' +
+      '<div class="hScroll hScroll--ads">' + ads.map(function (a) { return '<div class="fcard-wrap"><div class="adslot" data-ad="' + esc(a.id) + '"></div></div>'; }).join('') + '</div></section>';
+  };
+
+  /* ── Shop by Brand: only brands that really have products in Beauty ── */
+
+  P._brandsInPool = function () {
+    var self = this, byId = {}, list = [];
+    this.ctx.pool.forEach(function (p) {
+      var b = self._brandRow(p);
+      if (!b) return;
+      if (!byId[b.id]) { byId[b.id] = { b: b, n: 0 }; list.push(byId[b.id]); }
+      byId[b.id].n++;
+    });
+    return list.sort(function (x, y) { return (y.n - x.n) || String(x.b.name).localeCompare(String(y.b.name)); }).slice(0, BRAND_CAP);
+  };
+
+  P._brandsHTML = function () {
+    var self = this, list = this._brandsInPool();
+    if (!list.length) return '';
+    var on = this.filter.type === 'brand' && this.filter.brand ? String(this.filter.brand.id) : '';
+    return '<section class="bw-sec" aria-label="Shop by Brand">' +
+      '<div class="secHd secHd--accent" style="--sec-accent:#8E2DE2"><span class="secTtl">Shop by Brand</span></div>' +
+      '<div class="bw-brands" data-bw-brands>' + list.map(function (x) {
+        var b = x.b, letter = esc(String(b.name || '?').trim().charAt(0).toUpperCase());
+        return '<button type="button" class="bw-brand' + (String(b.id) === on ? ' on' : '') + '" data-bw-brand="' + esc(b.id) + '" title="' + esc(b.name) + '">' +
+          '<span class="bw-brand-logo"><span class="bw-brand-letter">' + letter + '</span>' +
+          (b.logo_url ? '<img src="' + safeUrl(b.logo_url) + '" alt="" loading="lazy" decoding="async" draggable="false" onerror="this.remove()">' : '') +
+          '</span><span class="bw-brand-name">' + esc(b.name) + '</span></button>';
+      }).join('') + '</div></section>';
   };
 
   /* ── build ─────────────────────────────────────────────────────── */
@@ -163,28 +226,13 @@
     this.ctx = ctx;
     var B = ns.BeautyData;
 
-    var newIn = B.sortNewest(ctx.pool).slice(0, 12);
+    var merch = this._merchSections().map(function (sec) { return self._railHTML(sec); }).join('');
+    var sponsored = this._sponsoredHTML();
+    var shownCats = ctx.cats.slice(0, CAT_CAP);
 
     root.innerHTML =
       '<div class="bw-root">' +
         '<div class="bw-bg" aria-hidden="true"><div class="bw-bg-in"><div class="bw-bg-img"></div><div class="bw-bg-veil"></div></div></div>' +
-
-        /* Marcato header (back + wordmark, the same bar the other worlds use) + the glass filter/utility bar that slides in under it */
-        '<header class="bw-hdr">' +
-          '<div class="bw-bar">' +
-            '<button type="button" class="bw-back" data-bw="back" aria-label="Back to Explore Marcato">' + I.back + '</button>' +
-            '<div class="bw-word">Beauty</div>' +
-          '</div>' +
-          '<div class="bw-sub" data-bw-sub>' +
-            '<div class="bw-chips" data-bw-chips-sticky>' + this._chipsHTML() + '</div>' +
-            '<div class="bw-tools">' +
-              '<button type="button" class="bw-ico" data-bw="search" aria-label="Search Beauty">' + I.search + '</button>' +
-              '<button type="button" class="bw-ico" data-bw="favs" aria-label="Favorites">' + I.heart + '</button>' +
-              '<button type="button" class="bw-ico bw-cartbtn" data-bw="cart" aria-label="Cart">' + I.bag + '<span class="bw-dot" data-bw-dot></span></button>' +
-              '<button type="button" class="bw-ico" data-bw="profile" aria-label="Account">' + I.user + '</button>' +
-            '</div>' +
-          '</div>' +
-        '</header>' +
 
         '<main class="bw-main">' +
           '<div class="bw-search" data-bw-search>' +
@@ -193,22 +241,20 @@
 
           (ctx.promos.length ? this._heroHTML(ctx.promos) : '') +
 
-          (ctx.cats.length ?
+          (shownCats.length ?
             '<section class="bw-sec" aria-label="Categories">' +
-              '<div class="bw-sech"><h2>Categories</h2><button type="button" class="bw-seeall" data-bw="allcats">See All ' + I.arrow + '</button></div>' +
-              '<div class="bw-catrail" data-bw-catrail>' + ctx.cats.map(function (c) { return self._tileHTML(c); }).join('') + '</div>' +
+              '<div class="secHd secHd--accent" style="--sec-accent:#D91C6E"><span class="secTtl">Shop by Category</span><button type="button" class="secAll bw-seeall" data-bw="allcats">See All</button></div>' +
+              '<div class="bw-catgrid" data-bw-catgrid>' + shownCats.map(function (c) { return self._tileHTML(c); }).join('') + '</div>' +
             '</section>' : '') +
 
-          (newIn.length ?
-            '<section class="bw-sec" aria-label="New in Beauty">' +
-              '<div class="bw-sech"><h2>New In</h2></div>' +
-              '<div class="bw-rail" data-bw-newin>' + newIn.map(function (p) { return self._card(p, 'bw-card-rail'); }).join('') + '</div>' +
-            '</section>' : '') +
+          merch + sponsored +
+
+          this._brandsHTML() +
 
           '<section class="bw-sec bw-all" data-bw-all aria-label="Beauty products">' +
-            '<div class="bw-sech"><h2 data-bw-title>All Products</h2><span class="bw-count" data-bw-count></span></div>' +
+            '<div class="secHd secHd--accent" style="--sec-accent:#0F6FC5"><span class="secTtl" data-bw-title>All Products</span><span class="bw-count" data-bw-count></span></div>' +
             '<div class="bw-chips bw-chips-inline" data-bw-chips-inline>' + this._chipsHTML() + '</div>' +
-            '<div class="bw-grid" data-bw-grid></div>' +
+            '<div class="pgrid-wrap" data-bw-grid></div>' +
           '</section>' +
         '</main>' +
 
@@ -229,17 +275,16 @@
       '</div>';
 
     this.el = {};
-    var map = { sub: '[data-bw-sub]', grid: '[data-bw-grid]', count: '[data-bw-count]', title: '[data-bw-title]', allSec: '[data-bw-all]',
+    var map = { grid: '[data-bw-grid]', count: '[data-bw-count]', title: '[data-bw-title]', allSec: '[data-bw-all]',
       catsPage: '[data-bw-catspage]', catsGrid: '[data-bw-catsgrid]', sPage: '[data-bw-spage]', sBody: '[data-bw-sbody]',
-      sInput: '.bw-sp-input', hero: '[data-bw-hero]', track: '[data-bw-track]', dots: '[data-bw-dots]', search: '[data-bw-search]', dot: '[data-bw-dot]' };
+      sInput: '.bw-sp-input', hero: '[data-bw-hero]', track: '[data-bw-track]', dots: '[data-bw-dots]', search: '[data-bw-search]', brands: '[data-bw-brands]' };
     Object.keys(map).forEach(function (k) { self.el[k] = root.querySelector(map[k]); });
 
     /* the Beauty background: the admin's image, else the built-in one */
     this.root.querySelector('.bw-root').style.setProperty('--bw-bg', 'url("' + String(ctx.bg).replace(/"/g, '%22') + '")');
 
     this._heroStart();
-    this._watchScroll();
-    this._watchCart();
+    if (this._ads && this._ads.length && typeof this.d.mountAds === 'function') this.d.mountAds(this.root.querySelector('[data-bw-msec="sponsored"]'));
 
     this._on(root, 'click', function (e) { self._onClick(e); });
     this._on(root, 'keydown', function (e) {
@@ -256,37 +301,6 @@
 
   /* the scroll container that hosts this world (#worldPage) */
   P._scroller = function () { return this.root.closest('#worldPage') || this.root.parentElement; };
-
-  /* ── header behaviour: the glass bar appears once the search bar has scrolled away ── */
-
-  P._watchScroll = function () {
-    var self = this, sc = this._scroller(), bar = this.root.querySelector('.bw-bar');
-    if (!sc) return;
-    var update = function () {
-      var hb = bar.getBoundingClientRect().bottom, sb = self.el.search.getBoundingClientRect().bottom;
-      self.el.sub.classList.toggle('show', sb < hb + 2);
-    };
-    var raf = 0;
-    this._on(sc, 'scroll', function () { if (!raf) raf = requestAnimationFrame(function () { raf = 0; update(); }); }, { passive: true });
-    this._on(global, 'resize', update);
-    update();
-  };
-
-  /* mirror the store's cart badge on this page's cart icon (no second cart) */
-  P._watchCart = function () {
-    var self = this, src = global.document.getElementById('cartDot');
-    if (!src || !global.MutationObserver) return;
-    var sync = function () {
-      var n = (src.textContent || '').trim();
-      var on = n && n !== '0' && global.getComputedStyle(src).display !== 'none';
-      self.el.dot.textContent = on ? n : '';
-      self.el.dot.style.display = on ? 'flex' : 'none';
-    };
-    var mo = new global.MutationObserver(sync);
-    mo.observe(src, { childList: true, characterData: true, subtree: true, attributes: true });
-    this.off.push(function () { mo.disconnect(); });
-    sync();
-  };
 
   /* ── hero: image / GIF slides, auto-advance, swipe (scroll-snap), dots ── */
 
@@ -394,6 +408,10 @@
       var m = ctx.persons[f.type];
       return m ? pool.filter(m) : [];
     }
+    if (f.type === 'brand' && f.brand) {
+      var self = this;
+      return pool.filter(function (p) { var b = self._brandRow(p); return b && String(b.id) === String(f.brand.id); });
+    }
     if (f.type === 'cat' && f.row) {
       var list = pool.filter(ctx.matchCat(f.row));
       if (f.row.kind === 'new') list = B.sortNewest(list);
@@ -410,6 +428,7 @@
   P._filterTitle = function () {
     var f = this.filter;
     if (f.type === 'cat' && f.row) return f.row.name;
+    if (f.type === 'brand' && f.brand) return f.brand.name;
     var hit = FILTERS.filter(function (x) { return x.key === f.type; })[0];
     return !hit || hit.key === 'all' ? 'All Products' : hit.label;
   };
@@ -422,16 +441,19 @@
     } else if (!list.length) {
       this.el.grid.innerHTML = this._emptyHTML('Nothing here yet', 'No beauty products match this selection right now.');
     } else {
-      this.el.grid.innerHTML = '<div class="bw-grid-inner">' + shown.map(function (p) { return self._card(p); }).join('') + '</div>' +
+      this.el.grid.innerHTML = '<div class="pgrid">' + shown.map(function (p) { return self._card(p); }).join('') + '</div>' +
         (list.length > shown.length ? '<button type="button" class="bw-more" data-bw="more">Show more</button>' : '');
     }
     this.el.title.textContent = this._filterTitle();
-    this.el.count.innerHTML = this.filter.type === 'cat'
+    this.el.count.innerHTML = (this.filter.type === 'cat' || this.filter.type === 'brand')
       ? '<button type="button" class="bw-clear" data-bw="clear">Clear</button> ' + list.length + ' product' + (list.length === 1 ? '' : 's')
       : list.length + ' product' + (list.length === 1 ? '' : 's');
     var chips = this._chipsHTML();
-    this.root.querySelectorAll('[data-bw-chips-sticky],[data-bw-chips-inline]').forEach(function (el) { el.innerHTML = chips; });
-    this.root.querySelectorAll('[data-bw-catrail] .bw-tile').forEach(function (t) {
+    this.root.querySelectorAll('[data-bw-chips-inline]').forEach(function (el) { el.innerHTML = chips; });
+    this.root.querySelectorAll('[data-bw-brands] .bw-brand').forEach(function (t) {
+      t.classList.toggle('on', self.filter.type === 'brand' && self.filter.brand && String(self.filter.brand.id) === t.getAttribute('data-bw-brand'));
+    });
+    this.root.querySelectorAll('[data-bw-catgrid] .bw-tile').forEach(function (t) {
       t.classList.toggle('on', self.filter.type === 'cat' && self.filter.row && String(self.filter.row.id) === t.getAttribute('data-bw-cat'));
     });
   };
@@ -446,7 +468,7 @@
   P._scrollToAll = function () {
     var sc = this._scroller(), sec = this.el.allSec;
     if (!sc || !sec) return;
-    var top = sec.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop - 62;
+    var top = sec.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop - 56;   // 52px shared header + a little air
     sc.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
   };
 
@@ -579,7 +601,7 @@
     var list = this._sRes.items.map(function (r) { return r.p; });
     if (!list.length) return '<div class="bw-sp-none"><b>No products found</b><span>Try different words or browse the categories.</span></div>';
     return '<div class="bw-sp-count">' + list.length + ' result' + (list.length === 1 ? '' : 's') + ' for &ldquo;' + esc(this._sQ) + '&rdquo;</div>' +
-      '<div class="bw-grid-inner">' + list.map(function (p) { return self._card(p); }).join('') + '</div>';
+      '<div class="pgrid-wrap"><div class="pgrid">' + list.map(function (p) { return self._card(p); }).join('') + '</div></div>';
   };
 
   P._searchClick = function (ev) {
@@ -615,14 +637,6 @@
       var a = b.getAttribute('data-bw');
       if (a === 'back') { if (this.d.onBack) this.d.onBack(); return; }
       if (a === 'search') { this._searchOpen(); return; }
-      if (a === 'favs') {
-        /* the existing favorites system lives on the home feed — leave the world and show it */
-        if (this.d.onBack) this.d.onBack();
-        if (global.showFavorites) global.showFavorites();
-        return;
-      }
-      if (a === 'cart') { if (global.openCart) global.openCart(); return; }
-      if (a === 'profile') { if (global.openAccount) global.openAccount(); return; }
       if (a === 'allcats') { this._openCats(); return; }
       if (a === 'closecats') { this._closeCats(); return; }
       if (a === 'closesearch') { this._closeSearch(); return; }
@@ -634,16 +648,20 @@
       this._setFilter({ type: b.getAttribute('data-bw-filter') }, true);
       return;
     }
+    if ((b = t.closest('[data-bw-brand]'))) {
+      var bid = b.getAttribute('data-bw-brand'), rec = null;
+      this._brandsInPool().forEach(function (x) { if (String(x.b.id) === bid) rec = x.b; });
+      if (!rec) return;
+      /* same browsing interface: the Beauty listing below re-filters in place */
+      this._setFilter(this.filter.type === 'brand' && String(this.filter.brand.id) === bid ? { type: 'all' } : { type: 'brand', brand: rec }, true);
+      return;
+    }
     if ((b = t.closest('[data-bw-cat]'))) {
       var row = this._rowForId(b.getAttribute('data-bw-cat'));
       if (!row) return;
       if (!this.el.catsPage.hidden) this._closeCats();
       this._setFilter({ type: 'cat', row: row }, true);
       return;
-    }
-    /* a product card opens the store's own product page (the heart and cart control handle themselves) */
-    if (!t.closest('.favBtn, .pcCtl') && (b = t.closest('[data-bw-open]')) && global.openProduct) {
-      global.openProduct(Number(b.getAttribute('data-bw-open')));
     }
   };
 
@@ -655,12 +673,16 @@
     this.off.forEach(function (fn) { try { fn(); } catch (e) { /* noop */ } });
     this.off = [];
     this.root.innerHTML = '';
+    if (this.root.parentNode) this.root.parentNode.removeChild(this.root);
   };
 
   ns.BeautyWorld = {
+    /* renders into its own child of `root`, so the shared world header already in `root` is never touched */
     mount: function (root, world, deps) {
-      root.innerHTML = '';
-      return new BeautyWorld(root, world, deps || {});
+      var host = global.document.createElement('div');
+      host.className = 'bw-host';
+      root.appendChild(host);
+      return new BeautyWorld(host, world, deps || {});
     }
   };
 })(window);

@@ -72,11 +72,7 @@
     root.classList.toggle('world-home', world.slug === 'home' || world.slug === 'home-decor');
     root.style.setProperty('--wp-grad', world.gradient);
 
-    if (world.slug === 'beauty' && global.Pcx && global.Pcx.BeautyWorld) {   /* the dedicated Beauty world (components/beauty-world.js) */
-      global.Pcx.BeautyWorld.mount(root, world, { onBack: d.onBack, beauty: d.beauty && d.beauty() });
-      return;
-    }
-
+    /* ONE header implementation for every world (Beauty included): built here, before any world-specific content. */
     var hdr = h('header', 'wp-hdr');
     var back = h('button', 'wp-back'); back.type = 'button'; back.setAttribute('aria-label', 'Back'); back.innerHTML = BACK;
     back.addEventListener('click', function () { d.onBack(); });
@@ -92,6 +88,14 @@
     profileBtn.addEventListener('click', function () { (d.openAccount || global.openAccount || function () {})(); });
     hdr.appendChild(searchBtn); hdr.appendChild(cartBtn); hdr.appendChild(profileBtn);
     root.appendChild(hdr);
+
+    if (world.slug === 'beauty' && global.Pcx && global.Pcx.BeautyWorld) {   /* the dedicated Beauty world (components/beauty-world.js) renders UNDER the shared header */
+      global.Pcx.BeautyWorld.mount(root, world, {
+        onBack: d.onBack, beauty: d.beauty && d.beauty(),
+        cardHTML: ctx && ctx.cardHTML, brandOf: d.brandOf, sponsored: d.sponsored, mountAds: d.mountAds
+      });
+      return;
+    }
 
     var body = h('div', 'ws-root');
     root.appendChild(body);
