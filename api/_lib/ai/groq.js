@@ -40,7 +40,7 @@ async function chat(opts) {
   if (opts.tools && opts.tools.length) { body.tools = opts.tools; body.tool_choice = 'auto'; }
   if (opts.json) body.response_format = { type: 'json_object' };
 
-  let lastStatus = 0;
+  let lastStatus = 0, lastErrDetail = '';
   for (let attempt = 0; attempt < 3; attempt++) {
     const ctl = new AbortController();
     const timer = setTimeout(() => ctl.abort(), opts.timeoutMs || 25000);
@@ -58,6 +58,14 @@ async function chat(opts) {
         if (!message) throw new AIError('upstream', 'The AI service returned an empty answer. Please try again.', 502);
         return { message, usage: data.usage || null };
       }
+      // Groq's error body is {"error":{"type","code","message"}}. "type"/"code" are short fixed slugs (e.g.
+      // "model_not_found") - safe to show. "message" is free text and must never reach the vendor or logs: a
+      // provider could echo back something sensitive in it (this is exactly what a leaked key would look like).
+      const errBody = await res.json().catch(() => null);
+      const provErr = errBody && errBody.error;
+      const safeSlug = /^[a-z0-9_.-]{1,40}$/i;
+      const rawDetail = provErr && (provErr.code || provErr.type);
+      lastErrDetail = typeof rawDetail === 'string' && safeSlug.test(rawDetail) ? rawDetail : '';
       if ((res.status === 429 || res.status >= 500) && attempt < 2) {
         const ra = Number(res.headers && res.headers.get && res.headers.get('retry-after'));
         await sleep(Math.min(ra > 0 ? ra * 1000 : 600 * (attempt + 1), 2500));
@@ -68,8 +76,8 @@ async function chat(opts) {
         console.error('[ai] provider rejected the API key');
         throw new AIError('not_configured', 'The AI assistant is not available right now. Please try again later.', 503);
       }
-      console.error('[ai] provider error status', res.status);   // status only: never log provider bodies or prompts
-      throw new AIError('upstream', 'The AI service had a problem. Please try again.', 502, { upstreamStatus: res.status });
+      console.error('[ai] provider error', res.status, lastErrDetail || '(no detail)');
+      throw new AIError('upstream', 'The AI service had a problem' + (lastErrDetail ? ' (' + lastErrDetail + ')' : '') + '. Please try again.', 502, { upstreamStatus: res.status, upstreamDetail: lastErrDetail });
     } catch (e) {
       if (e instanceof AIError) throw e;
       if (e && e.name === 'AbortError') {
@@ -83,7 +91,7 @@ async function chat(opts) {
       clearTimeout(timer);
     }
   }
-  throw new AIError('upstream', 'The AI service had a problem. Please try again.', lastStatus === 429 ? 429 : 502);
+  throw new AIError('upstream', 'The AI service had a problem' + (lastErrDetail ? ' (' + lastErrDetail + ')' : '') + '. Please try again.', lastStatus === 429 ? 429 : 502);
 }
 
 // reasoning models sometimes wrap thoughts in <think>…</think>; never show those

@@ -56,6 +56,14 @@ test('4/regen only selected fields keeps the vendor edits for everything else', 
   const r = await generateDraft({ name: 'Bag', fields: ['tags'], previous }, { chatImpl: reply(draftJson({ title: 'AI title', description: 'AI text', tags: ['new', 'tags'] })) });
   assert.equal(r.draft.title, 'My edited title'); assert.equal(r.draft.description, 'My edited text'); assert.deepEqual(r.draft.tags, ['new', 'tags']);
 });
+test('4b/regen description with a photo attached and an array-valued attribute left over from the first draft (the exact shape the real "Regenerate" button sends)', async () => {
+  const previous = draftJson({ title: 'Kept title', shortDescription: 'Kept short', attributes: { sizes: ['S', 'M', 'L'], colour: 'Red' } });
+  const r = await generateDraft({ name: 'Bag', images: [{ dataUrl: IMG }], fields: ['description'], previous },
+    { chatImpl: reply(draftJson({ description: 'Freshly regenerated description.' })) });
+  assert.equal(r.draft.description, 'Freshly regenerated description.');
+  assert.equal(r.draft.title, 'Kept title'); assert.equal(r.draft.shortDescription, 'Kept short');
+  assert.deepEqual(r.draft.attributes.sizes, ['S', 'M', 'L']); assert.equal(r.draft.attributes.colour, 'Red');
+});
 test('draft: bad JSON is retried once, then fails safely', async () => {
   let n = 0;
   const ok = await generateDraft({ name: 'x' }, { chatImpl: async () => ({ message: { content: n++ ? JSON.stringify(draftJson()) : 'sorry not json' } }) });
@@ -79,6 +87,12 @@ const res = (status, body, headers) => ({ ok: status < 400, status, headers: { g
 test('17 Groq failure: safe message, no provider text, key never leaks', async () => {
   const f = async () => res(500, { error: { message: 'secret provider detail gsk_abc' } });
   await assert.rejects(groq.chat({ messages: [], fetchImpl: f }), e => e.code === 'upstream' && !/secret|gsk_/.test(e.publicMessage + e.message));
+});
+test('17b Groq failure: a short, fixed error code (e.g. "model_not_found") is shown - free-form "message" text is not', async () => {
+  const withCode = async () => res(400, { error: { code: 'model_not_found', message: 'The model `qwen/qwen3.6-27b` does not exist' } });
+  await assert.rejects(groq.chat({ messages: [], fetchImpl: withCode }), e => e.publicMessage.includes('model_not_found') && !e.publicMessage.includes('does not exist'));
+  const messyCode = async () => res(400, { error: { code: 'nope; DROP TABLE x --' } });   // not a safe slug: dropped, not shown
+  await assert.rejects(groq.chat({ messages: [], fetchImpl: messyCode }), e => e.publicMessage === 'The AI service had a problem. Please try again.');
 });
 test('groq: retries 429 then succeeds; gives rate_limited after retries', async () => {
   let n = 0;

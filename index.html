@@ -3293,9 +3293,13 @@ document.getElementById('legalOver').onclick = closeLegal;
 function setCookieConsent(accepted) {
   localStorage.setItem('cookieConsent', accepted ? 'accepted' : 'declined');
   document.getElementById('cookieBar').classList.remove('show');
+  if (window.Pcx && Pcx.mac) Pcx.mac.show();   // MAC (components/mac-fab.js) sits bottom-right, right where this banner covers - step back out once it's dismissed
 }
 if (!localStorage.getItem('cookieConsent')) {
-  setTimeout(() => document.getElementById('cookieBar').classList.add('show'), 1200);
+  setTimeout(() => {
+    document.getElementById('cookieBar').classList.add('show');
+    if (window.Pcx && Pcx.mac) Pcx.mac.hide();   // otherwise MAC is rendered directly underneath this, just invisibly so
+  }, 1200);
 }
 
 /* While the search bar is on screen the header shows no search icon and no category bar.
@@ -3769,6 +3773,7 @@ function initAssistant() {
   if (macChat || !window.Pcx || !Pcx.MacFab || !Pcx.MacChat) return;
   if (document.querySelector('.macFab') || document.querySelector('.macChat')) return;   // already mounted (e.g. by the component's own auto-init) — never stack a second one
   Pcx.mac = new Pcx.MacFab({});
+  if (document.getElementById('cookieBar').classList.contains('show')) Pcx.mac.hide();   // covers the case where the cookie banner beat MAC to mounting
   macChat = new Pcx.MacChat({
     mac: Pcx.mac,
     getSession: () => buyerSession,
