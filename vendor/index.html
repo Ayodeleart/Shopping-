@@ -999,7 +999,7 @@ document.getElementById('obLogoFile').onchange = async (e) => {
   reader.onload = ev => { document.getElementById('obLogoPreview').src = ev.target.result; document.getElementById('obLogoPreview').style.display = 'block'; document.getElementById('obLogoPickTxt').style.display = 'none'; };
   reader.readAsDataURL(file);
   try {
-    const url = await uploadImage(file, 'store-logos', false, 'obLogoProgBar', 'obLogoProg');
+    const url = await uploadImage(file, 'vendor-logos/' + session.user.id, false, 'obLogoProgBar', 'obLogoProg');
     document.getElementById('obLogoFile').dataset.url = url;
   } catch (err) { toast('Logo upload failed: ' + err.message, true); }
 };
